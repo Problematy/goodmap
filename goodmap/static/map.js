@@ -1,5 +1,16 @@
+ $.ajaxSetup({
+    async: false
+});
+
  let text     = '[{"name": "PCK","position": [17.05, 51.1] }]';
- var data     = JSON.parse(text);
+
+ var data     = $.getJSON("/data").responseJSON
+// var data     = JSON.parse(text);
+ console.log(data)
+//  $.ajaxSetup({
+//    async: true
+//});
+
  var points   = data.map(x => new ol.Feature({
      name: x.name,
      geometry: new ol.geom.Point(ol.proj.fromLonLat(x.position))
