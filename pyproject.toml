@@ -6,6 +6,7 @@ authors = ["Your Name <you@example.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
+Flask = "^2.1.1"
 
 [tool.poetry.dev-dependencies]
 
