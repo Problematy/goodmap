@@ -9,8 +9,7 @@ app = Flask(__name__)
 
 DATA = os.getenv('DATA')
 
-with open(DATA, 'r') as f:
-    data = json.load(f)
+
 
 
 @app.route("/")
@@ -20,4 +19,6 @@ def index():
 
 @app.route("/data")
 def map_data():
+    with open(DATA, 'r') as f:
+        data = json.load(f)
     return jsonify(data)
