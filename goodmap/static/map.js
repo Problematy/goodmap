@@ -28,11 +28,19 @@ command.onAdd = function (map) {
 command.addTo(map);
 
 function createCheckboxWithType(type) {
+    var main = document.createElement("div");
+    var label = document.createElement("Label");
+    label.htmlFor = type;
+    label.innerHTML = type;
     var checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.name = "name";
     checkbox.value = type;
     checkbox.id = type;
-    checkbox.innerHTML = type;
-    return checkbox;
+    checkbox.label = type;
+
+    main.appendChild(label);
+    main.appendChild(checkbox);
+
+    return main;
 }
