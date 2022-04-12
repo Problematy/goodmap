@@ -2,41 +2,37 @@
     async: false
 });
 
- var data     = $.getJSON("/data").responseJSON
- var points   = data.map(x => new ol.Feature({
-     name: x.name,
-     geometry: new ol.geom.Point(ol.proj.fromLonLat(x.position))
- }))
+var alldata     = $.getJSON("/data").responseJSON
+var data        = alldata.data
+var types       = alldata.allowed_types
+var map = L.map('map').setView([51.1,17.05], 13);
 
- var myStyle = new ol.style.Style({
-   image: new ol.style.Circle({
-     radius: 7,
-     fill: new ol.style.Fill({color: 'black'}),
-     stroke: new ol.style.Stroke({
-       color: [255,0,0], width: 2
-     })
-   })
- })
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap contributors</a>'
+      }).addTo(map);
 
- var map = new ol.Map({
-     controls: ol.control.defaults({attribution: true}),
-     layers: [
-         new ol.layer.Tile({
-             source: new ol.source.OSM()
-         })
-     ],
-     target: 'map',
-     view: new ol.View({
-         center: ol.proj.fromLonLat([17.05, 51.1]),
-         maxZoom: 18,
-         zoom: 12
-     })
- });
-     var layer = new ol.layer.Vector({
-       style: myStyle,
-       source: new ol.source.Vector(
-       {
-         features: points
-       })
-     });
- map.addLayer(layer);
+var markers = data.map(x => L.marker(x.position).addTo(map).bindPopup(x.name));
+
+var command = L.control({position: 'topright'});
+
+
+command.onAdd = function (map) {
+    var div = L.DomUtil.create('div', 'command');
+    var form = document.createElement('form');
+    types.map(x => form.appendChild(createCheckboxWithType(x)));
+    div.appendChild(form);
+    return div;
+};
+
+command.addTo(map);
+
+function createCheckboxWithType(type) {
+    var checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.name = "name";
+    checkbox.value = type;
+    checkbox.id = type;
+    checkbox.innerHTML = type;
+    return checkbox;
+}
