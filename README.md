@@ -21,19 +21,27 @@ specified below.
 ## Data format
 
 Data file is simple json file with list of objects containing:
-* `name` - which is self explanatory
-* `position` - which contains coordinates on map
+* `data` - consisting data about objects
+  * `name` - which is self explanatory
+  * `position` - which contains coordinates on map
+  * `types` - list of types(requirements) which object fits
+* `types` - list of all available types
 ```
-[
-  {
-    "name": "First object",
-    "position": [17.05, 51.1]
-  },
-  {
-    "name": "Second object",
-    "position": [27.06, 66.1]
-  }
-]
+{
+  "data": [
+    {
+      "name": "object1",
+      "position": [51.1, 17.05],
+      "types": ["clothes"]
+    },
+    {
+      "name": "object2",
+      "position": [51.113, 17.06],
+      "types": ["clothes", "shoes"]
+    }
+  ],
+  "types": ["clothes", "shoes"]
+}
 ```
 
 ## Version History

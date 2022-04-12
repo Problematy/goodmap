@@ -22,12 +22,18 @@ def index():
 
 
 @app.route("/data")
-def map_data():
+def get_data():
     local_data = data["data"]
     query_params = request.args.to_dict(flat=False)
-    what = query_params.get('types')
+    what = query_params.get('type')
     if what:
         filtered_data = filter(lambda x: all(elem in x["types"] for elem in what), local_data)
         return jsonify(list(filtered_data))
     else:
         return jsonify(local_data)
+
+
+@app.route("/types")
+def get_types():
+    local_data = data["types"]
+    return jsonify(local_data)
