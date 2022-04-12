@@ -1,5 +1,5 @@
 from flask import Flask
-from flask import render_template
+from flask import render_template, request
 import os
 import json
 from flask import jsonify
@@ -16,7 +16,6 @@ def get_data(file):
 
 data = get_data(DATA)
 
-
 @app.route("/")
 def index():
     return render_template('map.html')
@@ -24,4 +23,11 @@ def index():
 
 @app.route("/data")
 def map_data():
-    return jsonify(data)
+    local_data = data["data"]
+    query_params = request.args.to_dict(flat=False)
+    what = query_params.get('types')
+    if what:
+        filtered_data = filter(lambda x: all(elem in x["types"] for elem in what), local_data)
+        return jsonify(list(filtered_data))
+    else:
+        return jsonify(local_data)
