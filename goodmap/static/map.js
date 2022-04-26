@@ -50,7 +50,7 @@ $(".filter").on('click', function(){
    map.removeLayer(markers);
    markers = L.markerClusterGroup();
    var checked_boxes = $(".filter:checked").toArray();
-   var types = checked_boxes.map(x => 'type=' + x.value).join('&');
+   var types = checked_boxes.map(x => 'types=' + x.value).join('&');
    var url = ["/data", types].filter(n => n).join('?');
    var new_data = $.getJSON(url).responseJSON;
    new_data.map(x => L.marker(x.position).addTo(markers).bindPopup(x.name));
