@@ -34,15 +34,20 @@ def create_app():
         query_params = request.args.to_dict(flat=False)
         filters = app.config["data"]["filters"]
         requirements = []
-        for x in filters.keys():
-            requirements.append((x, query_params.get(x)))
+        for key in filters.keys():
+            requirements.append((key, query_params.get(key)))
 
         filtered_data = filter(lambda x: does_fulfill_requriement(x, requirements), local_data)
         return jsonify(list(filtered_data))
 
-    @app.route("/types")
-    def get_types():
-        local_data = app.config["data"]["filters"]["types"]
+    @app.route("/api/filters")
+    def get_filters():
+        data = list(app.config["data"]["filters"].keys())
+        return jsonify(data)
+
+    @app.route("/api/filter/<filter_type>")
+    def get_types(filter_type):
+        local_data = app.config["data"]["filters"][filter_type]
         return jsonify(local_data)
 
     return app
