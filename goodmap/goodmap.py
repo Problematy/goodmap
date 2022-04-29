@@ -12,10 +12,10 @@ def load_json(file):
 
 def does_fulfill_requriement(entry, requirements):
     matches = []
-    for filter_type, values in requirements:
+    for category, values in requirements:
         if not values:
             continue
-        matches.append(all(entry_value in entry[filter_type] for entry_value in values))
+        matches.append(all(entry_value in entry[category] for entry_value in values))
     return all(matches)
 
 
@@ -32,22 +32,22 @@ def create_app():
     def get_data():
         local_data = app.config["data"]["data"]
         query_params = request.args.to_dict(flat=False)
-        filters = app.config["data"]["filters"]
+        categories = app.config["data"]["categories"]
         requirements = []
-        for key in filters.keys():
+        for key in categories.keys():
             requirements.append((key, query_params.get(key)))
 
         filtered_data = filter(lambda x: does_fulfill_requriement(x, requirements), local_data)
         return jsonify(list(filtered_data))
 
-    @app.route("/api/filters")
-    def get_filters():
-        data = list(app.config["data"]["filters"].keys())
+    @app.route("/api/categories")
+    def get_categories():
+        data = list(app.config["data"]["categories"].keys())
         return jsonify(data)
 
-    @app.route("/api/filter/<filter_type>")
-    def get_types(filter_type):
-        local_data = app.config["data"]["filters"][filter_type]
+    @app.route("/api/category/<category_type>")
+    def get_category_types(category_type):
+        local_data = app.config["data"]["categories"][category_type]
         return jsonify(local_data)
 
     return app

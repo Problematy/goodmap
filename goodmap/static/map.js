@@ -3,7 +3,7 @@ $.ajaxSetup({
 });
 
 var data  = $.getJSON("/data").responseJSON
-var filters = $.getJSON("/api/filters").responseJSON
+var categories = $.getJSON("/api/categories").responseJSON
 var map   = L.map('map').setView([51.1,17.05], 13);
 var layer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
@@ -15,26 +15,19 @@ var markers = L.markerClusterGroup();
 data.map(x => L.marker(x.position).addTo(markers).bindPopup(x.name));
 layer.addTo(map);
 map.addLayer(markers);
+
 var command = L.control({position: 'topright'});
-
-
 command.onAdd = function (map) {
     var div = L.DomUtil.create('div', 'command');
     var form = document.createElement('form');
-    var filterros = filters.map(x => [x, $.getJSON("/api/filter/"+x).responseJSON])
-    filterros.forEach( x =>
+    var checkbox_data = categories.map(x => [x, $.getJSON("/api/category/"+x).responseJSON])
+    checkbox_data.forEach( x =>
         x[1].forEach(y => form.appendChild(createCheckboxWithType(x[0], y)))
     )
 
     div.appendChild(form);
     return div;
 };
-
-function addCheckboxFilter(filter_type) {
-    var types = $.getJSON("/api/filter/"+filter_type).responseJSON
-    types.map(x => form.appendChild(createCheckboxWithType(filter_type, x)));
-}
-
 command.addTo(map);
 
 function createCheckboxWithType(filter_type, entry) {
@@ -58,8 +51,8 @@ $(".filter").on('click', function(){
     map.removeLayer(markers);
     markers = L.markerClusterGroup();
 
-    var filterros = filters.map(x => $.getJSON("/api/filter/"+x).responseJSON)
-    var all_checkboxes = filters.map(x => getSpecificCheckboxes(x))
+    var filterros = categories.map(x => $.getJSON("/api/category/"+x).responseJSON)
+    var all_checkboxes = categories.map(x => getSpecificCheckboxes(x))
     var filteros = all_checkboxes.filter(n => n).join('&');
 
     var url = ["/data", filteros].filter(n => n).join('?');

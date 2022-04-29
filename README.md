@@ -18,29 +18,46 @@ specified below.
 * You can add also __FLASK_ENV__ variable to get your development easier `FLASK_ENV=development` 
 
 
-## Data format
+## Configuration
 
-Data file is simple json file with list of objects containing:
-* `data` - consisting data about objects
-  * `name` - which is self explanatory
-  * `position` - which contains coordinates on map
-  * `types` - list of types(requirements) which object fits
-* `types` - list of all available types
+Configuration file is simple json file with list of objects containing:
+* `categories` - categories of object on map (which later can be filtered based on)
+* `data` - data about objects
+
+### Categories
+Fully configurable map where key is name of category and value is list of allowed types. E.g.
+* "car_elements": ["mirror", "wheel", "steering wheel"]
+* "color": ["red", "blue", "green"]
+
+### Data
+Data consists of two parts:
+* obligatory and constant
+  * `name` - name of the object
+  * `position` - coordinates of object
+* category dependent - depending on your `categories` setup it varies. See example of config below.
+
+### Config example
 ```
 {
+  "categories":
+  {
+    "types": ["clothes", "shoes"],
+    "gender": ["male", "female"]
+  },
   "data": [
     {
-      "name": "object1",
+      "name": "Only male clothes",
       "position": [51.1, 17.05],
-      "types": ["clothes"]
+      "types": ["clothes"],
+      "gender": ["male"]
     },
     {
-      "name": "object2",
+      "name": "Clothes and shoes for males and females both",
       "position": [51.113, 17.06],
-      "types": ["clothes", "shoes"]
+      "types": ["clothes", "shoes"],
+      "gender": ["male", "female"]
     }
-  ],
-  "types": ["clothes", "shoes"]
+  ]
 }
 ```
 
