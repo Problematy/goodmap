@@ -1,3 +1,6 @@
+![Github Actions](https://github.com/raven-wing/goodmap/actions/workflows/python-app.yml/badge.svg)
+
+
 # Good Map
 
 Map engine to serve all the people ;) 
