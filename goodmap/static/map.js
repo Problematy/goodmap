@@ -4,11 +4,11 @@ $.ajaxSetup({
 
 $( document ).ready( function() {
     var markers = L.markerClusterGroup();
-    var data  = $.getJSON("/data").then( function(response) {
+    $.getJSON("/data", function(response) {
       response.map(x => L.marker(x.position).addTo(markers).bindPopup(x.name));
     });
     var categories = $.getJSON("/api/categories").responseJSON;
-    var checkbox_data = categories.map(x => [x, $.getJSON("/api/category/"+x).responseJSON]);
+    var checkbox_data_async = categories.map(x => [x, $.getJSON("/api/category/" + x)]);
 
     var mainMap   = L.map('map').setView([51.1,17.05], 13);
     var layer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -19,36 +19,41 @@ $( document ).ready( function() {
     layer.addTo(mainMap);
     mainMap.addLayer(markers);
 
-    var command = L.control({position: 'topright'});
-    command.onAdd = function (mainMap) {
-        var div = L.DomUtil.create('div', 'command');
-        var form = document.createElement('form');
-
-        checkbox_data.forEach( x =>
-            x[1].forEach(y => form.appendChild(createCheckboxWithType(x[0], y)))
-        )
-
-        div.appendChild(form);
-        return div;
-    };
-    command.addTo(mainMap);
-
-    $(".filter").on('click', function(){
-        mainMap.removeLayer(markers);
-        markers = L.markerClusterGroup();
-
-        var filterros = categories.map(x => $.getJSON("/api/category/"+x).responseJSON);
-        var all_checkboxes = categories.map(x => getSpecificCheckboxes(x));
-        var filteros = all_checkboxes.filter(n => n).join('&');
-
-        var url = ["/data", filteros].filter(n => n).join('?');
-        var new_data = $.getJSON(url).responseJSON;
-        new_data.map(x => L.marker(x.position).addTo(markers).bindPopup(x.name));
-        mainMap.addLayer(markers);
+    $.when.apply(null, checkbox_data_async).then(function(){
+        addCommandBox(mainMap, checkbox_data_async);
+        $(".filter").on('click', function(){
+            mainMap.removeLayer(markers);
+            markers = getNewMarkers(categories);
+            mainMap.addLayer(markers);
+        });
     });
-
 });
 
+function getNewMarkers(cats){
+    var markeros = L.markerClusterGroup();
+    var all_checkboxes = cats.map(x => getSelectedCheckboxesOfCategory(x));
+    var filteros = all_checkboxes.filter(n => n).join('&');
+    var url = ["/data", filteros].filter(n => n).join('?');
+    var new_data = $.getJSON(url).responseJSON;
+    new_data.map(x => L.marker(x.position).addTo(markeros).bindPopup(x.name));
+    return markeros;
+}
+
+function addCommandBox(map, checkbox_data) {
+    var command = L.control({position: 'topright'});
+    command.onAdd = prepareFilterBox.bind(null, checkbox_data);
+    command.addTo(map);
+}
+
+function prepareFilterBox(checkboxes) {
+    var div = L.DomUtil.create('div', 'command');
+    var form = document.createElement('form');
+    checkboxes.forEach( x =>
+        x[1].responseJSON.forEach(y => form.appendChild(createCheckboxWithType(x[0], y)))
+    )
+    div.appendChild(form);
+    return div;
+};
 
 function createCheckboxWithType(filter_type, entry) {
     var main = document.createElement("div");
@@ -67,7 +72,7 @@ function createCheckboxWithType(filter_type, entry) {
     return main;
 }
 
-function getSpecificCheckboxes(filter_type){
+function getSelectedCheckboxesOfCategory(filter_type){
     var selector = ".filter."+filter_type+":checked";
     var select = $(selector);
     var checked_boxes_types = $(".filter."+filter_type+":checked").toArray();
