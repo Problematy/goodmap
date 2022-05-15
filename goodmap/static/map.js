@@ -50,33 +50,38 @@ function getNewMarkers(cats){
 function createCommandBox(categories) {
   let command = L.control({position: 'topright'});
   command.onAdd = prepareFilterBox.bind(null, categories);
-
   return command;
 }
 
 function prepareFilterBox(categories) {
   let div = L.DomUtil.create('div', 'command');
+  div.className="container"
   let form = document.createElement('form');
   categories.map( x => $.getJSON("/api/category/" + x, (category_types) => {
     category_types.map(y => form.appendChild(createCheckboxWithType(x, y)))
     }));
+
+  div.ondblclick = (ev) => {
+    L.DomEvent.stopPropagation(ev)
+  };
+
   div.appendChild(form);
   return div;
 };
 
 function createCheckboxWithType(filter_type, entry) {
   let main = document.createElement("div");
+  main.className="form-check";
   let label = document.createElement("Label");
   label.htmlFor = entry;
   label.innerHTML = entry;
 
   let checkbox = document.createElement("input");
-  checkbox.className = "filter "+filter_type;
+  checkbox.className = "form-check-input filter "+filter_type;
   checkbox.type = "checkbox";
   checkbox.name = "name";
   checkbox.value = entry;
   checkbox.id = entry;
-  checkbox.label = entry;
   checkbox.onclick = refreshMap.bind(null, cats);
   main.appendChild(label);
   main.appendChild(checkbox);
