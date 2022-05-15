@@ -24,6 +24,10 @@ def create_app():
     DATA = os.getenv('DATA')
     app.config['data'] = load_json(DATA)
 
+    @app.context_processor
+    def setup_context():
+        return dict(app_name=app.config['data']['app_name'])
+
     @app.route("/")
     def index():
         return render_template('map.html')

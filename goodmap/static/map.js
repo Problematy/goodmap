@@ -4,7 +4,6 @@ var cats      = null;
 
 $.getJSON("/api/categories").then( categories => {
   cats = categories
-  console.log(categories);
   $( document ).ready(main);
 });
 
@@ -51,6 +50,7 @@ function getNewMarkers(cats){
 function createCommandBox(categories) {
   let command = L.control({position: 'topright'});
   command.onAdd = prepareFilterBox.bind(null, categories);
+
   return command;
 }
 
@@ -77,7 +77,7 @@ function createCheckboxWithType(filter_type, entry) {
   checkbox.value = entry;
   checkbox.id = entry;
   checkbox.label = entry;
-  checkbox.onclick = refreshMap.bind(null, cats)
+  checkbox.onclick = refreshMap.bind(null, cats);
   main.appendChild(label);
   main.appendChild(checkbox);
   return main;
