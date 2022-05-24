@@ -25,6 +25,8 @@ jobs:
         poetry run pytest
 
   deploy:
+    needs: build
+    environment: goodmap_env
     name: Deploying to Google Cloud
     runs-on: ubuntu-latest
     steps:
