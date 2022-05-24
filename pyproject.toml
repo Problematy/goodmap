@@ -2,7 +2,7 @@
 name = "goodmap"
 version = "0.1.0"
 description = ""
-authors = [""]
+authors = ["Krzysztof Kolodzinski <krzysztof.kolodzinski@problematy.pl>"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
