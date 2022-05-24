@@ -39,6 +39,6 @@ jobs:
         workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
         service_account: ${{ secrets.SERVICE_ACCOUNT }}
     - id: deploy
-      uses: google-github-actions/deploy-appengine@v0
+      uses: google-github-actions/deploy-appengine@v0.8.0
     - name: Test
       run: curl "${{ steps.deploy.outputs.url }}"
