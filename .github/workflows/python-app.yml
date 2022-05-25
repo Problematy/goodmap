@@ -40,6 +40,8 @@ jobs:
         workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
         service_account: ${{ secrets.SERVICE_ACCOUNT }}
         access_token_lifetime: '300s'
+    - id: first_deploy
+      run: 'gcloud app deploy app.yaml --quiet --no-promote --version v1 --service-account=${{ secrets.SERVICE_ACCOUNT }}'
     - id: deploy
       uses: google-github-actions/deploy-appengine@v0
     - name: Test
