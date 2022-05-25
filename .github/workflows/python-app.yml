@@ -41,7 +41,7 @@ jobs:
         service_account: ${{ secrets.SERVICE_ACCOUNT }}
         access_token_lifetime: '300s'
     - id: first_deploy
-      run: gcloud beta app deploy app.yaml --service-account=${{ secrets.SERVICE_ACCOUNT }} --quiet --no-promote
+      run: gcloud beta app deploy app.yaml --service-account=${{ secrets.SERVICE_ACCOUNT }} --quiet
       #gcloud app deploy ~/my_app/app.yaml --service-account=SERVICE_ACCOUNT
     - id: deploy
       uses: google-github-actions/deploy-appengine@v0
