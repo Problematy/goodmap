@@ -23,9 +23,14 @@ def load_json_db(json_config):
     return load_json(json_config["data_file_path"])
 
 
+def load_google_hosted_json_db(json_config):
+    return json.loads(download_blob(json_config["bucket_name"], json_config["source_blob_name"]))
+
+
 def load_data(db_config):
     config_loaders = {
-        "json_file": lambda x: load_json_db(x)
+        "json_file": lambda x: load_json_db(x),
+        "google_hosted_json_file" : lambda x: load_google_hosted_json_db(x)
     }
     return config_loaders[db_config["type"]](db_config)
 
@@ -33,8 +38,6 @@ def load_data(db_config):
 def create_app():
     app = Flask(__name__)
     app.config["config"] = load_json("./config.json")
-
-    #download_blob(DATA, "./data.json")
 
     app.config['data'] = load_data(app.config["config"]["db"])
 
