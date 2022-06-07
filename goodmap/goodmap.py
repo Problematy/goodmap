@@ -1,13 +1,8 @@
 from flask import Flask
 from flask import render_template, request
-import os
-import json
+from .db import load_data
 from flask import jsonify
-from .google_json_db import download_blob
-
-def load_json(file):
-    with open(file, 'r') as file:
-        return json.load(file)
+import json
 
 
 def does_fulfill_requriement(entry, requirements):
@@ -19,25 +14,14 @@ def does_fulfill_requriement(entry, requirements):
     return all(matches)
 
 
-def load_json_db(json_config):
-    return load_json(json_config["data_file_path"])
+def load_config(config_path):
+    with open(config_path, 'r') as file:
+        return json.load(file)
 
 
-def load_google_hosted_json_db(json_config):
-    return json.loads(download_blob(json_config["bucket_name"], json_config["source_blob_name"]))
-
-
-def load_data(db_config):
-    config_loaders = {
-        "json_file": lambda x: load_json_db(x),
-        "google_hosted_json_file" : lambda x: load_google_hosted_json_db(x)
-    }
-    return config_loaders[db_config["type"]](db_config)
-
-
-def create_app():
+def create_app(config_path="./config.json"):
     app = Flask(__name__)
-    app.config["config"] = load_json("./config.json")
+    app.config["config"] = load_config(config_path)
 
     app.config['data'] = load_data(app.config["config"]["db"])
 

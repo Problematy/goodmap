@@ -1,4 +1,9 @@
 from google.cloud import storage
+import json
+
+
+def load_google_hosted_json_db(json_config):
+    return json.loads(download_blob(json_config["bucket_name"], json_config["source_blob_name"]))
 
 
 def download_blob(bucket_name, source_blob_name):
