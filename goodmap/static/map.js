@@ -34,7 +34,6 @@ function onLocationFound(e, map) {
     iconSize: [25, 25],
     popupAnchor: [1, -34],
   });
-
   L.marker(e.latlng, {icon: greenIcon}).addTo(map);
   L.circle(e.latlng, radius).addTo(map);
 }
