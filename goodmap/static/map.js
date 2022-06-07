@@ -26,6 +26,19 @@ function refreshMap(categories)
   mainMap.addLayer(markers);
 }
 
+function onLocationFound(e, map) {
+  var radius = e.accuracy / 2;
+  var greenIcon = new L.Icon(
+  {
+    iconUrl: 'https://cdn3.iconfinder.com/data/icons/google-material-design-icons/48/ic_my_location_48px-512.png',
+    iconSize: [25, 25],
+    popupAnchor: [1, -34],
+  });
+
+  L.marker(e.latlng, {icon: greenIcon}).addTo(map);
+  L.circle(e.latlng, radius).addTo(map);
+}
+
 function createBasicMap() {
   let map = L.map('map').setView([51.1,17.05], 13);
   let layer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -33,6 +46,8 @@ function createBasicMap() {
     attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap contributors</a>'
   });
   map.addLayer(layer);
+  map.on('locationfound', (e) => {onLocationFound(e, map)});
+  map.locate({setView: true, watch:true, maxZoom: 16});
   return map;
 }
 
