@@ -16,6 +16,7 @@ function main() {
 
   $.getJSON("/api/categories", (categories) => {
     mainMap.addControl(createCommandBox(categories));
+    refreshMap(categories);
   });
 };
 
@@ -50,13 +51,33 @@ function createBasicMap() {
   return map;
 }
 
+function getFormattedDataForPopup(data){
+  let dataEntry = document.createElement("p");
+  return ["types", "gender", "condition"].map(x => "<b>"+x+"</b>" + ": " + data[x].join(', '));
+}
+
+function getFormattedData(place){
+//TODO: this should not have hardcoded place fields like name and type_of_place. make it configurable
+  let main = document.createElement("div");
+  main.className="place-data";
+  let name = document.createElement("p");
+  name.innerHTML = "<b>" + place.name + "</b>" + "<br>" + place.type_of_place;
+
+  let type = document.createElement("p");
+  type.innerHTML = getFormattedDataForPopup(place).join('<br>');
+
+  main.appendChild(name);
+  main.appendChild(type);
+  return main;
+}
+
 function getNewMarkers(cats){
   let markeros = L.markerClusterGroup();
   let all_checkboxes = cats.map(x => getSelectedCheckboxesOfCategory(x));
   let filteros = all_checkboxes.filter(n => n).join('&');
   let url = ["/data", filteros].filter(n => n).join('?');
   $.getJSON(url, (response) => {
-    response.map(x => L.marker(x.position).addTo(markeros).bindPopup(x.name));
+    response.map(x => L.marker(x.position).addTo(markeros).bindPopup(getFormattedData(x)));
   });
   return markeros;
 }
@@ -72,6 +93,10 @@ function prepareFilterBox(categories) {
   div.className="container"
   let form = document.createElement('form');
   categories.map( x => $.getJSON("/api/category/" + x, (category_types) => {
+    let title = document.createElement("span");
+    title.textContent = x;
+    form.appendChild(title);
+
     category_types.map(y => form.appendChild(createCheckboxWithType(x, y)))
     }));
 
@@ -86,6 +111,7 @@ function prepareFilterBox(categories) {
 function createCheckboxWithType(filter_type, entry) {
   let main = document.createElement("div");
   main.className="form-check";
+
   let label = document.createElement("Label");
   label.htmlFor = entry;
   label.innerHTML = entry;
