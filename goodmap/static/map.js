@@ -9,7 +9,6 @@ $.getJSON("/api/categories").then( categories => {
 
 function main() {
   mainMap.addLayer(markers);
-
   $.getJSON("/data", (response) => {
     response.map(x => L.marker(x.position).addTo(markers).bindPopup(x.name));
   });
