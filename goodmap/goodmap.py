@@ -47,8 +47,8 @@ def create_app(config_path="./config.json"):
 
     @app.route("/api/categories")
     def get_categories():
-        data = list(app.config["data"]["categories"].keys())
-        return jsonify(data)
+        categories = list(app.config["data"]["categories"].keys())
+        return jsonify(categories)
 
     @app.route("/api/category/<category_type>")
     def get_category_types(category_type):

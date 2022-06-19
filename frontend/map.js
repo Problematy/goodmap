@@ -1,3 +1,10 @@
+import L from 'leaflet'
+import 'leaflet.markercluster'
+import {getFormattedDataForPopup, getFormattedData} from './formatters'
+import {createCheckboxWithType} from './checkboxes'
+import * as ReactDOMServer from 'react-dom/server';
+import * as ReactDOM from 'react-dom';
+
 var mainMap   = createBasicMap();
 var markers   = L.markerClusterGroup();
 var cats      = null;
@@ -50,26 +57,6 @@ function createBasicMap() {
   return map;
 }
 
-function getFormattedDataForPopup(data){
-  let dataEntry = document.createElement("p");
-  return ["types", "gender", "condition"].map(x => "<b>"+x+"</b>" + ": " + data[x].join(', '));
-}
-
-function getFormattedData(place){
-//TODO: this should not have hardcoded place fields like name and type_of_place. make it configurable
-  let main = document.createElement("div");
-  main.className="place-data";
-  let name = document.createElement("p");
-  name.innerHTML = "<b>" + place.name + "</b>" + "<br>" + place.type_of_place;
-
-  let type = document.createElement("p");
-  type.innerHTML = getFormattedDataForPopup(place).join('<br>');
-
-  main.appendChild(name);
-  main.appendChild(type);
-  return main;
-}
-
 function getNewMarkers(cats){
   let markeros = L.markerClusterGroup();
   let all_checkboxes = cats.map(x => getSelectedCheckboxesOfCategory(x));
@@ -96,7 +83,7 @@ function prepareFilterBox(categories) {
     title.textContent = x;
     form.appendChild(title);
 
-    category_types.map(y => form.appendChild(createCheckboxWithType(x, y)))
+    category_types.map(y => form.appendChild(createCheckboxWithTypeWrapper(x, y, refreshMap.bind(null, cats))))
     }));
 
   div.ondblclick = (ev) => {
@@ -107,24 +94,11 @@ function prepareFilterBox(categories) {
   return div;
 };
 
-function createCheckboxWithType(filter_type, entry) {
-  let main = document.createElement("div");
-  main.className="form-check";
-
-  let label = document.createElement("Label");
-  label.htmlFor = entry;
-  label.innerHTML = entry;
-
-  let checkbox = document.createElement("input");
-  checkbox.className = "form-check-input filter "+filter_type;
-  checkbox.type = "checkbox";
-  checkbox.name = "name";
-  checkbox.value = entry;
-  checkbox.id = entry;
-  checkbox.onclick = refreshMap.bind(null, cats);
-  main.appendChild(label);
-  main.appendChild(checkbox);
-  return main;
+function createCheckboxWithTypeWrapper(x, y, clickon) {
+  let result = createCheckboxWithType(x, y, clickon);
+  const tempDiv = document.createElement('div');
+  ReactDOM.render(result, tempDiv);
+  return tempDiv;
 }
 
 function getSelectedCheckboxesOfCategory(filter_type){

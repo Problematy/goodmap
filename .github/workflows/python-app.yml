@@ -8,7 +8,7 @@ permissions:
   id-token: 'write'
 
 jobs:
-  build:
+  backend-test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -25,14 +25,40 @@ jobs:
       run: |
         poetry run pytest
 
+  frontend-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16.14'
+    - name: Install dependencies
+      run: npm install
+    - name: Test with jest
+      run: npm test
+
   deploy:
-    needs: build
+    needs: [backend-test, frontend-test]
     environment: goodmap_env
     name: Deploying to Google Cloud
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v3
+#TODO: this section should be replaced with another solution (probably separate javascript form python)
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16.14'
+    - name: Install dependencies
+      run: npm install
+    - name: Build javascript
+      run: npm run build
+# end of TODO
     - id: auth
       uses: google-github-actions/auth@v0
       with:
