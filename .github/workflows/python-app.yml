@@ -56,8 +56,10 @@ jobs:
         node-version: '16.14'
     - name: Install dependencies
       run: npm install
+      working-directory: ./frontend
     - name: Build javascript
       run: npm run build
+      working-directory: ./frontend
 # end of TODO
     - id: auth
       uses: google-github-actions/auth@v0
