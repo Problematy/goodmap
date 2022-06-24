@@ -11,28 +11,16 @@ test("Creates good checkbox box", async () => {
 
 
 // --------------------------------
-import {getFormattedDataForPopup, getFormattedData} from './formatters'
+import {getFormattedData} from './formatters'
 test("Formats data for popup well", async () => {
   const fakeData = {
-    types: ["clothes"],
-    gender: ["men"],
-    condition: ["worn"]
-  };
-    expect(getFormattedDataForPopup(fakeData)).toEqual(
-    [
-      "<b>types</b>: clothes",
-      "<b>gender</b>: men",
-      "<b>condition</b>: worn"
-    ]);
-});
-
-test("Formats data for popup even better", async () => {
-  const fakeData = {
-    name: "test",
-    type_of_place: "container",
-    types: ["clothes"],
-    gender: ["men"],
-    condition: ["worn"]
+    title: "test",
+    subtitle: "container",
+    data:{
+      types: ["clothes"],
+      gender: ["men"],
+      condition: ["worn"]
+    }
   };
     expect(getFormattedData(fakeData)).toBe(
     '<div class="place-data"><p><b>test</b><br/>container</p><p><b>types</b>: clothes<br><b>gender</b>: men<br><b>condition</b>: worn</p></div>'

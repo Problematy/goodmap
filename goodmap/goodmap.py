@@ -1,6 +1,8 @@
 from flask import Flask
 from flask import render_template, request
 from .db import load_data
+from .formatter import prepare_pin
+
 from flask import jsonify
 import json
 
@@ -33,7 +35,7 @@ def create_app(config_path="./config.json"):
     def index():
         return render_template('map.html')
 
-    @app.route("/data")
+    @app.route("/api/data")
     def get_data():
         local_data = app.config["data"]["data"]
         query_params = request.args.to_dict(flat=False)
@@ -43,7 +45,8 @@ def create_app(config_path="./config.json"):
             requirements.append((key, query_params.get(key)))
 
         filtered_data = filter(lambda x: does_fulfill_requriement(x, requirements), local_data)
-        return jsonify(list(filtered_data))
+        formatted_data = map(lambda x: prepare_pin(x, app.config["data"]["visible_data"]), filtered_data)
+        return jsonify(list(formatted_data))
 
     @app.route("/api/categories")
     def get_categories():
@@ -54,5 +57,4 @@ def create_app(config_path="./config.json"):
     def get_category_types(category_type):
         local_data = app.config["data"]["categories"][category_type]
         return jsonify(local_data)
-
     return app

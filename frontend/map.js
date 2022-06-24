@@ -1,6 +1,6 @@
 import L from 'leaflet'
 import 'leaflet.markercluster'
-import {getFormattedDataForPopup, getFormattedData} from './formatters'
+import {getFormattedData} from './formatters'
 import {createCheckboxWithType} from './checkboxes'
 import * as ReactDOMServer from 'react-dom/server';
 import * as ReactDOM from 'react-dom';
@@ -16,10 +16,7 @@ $.getJSON("/api/categories").then( categories => {
 
 function main() {
   mainMap.addLayer(markers);
-  $.getJSON("/data", (response) => {
-    response.map(x => L.marker(x.position).addTo(markers).bindPopup(x.name));
-  });
-
+  getNewMarkers(cats);
   $.getJSON("/api/categories", (categories) => {
     mainMap.addControl(createCommandBox(categories));
     refreshMap(categories);
@@ -61,7 +58,7 @@ function getNewMarkers(cats){
   let markeros = L.markerClusterGroup();
   let all_checkboxes = cats.map(x => getSelectedCheckboxesOfCategory(x));
   let filteros = all_checkboxes.filter(n => n).join('&');
-  let url = ["/data", filteros].filter(n => n).join('?');
+  let url = ["/api/data", filteros].filter(n => n).join('?');
   $.getJSON(url, (response) => {
     response.map(x => L.marker(x.position).addTo(markeros).bindPopup(getFormattedData(x)));
   });
