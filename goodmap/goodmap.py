@@ -4,7 +4,7 @@ from .db import load_data
 from .formatter import prepare_pin
 
 from flask import jsonify
-import json
+import yaml
 
 
 def does_fulfill_requriement(entry, requirements):
@@ -18,13 +18,14 @@ def does_fulfill_requriement(entry, requirements):
 
 def load_config(config_path):
     with open(config_path, 'r') as file:
-        return json.load(file)
+        return yaml.safe_load(file)
 
 
-def create_app(config_path="./config.json"):
+def create_app(config_path="./config.yml"):
     app = Flask(__name__)
-    app.config["config"] = load_config(config_path)
 
+    app.config["config"] = load_config(config_path)
+    app.config["SECRET_KEY"] = app.config["config"]["flask_secretkey"]
     app.config['data'] = load_data(app.config["config"]["db"])
 
     @app.context_processor
