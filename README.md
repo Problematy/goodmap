@@ -13,26 +13,32 @@ All dependencies are specified in __pyproject.toml__ file. To install them in yo
 * go to project directory
 * use `poetry install`
 
+## Configuration
+
+Rename config-template.yml to config.yml and change it's contents according to your needs.
+Values descriptions you can find inside config-template.yml.
+
 ### Running
 
 * get into poetry shell `poetry shell`
-* Run `DATA=<PATH-TO-DATA> FLASK_APP=goodmap.goodmap flask run` where __PATH_TO_DATA__ is json file with data format
-specified below.
+* Run `FLASK_APP=goodmap.goodmap flask run`
 * You can add also __FLASK_ENV__ variable to get your development easier `FLASK_ENV=development` 
 
+##Database
 
-## Configuration
+Database consists of three sections:
 
-Configuration file is simple json file with list of objects containing:
-* `categories` - categories of object on map (which later can be filtered based on)
-* `data` - data about objects
+- `categories` - which informs on what categories data of points is divided
+- `visible_data` - list of categories which will be visible by application users
+- `data` - actual data splitted into `categories`
 
-### Categories
+
+### `categories`
 Fully configurable map where key is name of category and value is list of allowed types. E.g.
 * "car_elements": ["mirror", "wheel", "steering wheel"]
 * "color": ["red", "blue", "green"]
 
-### Data
+### `data`
 Data consists of two parts:
 * obligatory and constant
   * `name` - name of the object
@@ -47,6 +53,7 @@ Data consists of two parts:
     "types": ["clothes", "shoes"],
     "gender": ["male", "female"]
   },
+  "visible_data": ["types"],
   "data": [
     {
       "name": "Only male clothes",

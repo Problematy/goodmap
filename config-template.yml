@@ -1,0 +1,19 @@
+app_name: My awesome application
+
+## Flask's own SECRET_KEY. You should set it and keep secret.
+## Ref: https://flask.palletsprojects.com/en/2.1.x/config/
+flask_secretkey: YOU SHOULD CHANGE IT!!!
+
+
+## Database configuration
+
+# -- DB stored in simple json file
+db:
+  type: json_file
+  data_file_path: data.json
+
+# -- DB stored in google cloud storage as json.
+## db:
+##   type: google_hosted_json_file
+##   bucket_name: good-map
+##   source_blob_name: data.json
