@@ -5,7 +5,7 @@
   "main": "map.js",
   "scripts": {
     "build": "webpack --mode production --progress --config webpack.config.js",
-    "dev-build": "webpack --progress -d --config webpack.config.js",
+    "dev-build": "webpack --progress --mode development --config webpack.config.js",
     "watch": "webpack --progress -d --config webpack.config.js --watch",
     "test": "jest"
   },
