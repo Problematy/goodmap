@@ -44,5 +44,6 @@ jobs:
   deploy:
     needs: [backend-test, frontend-test]
     uses: ./.github/workflows/deploy.yml
+    secrets: inherit
     with:
       environment: goodmap_env
