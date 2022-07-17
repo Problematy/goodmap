@@ -42,6 +42,7 @@ jobs:
       run: npm test
 
   deploy:
+    needs: [backend-test, frontend-test]
     uses: ./.github/workflows/deploy.yml
     with:
       environment: goodmap_env
