@@ -43,5 +43,6 @@ jobs:
       uses: google-github-actions/deploy-appengine@v0
       with:
         version: ${{ inputs.environment }}
+        promote: ${{ inputs.environment == 'production' }}
     - name: Test
       run: curl "${{ steps.deploy.outputs.url }}"
