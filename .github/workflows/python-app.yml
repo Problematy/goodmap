@@ -41,9 +41,16 @@ jobs:
     - name: Test with jest
       run: npm test
 
-  deploy:
+  staging:
     needs: [backend-test, frontend-test]
     uses: ./.github/workflows/deploy.yml
     secrets: inherit
     with:
       environment: staging
+
+  deploy:
+    needs: [staging]
+    uses: ./.github/workflows/deploy.yml
+    secrets: inherit
+    with:
+      environment: production
