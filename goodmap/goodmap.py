@@ -1,5 +1,4 @@
-from flask import Flask
-from flask import render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 from .db import load_data
 from .formatter import prepare_pin
 
@@ -27,6 +26,12 @@ def create_app(config_path="./config.yml"):
     app.config["config"] = load_config(config_path)
     app.config["SECRET_KEY"] = app.config["config"]["flask_secretkey"]
     app.config['data'] = load_data(app.config["config"]["db"])
+
+    if overwrites := app.config["config"].get("development_overwrites"):
+        for source, destination in overwrites.items():
+            @app.route(source)
+            def testing_map():
+                return redirect(destination)
 
     @app.context_processor
     def setup_context():

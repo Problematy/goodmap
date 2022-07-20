@@ -17,3 +17,8 @@ db:
 ##   type: google_hosted_json_file
 ##   bucket_name: good-map
 ##   source_blob_name: data.json
+
+
+## List of overwrites for routes. Useful in frontend development.
+#development_overwrites:
+#  /static/map.js: http://localhost:8080/map.js

@@ -1,7 +1,7 @@
 import L from 'leaflet'
 import 'leaflet.markercluster'
-import {getFormattedData} from './formatters'
-import {createCheckboxWithType} from './checkboxes'
+import {getFormattedData} from './formatters.js'
+import {createCheckboxWithType} from './checkboxes.js'
 import * as ReactDOMServer from 'react-dom/server';
 import * as ReactDOM from 'react-dom';
 

@@ -5,24 +5,28 @@
 
 Map engine to serve all the people ;) 
 
-## Getting Started
+## Running App locally
 
-### Dependencies
-
-All dependencies are specified in __pyproject.toml__ file. To install them in your onw environment:
-* go to project directory
-* use `poetry install`
-
-## Configuration
+### Configuration
 
 Rename config-template.yml to config.yml and change it's contents according to your needs.
 Values descriptions you can find inside config-template.yml.
 
-### Running
+### Backend 
 
+All dependencies are specified in __pyproject.toml__ file. To install them in your onw environment:
+* go to project directory
+* use `poetry install`
 * get into poetry shell `poetry shell`
-* Run `FLASK_APP=goodmap.goodmap flask run`
-* You can add also __FLASK_ENV__ variable to get your development easier `FLASK_ENV=development` 
+* Run `FLASK_ENV=development;FLASK_APP=goodmap.goodmap flask run`
+
+### Frontend (optional)
+In production environment javascript is served as static files, but for ease of development you can run javascript
+server locally:
+* go to frontend directory
+* install all dependencies with `nmp install`
+* run server with `npm run serve`
+* set `development_overwrites` for wanted endpoints, otherwise application will use compiled files.
 
 ##Database
 
