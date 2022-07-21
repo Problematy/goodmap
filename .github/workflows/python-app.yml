@@ -1,4 +1,4 @@
-name: Good map
+name: Testing pipeline
 
 on:
   push
@@ -47,10 +47,3 @@ jobs:
     secrets: inherit
     with:
       environment: staging
-
-  deploy:
-    needs: [staging]
-    uses: ./.github/workflows/deploy.yml
-    secrets: inherit
-    with:
-      environment: production
