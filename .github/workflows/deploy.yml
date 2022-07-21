@@ -24,7 +24,7 @@ jobs:
       run: npm run build
       working-directory: ./frontend
     - name: Remove frontend dir # for fronted built bundle is used
-      run: rm ./frontend
+      run: rm -rf ./frontend
   # end of TODO
     - id: auth
       uses: google-github-actions/auth@v0
