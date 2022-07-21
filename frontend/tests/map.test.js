@@ -1,4 +1,4 @@
-import {createCheckboxWithType} from './checkboxes'
+import {createCheckboxWithType} from '../src/checkboxes.js'
 import * as ReactDOMServer from 'react-dom/server';
 
 //TODO: this test should not need rendering to string
@@ -11,7 +11,7 @@ test("Creates good checkbox box", async () => {
 
 
 // --------------------------------
-import {getFormattedData} from './formatters'
+import {getFormattedData} from '../src/formatters.js'
 test("Formats data for popup well", async () => {
   const fakeData = {
     title: "test",
