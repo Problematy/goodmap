@@ -16,7 +16,6 @@
     list-style: none;
     margin-right: 1rem;
     padding-top: 1rem;
-    // padding-bottom: 0.5rem;
     text-align: right;
 
     .list-elem {
@@ -27,29 +26,55 @@
       margin-right: 1em;
       padding: 0.8em 2em;
       border-radius: 8px 8px 0 0;
+      margin-bottom: -0.02em;
 
       &__last {
         margin-right: 4.5em;
       }
     }
-    .list-elem:active,
+
     .list-elem:hover,
     .active {
       cursor: pointer;
-      box-shadow: rgba(70, 66, 66, 0.24) 4px 0px 25px;
+      // box-shadow: rgba(70, 66, 66, 0.24) 4px -2px 25px;
+      box-shadow: rgba(70, 66, 66, 0.24) 4px -3px 15px 0px;
       border-color: $grey-tabs;
-      border-bottom: none;
+      border-bottom: 0;
+      position: relative;
+      display: inline-block;
     }
+
+    // .list-elem:after,
+    // .list-elem:before,
+    // .active:after,
+    // .active:before {
+    //   content: "";
+    //   width: 40px;
+    //   height: 10px;
+    //   border: 2px solid $white-button;
+    //   position: absolute;
+    //   bottom: 0;
+    //   border-top: 0;
+    //   width: 5px;
+    // }
+    // .list-elem:after,
+    // .active:after {
+    //   border-left: 0;
+    //   border-radius: 0 0 5px 0;
+    //   left: -5px;
+    // }
+    // .list-elem:before,
+    // .active:before {
+    //   border-right: 0;
+    //   border-radius: 0 0 0 5px;
+    //   right: -5px;
+    // }
   }
 
   .lang-container {
     display: flex;
-    // border: 1px solid black;
     justify-content: right;
     margin: 1.5em 4em 1em 0;
-    // margin-top: 1.5em;
-    // margin-right: 4em;
-
     .lang-list {
       display: flex;
       margin-right: 2em;
@@ -80,7 +105,6 @@
     border: 1px solid black;
   }
   .leaflet-container {
-    // border: 1px solid black;
     width: 95%;
     height: 90vh;
     margin-top: 3em;
@@ -92,6 +116,18 @@
   }
 }
 
+.sidebar-container {
+  position: relative;
+  top: -10%;
+}
+
+.sidenav---sidenav---_2tBP,
+.map-tab_container .sidebar-container {
+  position: relative;
+  border: none;
+}
+
 .form-container {
   display: flex;
+  border: transparent;
 }

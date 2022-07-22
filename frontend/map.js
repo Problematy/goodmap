@@ -5,9 +5,9 @@ import {createCheckboxWithType} from './checkboxes'
 import * as ReactDOMServer from 'react-dom/server';
 import * as ReactDOM from 'react-dom';
 
-let mainMap        = createBasicMap();
-let markers        = L.markerClusterGroup();
-let cats           = null;
+let mainMap = createBasicMap();
+let markers = L.markerClusterGroup();
+let cats = null;
 
 $.getJSON("/api/categories").then( categories => {
   cats = categories
