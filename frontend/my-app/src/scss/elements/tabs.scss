@@ -1,0 +1,97 @@
+.tabs-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(
+    rgba(255, 255, 255, 0.422),
+    rgba(238, 232, 232, 0.15)
+  );
+  box-shadow: rgb(37 42 49 / 16%) 0px 0px 2px 0px,
+    rgb(37 42 49 / 12%) 0px 2px 4px 0px;
+
+  .title-page {
+    margin-left: 4em;
+  }
+  .list-container {
+    list-style: none;
+    margin-right: 1rem;
+    padding-top: 1rem;
+    // padding-bottom: 0.5rem;
+    text-align: right;
+
+    .list-elem {
+      border: none;
+      background-color: transparent;
+      display: inline-block;
+      margin-left: 1em;
+      margin-right: 1em;
+      padding: 0.8em 2em;
+      border-radius: 8px 8px 0 0;
+
+      &__last {
+        margin-right: 4.5em;
+      }
+    }
+    .list-elem:active,
+    .list-elem:hover,
+    .active {
+      cursor: pointer;
+      box-shadow: rgba(70, 66, 66, 0.24) 4px 0px 25px;
+      border-color: $grey-tabs;
+      border-bottom: none;
+    }
+  }
+
+  .lang-container {
+    display: flex;
+    // border: 1px solid black;
+    justify-content: right;
+    margin: 1.5em 4em 1em 0;
+    // margin-top: 1.5em;
+    // margin-right: 4em;
+
+    .lang-list {
+      display: flex;
+      margin-right: 2em;
+
+      &__elem {
+        padding-left: 0.8em;
+        padding-right: 0.8em;
+        border-right: 1px solid $dividers;
+      }
+
+      .lang-elem__last {
+        border: none;
+      }
+    }
+    .lang-list__elem:hover,
+    .user:hover {
+      cursor: pointer;
+    }
+  }
+}
+
+.map-tab_container {
+  margin-top: 0;
+  display: flex;
+  justify-content: space-between;
+
+  .sidebar-container {
+    border: 1px solid black;
+  }
+  .leaflet-container {
+    // border: 1px solid black;
+    width: 95%;
+    height: 90vh;
+    margin-top: 3em;
+    margin-right: 1rem;
+    position: relative;
+    float: right;
+    border-radius: 5px;
+    background-color: transparent;
+  }
+}
+
+.form-container {
+  display: flex;
+}
