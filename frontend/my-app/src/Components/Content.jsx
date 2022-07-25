@@ -4,24 +4,40 @@ import { Sidebar } from "./TabComponent/Tab1/Sidebar";
 import { Tabs } from "./TabComponent/Tabs";
 import { Form } from "./TabComponent/Tab1/Form";
 
+const TabAbout = () => {
+  return <div>"About Us"</div>;
+};
+
+const TabFAQ = () => {
+  return <div>'FAQ content'</div>;
+};
+
+const TabCollection = () => {
+  return <div>"On-line Collection - Redirected"</div>;
+};
+
+const TabMap = () => {
+  return (
+    <>
+      <div className="map-tab_container">
+        <Sidebar />
+        <Map />
+      </div>
+      <Form />
+    </>
+  );
+};
+
 const setComponent = (tab) => {
   switch (tab) {
     case 1:
-      return (
-        <>
-          <div className="map-tab_container">
-            <Sidebar />
-            <Map />
-          </div>
-          <Form />
-        </>
-      );
+      return <TabMap />;
     case 2:
-      return <div>"On-line Collection - Redirected"</div>;
+      return <TabCollection />;
     case 3:
-      return <div>'FAQ content'</div>;
+      return <TabFAQ />;
     case 4:
-      return <div>"About Us"</div>;
+      return <TabAbout />;
     default:
       return null;
   }
