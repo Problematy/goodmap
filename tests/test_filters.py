@@ -1,4 +1,4 @@
-from goodmap.goodmap import does_fulfill_requriement
+from goodmap.goodmap import does_fulfill_requirement
 
 test_data = {
     "data": [
@@ -31,5 +31,5 @@ def test_filtering():
         "types": ["clothes"],
         "gender": ["male"]
     }]
-    filtered_data = list(filter(lambda x: does_fulfill_requriement(x, requirements), test_data['data']))
+    filtered_data = list(filter(lambda x: does_fulfill_requirement(x, requirements), test_data['data']))
     assert filtered_data == expected_data

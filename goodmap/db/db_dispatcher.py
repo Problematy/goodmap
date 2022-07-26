@@ -1,10 +1,10 @@
-from .local_json_db import load_json_db
-from .google_json_db import load_google_hosted_json_db
+from .local_json_db import LocalJsonDb
+from .google_json_db import GoogleJsonDb
 
 
-def load_data(db_config):
+def get_db(db_config):
     config_loaders = {
-        "json_file": lambda x: load_json_db(x),
-        "google_hosted_json_file": lambda x: load_google_hosted_json_db(x)
+        "json_file": lambda x: LocalJsonDb(x),
+        "google_hosted_json_file": lambda x: GoogleJsonDb(x)
     }
     return config_loaders[db_config["type"]](db_config)

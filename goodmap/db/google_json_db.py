@@ -1,13 +1,24 @@
 from google.cloud import storage
 import json
 
-
-def load_google_hosted_json_db(json_config):
-    return json.loads(download_blob(json_config["bucket_name"], json_config["source_blob_name"]))
+from .db_base import Database
 
 
-def download_blob(bucket_name, source_blob_name):
+def get_blob(bucket_name, source_blob_name):
     storage_client = storage.Client()
     bucket = storage_client.bucket(bucket_name)
-    blob = bucket.blob(source_blob_name)
-    return blob.download_as_string(client=None)
+    return bucket.blob(source_blob_name)
+
+
+class GoogleJsonDb(Database):
+    def __init__(self, config):
+        self.blob = get_blob(config["bucket_name"], config["source_blob_name"])
+
+    def get_data(self):
+        raw_data = self.blob.download_as_text(client=None)
+        return json.loads(raw_data)
+
+    def save_entry(self, entry):
+        data = self.get_data()
+        data["data"].append(entry)
+        self.blob.upload_from_string(json.dumps(data), content_type='application/json')

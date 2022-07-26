@@ -1,12 +1,13 @@
 from flask import Flask, render_template, request, redirect, url_for
-from .db import load_data
-from .formatter import prepare_pin
-
 from flask import jsonify
 import yaml
 
+from .db import get_db
+from .formatter import prepare_pin
+from .checker import checker_page
 
-def does_fulfill_requriement(entry, requirements):
+
+def does_fulfill_requirement(entry, requirements):
     matches = []
     for category, values in requirements:
         if not values:
@@ -25,7 +26,8 @@ def create_app(config_path="./config.yml"):
 
     app.config["config"] = load_config(config_path)
     app.config["SECRET_KEY"] = app.config["config"]["flask_secretkey"]
-    app.config['data'] = load_data(app.config["config"]["db"])
+    app.db = get_db(app.config["config"]["db"])
+    app.register_blueprint(checker_page(app.db))
 
     if overwrites := app.config["config"].get("development_overwrites"):
         for source, destination in overwrites.items():
@@ -43,24 +45,27 @@ def create_app(config_path="./config.yml"):
 
     @app.route("/api/data")
     def get_data():
-        local_data = app.config["data"]["data"]
+        all_data = app.db.get_data()
+        local_data = all_data["data"]
         query_params = request.args.to_dict(flat=False)
-        categories = app.config["data"]["categories"]
+        categories = all_data["categories"]
         requirements = []
         for key in categories.keys():
             requirements.append((key, query_params.get(key)))
 
-        filtered_data = filter(lambda x: does_fulfill_requriement(x, requirements), local_data)
-        formatted_data = map(lambda x: prepare_pin(x, app.config["data"]["visible_data"]), filtered_data)
+        filtered_data = filter(lambda x: does_fulfill_requirement(x, requirements), local_data)
+        formatted_data = map(lambda x: prepare_pin(x, all_data["visible_data"]), filtered_data)
         return jsonify(list(formatted_data))
 
     @app.route("/api/categories")
     def get_categories():
-        categories = list(app.config["data"]["categories"].keys())
+        all_data = app.db.get_data()
+        categories = list(all_data["categories"].keys())
         return jsonify(categories)
 
     @app.route("/api/category/<category_type>")
     def get_category_types(category_type):
-        local_data = app.config["data"]["categories"][category_type]
+        all_data = app.db.get_data()
+        local_data = all_data["categories"][category_type]
         return jsonify(local_data)
     return app

@@ -1,1 +1,1 @@
-from .db_dispatcher import load_data
+from .db_dispatcher import get_db
