@@ -58,7 +58,7 @@ function createBasicMap() {
   });
   map.addLayer(layer);
   map.on('locationfound', (e) => {onLocationFound(e, map, lMarker, cMarker)});
-  map.locate({setView: true, watch:true, maxZoom: 16});
+  map.locate({setView: false, watch:true, maxZoom: 16});
   lMarker.addTo(map);
   cMarker.addTo(map);
   return map;
