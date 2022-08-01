@@ -1,0 +1,108 @@
+# English translations for PROJECT.
+# Copyright (C) 2022 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2022.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2022-07-30 03:07+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: EN\n"
+"Language-Team: EN <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.10.3\n"
+
+#: translations/added_words.list
+msgid "categories"
+msgstr "Categories"
+
+#: translations/added_words.list
+msgid "types"
+msgstr ""
+
+#: translations/added_words.list
+msgid "clothes"
+msgstr ""
+
+#: translations/added_words.list
+msgid "shoes"
+msgstr ""
+
+#: translations/added_words.list
+msgid "bedding"
+msgstr ""
+
+#: translations/added_words.list
+msgid "stuffed toys"
+msgstr ""
+
+#: translations/added_words.list
+msgid "underwear"
+msgstr ""
+
+#: translations/added_words.list
+msgid "towel"
+msgstr ""
+
+#: translations/added_words.list
+msgid "gender"
+msgstr ""
+
+#: translations/added_words.list
+msgid "male"
+msgstr ""
+
+#: translations/added_words.list
+msgid "female"
+msgstr ""
+
+#: translations/added_words.list
+msgid "kids"
+msgstr ""
+
+#: translations/added_words.list
+msgid "condition"
+msgstr ""
+
+#: translations/added_words.list
+msgid "good"
+msgstr ""
+
+#: translations/added_words.list
+msgid "worn"
+msgstr ""
+
+#: translations/added_words.list
+msgid "type_of_place"
+msgstr ""
+
+#: translations/added_words.list
+msgid "container"
+msgstr ""
+
+#: translations/added_words.list
+msgid "place"
+msgstr ""
+
+#: translations/added_words.list
+msgid "visible_data"
+msgstr ""
+
+#: translations/added_words.list
+msgid "website"
+msgstr ""
+
+#: translations/added_words.list
+msgid "opening_hours"
+msgstr ""
+
+#: translations/added_words.list
+msgid "check_date"
+msgstr ""
+
