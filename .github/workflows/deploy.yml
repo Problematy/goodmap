@@ -45,7 +45,7 @@ jobs:
       uses: google-github-actions/deploy-appengine@v0
       with:
         deliverables: app.${{ inputs.environment }}.yaml
-#         version: ${{ inputs.environment }}
+        version: ${{ inputs.environment }}
         promote: ${{ inputs.environment == 'production' }}
     - name: Test
       run: curl "${{ steps.deploy.outputs.url }}"
