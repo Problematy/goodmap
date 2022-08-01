@@ -1,18 +1,18 @@
-# Polish translations for PROJECT.
+# Ukrainian translations for Goodmap.
 # Copyright (C) 2022 ORGANIZATION
-# This file is distributed under the same license as the PROJECT project.
+# This file is distributed under the same license as the Goodmap project.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2022-07-30 03:02+0200\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"POT-Creation-Date: 2022-08-02 00:37+0200\n"
+"PO-Revision-Date: 2022-08-02 00:37+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language: PL\n"
-"Language-Team: PL <LL@li.org>\n"
-"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && "
-"(n%100<10 || n%100>=20) ? 1 : 2);\n"
+"Language: uk\n"
+"Language-Team: uk <LL@li.org>\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -20,88 +20,89 @@ msgstr ""
 
 #: translations/added_words.list
 msgid "categories"
-msgstr "kategorie"
+msgstr ""
 
 #: translations/added_words.list
 msgid "types"
-msgstr "typy"
+msgstr ""
 
 #: translations/added_words.list
 msgid "clothes"
-msgstr "odzież"
+msgstr ""
 
 #: translations/added_words.list
 msgid "shoes"
-msgstr "buty"
+msgstr ""
 
 #: translations/added_words.list
 msgid "bedding"
-msgstr "pościel"
+msgstr ""
 
 #: translations/added_words.list
 msgid "stuffed toys"
-msgstr "pluszaki"
+msgstr ""
 
 #: translations/added_words.list
 msgid "underwear"
-msgstr "bielizna"
+msgstr ""
 
 #: translations/added_words.list
 msgid "towel"
-msgstr "ręcznik"
+msgstr ""
 
 #: translations/added_words.list
 msgid "gender"
-msgstr "płeć"
+msgstr ""
 
 #: translations/added_words.list
 msgid "male"
-msgstr "mężczyzna"
+msgstr ""
 
 #: translations/added_words.list
 msgid "female"
-msgstr "kobieta"
+msgstr ""
 
 #: translations/added_words.list
 msgid "kids"
-msgstr "dzieci"
+msgstr ""
 
 #: translations/added_words.list
 msgid "condition"
-msgstr "stan"
+msgstr ""
 
 #: translations/added_words.list
 msgid "good"
-msgstr "dobre"
+msgstr ""
 
 #: translations/added_words.list
 msgid "worn"
-msgstr "znoszone"
+msgstr ""
 
 #: translations/added_words.list
 msgid "type_of_place"
-msgstr "typ miejsca"
+msgstr ""
 
 #: translations/added_words.list
 msgid "container"
-msgstr "kontener"
+msgstr ""
 
 #: translations/added_words.list
 msgid "place"
-msgstr "placówka"
+msgstr ""
 
 #: translations/added_words.list
 msgid "visible_data"
-msgstr "widoczne"
+msgstr ""
 
 #: translations/added_words.list
 msgid "website"
-msgstr "strona internetowa"
+msgstr ""
 
 #: translations/added_words.list
 msgid "opening_hours"
-msgstr "godziny otwarcia"
+msgstr ""
 
 #: translations/added_words.list
 msgid "check_date"
-msgstr "data sprawdzenia"
+msgstr ""
+
