@@ -1,5 +1,5 @@
-from flask import Flask, render_template, request, redirect, url_for
-from flask import jsonify
+from flask import Flask, render_template, request, redirect, jsonify
+from flask_babel import Babel, gettext
 import yaml
 
 from .db import get_db
@@ -27,13 +27,20 @@ def create_app(config_path="./config.yml"):
     app.config["config"] = load_config(config_path)
     app.config["SECRET_KEY"] = app.config["config"]["flask_secretkey"]
     app.db = get_db(app.config["config"]["db"])
+    app.config['BABEL_DEFAULT_LOCALE'] = 'pl'
+    app.config["BABEL_TRANSLATION_DIRECTORIES"] = "../translations"
     app.register_blueprint(checker_page(app.db))
+    app.babel = Babel(app)
 
     if overwrites := app.config["config"].get("development_overwrites"):
         for source, destination in overwrites.items():
             @app.route(source)
             def testing_map():
                 return redirect(destination)
+
+    @app.babel.localeselector
+    def get_locale():
+        return 'pl'
 
     @app.context_processor
     def setup_context():
