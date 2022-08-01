@@ -5,6 +5,6 @@ env_variables:
   DATA: "./data.json"
 handlers:
 - url: /
-  secure: always
+#   secure: always
   script: auto
 #   redirect_http_response_code: 301
