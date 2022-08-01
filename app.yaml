@@ -4,7 +4,7 @@ entrypoint: gunicorn "goodmap.goodmap:create_app()" -b :$PORT
 env_variables:
   DATA: "./data.json"
 handlers:
-- url: /.*
+- url: /
   secure: always
   script: auto
 #   redirect_http_response_code: 301
