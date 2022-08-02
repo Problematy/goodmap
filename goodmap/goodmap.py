@@ -21,6 +21,9 @@ def load_config(config_path):
         return yaml.safe_load(file)
 
 
+def make_tuple_translation(keys_to_translate):
+    return [(x, gettext(x)) for x in keys_to_translate]
+
 def create_app(config_path="./config.yml"):
     app = Flask(__name__)
 
@@ -67,12 +70,12 @@ def create_app(config_path="./config.yml"):
     @app.route("/api/categories")
     def get_categories():
         all_data = app.db.get_data()
-        categories = list(all_data["categories"].keys())
+        categories = make_tuple_translation(all_data["categories"].keys())
         return jsonify(categories)
 
     @app.route("/api/category/<category_type>")
     def get_category_types(category_type):
         all_data = app.db.get_data()
-        local_data = all_data["categories"][category_type]
+        local_data = make_tuple_translation(all_data["categories"][category_type])
         return jsonify(local_data)
     return app

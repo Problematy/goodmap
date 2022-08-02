@@ -3,7 +3,7 @@ import 'leaflet.markercluster'
 import {getFormattedData} from './formatters.js'
 import {createCheckboxWithType} from './checkboxes.js'
 import * as ReactDOMServer from 'react-dom/server';
-import * as ReactDOM from 'react-dom';
+import ReactDOM from 'react-dom/client';
 
 let mainMap        = createBasicMap();
 let markers        = L.markerClusterGroup();
@@ -66,7 +66,7 @@ function createBasicMap() {
 
 function getNewMarkers(cats){
   let markeros = L.markerClusterGroup();
-  let all_checkboxes = cats.map(x => getSelectedCheckboxesOfCategory(x));
+  let all_checkboxes = cats.map(([x, translation]) => getSelectedCheckboxesOfCategory(x));
   let filteros = all_checkboxes.filter(n => n).join('&');
   let url = ["/api/data", filteros].filter(n => n).join('?');
   $.getJSON(url, (response) => {
@@ -85,13 +85,14 @@ function prepareFilterBox(categories) {
   let div = L.DomUtil.create('div', 'command');
   div.className="container"
   let form = document.createElement('form');
-  categories.map( x => $.getJSON("/api/category/" + x, (category_types) => {
-    let title = document.createElement("span");
-    title.textContent = x;
-    form.appendChild(title);
-
-    category_types.map(y => form.appendChild(createCheckboxWithTypeWrapper(x, y, refreshMap.bind(null, cats))))
-    }));
+  categories.map(
+    ([x, cat_translation]) => $.getJSON("/api/category/" + x, (category_types) => {
+      let title = document.createElement("span");
+      title.textContent = cat_translation;
+      form.appendChild(title);
+      category_types.map(([field_name, translation]) => form.appendChild(createCheckboxWithTypeWrapper(x, field_name, translation, refreshMap.bind(null, cats))))
+    }
+    ));
 
   div.ondblclick = (ev) => {
     L.DomEvent.stopPropagation(ev)
@@ -101,10 +102,10 @@ function prepareFilterBox(categories) {
   return div;
 };
 
-function createCheckboxWithTypeWrapper(x, y, clickon) {
-  let result = createCheckboxWithType(x, y, clickon);
+function createCheckboxWithTypeWrapper(x, field_name, translation, clickon) {
+  let result = createCheckboxWithType(x, field_name, translation, clickon);
   const tempDiv = document.createElement('div');
-  ReactDOM.render(result, tempDiv);
+  ReactDOM.createRoot(tempDiv).render(result);
   return tempDiv;
 }
 
