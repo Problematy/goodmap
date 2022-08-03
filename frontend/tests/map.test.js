@@ -4,9 +4,9 @@ import * as ReactDOMServer from 'react-dom/server';
 //TODO: this test should not need rendering to string
 test("Creates good checkbox box", async () => {
     expect(
-      ReactDOMServer.renderToStaticMarkup(createCheckboxWithType("gender", "female")))
+      ReactDOMServer.renderToStaticMarkup(createCheckboxWithType("gender", "female", "kobieta")))
     .toContain(
-      '<div class="form-check"><label for="female">female</label><input class="form-check-input filter gender" type="checkbox" name="name" id="female" value="female"/></div>');
+      '<div class="form-check"><label for="female">kobieta</label><input class="form-check-input filter gender" type="checkbox" name="name" id="female" value="female"/></div>');
 });
 
 
