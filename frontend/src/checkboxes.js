@@ -1,8 +1,7 @@
 import React from 'react';
 
 export function createCheckboxWithType(filter_type, field_name, translation, onclick) {
-  let label = React.createElement("label", {htmlFor: field_name}, translation);
-
+  let label = React.createElement("label", {htmlFor: field_name}, translation, field_name);  console.log(label);
   let checkbox = React.createElement("input", {
     className: "form-check-input filter "+filter_type,
     type: "checkbox",
