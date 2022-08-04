@@ -2,6 +2,8 @@ import L from 'leaflet'
 import 'leaflet.markercluster'
 import {getFormattedData} from './formatters.js'
 import {createCheckboxWithType} from './checkboxes.js'
+import {createLanguageChooser} from './languages.js'
+
 import * as ReactDOMServer from 'react-dom/server';
 import ReactDOM from 'react-dom/client';
 
@@ -20,6 +22,12 @@ function main() {
   $.getJSON("/api/categories", (categories) => {
     mainMap.addControl(createCommandBox(categories));
     refreshMap(categories);
+  });
+
+  $.getJSON("/api/languages", (languages) => {
+    let lang_list = document.getElementById('lang-list');
+    let chooser = createLanguageChooser(languages);
+    ReactDOM.createRoot(lang_list).render(chooser);
   });
 };
 

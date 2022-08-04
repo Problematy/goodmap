@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, jsonify
+from flask import Flask, render_template, request, redirect, jsonify, session, url_for
 from flask_babel import Babel, gettext
 import yaml
 
@@ -24,13 +24,14 @@ def load_config(config_path):
 def make_tuple_translation(keys_to_translate):
     return [(x, gettext(x)) for x in keys_to_translate]
 
+
 def create_app(config_path="./config.yml"):
     app = Flask(__name__)
 
     app.config["config"] = load_config(config_path)
     app.config["SECRET_KEY"] = app.config["config"]["flask_secretkey"]
     app.db = get_db(app.config["config"]["db"])
-    app.config['BABEL_DEFAULT_LOCALE'] = 'pl'
+    app.config['BABEL_DEFAULT_LOCALE'] = app.config["config"]["languages"][0]
     app.config["BABEL_TRANSLATION_DIRECTORIES"] = "../translations"
     app.register_blueprint(checker_page(app.db))
     app.babel = Babel(app)
@@ -43,7 +44,12 @@ def create_app(config_path="./config.yml"):
 
     @app.babel.localeselector
     def get_locale():
-        return 'pl'
+        return session.get('language', request.accept_languages.best_match(app.config["config"]["languages"]))
+
+    @app.route('/language/<language>')
+    def set_language(language):
+        session['language'] = language
+        return redirect(url_for('index'))
 
     @app.context_processor
     def setup_context():
@@ -72,6 +78,10 @@ def create_app(config_path="./config.yml"):
         all_data = app.db.get_data()
         categories = make_tuple_translation(all_data["categories"].keys())
         return jsonify(categories)
+
+    @app.route("/api/languages")
+    def get_languages():
+        return jsonify(app.config["config"]["languages"])
 
     @app.route("/api/category/<category_type>")
     def get_category_types(category_type):
