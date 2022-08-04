@@ -36,7 +36,6 @@ jobs:
     - name: Prepare config
       run : |
         echo '${{ secrets.CONFIG }}' >config.yml
-        echo 'flask_secretkey: ${{ secrets.FLASK_SECRETKEY }}' >> config.yml
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
