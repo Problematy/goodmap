@@ -1,7 +1,6 @@
-from goodmap.core_api import does_fulfill_requirement
+from goodmap.core import does_fulfill_requirement
 
-test_data = {
-    "data": [
+test_data = [
         {
             "name": "LASSO",
             "position": [51.113, 17.06],
@@ -14,13 +13,7 @@ test_data = {
             "types": ["clothes"],
             "gender": ["male"]
         }
-    ],
-    "filters":
-        {
-            "types": ["clothes", "shoes"],
-            "gender": ["male", "female"]
-        }
-}
+    ]
 
 
 def test_filtering():
@@ -31,5 +24,23 @@ def test_filtering():
         "types": ["clothes"],
         "gender": ["male"]
     }]
-    filtered_data = list(filter(lambda x: does_fulfill_requirement(x, requirements), test_data['data']))
+    filtered_data = list(filter(lambda x: does_fulfill_requirement(x, requirements), test_data))
+    assert filtered_data == expected_data
+
+
+def test_category_match_if_not_specified():
+    requirements = [('types', []), ('gender', ['male'])]
+    expected_data = [{
+            "name": "LASSO",
+            "position": [51.113, 17.06],
+            "types": ["shoes"],
+            "gender": ["male", "female"]
+        },
+        {
+            "name": "PCK",
+            "position": [51.1, 17.05],
+            "types": ["clothes"],
+            "gender": ["male"]
+        }]
+    filtered_data = list(filter(lambda x: does_fulfill_requirement(x, requirements), test_data))
     assert filtered_data == expected_data

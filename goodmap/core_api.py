@@ -1,15 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_babel import gettext
+from .core import get_queried_data
 from .formatter import prepare_pin
-
-
-def does_fulfill_requirement(entry, requirements):
-    matches = []
-    for category, values in requirements:
-        if not values:
-            continue
-        matches.append(all(entry_value in entry[category] for entry_value in values))
-    return all(matches)
 
 
 def make_tuple_translation(keys_to_translate):
@@ -22,15 +14,12 @@ def core_pages(database, languages):
     @core_api.route("/data")
     def get_data():
         all_data = database.get_data()
-        local_data = all_data["data"]
         query_params = request.args.to_dict(flat=False)
+        data = all_data["data"]
         categories = all_data["categories"]
-        requirements = []
-        for key in categories.keys():
-            requirements.append((key, query_params.get(key)))
-
-        filtered_data = filter(lambda x: does_fulfill_requirement(x, requirements), local_data)
-        formatted_data = map(lambda x: prepare_pin(x, all_data["visible_data"]), filtered_data)
+        visible_data = all_data["visible_data"]
+        queried_data = get_queried_data(data, categories, query_params)
+        formatted_data = map(lambda x: prepare_pin(x, visible_data), queried_data)
         return jsonify(list(formatted_data))
 
     @core_api.route("/categories")
