@@ -4,7 +4,6 @@ import yaml
 
 from .db import get_db
 from .core_api import core_pages
-from .checker import checker_page
 
 
 def load_config(config_path):
@@ -20,7 +19,6 @@ def create_app(config_path="./config.yml"):
     app.db = get_db(app.config["config"]["db"])
     app.config['BABEL_DEFAULT_LOCALE'] = app.config["config"]["languages"][0]
     app.config["BABEL_TRANSLATION_DIRECTORIES"] = "../translations"
-    app.register_blueprint(checker_page(app.db))
     app.register_blueprint(core_pages(app.db, app.config["config"]["languages"]))
 
     app.babel = Babel(app)
