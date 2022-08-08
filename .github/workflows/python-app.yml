@@ -24,9 +24,11 @@ jobs:
     - name: Test with pytest
       run: |
         poetry run coverage run -m pytest
+        poetry run coverage lcov
     - name: Coveralls
       uses: coverallsapp/github-action@master
       with:
+        path-to-lcov: "./coverage.lcov"
         github-token: ${{ secrets.GITHUB_TOKEN }}
 
   frontend-test:
