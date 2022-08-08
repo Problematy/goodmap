@@ -4,6 +4,6 @@ entrypoint: gunicorn "goodmap.goodmap:create_app()" -b :$PORT
 service: default
 handlers:
 - url: /
-   secure: always
-   script: auto
-   redirect_http_response_code: 301
+  secure: always
+  script: auto
+  redirect_http_response_code: 301
