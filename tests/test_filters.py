@@ -1,4 +1,4 @@
-from goodmap.goodmap import does_fulfill_requirement
+from goodmap.core_api import does_fulfill_requirement
 
 test_data = {
     "data": [
