@@ -1,5 +1,5 @@
 ![Github Actions](https://github.com/raven-wing/goodmap/actions/workflows/python-app.yml/badge.svg)
-[![Coverage Status](https://coveralls.io/repos/github/Problematy/goodmap/badge.svg)](https://coveralls.io/github/Problematy/goodmap)
+[![Coverage Status](https://coveralls.io/repos/github/Problematy/goodmap/badge.png)](https://coveralls.io/github/Problematy/goodmap)
 
 # Good Map
 
