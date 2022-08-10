@@ -77,5 +77,10 @@ Data consists of two parts:
 
 ## Version History
 
-* 0.1
-    * Initial Release - still in development
+### 0.1 - Initial Release - in development
+#### 0.1.1 - In development
+  * Using frontend served in npm  
+
+#### 0.1.0 - First working version
+ * JSON and Google hosted JSON database
+ * Map displays points from database

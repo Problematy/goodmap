@@ -1,5 +1,5 @@
 # -- Basic app configuration
-app_name: My awesome application
+app_name: My awesome goodmap application
 
 
 ## -- Flask's SECRET_KEY. In production environment you should set it and keep secret.
@@ -28,5 +28,5 @@ db:
 
 
 ## -- List of overwrites for routes. Useful in frontend development.
-# development_overwrites:
-#   /static/map.js: http://localhost:8080/map.js
+route_overwrites:
+  /static/map.js: https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.1.2

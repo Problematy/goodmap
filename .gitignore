@@ -1,3 +1,4 @@
 dist
 config.yml
 data.json
+.coverage

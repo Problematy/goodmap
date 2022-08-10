@@ -23,7 +23,7 @@ def create_app(config_path="./config.yml"):
 
     app.babel = Babel(app)
 
-    if overwrites := app.config["config"].get("development_overwrites"):
+    if overwrites := app.config["config"].get("route_overwrites"):
         for source, destination in overwrites.items():
             @app.route(source)
             def testing_map():

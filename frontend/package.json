@@ -1,8 +1,8 @@
 {
-  "name": "frontend",
-  "version": "0.1.0",
-  "description": "",
-  "main": "map.js",
+  "name": "@problematy/goodmap",
+  "version": "0.1.2",
+  "description": "Fronted scripts for map ",
+  "main": "dist/map.js",
   "scripts": {
     "build": "webpack --mode production --progress --config webpack.config.js",
     "dev-build": "webpack --progress --mode development --config webpack.config.js",
@@ -10,6 +10,9 @@
     "serve": "webpack-dev-server --mode development",
     "test": "jest"
   },
+  "files": [
+    "dist"
+  ],
   "jest": {
     "transform": {
       "^.+\\.[t|j]sx?$": "babel-jest"

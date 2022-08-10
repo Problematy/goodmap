@@ -1,8 +1,8 @@
 const webpack = require('webpack');
 module.exports = {
-    entry:  __dirname + '/src/map.js',
+    entry:  './src/map.js',
     output: {
-        path: __dirname + '/../goodmap/static',
+        path: __dirname + '/dist',
         filename: 'map.js',
     },
     resolve: {
