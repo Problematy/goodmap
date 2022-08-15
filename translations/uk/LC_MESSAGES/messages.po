@@ -20,89 +20,89 @@ msgstr ""
 
 #: translations/added_words.list
 msgid "categories"
-msgstr ""
+msgstr "категорії"
 
 #: translations/added_words.list
 msgid "types"
-msgstr ""
+msgstr "одяг, взуття, постільна білизна.."
 
 #: translations/added_words.list
 msgid "clothes"
-msgstr ""
+msgstr "одяг"
 
 #: translations/added_words.list
 msgid "shoes"
-msgstr ""
+msgstr "взуття"
 
 #: translations/added_words.list
 msgid "bedding"
-msgstr ""
+msgstr "постільна білизна"
 
 #: translations/added_words.list
 msgid "stuffed toys"
-msgstr ""
+msgstr "м'які іграшки"
 
 #: translations/added_words.list
 msgid "underwear"
-msgstr ""
+msgstr "білизна"
 
 #: translations/added_words.list
 msgid "towel"
-msgstr ""
+msgstr "рушники"
 
 #: translations/added_words.list
 msgid "gender"
-msgstr ""
+msgstr "жіночий, чоловічий, дитячий..."
 
 #: translations/added_words.list
 msgid "male"
-msgstr ""
+msgstr "чоловічий"
 
 #: translations/added_words.list
 msgid "female"
-msgstr ""
+msgstr "жіночий"
 
 #: translations/added_words.list
 msgid "kids"
-msgstr ""
+msgstr "дитячий"
 
 #: translations/added_words.list
 msgid "condition"
-msgstr ""
+msgstr "в доброму стані, вживане..."
 
 #: translations/added_words.list
 msgid "good"
-msgstr ""
+msgstr "в доброму стані"
 
 #: translations/added_words.list
 msgid "worn"
-msgstr ""
+msgstr "вживане"
 
 #: translations/added_words.list
 msgid "type_of_place"
-msgstr ""
+msgstr "контейнер, відділення..."
 
 #: translations/added_words.list
 msgid "container"
-msgstr ""
+msgstr "контейнер"
 
 #: translations/added_words.list
 msgid "place"
-msgstr ""
+msgstr "відділення"
 
 #: translations/added_words.list
 msgid "visible_data"
-msgstr ""
+msgstr "видно"
 
 #: translations/added_words.list
 msgid "website"
-msgstr ""
+msgstr "веб-сторінка"
 
 #: translations/added_words.list
 msgid "opening_hours"
-msgstr ""
+msgstr "години роботи"
 
 #: translations/added_words.list
 msgid "check_date"
-msgstr ""
+msgstr "дата перевірки"
 
