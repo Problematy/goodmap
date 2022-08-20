@@ -1,4 +1,25 @@
+# ?
 dist
-config.yml
+
+# Dataset
+# ...read more in projects README.md
 data.json
+
+# This file should be explicitly managed by local user
+# ...read more in projects README.md
+config.yml
+
+# Created local coverage reporting
 .coverage
+
+# Cache should always stay local
+# ...read more: https://stackoverflow.com/questions/16869024/what-is-pycache
+**/__pycache__
+
+# Relevant only for asdf users (maybe consider this project asdf friendly?)
+# ...read more: https://github.com/asdf-vm/asdf
+.tool-versions
+
+# Python typing specific files, that interested colaborator should create on their own for local development
+# ...read more: https://docs.python.org/3/library/typing.html
+typings/
