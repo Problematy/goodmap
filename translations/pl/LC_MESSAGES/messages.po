@@ -24,11 +24,11 @@ msgstr "kategorie"
 
 #: translations/added_words.list
 msgid "types"
-msgstr "typy"
+msgstr "ubrania, buty, pościel.."
 
 #: translations/added_words.list
 msgid "clothes"
-msgstr "odzież"
+msgstr "ubrania"
 
 #: translations/added_words.list
 msgid "shoes"
@@ -48,39 +48,39 @@ msgstr "bielizna"
 
 #: translations/added_words.list
 msgid "towel"
-msgstr "ręcznik"
+msgstr "ręczniki"
 
 #: translations/added_words.list
 msgid "gender"
-msgstr "płeć"
+msgstr "damskie, meskie, dziecięce..."
 
 #: translations/added_words.list
 msgid "male"
-msgstr "mężczyzna"
+msgstr "męskie"
 
 #: translations/added_words.list
 msgid "female"
-msgstr "kobieta"
+msgstr "damskie"
 
 #: translations/added_words.list
 msgid "kids"
-msgstr "dzieci"
+msgstr "dziecięce"
 
 #: translations/added_words.list
 msgid "condition"
-msgstr "stan"
+msgstr "w dobrym stanie, zużyte..."
 
 #: translations/added_words.list
 msgid "good"
-msgstr "dobre"
+msgstr "w dobrym stanie"
 
 #: translations/added_words.list
 msgid "worn"
-msgstr "znoszone"
+msgstr "zużyte"
 
 #: translations/added_words.list
 msgid "type_of_place"
-msgstr "typ miejsca"
+msgstr "kontener, placówka..."
 
 #: translations/added_words.list
 msgid "container"

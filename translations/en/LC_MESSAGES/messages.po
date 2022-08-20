@@ -20,89 +20,89 @@ msgstr ""
 
 #: translations/added_words.list
 msgid "categories"
-msgstr "Categories"
+msgstr "categories"
 
 #: translations/added_words.list
 msgid "types"
-msgstr ""
+msgstr "clothes, shoes, bedding..."
 
 #: translations/added_words.list
 msgid "clothes"
-msgstr ""
+msgstr "clothes"
 
 #: translations/added_words.list
 msgid "shoes"
-msgstr ""
+msgstr "shoes"
 
 #: translations/added_words.list
 msgid "bedding"
-msgstr ""
+msgstr "bedding"
 
 #: translations/added_words.list
 msgid "stuffed toys"
-msgstr ""
+msgstr "stuffed toys"
 
 #: translations/added_words.list
 msgid "underwear"
-msgstr ""
+msgstr "underwear"
 
 #: translations/added_words.list
 msgid "towel"
-msgstr ""
+msgstr "towels"
 
 #: translations/added_words.list
 msgid "gender"
-msgstr ""
+msgstr "female, male, kids..."
 
 #: translations/added_words.list
 msgid "male"
-msgstr ""
+msgstr "male"
 
 #: translations/added_words.list
 msgid "female"
-msgstr ""
+msgstr "female"
 
 #: translations/added_words.list
 msgid "kids"
-msgstr ""
+msgstr "kids"
 
 #: translations/added_words.list
 msgid "condition"
-msgstr ""
+msgstr "good, worn..."
 
 #: translations/added_words.list
 msgid "good"
-msgstr ""
+msgstr "good condition"
 
 #: translations/added_words.list
 msgid "worn"
-msgstr ""
+msgstr "worn"
 
 #: translations/added_words.list
 msgid "type_of_place"
-msgstr ""
+msgstr "container, place..."
 
 #: translations/added_words.list
 msgid "container"
-msgstr ""
+msgstr "container"
 
 #: translations/added_words.list
 msgid "place"
-msgstr ""
+msgstr "place"
 
 #: translations/added_words.list
 msgid "visible_data"
-msgstr ""
+msgstr "visible data"
 
 #: translations/added_words.list
 msgid "website"
-msgstr ""
+msgstr "website"
 
 #: translations/added_words.list
 msgid "opening_hours"
-msgstr ""
+msgstr "opening hours"
 
 #: translations/added_words.list
 msgid "check_date"
-msgstr ""
+msgstr "check date"
 
