@@ -23,3 +23,6 @@ config.yml
 # Python typing specific files, that interested colaborator should create on their own for local development
 # ...read more: https://docs.python.org/3/library/typing.html
 typings/
+
+# So far, not everyone uses Pyright
+pyrightconfig.json
