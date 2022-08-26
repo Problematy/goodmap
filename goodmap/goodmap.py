@@ -10,20 +10,23 @@ from .core_api import core_pages
 def create_app(config_path="./config.yml"):
     app = Flask(__name__)
 
-    app.config["config"] = load_config(config_path)
-    if not "flask_secretkey" in app.config["config"]:
-        sys.exit(
-            "ERROR Application misconfigured: please, set 'flask_secretkey' in './config.yml'"
-        )
-    app.config["SECRET_KEY"] = app.config["config"]["flask_secretkey"]
-    app.db = get_db(app.config["config"]["db"])
-    app.config["BABEL_DEFAULT_LOCALE"] = app.config["config"]["languages"][0]
+    app_config = load_app_config_from(config_path)
+
+    app.config["config"] = app_config
+    app.config["SECRET_KEY"] = app_config["flask_secretkey"]
+
+    db_config = app_config["db"]
+    app.db = get_db(db_config)
+
     app.config["BABEL_TRANSLATION_DIRECTORIES"] = "../translations"
-    app.register_blueprint(core_pages(app.db, app.config["config"]["languages"]))
+    languages_config = app_config["languages"]
+
+    core_api_handle = core_pages(app.db, languages_config)
+    app.register_blueprint(core_api_handle)
 
     app.babel = Babel(app)
 
-    if overwrites := app.config["config"].get("route_overwrites"):
+    if overwrites := app_config.get("route_overwrites"):
         for source, destination in overwrites.items():
 
             @app.route(source)
@@ -34,7 +37,7 @@ def create_app(config_path="./config.yml"):
     def get_locale():
         return session.get(
             "language",
-            request.accept_languages.best_match(app.config["config"]["languages"]),
+            request.accept_languages.best_match(app_config["languages"]),
         )
 
     @app.route("/language/<language>")
@@ -44,7 +47,7 @@ def create_app(config_path="./config.yml"):
 
     @app.context_processor
     def setup_context():
-        return dict(app_name=app.config["config"]["app_name"])
+        return dict(app_name=app_config["app_name"])
 
     @app.route("/")
     def index():
@@ -53,7 +56,13 @@ def create_app(config_path="./config.yml"):
     return app
 
 
-def load_config(config_path):
+def load_app_config_from(config_path):
+    app_config = load_yaml_from(config_path)
+    validate_app_config(app_config)
+    return app_config
+
+
+def load_yaml_from(config_path):
     try:
         with open(config_path, "r") as file:
             return yaml.safe_load(file)
@@ -62,4 +71,11 @@ def load_config(config_path):
             "ERROR: Expected but not found: file or directory '{}'. Check README.md for more info!".format(
                 config_path
             )
+        )
+
+
+def validate_app_config(app_config):
+    if not "flask_secretkey" in app_config:
+        sys.exit(
+            "ERROR Application misconfigured: please, set 'flask_secretkey' in './config.yml'"
         )
