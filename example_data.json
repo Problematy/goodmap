@@ -1,0 +1,45 @@
+{
+    "categories": {
+        "types": [
+            "clothes",
+            "shoes"
+        ],
+        "gender": [
+            "male",
+            "female"
+        ]
+    },
+    "visible_data": [
+        "types"
+    ],
+    "data": [
+        {
+            "name": "Only male clothes",
+            "position": [
+                51.1,
+                17.05
+            ],
+            "types": [
+                "clothes"
+            ],
+            "gender": [
+                "male"
+            ]
+        },
+        {
+            "name": "Clothes and shoes for males and females both",
+            "position": [
+                51.113,
+                17.06
+            ],
+            "types": [
+                "clothes",
+                "shoes"
+            ],
+            "gender": [
+                "male",
+                "female"
+            ]
+        }
+    ]
+}
