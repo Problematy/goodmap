@@ -1,5 +1,0 @@
-{
-  "python.analysis.useLibraryCodeForTypes": true,
-  "reportMissingImports": true,
-  "reportMissingTypeStubs": false
-}
