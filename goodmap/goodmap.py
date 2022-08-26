@@ -7,18 +7,6 @@ from .db import get_db
 from .core_api import core_pages
 
 
-def load_config(config_path):
-    try:
-        with open(config_path, "r") as file:
-            return yaml.safe_load(file)
-    except FileNotFoundError:
-        sys.exit(
-            "ERROR: Expected but not found: file or directory '{}'. Check README.md for more info!".format(
-                config_path
-            )
-        )
-
-
 def create_app(config_path="./config.yml"):
     app = Flask(__name__)
 
@@ -63,3 +51,15 @@ def create_app(config_path="./config.yml"):
         return render_template("map.html")
 
     return app
+
+
+def load_config(config_path):
+    try:
+        with open(config_path, "r") as file:
+            return yaml.safe_load(file)
+    except FileNotFoundError:
+        sys.exit(
+            "ERROR: Expected but not found: file or directory '{}'. Check README.md for more info!".format(
+                config_path
+            )
+        )
