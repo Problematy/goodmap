@@ -3,7 +3,7 @@ import json
 
 
 def load_json(json_config):
-    with open(json_config["data_file_path"], 'rw') as file:
+    with open(json_config["data_file_path"], "rw") as file:
         return json.load(file)
 
 
@@ -12,11 +12,15 @@ class LocalJsonDb(Database):
         self.data_file_path = config["data_file_path"]
 
     def get_data(self):
-        with open(self.data_file_path, 'r') as file:
-            return json.load(file)
+        try:
+            with open(self.data_file_path, "r") as file:
+                return json.load(file)
+        except FileNotFoundError:
+            with open("example_data.json", "r") as file:
+                return json.load(file)
 
     def save_entry(self, entry):
         data = self.get_data()
-        with open(self.data_file_path, 'w') as file:
+        with open(self.data_file_path, "w") as file:
             data["data"].append(entry)
             json.dump(data, file, indent=4)

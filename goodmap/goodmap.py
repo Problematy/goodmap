@@ -16,7 +16,8 @@ def create_app(config_path="./config.yml"):
     app.config["SECRET_KEY"] = app_config["flask_secretkey"]
 
     db_config = app_config["db"]
-    app.db = get_db(db_config)
+    app_db = get_db(db_config)
+    app.db = app_db
 
     app.config["BABEL_TRANSLATION_DIRECTORIES"] = "../translations"
     languages_config = app_config["languages"]
