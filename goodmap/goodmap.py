@@ -2,12 +2,15 @@ from flask import Flask, render_template, request, redirect, session, url_for
 from flask_babel import Babel
 import yaml
 import sys
+import logging
 
 from .db import get_db
 from .core_api import core_pages
 
 
 def create_app(config_path="./config.yml"):
+    logging.basicConfig(level=logging.DEBUG)
+
     app = Flask(__name__)
 
     app_config = load_app_config_from(config_path)

@@ -1,4 +1,5 @@
 from flask_babel import lazy_gettext, gettext
+import logging
 
 
 def safe_gettext(lista):
@@ -26,4 +27,5 @@ def get_type_of_place(place):
     try:
         return place["type_of_place"]
     except KeyError:
+        logging.error("Missing key 'type_of_place'")
         return "type_of_place"
