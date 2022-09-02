@@ -13,7 +13,6 @@ def create_app(config_path):
     app.config.from_file(absolute_config_path, load=yaml.safe_load)
     app.db = get_db(app.config["DB"])
     app.register_blueprint(core_pages(app.db, app.config["LANGUAGES"]))
-
     app.babel = Babel(app)
 
     if overwrites := app.config.get("ROUTE_OVERWRITES"):
@@ -24,7 +23,7 @@ def create_app(config_path):
 
     @app.babel.localeselector
     def get_locale():
-        return session.get('language', request.accept_languages.best_match(app.config["languages"]))
+        return session.get('language', request.accept_languages.best_match(app.config["LANGUAGES"]))
 
     @app.route('/language/<language>')
     def set_language(language):
