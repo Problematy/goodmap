@@ -5,7 +5,6 @@ on:
 
 permissions:
   contents: 'read'
-  id-token: 'write'
 
 jobs:
   backend-test:
@@ -30,19 +29,3 @@ jobs:
       with:
         path-to-lcov: "./coverage.lcov"
         github-token: ${{ secrets.GITHUB_TOKEN }}
-
-  frontend-test:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./frontend
-    steps:
-    - uses: actions/checkout@v3
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '16.14'
-    - name: Install dependencies
-      run: npm install
-    - name: Test with jest
-      run: npm test
