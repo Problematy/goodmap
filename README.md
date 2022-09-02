@@ -81,6 +81,7 @@ Data consists of two parts:
 #### 0.1.2 - In development
   * Simplified and standarized configuration in code
   * Extracted project dependencies to other repositoriesq
+  * Updated dependencies
 
 #### 0.1.1 - Static frontend
   * Using frontend served in npm  
