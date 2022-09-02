@@ -12,7 +12,7 @@ def get_blob(bucket_name, source_blob_name):
 
 class GoogleJsonDb(Database):
     def __init__(self, config):
-        self.blob = get_blob(config["bucket_name"], config["source_blob_name"])
+        self.blob = get_blob(config["BUCKET_NAME"], config["SOURCE_BLOB_NAME"])
 
     def get_data(self):
         raw_data = self.blob.download_as_text(client=None)

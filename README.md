@@ -78,7 +78,11 @@ Data consists of two parts:
 ## Version History
 
 ### 0.1 - Initial Release - in development
-#### 0.1.1 - In development
+#### 0.1.2 - In development
+  * Simplified and standarized configuration in code
+  * Extracted project dependencies to other repositoriesq
+
+#### 0.1.1 - Static frontend
   * Using frontend served in npm  
 
 #### 0.1.0 - First working version

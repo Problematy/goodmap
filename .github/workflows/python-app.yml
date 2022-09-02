@@ -46,10 +46,3 @@ jobs:
       run: npm install
     - name: Test with jest
       run: npm test
-
-  staging:
-    needs: [backend-test, frontend-test]
-    uses: ./.github/workflows/deploy.yml
-    secrets: inherit
-    with:
-      environment: staging

@@ -2,14 +2,9 @@ from .db_base import Database
 import json
 
 
-def load_json(json_config):
-    with open(json_config["data_file_path"], 'rw') as file:
-        return json.load(file)
-
-
 class LocalJsonDb(Database):
     def __init__(self, config):
-        self.data_file_path = config["data_file_path"]
+        self.data_file_path = config["DATA_FILE_PATH"]
 
     def get_data(self):
         with open(self.data_file_path, 'r') as file:
