@@ -28,7 +28,7 @@ server locally:
 * run server with `npm run serve`
 * set `development_overwrites` for wanted endpoints, otherwise application will use compiled files.
 
-##Database
+## Database
 
 Database consists of three sections:
 
