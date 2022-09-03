@@ -26,5 +26,5 @@ jobs:
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         verbose: true
-        verify_metadata: false
+        #verify_metadata: false
         password: ${{ secrets.PYPI_API_TOKEN }}
