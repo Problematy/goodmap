@@ -78,7 +78,10 @@ Data consists of two parts:
 ## Version History
 
 ### 0.1 - Initial Release - in development
-#### 0.1.2 - In development
+#### 0.1.4 - Makeover
+  * frontend for mobile version
+
+#### 0.1.3 - Simplification
   * Simplified and standarized configuration in code
   * Extracted project dependencies to other repositoriesq
   * Updated dependencies

@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
         integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
@@ -19,26 +20,36 @@
   <title>{{ app_name }}</title>
 </head>
 <body>
-<main>
-  <div class="container">
-    <header class="d-flex flex-wrap justify-content-center py-3 mb-4 border-bottom" id="main-menu">
-      <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-dark text-decoration-none">
-        <svg class="bi me-2" width="40" height="32"><use xlink:href="#bootstrap"></use></svg>
-        <span class="fs-4">{{ app_name }}</span>
-      </a>
-      <ul class="nav nav-pills">
-        <li class="nav-item"><a href="#" class="nav-link active" aria-current="page">Mapa</a></li>
-        <li class="nav-item"><a href="#" class="nav-link">Twórcy</a></li>
-      </ul>
-      <div id="lang-list"></div>
-    </header>
-  </div>
-  <div class="container-fluid">
-    <div class="row">
-      <div id="map" class="map"></div>
-      <script src="/static/map.js"></script>
+<div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
+  <header>
+    <nav class="navbar navbar-expand-lg">
+      <div class="container-fluid">
+        <a href="/" class="navbar-brand float-md-start">
+          <span class="fs-4">{{ app_name }}</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu" aria-controls="navbarsExample05" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbar-menu">
+          <ul class="navbar-nav nav nav-pills me-auto">
+            <li class="nav-item"><a href="#" class="nav-link active" aria-current="page">Mapa</a></li>
+            <li class="nav-item"><a href="#" class="nav-link">Twórcy</a></li>
+          </ul>
+          <div id="lang-list"></div>
+        </div>
+      </div>
+    </nav>
+  </header>
+  <main>
+    <div class="container-fluid">
+      <div class="row">
+        <div id="map" class="map"></div>
+        <script src="/static/map.js"></script>
+      </div>
     </div>
-  </div>
-</main>
+  </main>
+</div>
+
+
 </body>
 </html>
