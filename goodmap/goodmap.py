@@ -11,6 +11,8 @@ def create_app(config_path):
     app = Flask(__name__)
     absolute_config_path = os.path.join(os.getcwd(), config_path)
     app.config.from_file(absolute_config_path, load=yaml.safe_load)
+    os.chdir(os.path.dirname(config_path))
+
     app.db = get_db(app.config["DB"])
     app.register_blueprint(core_pages(app.db, app.config["LANGUAGES"]))
     app.babel = Babel(app)
