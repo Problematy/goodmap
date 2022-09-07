@@ -8,3 +8,7 @@ DB:
 #TODO this should not be necessary argument
 LANGUAGES:
   - en
+
+#TODO this should not be necessary argument
+ROUTE_OVERWRITES:
+  /static/map.js: https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.1.2
