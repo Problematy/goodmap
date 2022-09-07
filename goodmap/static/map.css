@@ -1,0 +1,9 @@
+.leaflet-control {
+  background-color: lavenderblush;
+}
+
+.map {
+  height: 100%;
+  width: 100vw;
+  position: fixed;
+}

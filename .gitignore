@@ -1,0 +1,5 @@
+dist
+config.yml
+data.json
+.coverage
+**/__pycache__
