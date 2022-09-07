@@ -37,7 +37,7 @@ jobs:
     - name: Run e2e tests
       run: |
         pwd
-        poetry run FLASK_APP="goodmap.goodmap:create_app(config_path='./tests/e2e_tests/config.yml')" flask run &
+        poetry run "FLASK_APP=\"goodmap.goodmap:create_app(config_path='./tests/e2e_tests/config.yml')\" flask run" &
         sleep 3
         docker ps |grep FLASK
         cd tests/e2e_tests && node_modules/cypress/bin/cypress run
