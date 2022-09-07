@@ -30,10 +30,11 @@ jobs:
         path-to-lcov: "./coverage.lcov"
         github-token: ${{ secrets.GITHUB_TOKEN }}
 # End to end tests:
-    - name: Run app in background (prepare for e2e test)
-      run: poetry FLASK_APP="goodmap.goodmap:create_app(config_path='./tests/e2e_tests/config.yml')" flask run &
-    - name: Install and run cypress tests
+    - name: Install cypress
       working-directory: "./tests/e2e_tests"
       run: |
         npm install cypress
-        node_modules/cypress/bin/cypress run
+    - name: Run e2e tests
+      run: |
+        poetry FLASK_APP="goodmap.goodmap:create_app(config_path='./tests/e2e_tests/config.yml')" flask run &
+        cd tests/e2e_tests && node_modules/cypress/bin/cypress run
