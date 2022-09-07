@@ -36,9 +36,6 @@ jobs:
         npm install cypress
     - name: Run e2e tests
       run: |
-        pwd
-        ls
-        FLASK_APP="goodmap.goodmap:create_app(config_path='./tests/e2e_tests/e2e_test_config.yml')" poetry run flask run &
+        PYTHONUNBUFFERED=1;FLASK_ENV=development;FLASK_APP="goodmap.goodmap:create_app(config_path='./tests/e2e_tests/e2e_test_config.yml')" poetry run flask run &
         sleep 3
-        docker ps |grep FLASK
         cd tests/e2e_tests && node_modules/cypress/bin/cypress run
