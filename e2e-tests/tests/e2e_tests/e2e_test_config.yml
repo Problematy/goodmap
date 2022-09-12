@@ -1,0 +1,14 @@
+APP_NAME: Bridges in Wroclaw
+SECRET_KEY: SECRET
+
+DB:
+  TYPE: json_file
+  DATA_FILE_PATH: e2e_test_data.json
+
+#TODO this should not be necessary argument
+LANGUAGES:
+  - en
+
+#TODO this should not be necessary argument
+ROUTE_OVERWRITES:
+  /static/map.js: https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.1.2
