@@ -49,31 +49,10 @@ Data consists of two parts:
   * `position` - coordinates of object
 * category dependent - depending on your `categories` setup it varies. See example of config below.
 
-### Config example
-```
-{
-  "categories":
-  {
-    "types": ["clothes", "shoes"],
-    "gender": ["male", "female"]
-  },
-  "visible_data": ["types"],
-  "data": [
-    {
-      "name": "Only male clothes",
-      "position": [51.1, 17.05],
-      "types": ["clothes"],
-      "gender": ["male"]
-    },
-    {
-      "name": "Clothes and shoes for males and females both",
-      "position": [51.113, 17.06],
-      "types": ["clothes", "shoes"],
-      "gender": ["male", "female"]
-    }
-  ]
-}
-```
+### Examples
+You can find examples of working configuration and database in `tests/e2e_tests` named:
+- `e2e_test_config.yml`
+- `e2e_test_data.json`
 
 ## Version History
 
