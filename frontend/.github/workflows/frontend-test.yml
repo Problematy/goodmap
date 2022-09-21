@@ -1,0 +1,21 @@
+name: Testing pipeline
+
+on:
+  push
+
+permissions:
+  contents: 'read'
+
+jobs:
+  frontend-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16.14'
+    - name: Install dependencies
+      run: npm install
+    - name: Test with jest
+      run: npm test
