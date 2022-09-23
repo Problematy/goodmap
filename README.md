@@ -78,6 +78,9 @@ Data consists of two parts:
 ## Version History
 
 ### 0.1 - Initial Release - in development
+#### 0.1.5 - in development
+  * better looking frontend
+
 #### 0.1.4 - Makeover
   * frontend for mobile version
 
