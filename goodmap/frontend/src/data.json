@@ -1,0 +1,45 @@
+{
+  "categories": {
+    "condition": ["good", "worn"],
+    "types": ["clothes", "shoes", "toys", "towels", "underwear"],
+    "gender": ["male", "female"]
+  },
+  "visible_data": ["types"],
+  "data": [
+    {
+      "name": "Only male clothes",
+      "position": [51.1, 17.05],
+      "condition": ["good"],
+      "types": ["clothes"],
+      "gender": ["male"]
+    },
+    {
+      "name": "Clothes and shoes for males and females both",
+      "position": [51.113, 17.06],
+      "condition": ["good"],
+      "types": ["clothes", "shoes"],
+      "gender": ["male", "female"]
+    },
+    {
+      "name": "Clothes and shoes for males and females both",
+      "position": [51.12, 17.01],
+      "condition": ["worn"],
+      "types": ["clothes", "shoes"],
+      "gender": ["female"]
+    },
+    {
+      "name": "Clothes and shoes for males and females both",
+      "position": [51.119, 17.04],
+      "condition": ["good", "worn"],
+      "types": ["clothes"],
+      "gender": ["male"]
+    },
+    {
+      "name": "Clothes and shoes for males and females both",
+      "position": [51.118, 17.03],
+      "condition": ["good", "worn"],
+      "types": ["clothes"],
+      "gender": ["male"]
+    }
+  ]
+}
