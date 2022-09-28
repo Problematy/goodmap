@@ -20,10 +20,10 @@ const TabMap = () => {
   return (
     <>
       <div className="map-tab_container">
-        <Sidebar />
+        {/* <Sidebar /> */}
         <Map />
       </div>
-      <Form />
+      {/* <Form /> */}
     </>
   );
 };
@@ -48,7 +48,6 @@ const Content = () => {
 
   const handleClick = (id) => () => {
     setTab(id);
-    console.log(id);
   };
 
   return (

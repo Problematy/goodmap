@@ -1,13 +1,13 @@
 import L from 'leaflet'
 import 'leaflet.markercluster'
-import {getFormattedData} from './formatters'
-import {createCheckboxWithType} from './checkboxes'
+import {getFormattedData} from './formatters.js'
+import {createCheckboxWithType} from './checkboxes.js'
 import * as ReactDOMServer from 'react-dom/server';
 import * as ReactDOM from 'react-dom';
 
-let mainMap = createBasicMap();
-let markers = L.markerClusterGroup();
-let cats = null;
+let mainMap        = createBasicMap();
+let markers        = L.markerClusterGroup();
+let cats           = null;
 
 $.getJSON("/api/categories").then( categories => {
   cats = categories
@@ -58,7 +58,7 @@ function createBasicMap() {
   });
   map.addLayer(layer);
   map.on('locationfound', (e) => {onLocationFound(e, map, lMarker, cMarker)});
-  map.locate({setView: true, watch:true, maxZoom: 16});
+  map.locate({setView: false, watch:true, maxZoom: 16});
   lMarker.addTo(map);
   cMarker.addTo(map);
   return map;

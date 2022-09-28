@@ -13,12 +13,7 @@ const Form = () => {
         </span>
       </div>
       <div>
-        <form>
-          "Form"
-          {/* <input>Email</input>
-          <input>Name</input>
-          <textarea>Given place doesn't exist..</textarea> */}
-        </form>
+        <form>"Form"</form>
       </div>
     </section>
   );
