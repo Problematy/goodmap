@@ -1,5 +1,6 @@
 const webpack = require('webpack');
 module.exports = {
+    devtool: 'source-map',
     entry:  './src/map.js',
     output: {
         path: __dirname + '/dist',

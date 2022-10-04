@@ -16,7 +16,6 @@ export function getFormattedData(place){
     React.createElement("br"),
     place.subtitle);
 
-//TODO: make transition to react full react elements, etc.
   let content = React.createElement("p", {
     dangerouslySetInnerHTML: {
       __html: getFormattedDataForPopup(place.data).join('<br>')
