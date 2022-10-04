@@ -1,6 +1,6 @@
 # goodmap-frontend
 
-Frontend for [GoodMap](https://github.com/Problematy/goodmap).
+Frontend for [GoodMap](https://github.com/Problematy/goodmap)
 
 # Installing
 
