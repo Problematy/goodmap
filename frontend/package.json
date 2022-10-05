@@ -1,6 +1,6 @@
 {
   "name": "@problematy/goodmap",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Fronted scripts for map ",
   "main": "dist/map.js",
   "scripts": {
