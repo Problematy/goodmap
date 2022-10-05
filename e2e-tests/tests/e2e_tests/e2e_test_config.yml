@@ -3,7 +3,7 @@ SECRET_KEY: SECRET
 
 DB:
   TYPE: json_file
-  DATA_FILE_PATH: e2e_test_data.json
+  DATA_FILE_PATH: tests/e2e_tests/e2e_test_data.json
 
 #TODO this should not be necessary argument
 LANGUAGES:
@@ -11,4 +11,4 @@ LANGUAGES:
 
 #TODO this should not be necessary argument
 ROUTE_OVERWRITES:
-  /static/map.js: https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.1.2
+  /static/map.js: https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.1.6
