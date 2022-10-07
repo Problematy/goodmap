@@ -1,7 +1,13 @@
 name: Testing pipeline
 
 on:
-  pull_request
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+      
 
 permissions:
   contents: 'read'
