@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "goodmap"
-version = "0.1.6"
+version = "0.1.7"
 description = "Map engine to serve all the people :)"
 authors = ["Krzysztof Kolodzinski <krzysztof.kolodzinski@problematy.pl>"]
 readme = "README.md"
