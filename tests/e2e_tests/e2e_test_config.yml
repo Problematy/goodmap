@@ -1,13 +1,19 @@
 APP_NAME: Bridges in Wroclaw
 SECRET_KEY: SECRET
-
+BLOG_PREFIX: "/blog"
 DB:
   TYPE: json_file
-  DATA_FILE_PATH: tests/e2e_tests/e2e_test_data.json
+  PATH: tests/e2e_tests/e2e_test_data.json
 
 #TODO this should not be necessary argument
 LANGUAGES:
-  - en
+  en:
+    name: English
+    flag: uk
+  pl:
+    name: polski
+    flag: pl
+
 
 #TODO this should not be necessary argument
 ROUTE_OVERWRITES:
