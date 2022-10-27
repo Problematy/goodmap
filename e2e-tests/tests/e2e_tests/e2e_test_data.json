@@ -1,42 +1,62 @@
 {
-    "data": [
-        {
-            "name": "Grunwaldzki",
-            "position": [
-                51.1095,
-                17.0525
-            ],
-            "accessible_by": [
-                "pedestrians",
-                "cars"
-            ],
-            "type_of_place": "big bridge"
-        },
-        {
-            "name": "Zwierzyniecka",
-            "position": [
-                51.10655,
-                17.0555
-            ],
+    "map": {
+        "data": [
+            {
+                "name": "Grunwaldzki",
+                "position": [
+                    51.1095,
+                    17.0525
+                ],
+                "accessible_by": [
+                    "pedestrians",
+                    "cars"
+                ],
+                "type_of_place": "big bridge"
+            },
+            {
+                "name": "Zwierzyniecka",
+                "position": [
+                    51.10655,
+                    17.0555
+                ],
+                "accessible_by": [
+                    "bikes",
+                    "pedestrians"
+                ],
+                "type_of_place": "small bridge"
+            }
+        ],
+        "categories": {
             "accessible_by": [
                 "bikes",
+                "cars",
                 "pedestrians"
             ],
-            "type_of_place": "small bridge"
-        }
-    ],
-    "categories": {
-        "accessible_by": [
-            "bikes",
-            "cars",
-            "pedestrians"
-        ],
-        "type_of_place": [
-            "big bridge",
-            "small bridge"
+            "type_of_place": [
+                "big bridge",
+                "small bridge"
+            ]
+        },
+        "visible_data": [
+            "accessible_by"
         ]
     },
-    "visible_data": [
-        "accessible_by"
+    "pages": [
+        {
+            "title": "About",
+            "slug": "about",
+            "contentInMarkdown": "about"
+        }
+    ],
+    "menu_items": [
+        {
+            "name": "Map",
+            "url": "/"
+        },
+        {
+            "name": "about",
+            "url": "/about"
+        }
+
     ]
 }
