@@ -18,6 +18,7 @@ toMatchInlineSnapshot(`
     <span
       textcontent="types"
     >
+       
       typy
     </span>
     <div
@@ -28,13 +29,13 @@ toMatchInlineSnapshot(`
         htmlFor="clothes"
       >
         ciuchy
+        <input
+          className="form-check-input filter types"
+          id="clothes"
+          type="checkbox"
+          value="clothes"
+        />
       </label>
-      <input
-        className="form-check-input filter types"
-        id="clothes"
-        type="checkbox"
-        value="clothes"
-      />
     </div>
     <div
       className="form-check"
@@ -44,13 +45,13 @@ toMatchInlineSnapshot(`
         htmlFor="shoes"
       >
         buty
+        <input
+          className="form-check-input filter types"
+          id="shoes"
+          type="checkbox"
+          value="shoes"
+        />
       </label>
-      <input
-        className="form-check-input filter types"
-        id="shoes"
-        type="checkbox"
-        value="shoes"
-      />
     </div>
   </div>
 </form>

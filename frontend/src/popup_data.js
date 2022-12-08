@@ -7,20 +7,23 @@ function getContentAsString(data){
 }
 
 function getFormattedDataForPopup(data){
-  return Object.keys(data).map(x => "<b>"+x+"</b>" + ": " + getContentAsString(data[x]));
+  return Object.keys(data).map(x => (
+    <p className="m-0">
+      <b>{x}</b>
+      {": " + getContentAsString(data[x])}
+    </p>));
 }
 
-export function getFormattedData(place){
-  let name = React.createElement("p", {},
-    React.createElement("b", {}, place.title),
-    React.createElement("br"),
-    place.subtitle);
+export function getFormattedData(place) {
+  let main = <div className="place-data m-0">
+    <p className="point-title m-0">
+      <b>{place.title}</b>
+    </p>
+    <p className="point-subtitle mt-0 mb-2">
+      {place.subtitle}
+    </p>
+    {getFormattedDataForPopup(place.data)}
+  </div>
 
-  let content = React.createElement("p", {
-    dangerouslySetInnerHTML: {
-      __html: getFormattedDataForPopup(place.data).join('<br>')
-  }});
-
-  let main = React.createElement("div", {className: "place-data"}, name, content);
   return ReactDOMServer.renderToStaticMarkup(main);;
 }
