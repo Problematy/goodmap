@@ -98,7 +98,8 @@ function getNewMarkers(cats){
       (response) => {
         response.map(x => L.marker(x.position).addTo(markeros).bindPopup(getFormattedData(x)));
       }
-    );
+    )
+    .catch(error=>console.error(error));
   return markeros;
 }
 
