@@ -5,28 +5,33 @@
 
 Map engine to serve all the people ;) 
 
+## Setup
+
+### System dependencies
+To run goodmap instance you'll need to install those dependencies:
+- python 3.10
+- poetry 1.20
+
+### Project dependencies
+We use `poetry` to serve project dependencies. To install all needed python dependencies:
+* go to project directory
+* use `poetry install`
+
 ## Running App locally
+
+### TL;DR
+If you don't want to go through all the configuration, e.g. you just simply want to test if everything works,
+you can simply run app with test dataset provided in `tests/e2e_tests` directory:
+
+> poetry run flask --app 'goodmap.goodmap:create_app(config_path="./tests/e2e_tests/e2e_test_config.yml")' run
 
 ### Configuration
 
-Rename config-template.yml to config.yml and change it's contents according to your needs.
+If you want to serve app with your configuration rename config-template.yml to config.yml and change its contents according to your needs.
 Values descriptions you can find inside config-template.yml.
 
-### Backend 
-
-All dependencies are specified in __pyproject.toml__ file. To install them in your onw environment:
-* go to project directory
-* use `poetry install`
-* get into poetry shell `poetry shell`
-* Run `FLASK_ENV=development;FLASK_APP=goodmap.goodmap flask run`
-
-### Frontend (optional)
-In production environment javascript is served as static files, but for ease of development you can run javascript
-server locally:
-* go to frontend directory
-* install all dependencies with `nmp install`
-* run server with `npm run serve`
-* set `development_overwrites` for wanted endpoints, otherwise application will use compiled files.
+Afterwards run it with:
+> poetry run flask --app 'goodmap.goodmap' --debug run
 
 ## Database
 
@@ -34,7 +39,7 @@ Database consists of three sections:
 
 - `categories` - which informs on what categories data of points is divided
 - `visible_data` - list of categories which will be visible by application users
-- `data` - actual data splitted into `categories`
+- `data` - actual data split into `categories`
 
 
 ### `categories`
@@ -49,12 +54,12 @@ Data consists of two parts:
   * `position` - coordinates of object
 * category dependent - depending on your `categories` setup it varies. See example of config below.
 
-### Examples
+## Examples
 You can find examples of working configuration and database in `tests/e2e_tests` named:
 - `e2e_test_config.yml`
 - `e2e_test_data.json`
 
-## Version History
+# Version History
 
 ### 0.1 - Initial Release - in development
 #### 0.1.5 - in development
