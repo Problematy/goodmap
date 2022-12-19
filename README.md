@@ -18,13 +18,13 @@ All dependencies are specified in __pyproject.toml__ file. To install them in yo
 * go to project directory
 * use `poetry install`
 * get into poetry shell `poetry shell`
-* Run `FLASK_ENV=development;FLASK_APP=goodmap.goodmap flask run`
+* Run `FLASK_ENV=development;FLASK_APP=goodmap.goodmap:create_app(\"config-development.yml\") flask run`
 
 ### Frontend (optional)
 In production environment javascript is served as static files, but for ease of development you can run javascript
 server locally:
 * go to frontend directory
-* install all dependencies with `nmp install`
+* install all dependencies with `npm install`
 * run server with `npm run serve`
 * set `development_overwrites` for wanted endpoints, otherwise application will use compiled files.
 
