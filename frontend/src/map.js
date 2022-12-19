@@ -70,8 +70,8 @@ function onLocationFound(e, map, locationMarker, circleMarker) {
 }
 
 function createBasicMap() {
-  let initPos = [51.1,17.05];
-  let map = L.map('map').setView(initPos, 13);
+  let initPos = [51.917, 19.013];
+  let map = L.map('map').setView(initPos, 7);
   map.zoomControl.setPosition('topright');
   let lMarker = createLocationMarker(initPos);
   let cMarker = L.circle(initPos, 2);
