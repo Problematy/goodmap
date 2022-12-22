@@ -14,6 +14,7 @@ const correctMarkerData = {
     accessible_by: ["pedestrians", "cars"],
     website: { type: "hyperlink", value: "https://www.google.com" },
     websiteWithDisplayValue: { type: "hyperlink", value: "https://www.google.com", displayValue: "testWebsite" },
+    unknownDataType: { type: "unknown", value: "example value for unknown data type" },
   },
 };
 
@@ -51,6 +52,10 @@ describe("should render marker popup correctly", () => {
 
       it("should render hyperlink", () => {
         expect(screen.getByRole("link", { name: "https://www.google.com" })).toBeInTheDocument();
+      });
+
+      it("should render unknown data type as text", () => {
+        expect(screen.getByText(/: example value for unknown data type/i)).toBeInTheDocument();
       });
     });
   });
