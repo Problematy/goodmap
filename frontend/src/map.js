@@ -96,7 +96,7 @@ function getNewMarkers(cats){
     .then(res => res.json())
     .then(
       (response) => {
-        response.map(x => L.marker(x.position).addTo(markeros).bindPopup(getFormattedData(x)));
+        response.map(x => L.marker(x.position).addTo(markeros).bindPopup(ReactDOMServer.renderToStaticMarkup(getFormattedData(x))));
       }
     )
     .catch(error=>console.error(error));

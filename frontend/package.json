@@ -8,7 +8,7 @@
     "dev-build": "webpack --progress --mode development --config webpack.config.js",
     "watch": "webpack --progress -d --config webpack.config.js --watch",
     "serve": "webpack-dev-server --mode development",
-    "test": "jest"
+    "test": "jest --config jest.config.js"
   },
   "files": [
     "dist"
@@ -23,6 +23,7 @@
     "@babel/core": "^7.18.5",
     "@babel/preset-env": "^7.18.2",
     "@babel/preset-react": "^7.17.12",
+    "@testing-library/react": "^13.4.0",
     "babel-jest": "^28.1.1",
     "babel-loader": "^8.2.5",
     "jest": "^28.1.1",
@@ -31,6 +32,8 @@
     "webpack-cli": "^4.10.0"
   },
   "dependencies": {
+    "@testing-library/jest-dom": "^5.16.5",
+    "jest-environment-jsdom": "^29.3.1",
     "leaflet.markercluster": "^1.5.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

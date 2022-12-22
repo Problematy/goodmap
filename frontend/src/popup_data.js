@@ -32,7 +32,7 @@ function getFormattedDataForPopup(data) {
       const CustomDataComponent = mapCustomTypeToReactComponent(value);
 
       return (
-        <p className="m-0">
+        <p key={dataKey} className="m-0">
           <b>{dataKey}</b>
           {": "}
           {CustomDataComponent}
@@ -41,7 +41,7 @@ function getFormattedDataForPopup(data) {
     }
 
     return (
-      <p className="m-0">
+      <p key={dataKey} className="m-0">
         <b>{dataKey}</b>
         {": " + getContentAsString(value)}
       </p>
@@ -50,7 +50,7 @@ function getFormattedDataForPopup(data) {
 }
 
 export function getFormattedData(place) {
-  const PopupContent = (
+  return (
     <div className="place-data m-0">
       <p className="point-title m-0">
         <b>{place.title}</b>
@@ -59,6 +59,4 @@ export function getFormattedData(place) {
       {getFormattedDataForPopup(place.data)}
     </div>
   );
-
-  return ReactDOMServer.renderToStaticMarkup(PopupContent);
 }
