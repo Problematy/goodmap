@@ -26,7 +26,6 @@ describe("should render marker popup correctly", () => {
   });
 
   it("should render marker popup subtitle", () => {
-    screen.debug();
     expect(screen.getByText(/big bridge/i)).toBeInTheDocument();
   });
 
