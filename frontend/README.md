@@ -1,3 +1,6 @@
+![Github Actions](https://github.com/problematy/goodmap-frontend/actions/workflows/frontend-test.yml/badge.svg?event=push&branch=main)
+[![Coverage Status](https://coveralls.io/repos/github/Problematy/goodmap-frontend/badge.svg?branch=main)](https://coveralls.io/github/Problematy/goodmap-frontend?branch=main)
+
 # goodmap-frontend
 
 Frontend for [GoodMap](https://github.com/Problematy/goodmap)
