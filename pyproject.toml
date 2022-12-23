@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "goodmap"
-version = "0.1.6"
+version = "0.1.7"
 description = "Map engine to serve all the people :)"
 authors = ["Krzysztof Kolodzinski <krzysztof.kolodzinski@problematy.pl>"]
 readme = "README.md"
@@ -14,6 +14,7 @@ google-cloud-storage = "^2.3.0"
 PyYAML = "^6.0"
 Babel = "^2.10.3"
 Flask-Babel = "^2.0.0"
+platzky = "^0.1.12"
 
 [tool.poetry.dev-dependencies]
 coverage = "^6.4.3"

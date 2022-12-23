@@ -1,17 +1,12 @@
-from .db_base import Database
 import json
 
+from platzky.db import json_file_db
 
-class LocalJsonDb(Database):
-    def __init__(self, config):
-        self.data_file_path = config["DATA_FILE_PATH"]
 
-    def get_data(self):
-        with open(self.data_file_path, 'r') as file:
-            return json.load(file)
+def get_data(self):
+    with open(self.data_file_path, 'r') as file:
+        return json.load(file)["map"]
 
-    def save_entry(self, entry):
-        data = self.get_data()
-        with open(self.data_file_path, 'w') as file:
-            data["data"].append(entry)
-            json.dump(data, file, indent=4)
+
+def process():
+    json_file_db.JsonFile.get_data = get_data

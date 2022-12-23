@@ -1,7 +1,6 @@
 describe('the most basic test', () => {
   beforeEach(() => {
-    // TODO this probably should be written in some cypress configuration
-    cy.visit('http://127.0.0.1:5000')
+    cy.visit('/')
   })
 
   it('displays filter list with two categories with 5 items', () => {
