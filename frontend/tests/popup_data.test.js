@@ -16,6 +16,15 @@ const correctMarkerData = {
   },
 };
 
+const incorrectComplexMarkerData = {
+  title: "Most Grunwaldzki",
+  position: [51.1095, 17.0525],
+  subtitle: "big bridge",
+  data: {
+    website: { wrongTypeAttribute: "hyperlink", value: "https://www.google.com" },
+  },
+};
+
 const dataKeys = Object.keys(correctMarkerData.data);
 
 describe("should render marker popup correctly", () => {
@@ -53,6 +62,12 @@ describe("should render marker popup correctly", () => {
 
       it("should render unknown data type as text", () => {
         expect(screen.getByText(/: example value for unknown data type/i)).toBeInTheDocument();
+      });
+    });
+
+    describe("should trow error when complex data is incorrect", () => {
+      it("should throw error when data type is not given", () => {
+        expect(() => render(getFormattedData(incorrectComplexMarkerData))).toThrowError();
       });
     });
   });
