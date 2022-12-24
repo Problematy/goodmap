@@ -1,7 +1,10 @@
 name: Testing pipeline
 
 on:
-  pull_request
+  pull_request:
+  push:
+    branches:
+      - main  
 
 permissions:
   contents: 'read'
@@ -18,4 +21,9 @@ jobs:
     - name: Install dependencies
       run: npm install
     - name: Test with jest
-      run: npm test
+      run: npm run coverage
+    - name: Coveralls
+      uses: coverallsapp/github-action@master
+      with:
+        path-to-lcov: "./coverage/lcov.info"
+        github-token: ${{ secrets.GITHUB_TOKEN }}
