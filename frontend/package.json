@@ -1,54 +1,60 @@
 {
-   "name": "@problematy/goodmap",
-   "version": "0.1.6",
-   "engines": {
-      "node": ">=16.0.0"
-   },
-   "description": "Fronted scripts for map ",
-   "main": "dist/map.js",
-   "scripts": {
-      "build": "webpack --mode production --progress --config webpack.config.js",
-      "dev-build": "webpack --progress --mode development --config webpack.config.js",
-      "watch": "webpack --progress -d --config webpack.config.js --watch",
-      "serve": "webpack-dev-server --mode development",
-      "test": "jest --config jest.config.js",
-      "coverage": "jest --coverage --config jest.config.js",
-      "lint": "eslint ."
-   },
-   "files": [
-      "dist"
-   ],
-   "jest": {
-      "transform": {
-         "^.+\\.[t|j]sx?$": "babel-jest"
-      }
-   },
-   "license": "UNLICENSED",
-   "devDependencies": {
-      "@babel/core": "^7.18.5",
-      "@babel/preset-env": "^7.18.2",
-      "@babel/preset-react": "^7.17.12",
-      "@testing-library/jest-dom": "^5.16.5",
-      "@testing-library/react": "^13.4.0",
-      "babel-jest": "^28.1.1",
-      "babel-loader": "^8.2.5",
-      "eslint": "^8.30.0",
-      "eslint-config-airbnb": "^19.0.4",
-      "eslint-config-prettier": "^8.5.0",
-      "eslint-plugin-prettier": "^4.2.1",
-      "eslint-plugin-react": "^7.31.11",
-      "eslint-plugin-react-hooks": "^4.6.0",
-      "jest": "^28.1.1",
-      "jest-environment-jsdom": "^29.3.1",
-      "prettier": "^2.8.1",
-      "terser-webpack-plugin": "^5.3.6",
-      "webpack": "^5.73.0",
-      "webpack-cli": "^4.10.0",
-      "webpack-dev-server": "^4.9.3"
-   },
-   "dependencies": {
-      "leaflet.markercluster": "^1.5.3",
-      "react": "^18.2.0",
-      "react-dom": "^18.2.0"
-   }
+    "name": "@problematy/goodmap",
+    "version": "0.1.6",
+    "engines": {
+        "node": ">=16.0.0"
+    },
+    "description": "Fronted scripts for map",
+    "main": "dist/index.js",
+    "scripts": {
+        "build": "webpack --mode production --progress --config webpack.config.js",
+        "dev-build": "webpack --progress --mode development --config webpack.config.js",
+        "watch": "webpack --progress -d --config webpack.config.js --watch",
+        "serve": "webpack-dev-server --mode development",
+        "test": "jest --config jest.config.js",
+        "coverage": "jest --coverage --config jest.config.js",
+        "lint": "eslint ."
+    },
+    "files": [
+        "dist"
+    ],
+    "jest": {
+        "transform": {
+            "^.+\\.(js|jsx)$": "babel-jest"
+        }
+    },
+    "license": "UNLICENSED",
+    "devDependencies": {
+        "@babel/core": "^7.18.5",
+        "@babel/eslint-parser": "^7.19.1",
+        "@babel/preset-env": "^7.18.2",
+        "@babel/preset-react": "^7.17.12",
+        "@testing-library/jest-dom": "^5.16.5",
+        "@testing-library/react": "^13.4.0",
+        "@types/leaflet": "^1.9.0",
+        "babel-jest": "^28.1.1",
+        "babel-loader": "^8.2.5",
+        "eslint": "^8.30.0",
+        "eslint-config-airbnb": "^19.0.4",
+        "eslint-config-prettier": "^8.5.0",
+        "eslint-plugin-prettier": "^4.2.1",
+        "eslint-plugin-react": "^7.31.11",
+        "eslint-plugin-react-hooks": "^4.6.0",
+        "jest": "^28.1.1",
+        "jest-environment-jsdom": "^29.3.1",
+        "prettier": "^2.8.1",
+        "terser-webpack-plugin": "^5.3.6",
+        "webpack": "^5.73.0",
+        "webpack-cli": "^4.10.0",
+        "webpack-dev-server": "^4.9.3"
+    },
+    "dependencies": {
+        "@changey/react-leaflet-markercluster": "^4.0.0-rc1",
+        "leaflet": "^1.9.3",
+        "leaflet.markercluster": "^1.5.3",
+        "prop-types": "^15.8.1",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "react-leaflet": "^4.2.0"
+    }
 }
