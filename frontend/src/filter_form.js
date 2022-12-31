@@ -2,7 +2,7 @@ import React from 'react'
 
 function createCheckbox(name, translation, category_name, onclick_action){
   return (
-    <div className="form-check" onClick={onclick_action}>
+    <div key={name} className="form-check" onClick={onclick_action}>
       <label htmlFor={name}>{translation}
         <input className={"form-check-input filter " + category_name} type="checkbox" id={name} value={name} />
       </label>
@@ -16,7 +16,7 @@ export function createSection(datum, onclick_action){
   const checkboxes = subcat_data.map(([name, translation]) => createCheckbox(name, translation, category_data[0], onclick_action))
 
   return(
-    <div>
+    <div key={`${category_data[0]} ${category_data[1]}`}>
       <span textcontent={category_data[0]}> {category_data[1]}</span>
       {checkboxes}
     </div>
