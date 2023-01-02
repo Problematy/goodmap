@@ -8,7 +8,7 @@ module.exports = (env, argv) => {
         devtool: 'source-map',
         entry: './src/index.js',
         output: {
-            path: __dirname + '/dist',
+            path: `${__dirname}/dist`,
             filename: IS_PROD ? 'index.min.js' : 'index.js',
         },
         resolve: {
