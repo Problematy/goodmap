@@ -2,7 +2,7 @@ const webpack = require('webpack');
 const TerserPlugin = require('terser-webpack-plugin');
 
 module.exports = (env, argv) => {
-    const IS_PROD = argv.mode == 'production';
+    const IS_PROD = argv.mode === 'production';
 
     return {
         devtool: 'source-map',

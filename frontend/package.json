@@ -23,7 +23,7 @@
             "^.+\\.(js|jsx)$": "babel-jest"
         }
     },
-    "license": "UNLICENSED",
+    "license": "MIT",
     "devDependencies": {
         "@babel/core": "^7.18.5",
         "@babel/eslint-parser": "^7.19.1",
