@@ -4,6 +4,8 @@ from flask_babel import lazy_gettext, gettext
 def safe_gettext(lista):
     if isinstance(lista, list):
         return list(map(gettext, lista))
+    elif isinstance(lista, dict):
+        return lista
     else:
         return gettext(lista)
 
