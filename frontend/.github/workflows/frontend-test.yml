@@ -20,7 +20,7 @@ jobs:
         node-version: '16.14'
     - name: Install dev dependencies
       run: npm install
-    - name: Test with jest
+    - name: Run lint test
       run: npm run lint
 
   frontend-test:
