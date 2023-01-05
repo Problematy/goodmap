@@ -54,7 +54,16 @@ Data consists of two parts:
   * `position` - coordinates of object
 * category dependent - depending on your `categories` setup it varies. See example of config below.
 
+#### `custom data`
+You can define your own, more complex data types as dictionary.
+* obligatory fields in dictionary:
+  * `type` - type of data
+  * `value` - value of data
+* optional fields in dictionary:
+  * `displayValue` - value to display instead of `value`
+
 ## Examples
+
 You can find examples of working configuration and database in `tests/e2e_tests` named:
 - `e2e_test_config.yml`
 - `e2e_test_data.json`
