@@ -4,12 +4,25 @@ on:
   pull_request:
   push:
     branches:
-      - main  
+      - main
 
 permissions:
   contents: 'read'
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16.14'
+    - name: Install dev dependencies
+      run: npm install
+    - name: Run lint test
+      run: npm run lint
+
   frontend-test:
     runs-on: ubuntu-latest
     steps:
