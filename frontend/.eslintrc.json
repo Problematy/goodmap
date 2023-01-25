@@ -6,7 +6,8 @@
         "sourceType": "module"
     },
     "globals": {
-        "document": true
+        "document": true,
+        "navigator": true
     },
     "env": {
         "jest": true

@@ -1,6 +1,7 @@
 import Leaflet from 'leaflet';
 import { UserLocationMarker } from './components/UserLocationMarker/UserLocationMarker';
 import { mapConfig } from './map.config';
+import './components/LocationControl/LocationControl';
 
 export function createBaseMap(onLocationFound) {
     const map = Leaflet.map('map').setView(
@@ -9,6 +10,7 @@ export function createBaseMap(onLocationFound) {
     );
     const locationMarker = UserLocationMarker(mapConfig.initialMapCoordinates);
     const cMarker = Leaflet.circle(mapConfig.initialMapCoordinates, 2);
+    const locationControl = new Leaflet.Control.Button();
     const mapBase = Leaflet.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: mapConfig.maxMapZoom,
         attribution:
@@ -22,6 +24,7 @@ export function createBaseMap(onLocationFound) {
     });
     map.locate({ setView: false, watch: true, maxZoom: 16 });
 
+    locationControl.addTo(map);
     locationMarker.addTo(map);
     cMarker.addTo(map);
 
