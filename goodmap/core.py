@@ -12,5 +12,5 @@ def get_queried_data(all_data, categories, query_params):
     for key in categories.keys():
         requirements.append((key, query_params.get(key)))
 
-    filtered_data = filter(lambda x: does_fulfill_requirement(x, requirements), all_data)
-    return list(filtered_data)
+    filtered_data = [x for x in all_data if does_fulfill_requirement(x, requirements)]
+    return filtered_data
