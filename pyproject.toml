@@ -40,3 +40,6 @@ reportUnknownVariableType = false
 reportUnknownParameterType = false
 reportUnusedFunction = false
 reportUnnecessaryTypeIgnoreComment = true
+reportUntypedClassDecorator = false
+reportUnusedClass = false
+reportUntypedBaseClass = false
