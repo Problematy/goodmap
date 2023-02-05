@@ -15,12 +15,13 @@ def core_pages(database, languages, email_service):
     core_api_blueprint = Blueprint('api', __name__, url_prefix="/api")
     core_api = Api(core_api_blueprint, doc='/doc', version='0.1')
 
-    @core_api.route("/locations:report", methods=["POST"])
-    @expects_json(report_location_schema)
-    def report_location():
-        request_body = request.get_json()
-        email_service.send_report_location_email(request_body)
-        return "", 200
+    if email_service:
+        @core_api.route("/locations:report", methods=["POST"])
+        @expects_json(report_location_schema)
+        def report_location():
+            request_body = request.get_json()
+            email_service.send_report_location_email(request_body)
+            return "", 200
 
     @core_api.route("/data")
     class Data(Resource):

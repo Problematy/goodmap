@@ -14,7 +14,7 @@ def create_app(config_path):
 
     app = platzky.create_app_from_config(config)
     extend_app_db(app)
-    app.email_service = EmailService(app.config["SMTP"], app.sendmail)
+    app.email_service = EmailService(app.config["SMTP"], app.sendmail) if 'sendmail' in app.config["PLUGINS"] else None
 
     app.register_blueprint(core_pages(app.db, app.config["LANGUAGES"], app.email_service))
     main = create_app_original(config)
