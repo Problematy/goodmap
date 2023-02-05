@@ -16,6 +16,7 @@ Babel = "^2.10.3"
 Flask-Babel = "^2.0.0"
 platzky = "^0.1.12"
 flask-restx = "^1.0.3"
+flask-expects-json = "^1.7.0"
 
 [tool.poetry.dev-dependencies]
 coverage = "^6.4.3"

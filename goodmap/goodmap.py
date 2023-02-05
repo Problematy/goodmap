@@ -2,6 +2,7 @@ from platzky import platzky
 
 from flask import render_template, redirect, Blueprint
 from os import path
+from goodmap.services.email_service.email_service import EmailService
 
 from goodmap.db.extend import extend_app_db
 from .core_api import core_pages
@@ -13,8 +14,9 @@ def create_app(config_path):
 
     app = platzky.create_app_from_config(config)
     extend_app_db(app)
+    app.email_service = EmailService(app.config["SMTP"], app.sendmail)
 
-    app.register_blueprint(core_pages(app.db, app.config["LANGUAGES"]))
+    app.register_blueprint(core_pages(app.db, app.config["LANGUAGES"], app.email_service))
     main = create_app_original(config)
     app.register_blueprint(main)
 

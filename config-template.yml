@@ -1,7 +1,6 @@
 # -- Basic app configuration
 app_name: My awesome goodmap application
 
-
 ## -- Flask's SECRET_KEY. In production environment you should set it and keep secret.
 ## -- Ref: https://flask.palletsprojects.com/en/2.1.x/config/
 # flask_secretkey: YOU SHOULD CHANGE IT!!!
@@ -11,7 +10,6 @@ app_name: My awesome goodmap application
 languages:
   - en
 #  - pl
-
 
 # -- Database configuration
 
@@ -26,7 +24,19 @@ db:
 #   bucket_name: good-map
 #   source_blob_name: data.json
 
-
 ## -- List of overwrites for routes. Useful in frontend development.
 route_overwrites:
   /static/map.js: https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.1.2
+
+SMTP:
+  PORT: 465
+  SERVER: "smtp.gmail.com"
+  ADDRESS: "my@gmail.com"
+  PASSWORD: "PA$$WORD"
+  DEFAULT_SENDER: "sender@gmail.com"
+  ADMIN_EMAIL: "help.desk@gmail.com"
+
+USE_WWW: false
+
+PLUGINS:
+  - sendmail
