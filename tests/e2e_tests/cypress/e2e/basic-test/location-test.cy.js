@@ -1,6 +1,10 @@
 describe('Geolocation prompt', () => {
-  it('asks for permission to share location', () => {
+  beforeEach(() => {
+    cy.clearCookies();
+    cy.clearLocalStorage();
+  });
 
+  it('asks for permission to share location', () => {
     cy.window().then((win) => {
       cy.visit('/');
       cy.wait(500);
