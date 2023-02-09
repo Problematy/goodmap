@@ -17,4 +17,4 @@ LANGUAGES:
 
 #TODO this should not be necessary argument
 ROUTE_OVERWRITES:
-  /static/map.js: https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.1.6
+  /static/map.js: https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.1.7
