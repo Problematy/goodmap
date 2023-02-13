@@ -1,16 +1,10 @@
-describe('Geolocation prompt', () => {
-  beforeEach(() => {
-    cy.clearCookies();
-    cy.clearLocalStorage();
-  });
-
-  it('asks for permission to share location', () => {
-    cy.window().then((win) => {
-      cy.visit('/');
-      cy.wait(500);
-      win.navigator.permissions.query({ name: 'geolocation' }).then((permissionStatus) => {
-        expect(permissionStatus.state).to.eq('prompt');
-      });
+describe('Geolocation Request Test', () => {
+  it('Checks if page is asking for geolocation on load', () => {
+    cy.visit('/', {
+      onBeforeLoad ({ navigator }) {
+        cy.spy(navigator.geolocation, 'watchPosition').as('geonavigator');
+      }
     });
+    cy.get('@geonavigator').should('be.calledOnce');
   });
 });
