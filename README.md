@@ -31,7 +31,7 @@ If you want to serve app with your configuration rename config-template.yml to c
 Values descriptions you can find inside config-template.yml.
 
 Afterwards run it with:
-> poetry run flask --app 'goodmap.goodmap' --debug run
+> poetry run flask --app 'goodmap.goodmap(config_path="<path-to-your-config>")' --debug run
 
 ## Database
 
