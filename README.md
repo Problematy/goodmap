@@ -7,7 +7,7 @@ Map engine to serve all the people ;)
 
 ## Setup
 
-Use python 3.10 and install dependencies by running `make install`
+Use python 3.10, install poetry: `pip install poetry` and then install dependencies: `poetry install`
 
 ## Running App locally
 
