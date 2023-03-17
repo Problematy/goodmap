@@ -1,6 +1,6 @@
 import json
 
-from platzky.db import json_file_db
+from goodmap.platzky.db import json_file_db
 
 
 def get_data(self):
@@ -9,4 +9,4 @@ def get_data(self):
 
 
 def process():
-    json_file_db.JsonFile.get_data = get_data
+    json_file_db.JsonFile.get_data = get_data # pyright: ignore

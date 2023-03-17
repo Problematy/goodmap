@@ -1,4 +1,4 @@
-from platzky import platzky
+from goodmap.platzky import platzky
 
 from flask import render_template, redirect, Blueprint
 from os import path
@@ -14,7 +14,7 @@ def create_app(config_path):
     app = platzky.create_app_from_config(config)
     extend_app_db(app)
 
-    app.register_blueprint(core_pages(app.db, app.config["LANGUAGES"]))
+    app.register_blueprint(core_pages(app.db, app.config["LANGUAGES"]))  # pyright: ignore
     main = create_app_original(config)
     app.register_blueprint(main)
 
