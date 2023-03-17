@@ -2,4 +2,5 @@ dist
 config.yml
 data.json
 .coverage
+coverage.lcov
 **/__pycache__

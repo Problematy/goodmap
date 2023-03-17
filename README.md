@@ -7,15 +7,7 @@ Map engine to serve all the people ;)
 
 ## Setup
 
-### System dependencies
-To run goodmap instance you'll need to install those dependencies:
-- python 3.10
-- poetry 1.20
-
-### Project dependencies
-We use `poetry` to serve project dependencies. To install all needed python dependencies:
-* go to project directory
-* use `poetry install`
+Use python 3.10, install poetry: `pip install poetry` and then install dependencies: `poetry install`
 
 ## Running App locally
 
