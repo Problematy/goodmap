@@ -22,8 +22,8 @@ def core_pages(database, languages):
             categories = all_data["categories"]
             visible_data = all_data["visible_data"]
             queried_data = get_queried_data(data, categories, query_params)
-            formatted_data = map(lambda x: prepare_pin(x, visible_data), queried_data)
-            return jsonify(list(formatted_data))
+            formatted_data = [prepare_pin(x, visible_data) for x in queried_data]
+            return jsonify(formatted_data)
 
     @core_api.route("/categories")
     class Categories(Resource):
