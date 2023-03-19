@@ -14,11 +14,15 @@ from .www_handler import redirect_www_to_nonwww, redirect_nonwww_to_www
 
 def create_app_from_config(config_object):
     engine = create_engine_from_config(config_object)
-
-    blog_blueprint = blog.create_blog_blueprint(db=engine.db,
-                                                config=engine.config, babel=engine.babel)
-    seo_blueprint = seo.create_seo_blueprint(db=engine.db,
-                                             config=engine.config)
+    blog_blueprint = blog.create_blog_blueprint(
+        db=engine.db,  # pyright: ignore
+        config=engine.config,
+        babel=engine.babel  # pyright: ignore
+    )
+    seo_blueprint = seo.create_seo_blueprint(
+        db=engine.db,  # pyright: ignore
+        config=engine.config
+    )
     engine.register_blueprint(blog_blueprint)
     engine.register_blueprint(seo_blueprint)
     Minify(app=engine, html=True, js=True, cssless=True)
@@ -44,8 +48,8 @@ def create_engine(config, db, languages, domain_langs):
     app = Flask(__name__)
     app.config.from_mapping(config)
 
-    app.db = db
-    app.babel = Babel(app)
+    app.db = db  # pyright: ignore
+    app.babel = Babel(app) # pyright: ignore
     languages = languages
     domain_langs = domain_langs
 
@@ -56,7 +60,7 @@ def create_engine(config, db, languages, domain_langs):
         else:
             return redirect_www_to_nonwww()
 
-    @app.babel.localeselector
+    @app.babel.localeselector # pyright: ignore
     def get_locale():
         domain = request.headers['Host']
         lang = domain_langs.get(domain,
@@ -83,8 +87,8 @@ def create_engine(config, db, languages, domain_langs):
             'languages': languages,
             "current_flag": languages[get_locale()]['flag'],
             "current_language": get_locale(),
-            "url_link": lambda x: urllib.parse.quote(x, safe=''),
-            "menu_items": app.db.get_menu_items()
+            "url_link": lambda x: urllib.parse.quote(x, safe=''),  # pyright: ignore[reportUnknownLambdaType]
+            "menu_items": app.db.get_menu_items()  # pyright: ignore
         }
 
     @app.errorhandler(404)

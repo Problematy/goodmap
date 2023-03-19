@@ -23,12 +23,14 @@ def find_plugins(enabled_plugins):
         module_name = plugin_dir.removesuffix('.py')
         spec = importlib.util.spec_from_file_location(module_name,
                                                       os.path.join(plugins_dir, plugin_dir, "entrypoint.py"))
+        assert spec is not None
         plugin = importlib.util.module_from_spec(spec)
         sys.modules[module_name] = plugin
+        assert spec.loader is not None
         spec.loader.exec_module(plugin)
         plugins.append(plugin)
 
-    for finder, name, ispkg in pkgutil.iter_modules():
+    for _, name, _ in pkgutil.iter_modules():
         if name.startswith('platzky_'):
             plugins.append(importlib.import_module(name))
 

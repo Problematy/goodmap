@@ -38,10 +38,8 @@ def create_seo_blueprint(db, config):
         static_urls = list()
         for rule in current_app.url_map.iter_rules():
             if not str(rule).startswith("/admin") and not str(rule).startswith("/user"):
-                if "GET" in rule.methods and len(rule.arguments) == 0:
-                    url = {
-                        "loc": f"{host_base}{str(rule)}"
-                    }
+                if rule.methods is not None and "GET" in rule.methods and len(rule.arguments) == 0:
+                    url = { "loc": f"{host_base}{str(rule)}" }
                     static_urls.append(url)
 
         # Dynamic routes with dynamic content

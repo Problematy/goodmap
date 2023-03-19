@@ -11,24 +11,20 @@ class Json(DB):
         self.data = data_dict
 
     def get_all_posts(self, lang):
-        posts = (filter(lambda x: x["language"] == lang, self.data.get("posts", [])))
-        return list(posts)
+        return [post for post in self.data.get("posts", ()) if post["language"] == lang]
 
     def get_post(self, slug):
-        post = next(filter(lambda x: x["slug"] == slug, self.data["posts"]), None)
-        return post
+        return next(post for post in self.data.get("posts") if post["slug"] == slug)
 
     def get_page(self, slug):
-        post = next(filter(lambda x: x["slug"] == slug, self.data["pages"]), None)
-        return post
+        return next(page for page in self.data.get("pages") if page["slug"] == slug)
 
     def get_menu_items(self):
         post = self.data.get("menu_items", [])
         return post
 
     def get_posts_by_tag(self, tag, lang):
-        posts = filter(lambda x: tag in x["tags"], self.data["posts"])
-        return posts
+        return (post for post in self.data["posts"] if tag in post["tags"])
 
     def get_all_providers(self):
         return self.data["providers"]

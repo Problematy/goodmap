@@ -1,5 +1,6 @@
 import urllib.parse
 from flask import request, redirect
+from typing import cast
 
 
 def redirect_nonwww_to_www():
@@ -7,7 +8,8 @@ def redirect_nonwww_to_www():
     urlparts = urllib.parse.urlparse(request.url)
     if not urlparts.netloc.startswith("www."):
         urlparts = urlparts._replace(netloc=f'www.{urlparts.netloc}')
-        return redirect(urllib.parse.urlunparse(urlparts), code=301)
+        url = cast(str, urllib.parse.urlunparse(urlparts))
+        return redirect(url, code=301)
 
 
 def redirect_www_to_nonwww():
@@ -15,4 +17,5 @@ def redirect_www_to_nonwww():
     urlparts = urllib.parse.urlparse(request.url)
     if urlparts.netloc.startswith("www."):
         urlparts = urlparts._replace(netloc=urlparts.netloc.removeprefix("www."))
-        return redirect(urllib.parse.urlunparse(urlparts), code=301)
+        url = cast(str, urllib.parse.urlunparse(urlparts))
+        return redirect(url, code=302)

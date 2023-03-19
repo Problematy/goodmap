@@ -1,5 +1,5 @@
-from flask import request, render_template,\
-    make_response, Blueprint, Markup
+from flask import request, render_template, make_response, Blueprint
+from markupsafe import Markup
 from goodmap.platzky.blog import comment_form, post_formatter
 from os.path import dirname
 

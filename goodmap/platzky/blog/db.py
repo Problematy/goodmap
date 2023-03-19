@@ -1,5 +1,8 @@
+from typing import Any
+
+
 class DB:
-    def get_all_posts(self, lang):
+    def get_all_posts(self, lang) -> Any:
         pass
 
     def get_post(self, slug):
@@ -8,7 +11,7 @@ class DB:
     def get_page(self, slug):
         pass
 
-    def get_posts_by_tag(self, tag, lang):
+    def get_posts_by_tag(self, tag, lang) -> Any:
         pass
 
     def get_menu(self):
