@@ -1,20 +1,16 @@
 {% extends "base.html" %}
 
-
 {% block left_panel %}
 <div id="filter-form"></div>
-
 {% endblock %}
 
+{% block body_meta %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin="">
+{% endblock %}
 
 {% block content %}
-<div class="h-100">
-  <div class="row h-100">
-  </div>
-  <div id="map" class="map d-inline-block h-100 w-100"></div>
-  <script src="/static/map.js"></script>
-</div>
-</div>
+<div id="map" class="map d-inline-block h-100 w-100"></div>
+<script src="/static/map.js"></script>
 {% endblock %}
 
 
