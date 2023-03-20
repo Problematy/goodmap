@@ -9,7 +9,7 @@ DB:
 LANGUAGES:
   en:
     name: English
-    flag: uk
+    flag: gb
   pl:
     name: polski
     flag: pl
@@ -17,4 +17,4 @@ LANGUAGES:
 
 #TODO this should not be necessary argument
 ROUTE_OVERWRITES:
-  /static/map.js: https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.1.6
+  /static/map.js: https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.1.7
