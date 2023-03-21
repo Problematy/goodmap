@@ -1,4 +1,5 @@
 import datetime
+
 import humanize
 
 
@@ -12,5 +13,5 @@ def format_post(post):
     now = datetime.datetime.now()
     for comment in post["comments"]:
         comment.update({"time_delta": get_delta(now, comment["date"])})
-    post["comments"].sort(key=lambda x: x["date"], reverse=True) # pyright: ignore[reportUnknownLambdaType]
+    post["comments"].sort(key=lambda x: x["date"], reverse=True)  # pyright: ignore
     return post

@@ -1,13 +1,14 @@
 import urllib.parse
-from flask import request, redirect
 from typing import cast
+
+from flask import redirect, request
 
 
 def redirect_nonwww_to_www():
     """Redirect non-www requests to www."""
     urlparts = urllib.parse.urlparse(request.url)
     if not urlparts.netloc.startswith("www."):
-        urlparts = urlparts._replace(netloc=f'www.{urlparts.netloc}')
+        urlparts = urlparts._replace(netloc=f"www.{urlparts.netloc}")
         url = cast(str, urllib.parse.urlunparse(urlparts))
         return redirect(url, code=301)
 

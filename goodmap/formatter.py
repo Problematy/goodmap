@@ -1,4 +1,4 @@
-from flask_babel import lazy_gettext, gettext
+from flask_babel import gettext, lazy_gettext
 
 
 def safe_gettext(lista):
@@ -15,6 +15,6 @@ def prepare_pin(place, visible_fields):
         "title": place["name"],
         "subtitle": lazy_gettext(place["type_of_place"]),
         "position": place["position"],
-        "data": {gettext(field): safe_gettext(place[field]) for field in visible_fields}
+        "data": {gettext(field): safe_gettext(place[field]) for field in visible_fields},
     }
     return pin_data

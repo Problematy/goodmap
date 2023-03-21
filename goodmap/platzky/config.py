@@ -1,18 +1,19 @@
 import os.path
+
 import yaml
 
 
 def is_db_ok(mapping):
-    if 'DB' not in mapping:
+    if "DB" not in mapping:
         raise Exception("DB not set")
-    if 'TYPE' not in mapping['DB']:
+    if "TYPE" not in mapping["DB"]:
         raise Exception("DB type is not set")
-    if mapping['DB']['TYPE'] not in ['graph_ql', 'json_file', 'google_json']:
+    if mapping["DB"]["TYPE"] not in ["graph_ql", "json_file", "google_json"]:
         raise Exception("DB type is not supported")
     return True
 
 
-class Config():
+class Config:
     def __init__(self, mapping):
         if is_db_ok(mapping):
             self.config = mapping
@@ -33,7 +34,7 @@ def get_config_mapping(base_config):
         "BLOG_PREFIX": "/",
         "LANGUAGES": {},
         "DOMAIN_TO_LANG": {},
-        "PLUGINS": []
+        "PLUGINS": [],
     }
 
     config = default_config | base_config

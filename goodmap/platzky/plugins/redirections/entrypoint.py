@@ -1,5 +1,6 @@
-from flask import redirect
 from functools import partial
+
+from flask import redirect
 from gql import gql
 
 
@@ -22,15 +23,16 @@ def graphql_get_redirections(self):
         }
         """
     )
-    return {x['source']:x['destination'] for x in self.client.execute(redirections)['redirections']}
+    return {
+        x["source"]: x["destination"] for x in self.client.execute(redirections)["redirections"]
+    }
 
 
 def get_proper_redirections(db_type):
     redirections = {
         "json_file": json_get_redirections,
         "graph_ql": graphql_get_redirections,
-        "google_json": google_get_redirections
-
+        "google_json": google_get_redirections,
     }
     return redirections[db_type]
 

@@ -1,8 +1,9 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, jsonify, request
 from flask_babel import gettext
+from flask_restx import Api, Resource
+
 from .core import get_queried_data
 from .formatter import prepare_pin
-from flask_restx import Resource, Api
 
 
 def make_tuple_translation(keys_to_translate):
@@ -10,8 +11,8 @@ def make_tuple_translation(keys_to_translate):
 
 
 def core_pages(database, languages):
-    core_api_blueprint = Blueprint('api', __name__, url_prefix="/api")
-    core_api = Api(core_api_blueprint, doc='/doc', version='0.1')
+    core_api_blueprint = Blueprint("api", __name__, url_prefix="/api")
+    core_api = Api(core_api_blueprint, doc="/doc", version="0.1")
 
     @core_api.route("/data")
     class Data(Resource):
@@ -34,7 +35,6 @@ def core_pages(database, languages):
 
     @core_api.route("/languages")
     class Languages(Resource):
-        '''dupa'''
         def get(self):
             return jsonify(languages)
 
