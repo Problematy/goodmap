@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="{{ language }}">
+<head>
+  {% include "head_meta.html" %}
+  <title>{% block title %}{% endblock %}</title>
+  <meta name="description" content=" {% block description %} {% endblock %} ">
+</head>
+<body>
+<div class="container" style="max-width:1080px; height:100%">
+  {% include "body_meta.html" %}
+  <nav class="navbar navbar-expand-lg navbar-light bg-light" id="mainNav">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/">{{ _(app_name) }}</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+              aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+          {% for menu_item in menu_items %}
+          <li class="nav-item">
+            <a class="nav-link" href={{menu_item["url"]}} >{{_(menu_item["name"])}}</a>
+          </li>
+          {% endfor %}
+        </ul>
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="languages-menu" role="button"
+               data-bs-toggle="dropdown" aria-expanded="false">
+              <i class=" {{ current_flag }} flag"></i></a>
+            <ul class="dropdown-menu" aria-labelledby="languages-menu">
+              {% for lg,items in languages.items() %}
+              <li><a class="dropdown-item" href={{url_for('change_language', lang=lg, _external=True)}}>
+                <i class="{{ items['flag'] }} flag"></i>{{ items['name'] }}</a></li>
+              {% endfor %}
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+</div>
+
+{% block header %}
+{% endblock %}
+
+
+{% block content %}
+{% endblock %}
+
+</body>
+</html>

@@ -1,0 +1,6 @@
+User-agent: Googlebot
+User-agent: AdsBot-Google
+Allow: /
+Disallow: /lang/*
+
+Sitemap: https://{{domain}}/sitemap.xml

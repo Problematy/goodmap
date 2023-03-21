@@ -1,7 +1,7 @@
 import types
 
-from platzky.db.google_json_db import GoogleJsonDb
-from platzky.db.json_file_db import JsonFile
+from goodmap.platzky.db.google_json_db import GoogleJsonDb
+from goodmap.platzky.db.json_file_db import JsonFile
 
 from goodmap.db import google_json_db, local_json_db
 
