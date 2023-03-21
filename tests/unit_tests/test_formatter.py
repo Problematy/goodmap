@@ -1,4 +1,6 @@
-from goodmap.formatter import prepare_pin
+from goodmap.formatter import prepare_pin, safe_gettext
+from flask_babel import gettext
+import pytest
 
 test_place = {
             "name": "LASSO",
@@ -22,3 +24,17 @@ def test_formatting():
         }
     }
     assert prepare_pin(test_place, visible_fields) == expected_data
+
+
+@pytest.mark.parametrize(
+    ("arg", "expected"),
+    (
+        ([], []),
+        (["abc"], [gettext("abc")]),
+        ({}, {}),
+        ({"a": "b"}, {"a": "b"}),
+        ("abc", gettext("abc")),
+    ),
+)
+def test_safe_gettext(arg: object, expected: object) -> None:
+    assert safe_gettext(arg) == expected
