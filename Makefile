@@ -1,13 +1,14 @@
 lint:
 	poetry run black .
-	poetry run pyright .
 	poetry run ruff check --fix .
 
+dev: lint
+	poetry run pyright .
 
 lint-check:
 	poetry run black --check .
-	poetry run pyright .
 	poetry run ruff check .
+	poetry run pyright .
 
 unit-test:
 	poetry run coverage run -m pytest
