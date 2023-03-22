@@ -26,6 +26,8 @@ coverage = "^6.4.3"
 coveralls = "^3.3.1"
 pyright = "^1.1.291"
 freezegun = "^1.2.2"
+black = "^23.1.0"
+ruff = "^0.0.257"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -48,3 +50,20 @@ reportUnnecessaryTypeIgnoreComment = true
 reportUntypedClassDecorator = false
 reportUnusedClass = false
 reportUntypedBaseClass = false
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+show-fixes = true
+select = [
+    "I", # isort
+    "F", # Pyflakes
+    "E", # pycodestyle Error
+    "W", # pycodestyle Warning
+    "RUF", # Ruff-specific rules
+]
+ignore = []

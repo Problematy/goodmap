@@ -1,5 +1,6 @@
-from goodmap.platzky.blog.db import DB
 import datetime
+
+from goodmap.platzky.blog.db import DB
 
 
 def get_db(config):
@@ -36,7 +37,9 @@ class Json(DB):
         comment = {
             "author": str(author_name),
             "comment": str(comment),
-            "date": datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+            "date": datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
         }
-        post_index = next(i for i in range(len(self.data["posts"])) if self.data["posts"][i]["slug"] == post_slug)
+        post_index = next(
+            i for i in range(len(self.data["posts"])) if self.data["posts"][i]["slug"] == post_slug
+        )
         self.data["posts"][post_index]["comments"].append(comment)

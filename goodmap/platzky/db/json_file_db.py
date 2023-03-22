@@ -17,7 +17,7 @@ class JsonFile(Json):
             super().__init__(data)
 
     def _save_file(self):
-        with open(self.data_file_path, 'w') as json_file:
+        with open(self.data_file_path, "w") as json_file:
             json.dump(self.data, json_file)
 
     def add_comment(self, author_name, comment, post_slug):

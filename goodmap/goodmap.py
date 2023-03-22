@@ -1,9 +1,10 @@
-from goodmap.platzky import platzky
-
-from flask import render_template, redirect, Blueprint
 from os import path
 
+from flask import Blueprint, redirect, render_template
+
 from goodmap.db.extend import extend_app_db
+from goodmap.platzky import platzky
+
 from .core_api import core_pages
 
 
@@ -23,17 +24,17 @@ def create_app(config_path):
 
 def create_app_original(config):
     url_prefix = "/"
-    goodmap = Blueprint('goodmap', __name__,
-                         url_prefix=url_prefix, template_folder='templates')
+    goodmap = Blueprint("goodmap", __name__, url_prefix=url_prefix, template_folder="templates")
 
     if overwrites := config.asdict().get("ROUTE_OVERWRITES"):
         for source, destination in overwrites.items():
+
             @goodmap.route(source)
             def testing_map():
                 return redirect(destination)
 
     @goodmap.route("/")
     def index():
-        return render_template('map.html')
+        return render_template("map.html")
 
     return goodmap

@@ -1,5 +1,7 @@
 import json
+
 from google.cloud import storage
+
 from .json_db import Json
 
 
@@ -30,4 +32,4 @@ class GoogleJsonDb(Json):
     def save_entry(self, entry):
         data = get_data(self.blob)
         data["data"].append(entry)
-        self.blob.upload_from_string(json.dumps(data), content_type='application/json')
+        self.blob.upload_from_string(json.dumps(data), content_type="application/json")
