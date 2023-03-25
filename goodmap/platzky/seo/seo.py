@@ -1,18 +1,17 @@
+import typing as t
 import urllib.parse
 from os.path import dirname
 
 from flask import Blueprint, current_app, make_response, render_template, request
 
 
-def create_seo_blueprint(db, config):
-    url_prefix = config["SEO_PREFIX"]
+def create_seo_blueprint(db, config: dict[str, t.Any]):
     seo = Blueprint(
         "seo",
         __name__,
-        url_prefix=url_prefix,
+        url_prefix=config["SEO_PREFIX"],
         template_folder=f"{dirname(__file__)}/../templates",
     )
-    # secure_headers = SecureHeaders()
 
     @seo.route("/robots.txt")
     def robots():
@@ -23,9 +22,8 @@ def create_seo_blueprint(db, config):
 
     @seo.route("/sitemap.xml")
     def main_sitemap():
-        if domain_to_lang := config.get("DOMAIN_TO_LANG", None):
-            domains_lang = domain_to_lang[request.host]
-            return sitemap(domains_lang)
+        if domain_to_lang := config["DOMAIN_TO_LANG"]:
+            return sitemap(domain_to_lang[request.host])
         else:
             return sitemap(
                 config.get("BABEL_TRANSLATION_DIRECTORIES")

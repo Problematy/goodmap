@@ -2,14 +2,13 @@ import json
 
 from google.cloud import storage
 
+from goodmap.config import GoogleJsonDbConfig
+
 from .json_db import Json
 
 
-def get_db(app_config):
-    config = app_config["DB"]
-    bucket_name = config["BUCKET_NAME"]
-    source_blob_name = config["SOURCE_BLOB_NAME"]
-    return GoogleJsonDb(bucket_name, source_blob_name)
+def get_db(config: GoogleJsonDbConfig):
+    return GoogleJsonDb(config.bucket_name, config.source_blob_name)
 
 
 def get_blob(bucket_name, source_blob_name):

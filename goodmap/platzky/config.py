@@ -1,4 +1,5 @@
 import os.path
+import typing as t
 
 import yaml
 
@@ -20,7 +21,7 @@ class Config:
         else:
             raise Exception("Config is wrong")
 
-    def add_translations_dir(self, absolute_translation_dir):
+    def add_translations_dir(self, absolute_translation_dir: str) -> None:
         self.config["BABEL_TRANSLATION_DIRECTORIES"] += ";" + absolute_translation_dir
 
     def asdict(self):
@@ -43,12 +44,14 @@ def get_config_mapping(base_config):
     return config
 
 
-def from_file(absolute_config_path):
-    with open(absolute_config_path, "r") as stream:
+def from_file(path: str) -> Config:
+    with open(path, "r") as stream:
         file_config = yaml.safe_load(stream)
-    file_config["CONFIG_PATH"] = absolute_config_path
+    file_config["CONFIG_PATH"] = path
+
     config_from_file = from_mapping(file_config)
-    config_directory = os.path.dirname(absolute_config_path)
+
+    config_directory = os.path.dirname(path)
     for x in ["locales", "locale", "translations"]:
         translation_directory = os.path.join(config_directory, x)
         config_from_file.add_translations_dir(translation_directory)
@@ -59,6 +62,6 @@ def from_file(absolute_config_path):
     return config_from_file
 
 
-def from_mapping(mapping):
+def from_mapping(mapping: dict[str, t.Any]):
     config_dict = get_config_mapping(mapping)
     return Config(config_dict)

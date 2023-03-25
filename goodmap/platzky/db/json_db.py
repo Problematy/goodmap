@@ -3,10 +3,6 @@ import datetime
 from goodmap.platzky.blog.db import DB
 
 
-def get_db(config):
-    return Json(config["DATA"])
-
-
 class Json(DB):
     def __init__(self, data_dict):
         self.data = data_dict
