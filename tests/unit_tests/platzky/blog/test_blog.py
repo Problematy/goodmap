@@ -23,14 +23,6 @@ mocked_post = {
         "alternateText": "text which is alternative",
         "image": {"url": "https://media.graphcms.com/XvmCDUjYTIq4c9wOIseo"},
     },
-    "comments": [
-        {
-            "time_delta": "10 months ago",
-            "date": "2021-02-19T00:00:00",
-            "comment": "This is some comment",
-            "author": "author",
-        }
-    ],
 }
 
 
@@ -62,10 +54,6 @@ def test_app():
     return app.test_client()
 
 
-def old_comment_on_page(response):
-    return b"This is some comment" in response.data
-
-
 def post_contents_on_page(response):
     return b"This is some content" in response.data
 
@@ -73,7 +61,6 @@ def post_contents_on_page(response):
 def test_usual_post(test_app):
     response = test_app.get("/prefix/slug")
     assert response.status_code == 200
-    assert old_comment_on_page(response)
     assert post_contents_on_page(response)
 
 
@@ -87,7 +74,6 @@ def test_rss_feed(test_app):
     response = test_app.get("/prefix/feed")
     assert response.status_code == 200
     assert b"post title" in response.data
-    assert not old_comment_on_page(response)
     assert not post_contents_on_page(response)
 
 
@@ -95,7 +81,6 @@ def test_all_posts(test_app):
     response = test_app.get("/prefix/")
     assert response.status_code == 200
     assert b"post title" in response.data
-    assert not old_comment_on_page(response)
     assert not post_contents_on_page(response)
 
 
@@ -103,19 +88,7 @@ def test_tag_filter(test_app):
     response = test_app.get("/prefix/tag/tag1")
     assert response.status_code == 200
     assert b"post title" in response.data
-    assert not old_comment_on_page(response)
     assert not post_contents_on_page(response)
-
-
-def test_posting_new_comment(test_app):
-    fresh_comment_content = "Fresh comment"
-    response = test_app.post(
-        "/prefix/slug",
-        data={"author_name": "comments author", "comment": fresh_comment_content},
-    )
-    assert response.status_code == 200
-    assert old_comment_on_page(response)
-    assert f"{fresh_comment_content}".encode("utf-8") in response.data
 
 
 def test_not_existing_page(test_app):

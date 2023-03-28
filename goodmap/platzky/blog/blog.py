@@ -1,10 +1,9 @@
 from os.path import dirname
 
-from flask import Blueprint, make_response, render_template, request
+from flask import Blueprint, make_response, render_template
 from markupsafe import Markup
 
 from goodmap.config import Config
-from goodmap.platzky.blog import post_formatter
 
 
 def create_blog_blueprint(db, config: Config, babel):
@@ -41,13 +40,11 @@ def create_blog_blueprint(db, config: Config, babel):
 
     @blog.route("/<post_slug>", methods=["GET"])
     def get_post(post_slug):
-        if raw_post := db.get_post(post_slug):
-            formatted_post = post_formatter.format_post(raw_post)
+        if post := db.get_post(post_slug):
             return render_template(
                 "post.html",
-                post=formatted_post,
+                post=post,
                 post_slug=post_slug,
-                comment_sent=request.args.get("comment_sent"),
             )
         else:
             return page_not_found("no such page")

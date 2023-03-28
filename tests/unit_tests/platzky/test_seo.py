@@ -34,14 +34,6 @@ def test_sitemap():
                 "alternateText": "text which is alternative",
                 "image": {"url": "https://media.graphcms.com/XvmCDUjYTIq4c9wOIseo"},
             },
-            "comments": [
-                {
-                    "time_delta": "10 months ago",
-                    "date": "2021-02-19T00:00:00",
-                    "comment": "komentarz",
-                    "author": "autor",
-                }
-            ],
         }
     ]
     config_mock = MagicMock()
