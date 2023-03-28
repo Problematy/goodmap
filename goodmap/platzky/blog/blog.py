@@ -4,7 +4,7 @@ from flask import Blueprint, make_response, render_template, request
 from markupsafe import Markup
 
 from goodmap.config import Config
-from goodmap.platzky.blog import comment_form, post_formatter
+from goodmap.platzky.blog import post_formatter
 
 
 def create_blog_blueprint(db, config: Config, babel):
@@ -39,16 +39,6 @@ def create_blog_blueprint(db, config: Config, babel):
         response.headers["Content-Type"] = "application/xml"
         return response
 
-    @blog.route("/<post_slug>", methods=["POST"])
-    def post_comment(post_slug):
-        comment = request.form.to_dict()
-        db.add_comment(
-            post_slug=post_slug,
-            author_name=comment["author_name"],
-            comment=comment["comment"],
-        )
-        return get_post(post_slug=post_slug)
-
     @blog.route("/<post_slug>", methods=["GET"])
     def get_post(post_slug):
         if raw_post := db.get_post(post_slug):
@@ -57,7 +47,6 @@ def create_blog_blueprint(db, config: Config, babel):
                 "post.html",
                 post=formatted_post,
                 post_slug=post_slug,
-                form=comment_form.CommentForm(),
                 comment_sent=request.args.get("comment_sent"),
             )
         else:

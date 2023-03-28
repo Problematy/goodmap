@@ -1,13 +1,12 @@
 import typing as t
 import urllib.parse
 
-import typing_extensions as te
 from flask import Flask, redirect, render_template, request, session
 from flask_babel import Babel
 from flask_minify import Minify
 
-from goodmap.config import Config, GoogleJsonDbConfig, GraphQlDbConfig, JsonFileDbConfig
-from goodmap.platzky.db import google_json_db, graph_ql_db, json_file_db
+from goodmap.config import Config
+from goodmap.db import JsonDatabase
 
 from .blog import blog
 from .plugin_loader import plugify
@@ -30,14 +29,7 @@ def create_app_from_config(config: Config) -> Flask:
 
 
 def create_engine_from_config(config: Config) -> Flask:
-    if isinstance(config.db, JsonFileDbConfig):
-        db = json_file_db.get_db(config.db)
-    elif isinstance(config.db, GoogleJsonDbConfig):
-        db = google_json_db.get_db(config.db)
-    elif isinstance(config.db, GraphQlDbConfig):  # pyright: ignore[reportUnnecessaryIsInstance]
-        db = graph_ql_db.get_db(config.db)
-    else:
-        te.assert_never(config.db)
+    db = JsonDatabase.from_config(config.db)
     return create_engine(config, db)
 
 

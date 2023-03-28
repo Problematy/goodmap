@@ -19,7 +19,7 @@ def core_pages(database, languages: LanguagesMapping) -> Blueprint:
     @core_api.route("/data")
     class Data(Resource):
         def get(self):
-            all_data = database.get_data()
+            all_data = database.get_map()
             query_params = request.args.to_dict(flat=False)
             data = all_data["data"]
             categories = all_data["categories"]
@@ -31,7 +31,7 @@ def core_pages(database, languages: LanguagesMapping) -> Blueprint:
     @core_api.route("/categories")
     class Categories(Resource):
         def get(self):
-            all_data = database.get_data()
+            all_data = database.get_map()
             categories = make_tuple_translation(all_data["categories"].keys())
             return jsonify(categories)
 
@@ -43,7 +43,7 @@ def core_pages(database, languages: LanguagesMapping) -> Blueprint:
     @core_api.route("/category/<category_type>")
     class CategoryTypes(Resource):
         def get(self, category_type):
-            all_data = database.get_data()
+            all_data = database.get_map()
             local_data = make_tuple_translation(all_data["categories"][category_type])
             return jsonify(local_data)
 

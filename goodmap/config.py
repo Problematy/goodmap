@@ -22,10 +22,7 @@ class GoogleJsonDbConfig(StrictBaseModel):
     source_blob_name: str = Field(alias="SOURCE_BLOB_NAME")
 
 
-class GraphQlDbConfig(StrictBaseModel):
-    type_: t.Literal["graph_ql"] = Field(alias="TYPE")
-    endpoint: str = Field(alias="CMS_ENDPOINT")
-    token: str = Field(alias="CMS_TOKEN")
+DatabaseConfig = t.Union[JsonFileDbConfig, GoogleJsonDbConfig]
 
 
 class LanguageConfig(StrictBaseModel):
@@ -41,7 +38,7 @@ LanguagesMapping = t.Mapping[str, t.Mapping[str, str]]
 class Config(StrictBaseModel):
     app_name: str = Field(alias="APP_NAME")
     secret_key: str = Field(alias="SECRET_KEY")
-    db: t.Union[JsonFileDbConfig, GoogleJsonDbConfig, GraphQlDbConfig] = Field(alias="DB")
+    db: DatabaseConfig = Field(alias="DB")
     use_www: bool = Field(default=True, alias="USE_WWW")
     seo_prefix: str = Field(default="/", alias="SEO_PREFIX")
     blog_prefix: str = Field(default="/", alias="BLOG_PREFIX")
