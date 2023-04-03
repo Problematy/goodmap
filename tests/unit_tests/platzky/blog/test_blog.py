@@ -8,6 +8,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from goodmap.config import Config
 from goodmap.platzky.blog import blog
 from goodmap.platzky.platzky import create_engine
 
@@ -39,23 +40,23 @@ def test_app():
     db_mock.get_post.return_value = mocked_post
     db_mock.get_posts_by_tag.return_value = [mocked_post]
     db_mock.get_all_posts.return_value = [mocked_post]
-    config_mock = MagicMock()
-    config = {
-        "BLOG_PREFIX": "/prefix",  # TODO test without prefix in config (same for seo tests)
-        "SECRET_KEY": "secret",
-        "PLUGINS": [],
-        "USE_WWW": False,
-        "SEO_PREFIX": "/",
-        "APP_NAME": "app name",
-        "TESTING": True,
-        "DEBUG": True,
-    }
-
-    config_mock.__getitem__.side_effect = config.__getitem__
-    languages = {"en": {"name": "English", "flag": "uk", "domain": "localhost"}}
-    domain_langs = {"localhost": "en"}
-    app = create_engine(config, db_mock, languages, domain_langs)
-    blog_blueprint = blog.create_blog_blueprint(db_mock, config_mock, app.babel)  # pyright: ignore
+    config = Config.parse_obj(
+        {
+            "BLOG_PREFIX": "/prefix",  # TODO test without prefix in config (same for seo tests)
+            "SECRET_KEY": "secret",
+            "PLUGINS": [],
+            "USE_WWW": False,
+            "SEO_PREFIX": "/",
+            "APP_NAME": "app name",
+            "LANGUAGES": {"en": {"name": "English", "flag": "uk", "domain": "localhost"}},
+            "DOMAIN_TO_LANG": {"localhost": "en"},
+            "DB": {"TYPE": "json_file", "PATH": ""},
+            "DEBUG": True,
+            "TESTING": True,
+        }
+    )
+    app = create_engine(config, db_mock)
+    blog_blueprint = blog.create_blog_blueprint(db_mock, config, app.babel)  # pyright: ignore
 
     app.register_blueprint(blog_blueprint)
     return app.test_client()

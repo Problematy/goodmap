@@ -1,22 +1,25 @@
-import os
+import typing as t
 import urllib.parse
 
+import typing_extensions as te
 from flask import Flask, redirect, render_template, request, session
 from flask_babel import Babel
 from flask_minify import Minify
 
-from . import config, db_loader
+from goodmap.config import Config, GoogleJsonDbConfig, GraphQlDbConfig, JsonFileDbConfig
+from goodmap.platzky.db import google_json_db, graph_ql_db, json_file_db
+
 from .blog import blog
 from .plugin_loader import plugify
 from .seo import seo
 from .www_handler import redirect_nonwww_to_www, redirect_www_to_nonwww
 
 
-def create_app_from_config(config_object):
-    engine = create_engine_from_config(config_object)
+def create_app_from_config(config: Config) -> Flask:
+    engine = create_engine_from_config(config)
     blog_blueprint = blog.create_blog_blueprint(
         db=engine.db,  # pyright: ignore
-        config=engine.config,
+        config=config,
         babel=engine.babel,  # pyright: ignore
     )
     seo_blueprint = seo.create_seo_blueprint(db=engine.db, config=engine.config)  # pyright: ignore
@@ -26,49 +29,47 @@ def create_app_from_config(config_object):
     return engine
 
 
-def create_app(config_path):
-    absolute_config_path = os.path.join(os.getcwd(), config_path)
-    config_object = config.from_file(absolute_config_path)
-    return create_app_from_config(config_object)
+def create_engine_from_config(config: Config) -> Flask:
+    if isinstance(config.db, JsonFileDbConfig):
+        db = json_file_db.get_db(config.db)
+    elif isinstance(config.db, GoogleJsonDbConfig):
+        db = google_json_db.get_db(config.db)
+    elif isinstance(config.db, GraphQlDbConfig):  # pyright: ignore[reportUnnecessaryIsInstance]
+        db = graph_ql_db.get_db(config.db)
+    else:
+        te.assert_never(config.db)
+    return create_engine(config, db)
 
 
-def create_engine_from_config(config_object):
-    config_dict = config_object.asdict()
-    db_driver = db_loader.load_db_driver(config_dict["DB"]["TYPE"])
-    db = db_driver.get_db(config_dict)
-    languages = config_dict["LANGUAGES"]
-    domain_langs = config_dict["DOMAIN_TO_LANG"]
-    return create_engine(config_dict, db, languages, domain_langs)
-
-
-def create_engine(config, db, languages, domain_langs):
+def create_engine(config: Config, db) -> Flask:
     app = Flask(__name__)
-    app.config.from_mapping(config)
-
+    app.config.from_mapping(config.dict(by_alias=True))
     app.db = db  # pyright: ignore
     app.babel = Babel(app)  # pyright: ignore
-    languages = languages
-    domain_langs = domain_langs
 
     @app.before_request
     def handle_www_redirection():
-        if app.config["USE_WWW"]:
+        if config.use_www:
             return redirect_nonwww_to_www()
         else:
             return redirect_www_to_nonwww()
 
     @app.babel.localeselector  # pyright: ignore
-    def get_locale():
+    def get_locale() -> t.Optional[str]:
         domain = request.headers["Host"]
-        lang = domain_langs.get(
-            domain,
-            session.get("language", request.accept_languages.best_match(languages.keys(), "en")),
-        )
+        lang = config.domain_to_lang.get(domain)
+        if lang is None:
+            lang = session.get(
+                "language", request.accept_languages.best_match(config.languages.keys(), "en")
+            )
         session["language"] = lang
         return lang
 
-    def get_langs_domain(lang):
-        return languages.get(lang).get("domain")
+    def get_langs_domain(lang: str) -> t.Optional[str]:
+        lang_cfg = config.languages.get(lang)
+        if lang_cfg is None:
+            return None
+        return lang_cfg.domain
 
     @app.route("/lang/<string:lang>", methods=["GET"])
     def change_language(lang):
@@ -80,11 +81,15 @@ def create_engine(config, db, languages, domain_langs):
 
     @app.context_processor
     def utils():
+        locale = get_locale()
+        flag = ""
+        if locale is not None:
+            flag = lang.flag if (lang := config.languages.get(locale)) is not None else ""
         return {
-            "app_name": app.config["APP_NAME"],
-            "languages": languages,
-            "current_flag": languages[get_locale()]["flag"],
-            "current_language": get_locale(),
+            "app_name": config.app_name,
+            "languages": config.languages_dict,
+            "current_flag": flag,
+            "current_language": locale,
             "url_link": lambda x: urllib.parse.quote(x, safe=""),  # pyright: ignore
             "menu_items": app.db.get_menu_items(),  # pyright: ignore
         }
@@ -93,4 +98,4 @@ def create_engine(config, db, languages, domain_langs):
     def page_not_found(e):
         return render_template("404.html", title="404"), 404
 
-    return plugify(app)
+    return plugify(app, config.plugins)

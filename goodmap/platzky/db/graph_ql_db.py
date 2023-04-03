@@ -5,13 +5,12 @@ import json
 from gql import Client, gql
 from gql.transport.aiohttp import AIOHTTPTransport
 
+from goodmap.config import GraphQlDbConfig
 from goodmap.platzky.blog.db import DB
 
 
-def get_db(config):
-    endpoint = config["DB"]["CMS_ENDPOINT"]
-    token = config["DB"]["CMS_TOKEN"]
-    return GraphQL(endpoint, token)
+def get_db(config: GraphQlDbConfig):
+    return GraphQL(config.endpoint, config.token)
 
 
 class GraphQL(DB):

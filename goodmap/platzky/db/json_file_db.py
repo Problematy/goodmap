@@ -1,11 +1,12 @@
 import json
 import os.path
 
+from goodmap.config import JsonFileDbConfig
 from goodmap.platzky.db.json_db import Json
 
 
-def get_db(config):
-    db_path = os.path.abspath(config["DB"]["PATH"])
+def get_db(config: JsonFileDbConfig):
+    db_path = os.path.abspath(config.path)
     return JsonFile(db_path)
 
 
