@@ -32906,6 +32906,7 @@
                 "no data"
             ],
             "atributes": [
+                "no data",
                 "shelter",
                 "bench",
                 "bin",
@@ -32913,11 +32914,13 @@
                 "tactile_paving"
             ],
             "departures_board": [
+                "no data",
                 "timetable",
                 "realtime",
                 "no"
             ],
             "wheelchair": [
+                "no data",
                 "yes",
                 "no",
                 "limited"
