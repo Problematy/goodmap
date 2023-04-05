@@ -1,52 +1,73 @@
 <!doctype html>
 <html lang="{{ language }}">
 <head>
+  {% block head_meta %}
   {% include "head_meta.html" %}
+  {% endblock %}
   <title>{% block title %}{% endblock %}</title>
   <meta name="description" content=" {% block description %} {% endblock %} ">
 </head>
 <body>
-<div class="container" style="max-width:1080px; height:100%">
-  {% include "body_meta.html" %}
-  <nav class="navbar navbar-expand-lg navbar-light bg-light" id="mainNav">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="/">{{ _(app_name) }}</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-              aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-        <i class="fas fa-bars"></i>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav">
-          {% for menu_item in menu_items %}
-          <li class="nav-item">
-            <a class="nav-link" href={{menu_item["url"]}} >{{_(menu_item["name"])}}</a>
-          </li>
-          {% endfor %}
-        </ul>
-        <ul class="navbar-nav ms-auto">
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="languages-menu" role="button"
-               data-bs-toggle="dropdown" aria-expanded="false">
-              <i class=" {{ current_flag }} flag"></i></a>
-            <ul class="dropdown-menu" aria-labelledby="languages-menu">
-              {% for lg,items in languages.items() %}
-              <li><a class="dropdown-item" href={{url_for('change_language', lang=lg, _external=True)}}>
-                <i class="{{ items['flag'] }} flag"></i>{{ items['name'] }}</a></li>
-              {% endfor %}
-            </ul>
-          </li>
-        </ul>
+{% block body_meta %}
+{% include "body_meta.html" %}
+{% endblock %}
+<div class="container">
+  <div class="row">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light" id="mainNav">
+      <div class="container-fluid">
+        {% if self.left_panel() %}
+        <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#left-panel" aria-label="Toggle left panel">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        {% endif %}
+        <a class="navbar-brand" href="/">{{ _(app_name) }}</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+          <i class="fas fa-bars"></i>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav">
+            {% for menu_item in menu_items %}
+            <li class="nav-item">
+              <a class="nav-link" href={{menu_item["url"]}} >{{_(menu_item["name"])}}</a>
+            </li>
+            {% endfor %}
+          </ul>
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="languages-menu" role="button"
+                 data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fi fi-{{ current_flag }}"></i></a>
+              <ul class="dropdown-menu" aria-labelledby="languages-menu">
+                {% for lg,items in languages.items() %}
+                <a class="dropdown-item" href={{url_for('change_language', lang=lg, _external=True)}}>
+                  <i class="fi fi-{{ items['flag'] }} "></i>{{ items['name'] }}</a>
+                {% endfor %}
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+  </div>
+  {% block header %}{% endblock %}
+</div>
+<div class="container-fluid h-100 d-flex">
+  <div class="row">
+    {% if self.left_panel() %}
+    <div id="left-panel" class="offcanvas-lg offcanvas-start container-fluid col-lg-2 d-md-block">
+      <div class="offcanvas-header">
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" data-bs-target="#left-panel" aria-label="Close"></button>
+      </div>
+      <div class="offcanvas-body">
+        {% block left_panel %}{% endblock %}
       </div>
     </div>
-  </nav>
+    {% endif %}
+    <main>
+      {% block content %}{% endblock %}
+    </main>
+  </div>
 </div>
-
-{% block header %}
-{% endblock %}
-
-
-{% block content %}
-{% endblock %}
-
 </body>
 </html>
