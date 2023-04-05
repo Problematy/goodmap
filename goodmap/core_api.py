@@ -2,6 +2,8 @@ from flask import Blueprint, jsonify, request
 from flask_babel import gettext
 from flask_restx import Api, Resource
 
+from goodmap.config import LanguagesMapping
+
 from .core import get_queried_data
 from .formatter import prepare_pin
 
@@ -10,7 +12,7 @@ def make_tuple_translation(keys_to_translate):
     return [(x, gettext(x)) for x in keys_to_translate]
 
 
-def core_pages(database, languages):
+def core_pages(database, languages: LanguagesMapping) -> Blueprint:
     core_api_blueprint = Blueprint("api", __name__, url_prefix="/api")
     core_api = Api(core_api_blueprint, doc="/doc", version="0.1")
 

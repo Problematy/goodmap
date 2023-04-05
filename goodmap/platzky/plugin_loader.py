@@ -8,7 +8,6 @@ from os.path import abspath, dirname
 def get_selected_not_installed_plugins(enabled_plugins):
     plugins_root_dir = os.path.join(dirname(abspath(__file__)), "plugins")
     plugins_dirs = set(os.listdir(plugins_root_dir))
-
     return enabled_plugins - plugins_dirs
 
 
@@ -41,8 +40,7 @@ def find_plugins(enabled_plugins):
     return plugins
 
 
-def plugify(app):
-    plugins = set(app.config["PLUGINS"])
+def plugify(app, plugins):
     for plugin in find_plugins(plugins):
         plugin.process(app)
     return app
