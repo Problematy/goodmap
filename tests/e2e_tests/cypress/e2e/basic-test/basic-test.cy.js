@@ -4,8 +4,8 @@ describe('the most basic test', () => {
   })
 
   it('displays filter list with two categories with 5 items', () => {
-    cy.get('input[type="checkbox"]').should('have.length', 5)
-    cy.get('form span').should('have.length', 2)
+    cy.get('input[type="checkbox"]').should('have.length', 17)
+    cy.get('form span').should('have.length', 4)
   })
 
 })
