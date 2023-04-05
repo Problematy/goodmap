@@ -1,4 +1,4 @@
-APP_NAME: Public Communication Stops
+APP_NAME: Public Transport Stops
 SECRET_KEY: SECRET
 BLOG_PREFIX: "/blog"
 DB:
