@@ -1,4 +1,4 @@
-APP_NAME: Bridges in Wroclaw
+APP_NAME: Public Communication Stops
 SECRET_KEY: SECRET
 BLOG_PREFIX: "/blog"
 DB:
