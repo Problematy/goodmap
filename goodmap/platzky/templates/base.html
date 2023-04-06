@@ -52,10 +52,9 @@
   </div>
   {% block header %}{% endblock %}
 </div>
-<div class="container-fluid h-100 d-flex">
-  <div class="row">
+<div class="container h-100 d-flex flex-row">
     {% if self.left_panel() %}
-    <div id="left-panel" class="offcanvas-lg offcanvas-start container-fluid col-lg-2 d-md-block">
+    <div id="left-panel" class="offcanvas-lg offcanvas-start">
       <div class="offcanvas-header">
         <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" data-bs-target="#left-panel" aria-label="Close"></button>
       </div>
@@ -64,10 +63,9 @@
       </div>
     </div>
     {% endif %}
-    <main>
+    <main class="w-100 d-flex flex-grow-1">
       {% block content %}{% endblock %}
     </main>
-  </div>
 </div>
 </body>
 </html>
