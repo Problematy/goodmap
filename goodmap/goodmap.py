@@ -10,9 +10,7 @@ def create_app(config_path: str) -> Flask:
     config = Config.parse_yaml(config_path)
 
     app = platzky.create_app_from_config(config)
-
     app.register_blueprint(core_pages(app.db, config.languages_dict))  # pyright: ignore
-
     goodmap = Blueprint("goodmap", __name__, url_prefix="/", template_folder="templates")
 
     for source, destination in config.route_overwrites.items():
