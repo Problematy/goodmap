@@ -38,6 +38,14 @@ Languages = dict[str, LanguageConfig]
 LanguagesMapping = t.Mapping[str, t.Mapping[str, str]]
 
 
+class Smtp(StrictBaseModel):
+    port: str = Field(alias="PORT")
+    server: str = Field(alias="SERVER")
+    address: str = Field(alias="ADDRESS")
+    password: str = Field(alias="PASSWORD")
+    domain: t.Optional[str] = Field(default=None, alias="domain")
+
+
 class Config(StrictBaseModel):
     app_name: str = Field(alias="APP_NAME")
     secret_key: str = Field(alias="SECRET_KEY")
@@ -45,6 +53,7 @@ class Config(StrictBaseModel):
     use_www: bool = Field(default=True, alias="USE_WWW")
     seo_prefix: str = Field(default="/", alias="SEO_PREFIX")
     blog_prefix: str = Field(default="/", alias="BLOG_PREFIX")
+    smtp: Smtp = Field(default_factory=dict, alias="SMTP")
     languages: Languages = Field(default_factory=dict, alias="LANGUAGES")
     domain_to_lang: dict[str, str] = Field(default_factory=dict, alias="DOMAIN_TO_LANG")
     plugins: set[t.Any] = Field(default_factory=set, alias="PLUGINS")
