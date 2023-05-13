@@ -13,7 +13,7 @@ class Json(DB):
     def get_post(self, slug):
         return next(post for post in self.data.get("posts") if post["slug"] == slug)
 
-    #TODO: add test for non-existing page
+    # TODO: add test for non-existing page
     def get_page(self, slug):
         return next((page for page in self.data.get("pages") if page["slug"] == slug), None)
 
