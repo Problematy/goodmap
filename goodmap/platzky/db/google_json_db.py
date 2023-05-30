@@ -1,6 +1,6 @@
 import json
 
-from google.cloud import storage
+from google.cloud.storage import Client
 
 from goodmap.config import GoogleJsonDbConfig
 
@@ -12,7 +12,7 @@ def get_db(config: GoogleJsonDbConfig):
 
 
 def get_blob(bucket_name, source_blob_name):
-    storage_client = storage.Client()
+    storage_client = Client()
     bucket = storage_client.bucket(bucket_name)
     return bucket.blob(source_blob_name)
 

@@ -63,7 +63,11 @@ You can find examples of working configuration and database in `tests/e2e_tests`
 # Version History
 
 ### 0.1 - Initial Release - in development
-#### 0.1.5 - in development
+
+#### 0.1.8 - in development
+  * unified frontend
+
+#### 0.1.5
   * better looking frontend
 
 #### 0.1.4 - Makeover

@@ -1,73 +1,10 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+{% extends "base.html" %}
 
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
-        integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
-        crossorigin=""/>
+{% block left_panel %}
+<div id="filter-form"></div>
+{% endblock %}
 
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
-
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
-<!--  <link rel="stylesheet" href="/static/map.css" />-->
-
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
-  <title>{{ app_name }}</title>
-</head>
-<body class="vh-100 vw-100 position-fixed d-flex flex-column">
-<header>
-  <nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <div class="container-fluid">
-      <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#filter-panel" aria-label="Toggle filter">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <a href="/" class="navbar-brand float-md-start">
-        <span class="fs-4">{{ app_name }}</span>
-      </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu"
-              aria-controls="navbar-menu" aria-label="Toggle navigation" aria-expanded="false">
-        <svg width="16" height="16" fill="currentColor" class="bi bi-three-dots" viewBox="0 0 16 16">
-          <path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"></path>
-        </svg>
-      </button>
-      <div id="navbar-menu" class="collapse navbar-collapse">
-        <ul class="navbar-nav">
-          {% for menu_item in menu_items %}
-          <li class="nav-item">
-            <a class="nav-link" href={{menu_item["url"]}} >{{_(menu_item["name"])}}</a>
-          </li>
-          {% endfor %}
-          {% for lg,items in languages.items() %}
-          <li class="nav-item">
-            <a href={{url_for('change_language', lang=lg, _external=True)}} class="nav-link">
-              <i class="{{ items['flag'] }} flag"></i>{{ items['name'] }}</a>
-          </li>
-          {% endfor %}
-        </ul>
-      </div>
-
-<!-- TODO - remove from frontend     <div id="lang-list"></div>-->
-    </div>
-  </nav>
-</header>
-
-<div class="container-fluid h-100">
-  <div class="row h-100">
-    <div id="filter-panel" class="offcanvas-lg offcanvas-start container-fluid col-lg-2 d-md-block">
-      <div class="offcanvas-header">
-        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" data-bs-target="#filter-panel" aria-label="Close"></button>
-      </div>
-      <div id="filter-form" class="offcanvas-body"></div>
-    </div>
-    <main class="col-lg-10">
-      <div id="map" class="map d-inline-block h-100 w-100"></div>
-      <script src="/static/map.js"></script>
-    </main>
-  </div>
-</div>
-
-</body>
-</html>
+{% block content %}
+<div id="map" class="map h-100 w-100"></div>
+<script src="/static/map.js"></script>
+{% endblock %}
