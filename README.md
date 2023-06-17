@@ -64,7 +64,10 @@ You can find examples of working configuration and database in `tests/e2e_tests`
 
 ### 0.1 - Initial Release - in development
 
-#### 0.1.8 - in development
+#### 0.1.9
+  * fix: App not displaying data if visible data is null (#53)
+
+#### 0.1.8
   * unified frontend
 
 #### 0.1.5

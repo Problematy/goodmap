@@ -10,8 +10,8 @@ test_place = {
 }
 
 
-def test_formatting():
-    visible_fields = ["types", "gender"]
+def test_formatting_when_missing_visible_field():
+    visible_fields = ["types", "gender", "visible_without_data"]
     expected_data = {
         "title": "LASSO",
         "subtitle": "container",
