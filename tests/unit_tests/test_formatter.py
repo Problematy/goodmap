@@ -6,7 +6,7 @@ test_place = {
     "position": [51.113, 17.06],
     "random_field": "random_string",
     "types": ["shoes"],
-    "gender": ["male", "female"]
+    "gender": ["male", "female"],
 }
 
 

@@ -17,6 +17,6 @@ def prepare_pin(place, visible_fields):
         "position": place["position"],
         "data": {
             gettext(field): safe_gettext(place[field]) for field in visible_fields if field in place
-        }
+        },
     }
     return pin_data
