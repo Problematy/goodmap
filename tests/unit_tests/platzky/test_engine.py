@@ -36,5 +36,4 @@ def test_babel_gets_proper_directories():
     )
     engine = create_engine_from_config(config)
     with engine.app_context():
-        a = engine.babel.list_translations()
-        assert engine.babel.list_translations()
+        assert engine.babel.domain_instance.translation_directories == translation_directories

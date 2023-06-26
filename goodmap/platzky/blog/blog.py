@@ -75,7 +75,7 @@ def create_blog_blueprint(db, config: Config, locale_func):
 
     @blog.route("/tag/<path:tag>", methods=["GET"])
     def get_posts_from_tag(tag):
-        lang = Z()
+        lang = locale_func()
         posts = db.get_posts_by_tag(tag, lang)
         return render_template("blog.html", posts=posts, subtitle=f" - tag: {tag}")
 
