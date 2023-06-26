@@ -20,11 +20,12 @@ def create_app_from_config(config: Config) -> Flask:
     blog_blueprint = blog.create_blog_blueprint(
         db=engine.db,  # pyright: ignore
         config=config,
-        babel=engine.babel,  # pyright: ignore
+        locale_func=engine.get_locale,  # pyright: ignore
     )
     seo_blueprint = seo.create_seo_blueprint(db=engine.db, config=engine.config)  # pyright: ignore
     engine.register_blueprint(blog_blueprint)
     engine.register_blueprint(seo_blueprint)
+
     Minify(app=engine, html=True, js=True, cssless=True)
     return engine
 
@@ -45,7 +46,6 @@ def create_engine(config: Config, db) -> Flask:
     app = Flask(__name__)
     app.config.from_mapping(config.dict(by_alias=True))
     app.db = db  # pyright: ignore
-    app.babel = Babel(app)  # pyright: ignore
 
     @app.before_request
     def handle_www_redirection():
@@ -54,7 +54,6 @@ def create_engine(config: Config, db) -> Flask:
         else:
             return redirect_www_to_nonwww()
 
-    @app.babel.localeselector  # pyright: ignore
     def get_locale() -> t.Optional[str]:
         domain = request.headers["Host"]
         lang = config.domain_to_lang.get(domain)
@@ -97,5 +96,14 @@ def create_engine(config: Config, db) -> Flask:
     @app.errorhandler(404)
     def page_not_found(e):
         return render_template("404.html", title="404"), 404
+
+    babel_translation_directories = ";".join(config.translation_directories)
+    app.babel = Babel(  # pyright: ignore
+        app,
+        locale_selector=get_locale,
+        default_translation_directories=babel_translation_directories,
+    )
+
+    app.get_locale = get_locale
 
     return plugify(app, config.plugins)

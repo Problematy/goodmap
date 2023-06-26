@@ -1,4 +1,3 @@
-import os.path
 import typing as t
 
 import yaml
@@ -58,10 +57,8 @@ class Config(StrictBaseModel):
     domain_to_lang: dict[str, str] = Field(default_factory=dict, alias="DOMAIN_TO_LANG")
     plugins: set[t.Any] = Field(default_factory=set, alias="PLUGINS")
     route_overwrites: dict[str, str] = Field(default_factory=dict, alias="ROUTE_OVERWRITES")
-    translation_directories: tuple[str, ...] = Field(
-        default_factory=lambda: tuple(
-            os.path.join(os.path.dirname(__file__), "./translations"),
-        ),
+    translation_directories: list = Field(
+        default_factory=list,
         alias="TRANSLATION_DIRECTORIES",
     )
     debug: bool = Field(default=False, alias="DEBUG")

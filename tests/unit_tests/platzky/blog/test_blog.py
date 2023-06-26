@@ -56,7 +56,7 @@ def test_app():
         }
     )
     app = create_engine(config, db_mock)
-    blog_blueprint = blog.create_blog_blueprint(db_mock, config, app.babel)  # pyright: ignore
+    blog_blueprint = blog.create_blog_blueprint(db_mock, config, app.get_locale)  # pyright: ignore
 
     app.register_blueprint(blog_blueprint)
     return app.test_client()
