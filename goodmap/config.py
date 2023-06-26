@@ -57,7 +57,7 @@ class Config(StrictBaseModel):
     domain_to_lang: dict[str, str] = Field(default_factory=dict, alias="DOMAIN_TO_LANG")
     plugins: set[t.Any] = Field(default_factory=set, alias="PLUGINS")
     route_overwrites: dict[str, str] = Field(default_factory=dict, alias="ROUTE_OVERWRITES")
-    translation_directories: list = Field(
+    translation_directories: list[str] = Field(
         default_factory=list,
         alias="TRANSLATION_DIRECTORIES",
     )
