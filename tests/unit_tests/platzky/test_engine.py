@@ -18,7 +18,7 @@ def test_engine_creation():
         }
     )
     engine = create_engine_from_config(config)
-    assert type(engine) == Flask
+    assert isinstance(engine, Flask)
 
 
 def test_babel_gets_proper_directories():

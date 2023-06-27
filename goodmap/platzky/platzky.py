@@ -18,11 +18,11 @@ from .www_handler import redirect_nonwww_to_www, redirect_www_to_nonwww
 def create_app_from_config(config: Config) -> Flask:
     engine = create_engine_from_config(config)
     blog_blueprint = blog.create_blog_blueprint(
-        db=engine.db,  # pyright: ignore
+        db=engine.db,
         config=config,
-        locale_func=engine.get_locale,  # pyright: ignore
+        locale_func=engine.get_locale,
     )
-    seo_blueprint = seo.create_seo_blueprint(db=engine.db, config=engine.config)  # pyright: ignore
+    seo_blueprint = seo.create_seo_blueprint(db=engine.db, config=engine.config)
     engine.register_blueprint(blog_blueprint)
     engine.register_blueprint(seo_blueprint)
 
@@ -30,22 +30,41 @@ def create_app_from_config(config: Config) -> Flask:
     return engine
 
 
-def create_engine_from_config(config: Config) -> Flask:
-    if isinstance(config.db, JsonFileDbConfig):
-        db = json_file_db.get_db(config.db)
-    elif isinstance(config.db, GoogleJsonDbConfig):
-        db = google_json_db.get_db(config.db)
-    elif isinstance(config.db, GraphQlDbConfig):  # pyright: ignore[reportUnnecessaryIsInstance]
-        db = graph_ql_db.get_db(config.db)
-    else:
-        te.assert_never(config.db)
-    return create_engine(config, db)
+class Engine(Flask):
+    def __init__(self, config: Config, db, import_name):
+        super().__init__(import_name)
+        self.config.from_mapping(config.dict(by_alias=True))
+        self.db = db
+
+        babel_translation_directories = ";".join(config.translation_directories)
+
+        self.babel = Babel(
+            self,
+            locale_selector=self.get_locale,
+            default_translation_directories=babel_translation_directories,
+        )
+
+    def get_locale(self) -> str:
+        domain = request.headers["Host"]
+        domain_to_lang = self.config.get("DOMAIN_TO_LANG")
+
+        languages = self.config.get("LANGUAGES", {}).keys()
+        backup_lang = session.get(
+            "language",
+            request.accept_languages.best_match(languages, "en"),
+        )
+
+        if domain_to_lang:
+            lang = domain_to_lang.get(domain, backup_lang)
+        else:
+            lang = backup_lang
+
+        session["language"] = lang
+        return lang
 
 
-def create_engine(config: Config, db) -> Flask:
-    app = Flask(__name__)
-    app.config.from_mapping(config.dict(by_alias=True))
-    app.db = db  # pyright: ignore
+def create_engine(config: Config, db) -> Engine:
+    app = Engine(config, db, __name__)
 
     @app.before_request
     def handle_www_redirection():
@@ -53,16 +72,6 @@ def create_engine(config: Config, db) -> Flask:
             return redirect_nonwww_to_www()
         else:
             return redirect_www_to_nonwww()
-
-    def get_locale() -> t.Optional[str]:
-        domain = request.headers["Host"]
-        lang = config.domain_to_lang.get(domain)
-        if lang is None:
-            lang = session.get(
-                "language", request.accept_languages.best_match(config.languages.keys(), "en")
-            )
-        session["language"] = lang
-        return lang
 
     def get_langs_domain(lang: str) -> t.Optional[str]:
         lang_cfg = config.languages.get(lang)
@@ -80,30 +89,31 @@ def create_engine(config: Config, db) -> Flask:
 
     @app.context_processor
     def utils():
-        locale = get_locale()
-        flag = ""
-        if locale is not None:
-            flag = lang.flag if (lang := config.languages.get(locale)) is not None else ""
+        locale = app.get_locale()
+        flag = lang.flag if (lang := config.languages.get(locale)) is not None else ""
         return {
             "app_name": config.app_name,
             "languages": config.languages_dict,
             "current_flag": flag,
             "current_language": locale,
             "url_link": lambda x: urllib.parse.quote(x, safe=""),  # pyright: ignore
-            "menu_items": app.db.get_menu_items(),  # pyright: ignore
+            "menu_items": app.db.get_menu_items(),
         }
 
     @app.errorhandler(404)
     def page_not_found(e):
         return render_template("404.html", title="404"), 404
 
-    babel_translation_directories = ";".join(config.translation_directories)
-    app.babel = Babel(  # pyright: ignore
-        app,
-        locale_selector=get_locale,
-        default_translation_directories=babel_translation_directories,
-    )
-
-    app.get_locale = get_locale
-
     return plugify(app, config.plugins)
+
+
+def create_engine_from_config(config: Config) -> Engine:
+    if isinstance(config.db, JsonFileDbConfig):
+        db = json_file_db.get_db(config.db)
+    elif isinstance(config.db, GoogleJsonDbConfig):
+        db = google_json_db.get_db(config.db)
+    elif isinstance(config.db, GraphQlDbConfig):  # pyright: ignore[reportUnnecessaryIsInstance]
+        db = graph_ql_db.get_db(config.db)
+    else:
+        te.assert_never(config.db)
+    return create_engine(config, db)
