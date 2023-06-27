@@ -7,7 +7,7 @@ from goodmap.config import Config
 from goodmap.platzky.blog import comment_form, post_formatter
 
 
-def create_blog_blueprint(db, config: Config, babel):
+def create_blog_blueprint(db, config: Config, locale_func):
     url_prefix = config.blog_prefix
     blog = Blueprint(
         "blog",
@@ -15,9 +15,6 @@ def create_blog_blueprint(db, config: Config, babel):
         url_prefix=url_prefix,
         template_folder=f"{dirname(__file__)}/../templates",
     )
-
-    def locale():
-        return babel.locale_selector_func()
 
     @blog.app_template_filter()
     def markdown(text):
@@ -29,12 +26,12 @@ def create_blog_blueprint(db, config: Config, babel):
 
     @blog.route("/", methods=["GET"])
     def index():
-        lang = locale()
+        lang = locale_func()
         return render_template("blog.html", posts=db.get_all_posts(lang))
 
     @blog.route("/feed", methods=["GET"])
     def get_feed():
-        lang = locale()
+        lang = locale_func()
         response = make_response(render_template("feed.xml", posts=db.get_all_posts(lang)))
         response.headers["Content-Type"] = "application/xml"
         return response
@@ -78,7 +75,7 @@ def create_blog_blueprint(db, config: Config, babel):
 
     @blog.route("/tag/<path:tag>", methods=["GET"])
     def get_posts_from_tag(tag):
-        lang = locale()
+        lang = locale_func()
         posts = db.get_posts_by_tag(tag, lang)
         return render_template("blog.html", posts=posts, subtitle=f" - tag: {tag}")
 

@@ -26,7 +26,7 @@ def create_seo_blueprint(db, config: dict[str, t.Any]):
             return sitemap(domain_to_lang[request.host])
         else:
             return sitemap(
-                config.get("BABEL_TRANSLATION_DIRECTORIES")
+                config.get("TRANSLATION_DIRECTORIES")
             )  # TODO should be based on localization not on config
 
     def sitemap(lang):
