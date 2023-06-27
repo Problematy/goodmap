@@ -18,6 +18,11 @@ def test_formatting_when_missing_visible_field():
         "title": "LASSO",
         "subtitle": "container",
         "position": [51.113, 17.06],
-        "data": {"dict_data": {"a": "b"}, "types": ["shoes"], "gender": ["male", "female"], "plain_text": "text"},
+        "data": {
+            "dict_data": {"a": "b"},
+            "types": ["shoes"],
+            "gender": ["male", "female"],
+            "plain_text": "text",
+        },
     }
     assert prepare_pin(test_place, visible_fields) == expected_data
