@@ -7,15 +7,7 @@ Map engine to serve all the people ;)
 
 ## Setup
 
-### System dependencies
-To run goodmap instance you'll need to install those dependencies:
-- python 3.10
-- poetry 1.20
-
-### Project dependencies
-We use `poetry` to serve project dependencies. To install all needed python dependencies:
-* go to project directory
-* use `poetry install`
+Use python 3.10, install poetry: `pip install poetry` and then install dependencies: `poetry install`
 
 ## Running App locally
 
@@ -31,7 +23,7 @@ If you want to serve app with your configuration rename config-template.yml to c
 Values descriptions you can find inside config-template.yml.
 
 Afterwards run it with:
-> poetry run flask --app 'goodmap.goodmap' --debug run
+> poetry run flask --app 'goodmap.goodmap:create_app(config_path="/PATH/TO/YOUR/CONFIG")' --debug run
 
 ## Database
 
@@ -71,7 +63,14 @@ You can find examples of working configuration and database in `tests/e2e_tests`
 # Version History
 
 ### 0.1 - Initial Release - in development
-#### 0.1.5 - in development
+
+#### 0.1.9
+  * fix: App not displaying data if visible data is null (#53)
+
+#### 0.1.8
+  * unified frontend
+
+#### 0.1.5
   * better looking frontend
 
 #### 0.1.4 - Makeover

@@ -1,9 +1,12 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, jsonify, request
 from flask_babel import gettext
 from flask_expects_json import expects_json
+from flask_restx import Api, Resource
+
+from goodmap.config import LanguagesMapping
+
 from .core import get_queried_data
 from .formatter import prepare_pin
-from flask_restx import Resource, Api
 from .dto_schemas.report_location_schema import report_location_schema
 
 
@@ -11,9 +14,9 @@ def make_tuple_translation(keys_to_translate):
     return [(x, gettext(x)) for x in keys_to_translate]
 
 
-def core_pages(database, languages, email_service):
-    core_api_blueprint = Blueprint('api', __name__, url_prefix="/api")
-    core_api = Api(core_api_blueprint, doc='/doc', version='0.1')
+def core_pages(database, languages: LanguagesMapping, email_service):
+    core_api_blueprint = Blueprint("api", __name__, url_prefix="/api")
+    core_api = Api(core_api_blueprint, doc="/doc", version="0.1")
 
     if email_service:
         @core_api.route("/locations:report", methods=["POST"])
@@ -32,8 +35,8 @@ def core_pages(database, languages, email_service):
             categories = all_data["categories"]
             visible_data = all_data["visible_data"]
             queried_data = get_queried_data(data, categories, query_params)
-            formatted_data = map(lambda x: prepare_pin(x, visible_data), queried_data)
-            return jsonify(list(formatted_data))
+            formatted_data = [prepare_pin(x, visible_data) for x in queried_data]
+            return jsonify(formatted_data)
 
     @core_api.route("/categories")
     class Categories(Resource):
@@ -44,7 +47,6 @@ def core_pages(database, languages, email_service):
 
     @core_api.route("/languages")
     class Languages(Resource):
-        '''dupa'''
         def get(self):
             return jsonify(languages)
 

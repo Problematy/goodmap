@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="{{ language }}">
+<head>
+  {% block head_meta %}
+  {% include "head_meta.html" %}
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+        integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+        crossorigin=""/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+  {% endblock %}
+  <title>{% block title %}{% endblock %}</title>
+  <meta name="description" content=" {% block description %} {% endblock %} ">
+  <style>
+    html,
+    body {
+      height: 100%;
+    }
+    .container-fluid {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      justify-content: space-between;
+    }
+    .header-row {
+      z-index: 1;
+      background-color: lightblue;
+      height: min-content;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    #main-row {
+      flex-grow: 1;
+      z-index: 0;
+    }
+    .left-panel {
+      background-color: navy!important;
+    }
+    #filter-form {
+      color: white;
+      padding: 1rem;
+    }
+    .dropdown-menu {
+      z-index: 1;
+    }
+    .btn {
+      padding: 0;
+    }
+    i.fi {
+      margin: 0 0.5em;
+    }
+  </style>
+</head>
+<body>
+{% block body_meta %}
+{% include "body_meta.html" %}
+{% endblock %}
+<div class="container-fluid vh-100 g-0">
+  <div class="row header-row bg-light g-0">
+    <nav class="navbar navbar-expand-lg navbar-light p-3" id="mainNav">
+      {% if self.left_panel() %}
+      <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#left-panel" aria-label="Toggle left panel">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      {% endif %}
+      <a class="navbar-brand" href="/">{{ _(app_name) }}</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+              aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+          {% for menu_item in menu_items %}
+          <li class="nav-item">
+            <a class="nav-link" href={{menu_item["url"]}} >{{_(menu_item["name"])}}</a>
+          </li>
+          {% endfor %}
+        </ul>
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item dropdown">
+            <div id="language-dropdown" class="btn-group">
+              <button type="button" class="nav-link dropdown-toggle btn btn-link" id="languages-menu" role="button"
+                      data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fi fi-{{ current_flag }}"></i>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="languages-menu">
+                {% for lg,items in languages.items() %}
+                <a class="dropdown-item" href={{url_for('change_language', lang=lg, _external=True)}}>
+                  <i class="fi fi-{{ items['flag'] }} "></i>{{ items['name'] }}</a>
+                {% endfor %}
+              </ul>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </nav>
+  </div>
+  {% block header %}{% endblock %}
+
+  <div class="row g-0" id="main-row">
+    {% if self.left_panel() %}
+    <div class="col-lg-2 left-panel">
+      <div id="left-panel" class="left-panel offcanvas-lg offcanvas-start">
+        <div class="offcanvas-header">
+          <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" data-bs-target="#left-panel" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+          {% block left_panel %}{% endblock %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    <div class="h-100   {% if self.left_panel() %} col-lg-10 {% else %} col-lg-12 {% endif %}">
+      <main class="h-100">
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
