@@ -46,7 +46,7 @@ class Config(StrictBaseModel):
     blog_prefix: str = Field(default="/", alias="BLOG_PREFIX")
     languages: Languages = Field(default_factory=dict, alias="LANGUAGES")
     domain_to_lang: dict[str, str] = Field(default_factory=dict, alias="DOMAIN_TO_LANG")
-    plugins: dict[str, dict] = Field(default_factory=dict, alias="PLUGINS")
+    plugins: dict[str, dict[str, str]] = Field(default_factory=dict, alias="PLUGINS")
     route_overwrites: dict[str, str] = Field(default_factory=dict, alias="ROUTE_OVERWRITES")
     translation_directories: list[str] = Field(
         default_factory=list,

@@ -1,9 +1,10 @@
 import smtplib
-from pydantic import Field, BaseModel
+
+from pydantic import BaseModel, Field
+
 
 def send_mail(sender_email, password, smtp_server, port, receiver_email, subject, message):
     full_message = f"From: {sender_email}\nTo: {receiver_email}\nSubject: {subject}\n\n{message}"
-
     server = smtplib.SMTP_SSL(smtp_server, port)
     server.ehlo()
     server.login(sender_email, password)
@@ -20,7 +21,8 @@ def process(app, plugin_config):
             port=plugin_config["PORT"],
             receiver_email=plugin_config["RECEIVER"],
             subject=plugin_config["SUBJECT"],
-            message=message)
+            message=message,
+        )
     app.add_notifier(notify)
     return app
 

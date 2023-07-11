@@ -1,15 +1,13 @@
-from flask import Blueprint, jsonify, request, make_response
+from flask import Blueprint, jsonify, make_response, request
 from flask_babel import gettext
-from flask_restx import Api, Resource, marshal_with
+from flask_restx import Api, Resource
+from pydantic.tools import parse_obj_as
 
 from goodmap.config import LanguagesMapping
 
 from .core import get_queried_data
-from .formatter import prepare_pin
-
 from .data_models.location import Location
-
-from pydantic.tools import parse_obj_as
+from .formatter import prepare_pin
 
 
 def make_tuple_translation(keys_to_translate):

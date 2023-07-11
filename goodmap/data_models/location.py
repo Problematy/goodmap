@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+
 class Coordinates(BaseModel):
     x: float
     y: float
@@ -7,4 +8,3 @@ class Coordinates(BaseModel):
 class Location(BaseModel):
     name: str
     coordinates: Coordinates
-    properties: dict

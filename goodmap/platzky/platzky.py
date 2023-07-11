@@ -46,7 +46,8 @@ class Engine(Flask):
         )
 
     def notify(self, message: str):
-        map(lambda x: x(message), self.notifiers)
+        for notifier in self.notifiers:
+            notifier(message)
 
     def add_notifier(self, notifier):
         self.notifiers.append(notifier)
