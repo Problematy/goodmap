@@ -33,15 +33,12 @@ DB:
 ROUTE_OVERWRITES:
   /static/map.js: https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.1.7
 
-SMTP:
-  PORT: 465
-  SERVER: "smtp.gmail.com"
-  ADDRESS: "my@gmail.com"
-  PASSWORD: "PA$$WORD"
-  DEFAULT_SENDER: "sender@gmail.com"
-  ADMIN_EMAIL: "help.desk@gmail.com"
-
-USE_WWW: false
 
 PLUGINS:
-  - sendmail
+  sendmail:
+    PORT: 465
+    SERVER: "smtp.example.com"
+    RECEIVER: "receiver@example.com"
+    USER: "sender@example.pl"
+    PASSWORD: "PA$$WORD"
+    SUBJECT: "My awesome goodmap application"
