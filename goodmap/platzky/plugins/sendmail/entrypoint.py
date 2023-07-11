@@ -23,6 +23,7 @@ def process(app, plugin_config):
             subject=plugin_config["SUBJECT"],
             message=message,
         )
+
     app.add_notifier(notify)
     return app
 
