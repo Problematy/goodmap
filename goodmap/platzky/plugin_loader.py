@@ -41,6 +41,6 @@ def find_plugins(enabled_plugins):
 
 
 def plugify(app, plugins):
-    for plugin in find_plugins(plugins):
-        plugin.process(app)
+    for plugin in find_plugins(plugins.keys()):
+        plugin.process(app, plugins[plugin.__name__])
     return app

@@ -18,6 +18,11 @@ LANGUAGES:
 ROUTE_OVERWRITES:
   /static/map.js: https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.1.7
 
+
+PLUGINS:
+  - redirections
+  - sendmail
+
 SMTP:
   PORT: 465
   SERVER: "smtp.gmail.com"

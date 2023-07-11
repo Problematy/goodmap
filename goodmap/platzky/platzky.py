@@ -35,6 +35,7 @@ class Engine(Flask):
         super().__init__(import_name)
         self.config.from_mapping(config.dict(by_alias=True))
         self.db = db
+        self.notifiers = []
 
         babel_translation_directories = ";".join(config.translation_directories)
 
@@ -43,6 +44,12 @@ class Engine(Flask):
             locale_selector=self.get_locale,
             default_translation_directories=babel_translation_directories,
         )
+
+    def notify(self, message: str):
+        map(lambda x: x(message), self.notifiers)
+
+    def add_notifier(self, notifier):
+        self.notifiers.append(notifier)
 
     def get_locale(self) -> str:
         domain = request.headers["Host"]

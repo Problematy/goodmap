@@ -1,6 +1,5 @@
 import smtplib
-from functools import partial
-
+from pydantic import Field, BaseModel
 
 def send_mail(sender_email, password, smtp_server, port, receiver_email, subject, message):
     full_message = f"From: {sender_email}\nTo: {receiver_email}\nSubject: {subject}\n\n{message}"
@@ -12,13 +11,22 @@ def send_mail(sender_email, password, smtp_server, port, receiver_email, subject
     server.close()
 
 
-def process(app):
-    smtp_setup = app.config["SMTP"]
-    app.sendmail = partial(
-        send_mail,
-        smtp_setup["ADDRESS"],
-        smtp_setup["PASSWORD"],
-        smtp_setup["SERVER"],
-        smtp_setup["PORT"],
-    )
+def process(app, plugin_config):
+    def notify(message):
+        send_mail(
+            sender_email=plugin_config["USER"],
+            password=plugin_config["PASSWORD"],
+            smtp_server=plugin_config["SERVER"],
+            port=plugin_config["PORT"],
+            receiver_email=plugin_config["RECEIVER"],
+            subject=plugin_config["SUBJECT"],
+            message=message)
+    app.add_notifier(notify)
     return app
+
+
+class SendMailPlugin(BaseModel):
+    port: str = Field(alias="PORT")
+    server: str = Field(alias="SERVER")
+    user: str = Field(alias="USER")
+    password: str = Field(alias="PASSWORD")

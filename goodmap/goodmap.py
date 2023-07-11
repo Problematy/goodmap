@@ -3,7 +3,6 @@ import types
 
 from flask import Blueprint, Flask, redirect, render_template
 
-from goodmap.services.email_service.email_service import EmailService
 from goodmap.config import Config
 from goodmap.platzky import platzky
 from goodmap.platzky.db.google_json_db import GoogleJsonDb
@@ -16,12 +15,14 @@ def create_app(config_path: str) -> Flask:
     config = Config.parse_yaml(config_path)
 
     app = platzky.create_app_from_config(config)
-    app.email_service = EmailService(app.config["SMTP"], app.sendmail) if 'sendmail' in app.config["PLUGINS"] else None
 
     mapping = {GoogleJsonDb: google_json_get_data, JsonFile: local_json_get_data}
+
     app.db.get_data = types.MethodType(mapping[type(app.db)], app.db)  # pyright: ignore
 
-    app.register_blueprint(core_pages(app.db, config.languages_dict))  # pyright: ignore
+    cp = core_pages(app.db, config.languages_dict, app.notify)  # pyright: ignore
+
+    app.register_blueprint(cp)
 
     goodmap = Blueprint("goodmap", __name__, url_prefix="/", template_folder="templates")
 
