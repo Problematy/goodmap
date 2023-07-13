@@ -6,8 +6,8 @@ from flask import Flask, redirect, render_template, request, session
 from flask_babel import Babel
 from flask_minify import Minify
 
-from goodmap.config import Config, GoogleJsonDbConfig, GraphQlDbConfig, JsonFileDbConfig
-from goodmap.platzky.db import google_json_db, graph_ql_db, json_file_db
+from goodmap.config import Config, GoogleJsonDbConfig, GraphQlDbConfig, JsonFileDbConfig, JsonDbConfig
+from goodmap.platzky.db import google_json_db, graph_ql_db, json_file_db, json_db
 
 from .blog import blog
 from .plugin_loader import plugify
@@ -116,12 +116,20 @@ def create_engine(config: Config, db) -> Engine:
 
 
 def create_engine_from_config(config: Config) -> Engine:
-    if isinstance(config.db, JsonFileDbConfig):
-        db = json_file_db.get_db(config.db)
-    elif isinstance(config.db, GoogleJsonDbConfig):
-        db = google_json_db.get_db(config.db)
-    elif isinstance(config.db, GraphQlDbConfig):  # pyright: ignore[reportUnnecessaryIsInstance]
-        db = graph_ql_db.get_db(config.db)
-    else:
-        te.assert_never(config.db)
+    db = get_db_from_config(config.db)
+    """Create an engine from a config."""
     return create_engine(config, db)
+
+def get_db_from_config(db_config):
+    """Creates db provider dynamically based on config."""
+    #TODO this should be dynamic and not be limited to specified providers.
+    if isinstance(db_config, JsonDbConfig):
+        return json_db.get_db(db_config)
+    if isinstance(db_config, JsonFileDbConfig):
+        return json_file_db.get_db(db_config)
+    elif isinstance(db_config, GoogleJsonDbConfig):
+        return google_json_db.get_db(db_config)
+    elif isinstance(db_config, GraphQlDbConfig):  # pyright: ignore[reportUnnecessaryIsInstance]
+        return graph_ql_db.get_db(db_config)
+    else:
+        te.assert_never(db_config)

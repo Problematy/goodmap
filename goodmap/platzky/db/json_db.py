@@ -1,7 +1,10 @@
 import datetime
 
 from goodmap.platzky.blog.db import DB
+from goodmap.config import JsonDbConfig
 
+def get_db(config: JsonDbConfig):
+    return Json(config.data)
 
 class Json(DB):
     def __init__(self, data_dict):
