@@ -9,9 +9,11 @@ class StrictBaseModel(BaseModel):
         extra = Extra.forbid
         allow_mutation = False
 
+
 class JsonDbConfig(StrictBaseModel):
     type_: t.Literal["json"] = Field(alias="TYPE")
-    data: dict = Field(alias="DATA")
+    data: dict = Field(alias="DATA")  # type: ignore
+
 
 class JsonFileDbConfig(StrictBaseModel):
     type_: t.Literal["json_file"] = Field(alias="TYPE")
@@ -40,10 +42,16 @@ Languages = dict[str, LanguageConfig]
 LanguagesMapping = t.Mapping[str, t.Mapping[str, str]]
 
 
+def languages_dict(languages: Languages) -> LanguagesMapping:
+    return {name: lang.dict() for name, lang in languages.items()}
+
+
 class Config(StrictBaseModel):
     app_name: str = Field(alias="APP_NAME")
     secret_key: str = Field(alias="SECRET_KEY")
-    db: t.Union[JsonDbConfig, JsonFileDbConfig, GoogleJsonDbConfig, GraphQlDbConfig] = Field(alias="DB")
+    db: t.Union[JsonDbConfig, JsonFileDbConfig, GoogleJsonDbConfig, GraphQlDbConfig] = Field(
+        alias="DB"
+    )
     use_www: bool = Field(default=True, alias="USE_WWW")
     seo_prefix: str = Field(default="/", alias="SEO_PREFIX")
     blog_prefix: str = Field(default="/", alias="BLOG_PREFIX")
@@ -63,7 +71,3 @@ class Config(StrictBaseModel):
         with open(path) as f:
             cfg = yaml.safe_load(f)
         return cls.parse_obj(cfg)
-
-    @property
-    def languages_dict(self) -> LanguagesMapping:
-        return {name: lang.dict() for name, lang in self.languages.items()}

@@ -3,11 +3,11 @@ import types
 
 from flask import Blueprint, Flask, redirect, render_template
 
-from goodmap.config import Config
+from goodmap.config import Config, languages_dict
 from goodmap.platzky import platzky
 from goodmap.platzky.db.google_json_db import GoogleJsonDb
-from goodmap.platzky.db.json_file_db import JsonFile
 from goodmap.platzky.db.json_db import Json
+from goodmap.platzky.db.json_file_db import JsonFile
 
 from .core_api import core_pages
 
@@ -16,11 +16,16 @@ def create_app(config_path: str) -> Flask:
     config = Config.parse_yaml(config_path)
     return create_app_from_config(config)
 
+
 def create_app_from_config(config: Config) -> Flask:
     app = platzky.create_app_from_config(config)
-    mapping = {GoogleJsonDb: google_json_get_data, JsonFile: local_json_get_data, Json: json_get_data}
+    mapping = {
+        GoogleJsonDb: google_json_get_data,
+        JsonFile: local_json_get_data,
+        Json: json_get_data,
+    }
     app.db.get_data = types.MethodType(mapping[type(app.db)], app.db)  # pyright: ignore
-    cp = core_pages(app.db, config.languages_dict, app.notify)  # pyright: ignore
+    cp = core_pages(app.db, languages_dict(config.languages), app.notify)  # pyright: ignore
     app.register_blueprint(cp)
     goodmap = Blueprint("goodmap", __name__, url_prefix="/", template_folder="templates")
     for source, destination in config.route_overwrites.items():

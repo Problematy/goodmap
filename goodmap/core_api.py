@@ -24,7 +24,8 @@ def core_pages(database, languages: LanguagesMapping, notifier_function) -> Blue
             """Report location"""
             location_json = request.get_json()
             location = parse_obj_as(Location, location_json)
-            message = f"A location has been reported: '{location.name}' at coordinates {location.coordinates}"
+            message = f"A location has been reported: '{location.name}' \
+                at coordinates {location.coordinates}"
             try:
                 notifier_function(message)
             except Exception as e:
