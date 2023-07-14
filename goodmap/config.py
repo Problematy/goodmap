@@ -35,7 +35,7 @@ class GraphQlDbConfig(StrictBaseModel):
 class LanguageConfig(StrictBaseModel):
     name: str = Field(alias="name")
     flag: str = Field(alias="flag")
-    domain: t.Optional[str] = Field(default=None, alias="domain")
+    domain: t.Optional[str] = Field(alias="domain")
 
 
 Languages = dict[str, LanguageConfig]
