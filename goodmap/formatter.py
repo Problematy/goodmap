@@ -13,7 +13,7 @@ def safe_gettext(text):
 def prepare_pin(place, visible_fields):
     pin_data = {
         "title": place["name"],
-        "subtitle": lazy_gettext(place["type_of_place"]),
+        "subtitle": lazy_gettext(place["type_of_place"]),  #TODO this should not be obligatory
         "position": place["position"],
         "data": {
             gettext(field): safe_gettext(place[field]) for field in visible_fields if field in place

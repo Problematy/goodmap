@@ -13,3 +13,6 @@ lint-check:
 unit-test:
 	poetry run coverage run --source=goodmap -m pytest
 	poetry run coverage lcov
+
+html-cov: unit-test
+	poetry run coverage html
