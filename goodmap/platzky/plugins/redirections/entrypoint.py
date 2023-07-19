@@ -1,11 +1,12 @@
 from functools import partial
-from goodmap.platzky.db.json_db import Json
-from goodmap.platzky.db.json_file_db import JsonFile
-from goodmap.platzky.db.graph_ql_db import GraphQL
-from goodmap.platzky.db.google_json_db import GoogleJsonDb
 
 from flask import redirect
 from gql import gql
+
+from goodmap.platzky.db.google_json_db import GoogleJsonDb
+from goodmap.platzky.db.graph_ql_db import GraphQL
+from goodmap.platzky.db.json_db import Json
+from goodmap.platzky.db.json_file_db import JsonFile
 
 
 def json_get_redirections(self):

@@ -25,8 +25,10 @@ def core_pages(database, languages: LanguagesMapping, notifier_function) -> Blue
             try:
                 location_json = request.get_json()
                 location = parse_obj_as(Location, location_json)
-                message = f"A location has been reported: '{location.name}' " \
-                          f"at coordinates {location.coordinates}"
+                message = (
+                    f"A location has been reported: '{location.name}' "
+                    f"at coordinates {location.coordinates}"
+                )
                 notifier_function(message)
             except Exception as e:
                 return make_response(jsonify({"message": f"Error sending email: {e}"}), 400)
