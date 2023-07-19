@@ -1,4 +1,8 @@
 from functools import partial
+from goodmap.platzky.db.json_db import Json
+from goodmap.platzky.db.json_file_db import JsonFile
+from goodmap.platzky.db.graph_ql_db import GraphQL
+from goodmap.platzky.db.google_json_db import GoogleJsonDb
 
 from flask import redirect
 from gql import gql
@@ -30,15 +34,16 @@ def graphql_get_redirections(self):
 
 def get_proper_redirections(db_type):
     redirections = {
-        "json_file": json_get_redirections,
-        "graph_ql": graphql_get_redirections,
-        "google_json": google_get_redirections,
+        Json: json_get_redirections,
+        JsonFile: json_get_redirections,
+        GraphQL: graphql_get_redirections,
+        GoogleJsonDb: google_get_redirections,
     }
     return redirections[db_type]
 
 
-def process(app):
-    app.db.get_redirections = get_proper_redirections(app.config["DB"]["TYPE"])
+def process(app, config):
+    app.db.get_redirections = get_proper_redirections(app.db.__class__)
     redirects = app.db.get_redirections(app.db)
     for source, destiny in redirects.items():
         func = partial(redirect, destiny, code=301)
