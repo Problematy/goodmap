@@ -11,5 +11,8 @@ lint-check:
 	poetry run pyright .
 
 unit-test:
-	poetry run coverage run -m pytest
+	poetry run coverage run --source=goodmap -m pytest
 	poetry run coverage lcov
+
+html-cov: unit-test
+	poetry run coverage html
