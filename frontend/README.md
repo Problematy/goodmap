@@ -17,9 +17,10 @@ If you want to use compiled version you can use cdn here:
 
 # Development
 
-To build static version you can:
+To build and run static version follow these steps:
 
-- `npm run build` - which builds production ready version
-- `npm run dev-build` - which is useful in debugging
-
-To run development server version use `npm run serve`
+1. `npm install` -- install all the dependencies in your project,
+2. building:
+   - `npm run build` -- which builds production ready version,
+   - `npm run dev-build` -- which is useful in debugging,
+3. `npm run serve` -- run development server version.
