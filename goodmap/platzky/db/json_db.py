@@ -35,6 +35,9 @@ class Json(DB):
     def get_all_questions(self):
         return self.data["questions"]
 
+    def get_logo_url(self):
+        return self.data.get("logo_url", "")
+
     def add_comment(self, author_name, comment, post_slug):
         comment = {
             "author": str(author_name),

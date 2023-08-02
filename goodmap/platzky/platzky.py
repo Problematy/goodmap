@@ -102,6 +102,10 @@ def create_engine(config: Config, db) -> Engine:
             session["language"] = lang
             return redirect(request.referrer)
 
+    @app.route("/logo", methods=["GET"])
+    def logo():
+        return redirect("https://www.problematy.pl/wp-content/uploads/2023/08/kolor_poziom.png")
+
     @app.context_processor
     def utils():
         locale = app.get_locale()
@@ -113,6 +117,7 @@ def create_engine(config: Config, db) -> Engine:
             "current_language": locale,
             "url_link": lambda x: urllib.parse.quote(x, safe=""),  # pyright: ignore
             "menu_items": app.db.get_menu_items(),
+            "logo_url": app.db.get_logo_url(),
         }
 
     @app.errorhandler(404)
