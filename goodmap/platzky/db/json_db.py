@@ -38,6 +38,9 @@ class Json(DB):
     def get_logo_url(self):
         return self.data.get("logo_url", "")
 
+    def get_font(self):
+        return self.data.get("font", "")
+
     def add_comment(self, author_name, comment, post_slug):
         comment = {
             "author": str(author_name),
