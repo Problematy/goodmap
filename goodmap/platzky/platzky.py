@@ -118,6 +118,7 @@ def create_engine(config: Config, db) -> Engine:
             "url_link": lambda x: urllib.parse.quote(x, safe=""),  # pyright: ignore
             "menu_items": app.db.get_menu_items(),
             "logo_url": app.db.get_logo_url(),
+            "font": app.db.get_font(),
         }
 
     @app.errorhandler(404)

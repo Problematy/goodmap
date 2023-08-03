@@ -9,6 +9,7 @@
         crossorigin=""/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+  <link rel="stylesheet" href="{{ font.url }}">
   {% endblock %}
   <title>{% block title %}{% endblock %}</title>
   <meta name="description" content=" {% block description %} {% endblock %} ">
@@ -16,6 +17,10 @@
     html,
     body {
       height: 100%;
+
+    }
+    body {
+    font-family: {{ font.name }}
     }
     .logo {
       max-height: 6rem;
