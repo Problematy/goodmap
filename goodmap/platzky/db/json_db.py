@@ -20,7 +20,10 @@ class Json(DB):
 
     # TODO: add test for non-existing page
     def get_page(self, slug):
-        return next((page for page in self.data.get("site_content").get("pages") if page["slug"] == slug), None)
+        return next(
+            (page for page in self.data.get("site_content").get("pages") if page["slug"] == slug),
+            None,
+        )
 
     def get_menu_items(self):
         post = self.data.get("site_content").get("menu_items", [])
