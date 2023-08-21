@@ -20,10 +20,13 @@ class Json(DB):
 
     # TODO: add test for non-existing page
     def get_page(self, slug):
-        return next((page for page in self.data.get("pages") if page["slug"] == slug), None)
+        return next(
+            (page for page in self.data.get("site_content").get("pages") if page["slug"] == slug),
+            None,
+        )
 
     def get_menu_items(self):
-        post = self.data.get("menu_items", [])
+        post = self.data.get("site_content").get("menu_items", [])
         return post
 
     def get_posts_by_tag(self, tag, lang):
@@ -36,10 +39,16 @@ class Json(DB):
         return self.data["questions"]
 
     def get_logo_url(self):
-        return self.data.get("logo_url", "")
+        return self.data.get("site_content").get("logo_url", "")
 
     def get_font(self):
-        return self.data.get("font", "")
+        return self.data.get("site_content").get("font", "")
+
+    def get_primary_color(self):
+        return self.data.get("site_content").get("primary_color", "white")
+
+    def get_secondary_color(self):
+        return self.data.get("site_content").get("secondary_color", "navy")
 
     def add_comment(self, author_name, comment, post_slug):
         comment = {

@@ -27,7 +27,7 @@
     }
     .header-row {
       z-index: 1;
-      background-color: lightblue;
+      background-color: {{ primary_color }};
       height: min-content;
       display: flex;
       justify-content: center;
@@ -38,12 +38,23 @@
       z-index: 0;
     }
     .left-panel {
-      background-color: navy!important;
+      background-color: {{ secondary_color }};
     }
     #filter-form {
       color: white;
       padding: 1rem;
     }
+
+
+    #filter-form form > div {
+      padding-bottom: 1rem;
+    }
+
+    #filter-form form div > span {
+      font-weight: bold;
+      padding-bottom: 0.5rem;
+    }
+
     .dropdown-menu {
       z-index: 1;
     }

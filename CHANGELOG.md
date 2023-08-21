@@ -1,6 +1,12 @@
 # Changelog
 
-### 0.1 - Initial Release - in development
+### 0.2 - In development
+
+#### 0.2.0
+  * Changed database schema
+  * feature: added customizable formatting of site
+
+### 0.1 - Initial Release
 
 #### 0.1.12
   * feature: added displaying logo
