@@ -41,26 +41,31 @@
             "accessible_by"
         ]
     },
-    "pages": [
-        {
-            "title": "About",
-            "slug": "about",
-            "contentInMarkdown": "about"
-        }
-    ],
-    "menu_items": [
-        {
-            "name": "Map",
-            "url": "/"
+    "site_content": {
+        "pages": [
+            {
+                "title": "About",
+                "slug": "about",
+                "contentInMarkdown": "about"
+            }
+        ],
+        "menu_items": [
+            {
+                "name": "Map",
+                "url": "/"
+            },
+            {
+                "name": "about",
+                "url": "/blog/page/about"
+            }
+        ],
+        "logo_url": "https://www.problematy.pl/wp-content/uploads/2022/08/rect3716.png",
+        "font": {
+            "name": "Poppins",
+            "url": "https://fonts.googleapis.com/css2?family=Poppins"
         },
-        {
-            "name": "about",
-            "url": "/blog/page/about"
-        }
-    ],
-    "logo_url": "https://www.problematy.pl/wp-content/uploads/2022/08/rect3716.png",
-    "font": {
-        "name": "Poppins",
-        "url": "https://fonts.googleapis.com/css2?family=Poppins"
+        "primary_color": "#000000",
+        "secondary_color": "#245466",
+        "left_bar_width": "300px"
     }
 }
