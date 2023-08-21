@@ -40,7 +40,9 @@ def find_plugins(enabled_plugins):
     return plugins
 
 
-def plugify(app, plugins):
-    for plugin in find_plugins(plugins):
-        plugin.process(app)
+def plugify(app, plugins_configs):
+    plugins_names = plugins_configs.keys()
+    plugins = find_plugins(plugins_names)
+    for plugin in plugins:
+        plugin.process(app, plugins_configs[plugin.__name__])
     return app

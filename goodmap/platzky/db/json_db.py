@@ -1,6 +1,11 @@
 import datetime
 
+from goodmap.config import JsonDbConfig
 from goodmap.platzky.blog.db import DB
+
+
+def get_db(config: JsonDbConfig):
+    return Json(config.data)
 
 
 class Json(DB):
@@ -29,6 +34,12 @@ class Json(DB):
 
     def get_all_questions(self):
         return self.data["questions"]
+
+    def get_logo_url(self):
+        return self.data.get("logo_url", "")
+
+    def get_font(self):
+        return self.data.get("font", "")
 
     def add_comment(self, author_name, comment, post_slug):
         comment = {
