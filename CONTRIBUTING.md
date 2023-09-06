@@ -18,7 +18,7 @@ Best way to make sure your code will make to next release? Check if issue has mi
 
 ### Rule 3: Test your changes
 
-There is nothing to say here. We write unit tests for our code, so make sure that your code is tested.
+We write unit tests for our code, so make sure that your code is tested.
 
 ### Rule 4: Don't break it
 
