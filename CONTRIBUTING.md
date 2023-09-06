@@ -5,7 +5,7 @@
 ### Rule 1: Take it from issues
 
 We keep our issues on github fresh and clean. We put there feature requests, bugs, etc.
-If you want to help our project - do it!
+If you want to help in developing our project - do it!
 
 There are plenty of issues reported on github. Find one that suits you and make you change! Just rembember that...
 
