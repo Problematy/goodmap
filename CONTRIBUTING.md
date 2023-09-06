@@ -24,7 +24,7 @@ There is nothing to say here. We write unit tests for our code, so make sure tha
 
 If your PR is not passing our tests then it won't be allowed to get to our precious code.
 
-**BIG BUT:** it might happen that there is not yet test which can check your code properly.
+**BIG BUT:** it might happen that a test which could check your code properly hasn't existed yet.
 In this case best way of ensuring your code will be merged is to create such test.
 
 ## Exceptions
