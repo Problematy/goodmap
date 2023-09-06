@@ -2,7 +2,6 @@
 
 ## Rules
 
-### Rule 1: Take it from issues
 
 We keep our issues on github fresh and clean. We put there feature requests, bugs, etc.
 If you want to help in developing our project - do it!
