@@ -119,6 +119,8 @@ def create_engine(config: Config, db) -> Engine:
             "menu_items": app.db.get_menu_items(),
             "logo_url": app.db.get_logo_url(),
             "font": app.db.get_font(),
+            "primary_color": app.db.get_primary_color(),
+            "secondary_color": app.db.get_secondary_color(),
         }
 
     @app.errorhandler(404)
