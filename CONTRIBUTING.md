@@ -22,10 +22,7 @@ We write unit tests for our code, so make sure that your code is tested.
 
 ### Rule 4: Don't break it
 
-If your PR is not passing our tests then it won't be allowed to get to our precious code.
-
-**BIG BUT:** it might happen that a test which could check your code properly hasn't existed yet.
-In this case best way of ensuring your code will be merged is to create such test.
+If your PR is not passing our tests then it won't be allowed to get to our precious code. No one will even review it.
 
 ## Exceptions
 
