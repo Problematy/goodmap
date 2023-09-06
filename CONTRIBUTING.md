@@ -7,7 +7,9 @@ We keep our issues on github fresh and clean. We put there feature requests, bug
 If you want to help in developing our project - do it!
 
 There are plenty of issues reported on github. Find one that suits you and make your change! Just rembember that...
+### Rule 1: Assigne yourslef to an issue
 
+Choose an issue you want to work on and assign yourself to it. Thanks to this, other contributors will know that someone is already working on it. Remember to assign yourself only when you truly have time dedicated to resolve the issue. If we don't see any PRs from you for an extended period of time, you'll likely be unassigned from the issue. Of course, feel free to reassign yourself to the same issue as soon as you find more time. 
 ### Rule 2: Priorities matter
 
 Our backlog is diverse. It has both cosmetic and functional changes. We try to prioritise them.
