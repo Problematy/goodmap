@@ -7,7 +7,7 @@
 We keep our issues on github fresh and clean. We put there feature requests, bugs, etc.
 If you want to help in developing our project - do it!
 
-There are plenty of issues reported on github. Find one that suits you and make you change! Just rembember that...
+There are plenty of issues reported on github. Find one that suits you and make your change! Just rembember that...
 
 ### Rule 2: Priorities matter
 
