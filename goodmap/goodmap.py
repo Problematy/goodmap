@@ -1,5 +1,4 @@
 import json
-import types
 
 from flask import Blueprint, Flask, redirect, render_template
 
@@ -16,15 +15,21 @@ def create_app(config_path: str) -> Flask:
     config = Config.parse_yaml(config_path)
     return create_app_from_config(config)
 
+#TODO this should be dynamic, based on config, not hardcoded
+def get_db_specific_get_data(db_type):
+    mapping = {
+        "GoogleJsonDb": google_json_get_data,
+        "JsonFile": local_json_get_data,
+        "Json": json_get_data,
+    }
+    classname = db_type
+    return mapping[classname]
 
 def create_app_from_config(config: Config) -> Flask:
     app = platzky.create_app_from_config(config)
-    mapping = {
-        GoogleJsonDb: google_json_get_data,
-        JsonFile: local_json_get_data,
-        Json: json_get_data,
-    }
-    app.db.get_data = types.MethodType(mapping[type(app.db)], app.db)  # pyright: ignore
+    specific_get_data = get_db_specific_get_data(type(app.db).__name__)
+    app.db.get_data = lambda : specific_get_data(app.db)
+
     cp = core_pages(app.db, languages_dict(config.languages), app.notify)  # pyright: ignore
     app.register_blueprint(cp)
     goodmap = Blueprint("goodmap", __name__, url_prefix="/", template_folder="templates")

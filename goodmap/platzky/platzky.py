@@ -1,23 +1,18 @@
 import typing as t
 import urllib.parse
 
-import typing_extensions as te
 from flask import Flask, redirect, render_template, request, session
 from flask_babel import Babel
 from flask_minify import Minify
 
 from goodmap.config import (
     Config,
-    GoogleJsonDbConfig,
-    GraphQlDbConfig,
-    JsonDbConfig,
-    JsonFileDbConfig,
     languages_dict,
 )
-from goodmap.platzky.db import google_json_db, graph_ql_db, json_db, json_file_db
 
 from .blog import blog
 from .plugin_loader import plugify
+from .db.db_loader import get_db
 from .seo import seo
 from .www_handler import redirect_nonwww_to_www, redirect_www_to_nonwww
 
@@ -137,15 +132,4 @@ def create_engine_from_config(config: Config) -> Engine:
 
 
 def get_db_from_config(db_config):
-    """Creates db provider dynamically based on config."""
-    # TODO this should be dynamic and not be limited to specified providers.
-    if isinstance(db_config, JsonDbConfig):
-        return json_db.get_db(db_config)
-    if isinstance(db_config, JsonFileDbConfig):
-        return json_file_db.get_db(db_config)
-    elif isinstance(db_config, GoogleJsonDbConfig):
-        return google_json_db.get_db(db_config)
-    elif isinstance(db_config, GraphQlDbConfig):
-        return graph_ql_db.get_db(db_config)
-    else:
-        te.assert_never(db_config)
+    return get_db(db_config)
