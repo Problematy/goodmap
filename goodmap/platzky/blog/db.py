@@ -1,4 +1,5 @@
 from typing import Any
+from pydantic import BaseModel, Field, Extra
 
 
 class DB:
@@ -19,3 +20,7 @@ class DB:
 
     def add_comment(self, author_name, comment, post_slug):
         pass
+
+
+class DBConfig(BaseModel, extra=Extra.forbid, allow_mutation=False):
+    type_: str = Field(alias="TYPE")

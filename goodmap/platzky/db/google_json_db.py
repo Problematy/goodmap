@@ -1,11 +1,14 @@
 import json
 
 from google.cloud.storage import Client
-
-from goodmap.config import GoogleJsonDbConfig
+from pydantic import Field, BaseModel
+import typing as t
 
 from .json_db import Json
 
+class GoogleJsonDbConfig(BaseModel):
+    bucket_name: str = Field(alias="BUCKET_NAME")
+    source_blob_name: str = Field(alias="SOURCE_BLOB_NAME")
 
 def get_db(config: GoogleJsonDbConfig):
     return GoogleJsonDb(config.bucket_name, config.source_blob_name)
