@@ -11,8 +11,8 @@ from goodmap.config import (
 )
 
 from .blog import blog
-from .plugin_loader import plugify
 from .db.db_loader import get_db
+from .plugin_loader import plugify
 from .seo import seo
 from .www_handler import redirect_nonwww_to_www, redirect_www_to_nonwww
 

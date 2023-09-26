@@ -4,14 +4,15 @@ import json
 
 from gql import Client, gql
 from gql.transport.aiohttp import AIOHTTPTransport
-
 from pydantic import Field
 
 from goodmap.platzky.blog.db import DB, DBConfig
 
+
 class GraphQlDbConfig(DBConfig):
     endpoint: str = Field(alias="CMS_ENDPOINT")
     token: str = Field(alias="CMS_TOKEN")
+
 
 def get_db(config: GraphQlDbConfig):
     return GraphQL(config.endpoint, config.token)

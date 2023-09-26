@@ -3,13 +3,12 @@ import os
 import sys
 from os.path import abspath, dirname
 
+
 def get_db(db_config):
     db_dir = dirname(abspath(__file__))
     db_name = db_config["TYPE"]
 
-    spec = importlib.util.spec_from_file_location(
-        db_name, os.path.join(db_dir, f"{db_name}_db.py")
-    )
+    spec = importlib.util.spec_from_file_location(db_name, os.path.join(db_dir, f"{db_name}_db.py"))
 
     assert spec is not None
     db = importlib.util.module_from_spec(spec)

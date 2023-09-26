@@ -15,7 +15,7 @@ def create_app(config_path: str) -> Flask:
 def create_app_from_config(config: Config) -> Flask:
     app = platzky.create_app_from_config(config)
     specific_get_data = get_db_specific_get_data(type(app.db).__name__)
-    app.db.get_data = lambda : specific_get_data(app.db)
+    app.db.get_data = lambda: specific_get_data(app.db)
 
     cp = core_pages(app.db, languages_dict(config.languages), app.notify)  # pyright: ignore
     app.register_blueprint(cp)

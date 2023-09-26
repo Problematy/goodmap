@@ -2,12 +2,14 @@ import json
 import os.path
 
 from pydantic import Field
-from goodmap.platzky.db.json_db import Json
+
 from goodmap.platzky.blog.db import DBConfig
+from goodmap.platzky.db.json_db import Json
 
 
 class JsonFileDbConfig(DBConfig):
     path: str = Field(alias="PATH")
+
 
 def get_db(config):
     json_file_db_config = JsonFileDbConfig.parse_obj(config)

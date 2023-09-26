@@ -1,5 +1,6 @@
 from typing import Any
-from pydantic import BaseModel, Field, Extra
+
+from pydantic import BaseModel, Extra, Field
 
 
 class DB:

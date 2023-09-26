@@ -9,6 +9,7 @@ class StrictBaseModel(BaseModel):
         extra = Extra.forbid
         allow_mutation = False
 
+
 class LanguageConfig(StrictBaseModel):
     name: str = Field(alias="name")
     flag: str = Field(alias="flag")
