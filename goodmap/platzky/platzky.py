@@ -126,10 +126,6 @@ def create_app_from_config(config: Config) -> Engine:
 
 
 def create_engine_from_config(config: Config) -> Engine:
-    db = get_db_from_config(config.db)
     """Create an engine from a config."""
+    db = get_db(config.db)
     return create_engine(config, db)
-
-
-def get_db_from_config(db_config):
-    return get_db(db_config)
