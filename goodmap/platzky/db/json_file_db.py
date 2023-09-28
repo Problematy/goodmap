@@ -1,12 +1,19 @@
 import json
 import os.path
 
-from goodmap.config import JsonFileDbConfig
+from pydantic import Field
+
+from goodmap.platzky.blog.db import DBConfig
 from goodmap.platzky.db.json_db import Json
 
 
-def get_db(config: JsonFileDbConfig):
-    db_path = os.path.abspath(config.path)
+class JsonFileDbConfig(DBConfig):
+    path: str = Field(alias="PATH")
+
+
+def get_db(config):
+    json_file_db_config = JsonFileDbConfig.parse_obj(config)
+    db_path = os.path.abspath(json_file_db_config.path)
     return JsonFile(db_path)
 
 

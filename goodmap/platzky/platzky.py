@@ -1,40 +1,20 @@
 import typing as t
 import urllib.parse
 
-import typing_extensions as te
 from flask import Flask, redirect, render_template, request, session
 from flask_babel import Babel
 from flask_minify import Minify
 
 from goodmap.config import (
     Config,
-    GoogleJsonDbConfig,
-    GraphQlDbConfig,
-    JsonDbConfig,
-    JsonFileDbConfig,
     languages_dict,
 )
-from goodmap.platzky.db import google_json_db, graph_ql_db, json_db, json_file_db
 
 from .blog import blog
+from .db.db_loader import get_db
 from .plugin_loader import plugify
 from .seo import seo
 from .www_handler import redirect_nonwww_to_www, redirect_www_to_nonwww
-
-
-def create_app_from_config(config: Config) -> Flask:
-    engine = create_engine_from_config(config)
-    blog_blueprint = blog.create_blog_blueprint(
-        db=engine.db,
-        config=config,
-        locale_func=engine.get_locale,
-    )
-    seo_blueprint = seo.create_seo_blueprint(db=engine.db, config=engine.config)
-    engine.register_blueprint(blog_blueprint)
-    engine.register_blueprint(seo_blueprint)
-
-    Minify(app=engine, html=True, js=True, cssless=True)
-    return engine
 
 
 class Engine(Flask):
@@ -130,22 +110,22 @@ def create_engine(config: Config, db) -> Engine:
     return plugify(app, config.plugins)
 
 
+def create_app_from_config(config: Config) -> Engine:
+    engine = create_engine_from_config(config)
+    blog_blueprint = blog.create_blog_blueprint(
+        db=engine.db,
+        config=config,
+        locale_func=engine.get_locale,
+    )
+    seo_blueprint = seo.create_seo_blueprint(db=engine.db, config=engine.config)
+    engine.register_blueprint(blog_blueprint)
+    engine.register_blueprint(seo_blueprint)
+
+    Minify(app=engine, html=True, js=True, cssless=True)
+    return engine
+
+
 def create_engine_from_config(config: Config) -> Engine:
-    db = get_db_from_config(config.db)
     """Create an engine from a config."""
+    db = get_db(config.db)
     return create_engine(config, db)
-
-
-def get_db_from_config(db_config):
-    """Creates db provider dynamically based on config."""
-    # TODO this should be dynamic and not be limited to specified providers.
-    if isinstance(db_config, JsonDbConfig):
-        return json_db.get_db(db_config)
-    if isinstance(db_config, JsonFileDbConfig):
-        return json_file_db.get_db(db_config)
-    elif isinstance(db_config, GoogleJsonDbConfig):
-        return google_json_db.get_db(db_config)
-    elif isinstance(db_config, GraphQlDbConfig):
-        return graph_ql_db.get_db(db_config)
-    else:
-        te.assert_never(db_config)

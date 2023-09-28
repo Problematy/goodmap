@@ -1,11 +1,17 @@
 import datetime
 
-from goodmap.config import JsonDbConfig
-from goodmap.platzky.blog.db import DB
+from pydantic import Field
+
+from goodmap.platzky.blog.db import DB, DBConfig
 
 
-def get_db(config: JsonDbConfig):
-    return Json(config.data)
+class JsonDbConfig(DBConfig):
+    data: dict = Field(alias="DATA")  # type: ignore
+
+
+def get_db(config):
+    json_db_config = JsonDbConfig.parse_obj(config)
+    return Json(json_db_config.data)
 
 
 class Json(DB):
