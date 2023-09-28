@@ -17,21 +17,6 @@ from .seo import seo
 from .www_handler import redirect_nonwww_to_www, redirect_www_to_nonwww
 
 
-def create_app_from_config(config: Config) -> Flask:
-    engine = create_engine_from_config(config)
-    blog_blueprint = blog.create_blog_blueprint(
-        db=engine.db,
-        config=config,
-        locale_func=engine.get_locale,
-    )
-    seo_blueprint = seo.create_seo_blueprint(db=engine.db, config=engine.config)
-    engine.register_blueprint(blog_blueprint)
-    engine.register_blueprint(seo_blueprint)
-
-    Minify(app=engine, html=True, js=True, cssless=True)
-    return engine
-
-
 class Engine(Flask):
     def __init__(self, config: Config, db, import_name):
         super().__init__(import_name)
@@ -123,6 +108,21 @@ def create_engine(config: Config, db) -> Engine:
         return render_template("404.html", title="404"), 404
 
     return plugify(app, config.plugins)
+
+
+def create_app_from_config(config: Config) -> Engine:
+    engine = create_engine_from_config(config)
+    blog_blueprint = blog.create_blog_blueprint(
+        db=engine.db,
+        config=config,
+        locale_func=engine.get_locale,
+    )
+    seo_blueprint = seo.create_seo_blueprint(db=engine.db, config=engine.config)
+    engine.register_blueprint(blog_blueprint)
+    engine.register_blueprint(seo_blueprint)
+
+    Minify(app=engine, html=True, js=True, cssless=True)
+    return engine
 
 
 def create_engine_from_config(config: Config) -> Engine:

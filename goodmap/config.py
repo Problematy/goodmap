@@ -27,7 +27,7 @@ def languages_dict(languages: Languages) -> LanguagesMapping:
 class Config(StrictBaseModel):
     app_name: str = Field(alias="APP_NAME")
     secret_key: str = Field(alias="SECRET_KEY")
-    db: dict = Field(alias="DB")
+    db: dict = Field(alias="DB")  # pyright: ignore
     use_www: bool = Field(default=True, alias="USE_WWW")
     seo_prefix: str = Field(default="/", alias="SEO_PREFIX")
     blog_prefix: str = Field(default="/", alias="BLOG_PREFIX")
