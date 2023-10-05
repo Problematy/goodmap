@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, make_response, request
 from flask_babel import gettext
 from flask_restx import Api, Resource
+from flask_wtf.csrf import generate_csrf
 from pydantic.tools import parse_obj_as
 
 from goodmap.config import LanguagesMapping
@@ -43,8 +44,9 @@ def core_pages(database, languages: LanguagesMapping, notifier_function) -> Blue
             data = all_data["data"]
             categories = all_data["categories"]
             visible_data = all_data["visible_data"]
+            meta_data = all_data["meta_data"]
             queried_data = get_queried_data(data, categories, query_params)
-            formatted_data = [prepare_pin(x, visible_data) for x in queried_data]
+            formatted_data = [prepare_pin(x, visible_data, meta_data) for x in queried_data]
             return jsonify(formatted_data)
 
     @core_api.route("/categories")
@@ -68,5 +70,11 @@ def core_pages(database, languages: LanguagesMapping, notifier_function) -> Blue
             all_data = database.get_data()
             local_data = make_tuple_translation(all_data["categories"][category_type])
             return jsonify(local_data)
+
+    @core_api.route('/generate-csrf-token')
+    class CsrfToken(Resource):
+        def get(self):
+            csrf_token = generate_csrf()
+            return jsonify({'csrf_token': csrf_token})
 
     return core_api_blueprint

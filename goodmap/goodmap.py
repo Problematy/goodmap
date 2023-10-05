@@ -1,7 +1,7 @@
 from functools import partial
 
 from flask import Blueprint, redirect, render_template
-
+from flask_wtf.csrf import CSRFProtect
 from goodmap.config import Config, languages_dict
 from goodmap.platzky import platzky
 
@@ -18,6 +18,7 @@ def create_app_from_config(config: Config) -> platzky.Engine:
     app = platzky.create_app_from_config(config)
     specific_get_data = get_db_specific_get_data(type(app.db).__name__)
     app.db.get_data = partial(specific_get_data, app.db)
+    CSRFProtect(app)
 
     cp = core_pages(app.db, languages_dict(config.languages), app.notify)
     app.register_blueprint(cp)
