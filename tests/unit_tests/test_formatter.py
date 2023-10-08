@@ -24,5 +24,6 @@ def test_formatting_when_missing_visible_field():
             "gender": ["male", "female"],
             "plain_text": "text",
         },
+        "metadata": {},
     }
-    assert prepare_pin(test_place, visible_fields) == expected_data
+    assert prepare_pin(test_place, visible_fields, []) == expected_data

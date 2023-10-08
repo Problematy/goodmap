@@ -33,29 +33,30 @@ def test_app(notifier_function, db_mock):
         "categories": {"test-category": ["test-type-in-category"]},
         "locations": [],
         "data": [{"name": "test", "position": [50, 50], "type_of_place": "test"}],
+        "meta_data": {"test": "test"},
         "visible_data": ["name"],
     }
-    app.register_blueprint(core_pages(db_mock, languages, notifier_function))
+    app.register_blueprint(core_pages(db_mock, languages, notifier_function, lambda: "csrf"))
     return app.test_client()
 
 
 def test_reporting_location_is_sending_message_with_name_and_coordinates(
     test_app, notifier_function
 ):
-    data = {"name": "location-name", "coordinates": [50, 50]}
+    data = {"id": "location-id", "description": "some error"}
     headers = {"Content-Type": "application/json"}
-    response = test_app.post("/api/report_location", data=json.dumps(data), headers=headers)
+    response = test_app.post("/api/report-location", data=json.dumps(data), headers=headers)
     notification_message = str(notifier_function.call_args)
 
-    assert "location-name" in notification_message
-    assert "(50.0, 50.0)" in notification_message
+    assert "id" in notification_message
+    assert "some error" in notification_message
     assert response.status_code == 200
 
 
 def test_reporting_returns_error_when_wrong_json(test_app, notifier_function):
-    data = {"name": "location-name", "coordinates": 50}
+    data = {"name": "location-id", "coordinates": 50}
     headers = {"Content-Type": "application/json"}
-    response = test_app.post("/api/report_location", data=json.dumps(data), headers=headers)
+    response = test_app.post("/api/report-location", data=json.dumps(data), headers=headers)
     assert response.status_code == 400
     assert "Error" in response.json["message"]
 
@@ -87,6 +88,7 @@ def test_data_endpoint_returns_data(test_app):
     assert response.json == [
         {
             "data": {"name-translated": "test-translated"},
+            "metadata": {},
             "position": [50, 50],
             "subtitle": "test-translated",
             "title": "test",
@@ -99,3 +101,10 @@ def test_getting_all_category_data(test_app):
     response = test_app.get("/api/category/test-category")
     assert response.status_code == 200
     assert response.json == [["test-type-in-category", "test-type-in-category-translated"]]
+
+
+def test_getting_token(test_app):
+    response = test_app.get("/api/generate-csrf-token")
+    assert response.status_code == 200
+    assert "csrf_token" in response.json
+    assert response.json["csrf_token"] == "csrf"

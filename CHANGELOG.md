@@ -1,6 +1,7 @@
 # Changelog
 
-### 0.2 - In development
+#### 0.2.1
+  * added csrf token to form
 
 #### 0.2.0
   * Changed database schema
