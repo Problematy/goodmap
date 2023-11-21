@@ -11,7 +11,8 @@
                     "pedestrians",
                     "cars"
                 ],
-                "type_of_place": "big bridge"
+                "type_of_place": "big bridge",
+                "UUID": "hidden"
             },
             {
                 "name": "Zwierzyniecka",
@@ -23,7 +24,8 @@
                     "bikes",
                     "pedestrians"
                 ],
-                "type_of_place": "small bridge"
+                "type_of_place": "small bridge",
+                "UUID": "dattarro"
             }
         ],
         "categories": {
@@ -39,6 +41,9 @@
         },
         "visible_data": [
             "accessible_by"
+        ],
+        "meta_data": [
+            "UUID"
         ]
     },
     "site_content": {
