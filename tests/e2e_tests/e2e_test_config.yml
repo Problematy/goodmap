@@ -27,3 +27,5 @@ PLUGINS:
     PASSWORD: "PA$$WORD"
     DEFAULT_SENDER: "sender@gmail.com"
     ADMIN_EMAIL: "help.desk@gmail.com"
+  google-tag-manager:
+    ID: "GTM-WZP3LH73"

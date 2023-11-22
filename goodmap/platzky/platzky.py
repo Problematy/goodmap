@@ -23,6 +23,8 @@ class Engine(Flask):
         self.config.from_mapping(config.dict(by_alias=True))
         self.db = db
         self.notifiers = []
+        self.dynamic_bodies = ""
+        self.dynamic_headers = ""
 
         babel_translation_directories = ";".join(config.translation_directories)
 
@@ -38,6 +40,12 @@ class Engine(Flask):
 
     def add_notifier(self, notifier):
         self.notifiers.append(notifier)
+
+    def add_dynamic_body(self, body: str):
+        self.dynamic_bodies += body
+
+    def add_dynamic_header(self, body: str):
+        self.dynamic_headers += body
 
     def get_locale(self) -> str:
         domain = request.headers["Host"]
@@ -101,6 +109,18 @@ def create_engine(config: Config, db) -> Engine:
             "font": app.db.get_font(),
             "primary_color": app.db.get_primary_color(),
             "secondary_color": app.db.get_secondary_color(),
+        }
+
+    @app.context_processor
+    def dynamic_bodies():
+        return {
+            "dynamic_bodies": app.dynamic_bodies
+        }
+
+    @app.context_processor
+    def dynamic_headers():
+        return {
+            "dynamic_headers": app.dynamic_headers
         }
 
     @app.errorhandler(404)
