@@ -2,6 +2,7 @@
 
 #### 0.2.1
   * added csrf token to form
+  * added google tag manager plugin
 
 #### 0.2.0
   * Changed database schema
