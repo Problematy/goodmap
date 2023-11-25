@@ -1,8 +1,10 @@
 name: "Run TODO to Issue"
 on:
   push:
-    branches:
-      - main
+#    branches:
+#      - main
+
+# TODO this is a test
 jobs:
   build:
     runs-on: "ubuntu-latest"
