@@ -113,15 +113,11 @@ def create_engine(config: Config, db) -> Engine:
 
     @app.context_processor
     def dynamic_bodies():
-        return {
-            "dynamic_bodies": app.dynamic_bodies
-        }
+        return {"dynamic_bodies": app.dynamic_bodies}
 
     @app.context_processor
     def dynamic_headers():
-        return {
-            "dynamic_headers": app.dynamic_headers
-        }
+        return {"dynamic_headers": app.dynamic_headers}
 
     @app.errorhandler(404)
     def page_not_found(e):
