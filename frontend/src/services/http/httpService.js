@@ -18,13 +18,15 @@ export const httpService = {
         );
     },
 
-    getLocations: filtersUrlParams =>
-        fetch(`${DATA}?${filtersUrlParams}`, {
+    getLocations: async filtersUrlParams => {
+        const response = await fetch(`${DATA}?${filtersUrlParams}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
             },
-        }).then(response => response.json()),
+        });
+        return response.json();
+    },
 
     getLanguages: () => fetch(LANGUAGES).then(response => response.json()),
 };

@@ -1,40 +1,87 @@
-import Leaflet from 'leaflet';
+import React, { useState } from 'react';
+import PropTypes from 'prop-types';
+import { Marker, CircleMarker, useMap } from 'react-leaflet';
+import { Button, Box } from '@mui/material';
+import MyLocationIcon from '@mui/icons-material/MyLocation';
+import Control from 'react-leaflet-custom-control';
+import ReactDOMServer from 'react-dom/server';
+import L from 'leaflet';
 
-const LocationIcon = () => {
-    const icon = document.createElement('img');
-    icon.style.width = '22px';
-    icon.style.height = '22px';
-    icon.src =
-        'https://cdn3.iconfinder.com/data/icons/google-material-design-icons/48/ic_my_location_48px-512.png';
+const LocationButton = ({ userPosition }) => {
+    const map = useMap();
 
-    return icon;
+    const handleFlyToLocationClick = () => {
+        map.flyTo(userPosition, map.getZoom());
+    };
+
+    return (
+        <Control prepend position="bottomright">
+            <Button onClick={handleFlyToLocationClick}>
+                <Box
+                    sx={{
+                        boxShadow: 1.3,
+                        border: 0.1,
+                        color: 'black',
+                        padding: 0.5,
+                        background: 'white',
+                    }}
+                >
+                    <MyLocationIcon sx={{ color: 'black', fontSize: 22 }} />
+                </Box>
+            </Button>
+        </Control>
+    );
 };
 
-Leaflet.Control.Button = Leaflet.Control.extend({
-    options: {
-        position: 'bottomright',
-    },
+const createLocationIcon = () => {
+    const locationIconJSX = <MyLocationIcon sx={{ color: 'black', fontSize: 22 }} />;
+    const svgLocationIcon = ReactDOMServer.renderToString(locationIconJSX);
 
-    onLocationFoundCallback: (coordinates, map) =>
-        map.flyTo([coordinates.coords.latitude, coordinates.coords.longitude], 15),
+    return L.divIcon({
+        html: svgLocationIcon,
+        iconSize: [22, 22],
+        iconAnchor: [11, 11],
+        popupAnchor: [0, -11],
+        className: 'location-icon',
+    });
+};
 
-    onAdd: function (map) {
-        const container = Leaflet.DomUtil.create('div', 'leaflet-bar leaflet-control');
-        const button = Leaflet.DomUtil.create('a', 'leaflet-control-button', container);
-        const locationIcon = LocationIcon();
+const LocationControl = () => {
+    const [userPosition, setUserPosition] = useState(null);
+    const map = useMap();
 
-        container.title = 'Twoja lokalizacja';
-        button.appendChild(locationIcon);
+    const handleLocationFound = e => {
+        setUserPosition(e.latlng);
+        map.flyTo(e.latlng, map.getZoom());
+    };
 
-        Leaflet.DomEvent.disableClickPropagation(button);
-        Leaflet.DomEvent.on(button, 'click', () => {
-            navigator.geolocation.getCurrentPosition(coordinates =>
-                this.onLocationFoundCallback(coordinates, map),
-            );
-        });
+    map.once('locationfound', handleLocationFound);
 
-        return container;
-    },
+    map.locate({ setView: false, maxZoom: 16, watch: true });
 
-    onRemove: function () {},
+    if (!userPosition) {
+        return null;
+    }
+
+    const { lat, lng } = userPosition;
+    const radius = userPosition.accuracy / 2 || 0;
+
+    return (
+        <>
+            <LocationButton userPosition={userPosition} />
+            <CircleMarker center={[lat, lng]} radius={radius} />
+            <Marker position={userPosition} icon={createLocationIcon()} />
+        </>
+    );
+};
+
+export { LocationControl };
+
+const positionType = PropTypes.shape({
+    lat: PropTypes.number.isRequired,
+    lng: PropTypes.number.isRequired,
 });
+
+LocationButton.propTypes = {
+    userPosition: positionType.isRequired,
+};

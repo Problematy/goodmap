@@ -2,10 +2,11 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 export const Checkbox = ({ name, translation, categoryName, onClick }) => (
-    <div className="form-check" onClick={onClick}>
+    <div className="form-check">
         <label htmlFor={name}>
             {translation}
             <input
+                onClick={onClick}
                 className={`form-check-input filter ${categoryName}`}
                 type="checkbox"
                 id={name}

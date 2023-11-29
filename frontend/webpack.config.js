@@ -19,13 +19,21 @@ module.exports = (env, argv) => {
             minimizer: [new TerserPlugin({ parallel: true })],
         },
         module: {
-            rules: [
-                {
-                    test: /\.(js|jsx)?/,
-                    exclude: /node_modules/,
-                    use: 'babel-loader',
-                },
-            ],
+          rules: [
+            {
+              test: /\.(js|jsx)?/,
+              loader: 'babel-loader',
+              exclude: /node_modules/
+            },
+             {
+                test: /\.css$/,
+                use: ['style-loader', 'css-loader'] // Use both style-loader and css-loader
+            },
+            {
+              test: /\.(jpe?g|png|gif|woff|woff2|eot|ttf|svg)(\?[a-z0-9=.]+)?$/,
+              loader: 'url-loader'
+            }
+          ]
         },
     };
 };
