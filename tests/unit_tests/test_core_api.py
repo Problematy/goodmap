@@ -30,9 +30,16 @@ def test_app(notifier_function, db_mock):
     languages = languages_dict(a)
     app = Flask(__name__)
     db_mock.get_data.return_value = {
-        "categories": {"test-category": ["test-type-in-category"]},
+        "categories": {"test-category": ["test", "test2"]},
         "locations": [],
-        "data": [{"name": "test", "position": [50, 50], "type_of_place": "test"}],
+        "data": [
+            {
+                "name": "test",
+                "position": [50, 50],
+                "test-category": "test",
+                "type_of_place": "test-place",
+            }
+        ],
         "meta_data": {"test": "test"},
         "visible_data": ["name"],
     }
@@ -90,7 +97,24 @@ def test_data_endpoint_returns_data(test_app):
             "data": {"name-translated": "test-translated"},
             "metadata": {},
             "position": [50, 50],
-            "subtitle": "test-translated",
+            "subtitle": "test-place-translated",
+            "title": "test",
+        }
+    ]
+
+
+@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("goodmap.formatter.gettext", fake_translation)
+@mock.patch("flask_babel.gettext", fake_translation)
+def test_data_endpoint_returns_filtered_data(test_app):
+    response = test_app.get("/api/data?test-category=test")
+    assert response.status_code == 200
+    assert response.json == [
+        {
+            "data": {"name-translated": "test-translated"},
+            "metadata": {},
+            "position": [50, 50],
+            "subtitle": "test-place-translated",
             "title": "test",
         }
     ]
@@ -100,7 +124,7 @@ def test_data_endpoint_returns_data(test_app):
 def test_getting_all_category_data(test_app):
     response = test_app.get("/api/category/test-category")
     assert response.status_code == 200
-    assert response.json == [["test-type-in-category", "test-type-in-category-translated"]]
+    assert response.json == [["test", "test-translated"], ["test2", "test2-translated"]]
 
 
 def test_getting_token(test_app):

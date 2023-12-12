@@ -68,3 +68,8 @@ select = [
     "RUF", # Ruff-specific rules
 ]
 ignore = []
+
+[tool.pytest.ini_options]
+markers = [
+    "skip_coverage: skip coverage for this test"
+]

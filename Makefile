@@ -10,9 +10,15 @@ lint-check:
 	poetry run ruff check .
 	poetry run pyright .
 
-unit-test:
-	poetry run coverage run --source=goodmap -m pytest
+unit-tests:
+	poetry run python -m pytest
+
+unit-tests-no-coverage:
+	poetry run python -m pytest -m "skip_coverage"
+
+coverage:
+	poetry run coverage run --branch --source=goodmap -m pytest -m "not skip_coverage"
 	poetry run coverage lcov
 
-html-cov: unit-test
+html-cov: coverage
 	poetry run coverage html

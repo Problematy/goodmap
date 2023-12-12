@@ -6,10 +6,10 @@ from wtforms.widgets import TextArea
 
 
 class CommentForm(FlaskForm):
-    author_name = StringField(lazy_gettext("Name"), validators=[DataRequired()])
+    author_name = StringField(str(lazy_gettext("Name")), validators=[DataRequired()])
     comment = StringField(
-        lazy_gettext("Type comment here"),
+        str(lazy_gettext("Type comment here")),
         validators=[DataRequired()],
         widget=TextArea(),
     )
-    submit = SubmitField(lazy_gettext("Comment"))
+    submit = SubmitField(str(lazy_gettext("Comment")))
