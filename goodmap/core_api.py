@@ -45,7 +45,10 @@ def core_pages(
     @core_api.route("/data")
     class Data(Resource):
         def get(self):
-            """Shows all data"""
+            """
+            Shows all data filtered by query parameters
+            e.g. /api/data?category=category1&category=category2
+            """
             all_data = database.get_data()
             query_params = request.args.to_dict(flat=False)
             data = all_data["data"]
