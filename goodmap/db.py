@@ -24,5 +24,4 @@ def get_db_specific_get_data(db_type):
         "JsonFile": local_json_get_data,
         "Json": json_get_data,
     }
-    classname = db_type
-    return mapping[classname]
+    return mapping[db_type]

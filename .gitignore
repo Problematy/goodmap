@@ -4,3 +4,4 @@ data.json
 .coverage
 coverage.lcov
 **/__pycache__
+htmlcov

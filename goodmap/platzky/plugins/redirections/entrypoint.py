@@ -48,7 +48,7 @@ def process(app, config):
     redirects = app.db.get_redirections(app.db)
     for source, destiny in redirects.items():
         func = partial(redirect, destiny, code=301)
-        func.__name__ = f"{source}-{destiny}"  # pyright: ignore[reportGeneralTypeIssues]
+        func.__name__ = f"{source}-{destiny}"
         app.route(rule=source)(func)
 
     return app
