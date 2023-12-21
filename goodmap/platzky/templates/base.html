@@ -24,6 +24,7 @@
     }
     .logo {
       max-height: 6rem;
+      max-width: 50vw;
     }
     .header-row {
       z-index: 1;
@@ -75,7 +76,7 @@
     <nav class="navbar navbar-expand-lg navbar-light p-3" id="mainNav">
       {% if self.left_panel() %}
       <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#left-panel" aria-label="Toggle left panel">
-        <span class="navbar-toggler-icon"></span>
+        <i class="fas fa-sliders-h"></i>
       </button>
       {% endif %}
       <a class="navbar-brand" href="/">

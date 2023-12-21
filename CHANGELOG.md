@@ -1,5 +1,8 @@
 # Changelog
 
+#### 0.2.2
+  * fixed navbar on mobile
+
 #### 0.2.1
   * added csrf token to form
   * added google tag manager plugin
