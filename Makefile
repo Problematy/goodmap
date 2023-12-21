@@ -16,6 +16,9 @@ unit-tests:
 unit-tests-no-coverage:
 	poetry run python -m pytest -m "skip_coverage"
 
+e2e-tests:
+	cd tests/e2e_tests && node_modules/cypress/bin/cypress run --browser chromium
+
 coverage:
 	poetry run coverage run --branch --source=goodmap -m pytest -m "not skip_coverage"
 	poetry run coverage lcov
