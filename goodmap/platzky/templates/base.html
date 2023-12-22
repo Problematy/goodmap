@@ -35,17 +35,32 @@
       align-items: center;
     }
     #main-row {
+      position: relative;
       flex-grow: 1;
       z-index: 0;
     }
+
+    .left-panel-contents {
+      padding: 16px;
+    }
+
     .left-panel {
       background-color: {{ secondary_color }};
     }
-    #filter-form {
+
+    #left-panel {
+      background-color: {{ secondary_color }};
+      position: absolute;
+      height: 100%;
+      max-width: 80vw;
+      overflow-y: auto;
       color: white;
-      padding: 1rem;
     }
 
+    .offcanvas-lg.offcanvas-start {
+      top: auto;
+      width: auto;
+    }
 
     #filter-form form > div {
       padding-bottom: 1rem;
@@ -61,6 +76,10 @@
     }
     .btn {
       padding: 0;
+    }
+
+    .btn-close {
+      opacity: 1;
     }
     i.fi {
       margin: 0 0.5em;
@@ -121,15 +140,19 @@
 
   <div class="row g-0" id="main-row">
     {% if self.left_panel() %}
-    <div class="col-lg-2 left-panel">
-      <div id="left-panel" class="left-panel offcanvas-lg offcanvas-start">
-        <div class="offcanvas-header">
-          <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" data-bs-target="#left-panel" aria-label="Close"></button>
-        </div>
-        <div class="offcanvas-body">
-          {% block left_panel %}{% endblock %}
+    <div class="col-lg-2 left-panel" >
+      <div id="left-panel" class="left-panel offcanvas-lg offcanvas-start" aria-modal="true" role="dialog">
+        <div class="offcanvas-body d-flex">
+          <div class="left-panel-contents">
+            {% block left_panel %}{% endblock %}
+          </div>
+          <div class="offcanvas-header justify-content-between align-items-start">
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" data-bs-target="#left-panel" ></button>
+          </div>
+
         </div>
       </div>
+
     </div>
     {% endif %}
     <div class="h-100   {% if self.left_panel() %} col-lg-10 {% else %} col-lg-12 {% endif %}">

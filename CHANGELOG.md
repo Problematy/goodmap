@@ -1,5 +1,8 @@
 # Changelog
 
+#### 0.2.3
+  * fixed left menu on mobile
+
 #### 0.2.2
   * fixed navbar on mobile
 
