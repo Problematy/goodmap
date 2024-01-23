@@ -16,7 +16,12 @@ def get_db(config):
 
 class Json(DB):
     def __init__(self, data_dict):
+        super().__init__()
         self.data = data_dict
+        self.module_name = "json_db"
+        self.db_name = "JsonDb"
+
+
 
     def get_all_posts(self, lang):
         return [post for post in self.data.get("posts", ()) if post["language"] == lang]

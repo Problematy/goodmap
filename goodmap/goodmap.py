@@ -7,7 +7,7 @@ from goodmap.config import Config, languages_dict
 from goodmap.platzky import platzky
 
 from .core_api import core_pages
-from .db import get_db_specific_get_data
+from .db import get_data
 
 
 def create_app(config_path: str) -> platzky.Engine:
@@ -18,8 +18,7 @@ def create_app(config_path: str) -> platzky.Engine:
 def create_app_from_config(config: Config) -> platzky.Engine:
     app = platzky.create_app_from_config(config)
 
-    specific_get_data = get_db_specific_get_data(type(app.db).__name__)
-    app.db.extend('get_data', specific_get_data)
+    app.db.extend('get_data', get_data(app.db))
     CSRFProtect(app)
 
     cp = core_pages(app.db, languages_dict(config.languages), app.notify, generate_csrf)

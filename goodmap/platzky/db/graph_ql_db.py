@@ -20,9 +20,12 @@ def get_db(config: GraphQlDbConfig):
 
 class GraphQL(DB):
     def __init__(self, endpoint, token):
+        self.module_name = "google_json_db"
+        self.db_name = "GoogleJsonDb"
         full_token = "bearer " + token
         transport = AIOHTTPTransport(url=endpoint, headers={"Authorization": full_token})
         self.client = Client(transport=transport)
+        super().__init__()
 
     def get_all_posts(self, lang):
         all_posts = gql(

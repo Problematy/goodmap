@@ -5,6 +5,11 @@ from functools import partial
 
 
 class DB:
+    def __init__(self):
+        self.db_name: str = "DB"
+        self.module_name: str = "db"
+        self.config_type: type
+
     def extend(self, function_name, function):
         """
         Add a function to the DB object. The function must take the DB object as first parameter.

@@ -29,9 +29,13 @@ def get_data(blob):
 
 class GoogleJsonDb(Json):
     def __init__(self, bucket_name, source_blob_name):
+        self.module_name = "google_json_db"
+        self.db_name = "GoogleJsonDb"
+
         self.blob = get_blob(bucket_name, source_blob_name)
         data = get_data(self.blob)
         super().__init__(data)
+
 
     def save_entry(self, entry):
         data = get_data(self.blob)

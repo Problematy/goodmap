@@ -23,6 +23,8 @@ class JsonFile(Json):
         with open(self.data_file_path) as json_file:
             data = json.load(json_file)
             super().__init__(data)
+        self.module_name = "json_file_db"
+        self.db_name = "JsonFileDb"
 
     def _save_file(self):
         with open(self.data_file_path, "w") as json_file:
