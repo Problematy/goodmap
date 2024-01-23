@@ -94,6 +94,9 @@ def create_engine(config: Config, db) -> Engine:
     def logo():
         return redirect("https://www.problematy.pl/wp-content/uploads/2023/08/kolor_poziom.png")
 
+    def url_link(x: str) -> str:
+        return urllib.parse.quote(x, safe="")
+
     @app.context_processor
     def utils():
         locale = app.get_locale()
@@ -103,7 +106,7 @@ def create_engine(config: Config, db) -> Engine:
             "languages": languages_dict(config.languages),
             "current_flag": flag,
             "current_language": locale,
-            "url_link": lambda x: urllib.parse.quote(x, safe=""),  # pyright: ignore
+            "url_link": url_link,
             "menu_items": app.db.get_menu_items(),
             "logo_url": app.db.get_logo_url(),
             "font": app.db.get_font(),
