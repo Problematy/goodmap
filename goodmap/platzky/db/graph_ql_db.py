@@ -9,12 +9,24 @@ from pydantic import Field
 from .db import DB, DBConfig
 
 
+def db_type():
+    return GraphQL
+
+
+def db_config_type():
+    return GraphQlDbConfig
+
+
 class GraphQlDbConfig(DBConfig):
     endpoint: str = Field(alias="CMS_ENDPOINT")
     token: str = Field(alias="CMS_TOKEN")
 
 
 def get_db(config: GraphQlDbConfig):
+    return GraphQL(config.endpoint, config.token)
+
+
+def db_from_config(config: GraphQlDbConfig):
     return GraphQL(config.endpoint, config.token)
 
 

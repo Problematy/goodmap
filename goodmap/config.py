@@ -3,6 +3,9 @@ import typing as t
 import yaml
 from pydantic import BaseModel, Field
 
+from .platzky.db.db import DBConfig
+from .platzky.db.db_loader import get_db_module
+
 
 class StrictBaseModel(BaseModel):
     class Config:
@@ -26,7 +29,7 @@ def languages_dict(languages: Languages) -> LanguagesMapping:
 class Config(StrictBaseModel):
     app_name: str = Field(alias="APP_NAME")
     secret_key: str = Field(alias="SECRET_KEY")
-    db: dict = Field(alias="DB")  # pyright: ignore
+    db: DBConfig = Field(alias="DB")
     use_www: bool = Field(default=True, alias="USE_WWW")
     seo_prefix: str = Field(default="/", alias="SEO_PREFIX")
     blog_prefix: str = Field(default="/", alias="BLOG_PREFIX")
@@ -45,4 +48,6 @@ class Config(StrictBaseModel):
     def parse_yaml(cls, path: str) -> "Config":
         with open(path) as f:
             cfg = yaml.safe_load(f)
+            db_cfg_type = get_db_module(cfg["DB"]["TYPE"]).db_config_type()
+            cfg["DB"] = db_cfg_type.parse_obj(cfg["DB"])
         return cls.parse_obj(cfg)

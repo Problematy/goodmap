@@ -1,7 +1,7 @@
 from functools import partial
 from typing import Any
 
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, Field
 
 
 class DB:
@@ -36,5 +36,5 @@ class DB:
         pass
 
 
-class DBConfig(BaseModel, extra=Extra.forbid, allow_mutation=False):
-    type_: str = Field(alias="TYPE")
+class DBConfig(BaseModel, allow_mutation=False):
+    type: str = Field(alias="TYPE")

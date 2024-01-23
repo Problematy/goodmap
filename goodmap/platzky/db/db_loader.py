@@ -5,9 +5,9 @@ from os.path import abspath, dirname
 
 
 def get_db(db_config):
-    db_name = db_config["TYPE"]
+    db_name = db_config.type
     db = get_db_module(db_name)
-    return db.get_db(db_config)
+    return db.db_from_config(db_config)
 
 
 def get_db_module(db_type):

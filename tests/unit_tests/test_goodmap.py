@@ -4,11 +4,12 @@ import pytest
 
 from goodmap import goodmap
 from goodmap.config import Config
+from goodmap.platzky.db.json_db import JsonDbConfig
 
 config = Config(
     APP_NAME="test",
     SECRET_KEY="test",
-    DB={"TYPE": "json", "DATA": ""},
+    DB=JsonDbConfig(DATA={}, TYPE="json_db"),
 )
 
 
