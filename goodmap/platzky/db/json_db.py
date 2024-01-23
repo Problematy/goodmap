@@ -1,4 +1,5 @@
 import datetime
+from typing import Any, Dict
 
 from pydantic import Field
 
@@ -14,7 +15,7 @@ def db_config_type():
 
 
 class JsonDbConfig(DBConfig):
-    data: dict = Field(alias="DATA")  # type: ignore
+    data: Dict[str, Any] = Field(alias="DATA")
 
 
 def get_db(config):
@@ -27,9 +28,9 @@ def db_from_config(config: JsonDbConfig):
 
 
 class Json(DB):
-    def __init__(self, data: dict):  # type: ignore
+    def __init__(self, data: Dict[str, Any]):
         super().__init__()
-        self.data: dict = data  # type: ignore
+        self.data: Dict[str, Any] = data
         self.module_name = "json_db"
         self.db_name = "JsonDb"
 
