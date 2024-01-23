@@ -17,8 +17,9 @@ def create_app(config_path: str) -> platzky.Engine:
 
 def create_app_from_config(config: Config) -> platzky.Engine:
     app = platzky.create_app_from_config(config)
+
     specific_get_data = get_db_specific_get_data(type(app.db).__name__)
-    app.db.get_data = partial(specific_get_data, app.db)
+    app.db.extend('get_data', specific_get_data)
     CSRFProtect(app)
 
     cp = core_pages(app.db, languages_dict(config.languages), app.notify, generate_csrf)

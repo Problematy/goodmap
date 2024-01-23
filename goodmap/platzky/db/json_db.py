@@ -2,7 +2,7 @@ import datetime
 
 from pydantic import Field
 
-from goodmap.platzky.blog.db import DB, DBConfig
+from .db import DB, DBConfig
 
 
 class JsonDbConfig(DBConfig):

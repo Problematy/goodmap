@@ -3,7 +3,7 @@ import os.path
 
 from pydantic import Field
 
-from goodmap.platzky.blog.db import DBConfig
+from goodmap.platzky.db.db import DBConfig
 from goodmap.platzky.db.json_db import Json
 
 

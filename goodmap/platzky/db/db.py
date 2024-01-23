@@ -1,9 +1,17 @@
 from typing import Any
 
 from pydantic import BaseModel, Extra, Field
+from functools import partial
 
 
 class DB:
+    def extend(self, function_name, function):
+        """
+        Add a function to the DB object. The function must take the DB object as first parameter.
+        """
+        bound = partial(function, self)
+        setattr(self, function_name, bound)
+
     def get_all_posts(self, lang) -> Any:
         pass
 
