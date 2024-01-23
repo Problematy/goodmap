@@ -21,8 +21,6 @@ class Json(DB):
         self.module_name = "json_db"
         self.db_name = "JsonDb"
 
-
-
     def get_all_posts(self, lang):
         return [post for post in self.data.get("posts", ()) if post["language"] == lang]
 

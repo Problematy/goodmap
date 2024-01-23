@@ -36,7 +36,6 @@ class GoogleJsonDb(Json):
         data = get_data(self.blob)
         super().__init__(data)
 
-
     def save_entry(self, entry):
         data = get_data(self.blob)
         data["data"].append(entry)

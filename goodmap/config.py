@@ -1,7 +1,7 @@
 import typing as t
 
 import yaml
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, Field
 
 
 class StrictBaseModel(BaseModel):

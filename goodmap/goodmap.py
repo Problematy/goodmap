@@ -1,5 +1,3 @@
-from functools import partial
-
 from flask import Blueprint, redirect, render_template
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 
@@ -18,7 +16,7 @@ def create_app(config_path: str) -> platzky.Engine:
 def create_app_from_config(config: Config) -> platzky.Engine:
     app = platzky.create_app_from_config(config)
 
-    app.db.extend('get_data', get_data(app.db))
+    app.db.extend("get_data", get_data(app.db))
     CSRFProtect(app)
 
     cp = core_pages(app.db, languages_dict(config.languages), app.notify, generate_csrf)

@@ -1,7 +1,7 @@
+from functools import partial
 from typing import Any
 
 from pydantic import BaseModel, Extra, Field
-from functools import partial
 
 
 class DB:
