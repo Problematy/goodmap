@@ -6,7 +6,6 @@ from pydantic import BaseModel, Extra, Field
 
 class StrictBaseModel(BaseModel):
     class Config:
-        extra = Extra.forbid
         allow_mutation = False
 
 
