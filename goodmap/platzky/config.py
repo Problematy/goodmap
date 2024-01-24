@@ -3,8 +3,8 @@ import typing as t
 import yaml
 from pydantic import BaseModel, Field
 
-from .platzky.db.db import DBConfig
-from .platzky.db.db_loader import get_db_module
+from .db.db import DBConfig
+from .db.db_loader import get_db_module
 
 
 class StrictBaseModel(BaseModel):

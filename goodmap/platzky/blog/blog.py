@@ -3,8 +3,8 @@ from os.path import dirname
 from flask import Blueprint, make_response, render_template, request
 from markupsafe import Markup
 
-from goodmap.config import Config
-from goodmap.platzky.blog import comment_form, post_formatter
+from goodmap.platzky.config import Config
+from . import comment_form, post_formatter
 
 
 def create_blog_blueprint(db, config: Config, locale_func):

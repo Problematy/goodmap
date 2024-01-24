@@ -3,7 +3,7 @@ from typing import Any, Dict
 
 from pydantic import Field
 
-from goodmap.platzky.db.db import DB, DBConfig
+from .db import DB, DBConfig
 
 
 def db_type():

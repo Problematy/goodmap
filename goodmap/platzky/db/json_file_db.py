@@ -2,8 +2,8 @@ import json
 
 from pydantic import Field
 
-from goodmap.platzky.db.db import DBConfig
-from goodmap.platzky.db.json_db import Json
+from .db import DBConfig
+from .json_db import Json
 
 
 def db_type():

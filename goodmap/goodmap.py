@@ -1,7 +1,7 @@
 from flask import Blueprint, redirect, render_template
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 
-from goodmap.config import Config, languages_dict
+from goodmap.platzky.config import Config, languages_dict
 from goodmap.platzky import platzky
 
 from .core_api import core_pages

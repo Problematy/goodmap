@@ -18,11 +18,12 @@ def get_db_module(db_type):
     :return: db module
     """
     db_dir = dirname(abspath(__file__))
-    spec = importlib.util.spec_from_file_location(db_type, os.path.join(db_dir, f"{db_type}_db.py"))
+    spec = importlib.util.spec_from_file_location(f"goodmap.platzky.db.{db_type}", os.path.join(db_dir, f"{db_type}_db.py"))  # TODO remove goodmap from path
     assert spec is not None
     db = importlib.util.module_from_spec(spec)
     sys.modules[f"{db_type}_db"] = db
     assert spec.loader is not None
     spec.loader.exec_module(db)
+
 
     return db
