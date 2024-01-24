@@ -45,9 +45,13 @@ class Config(StrictBaseModel):
     testing: bool = Field(default=False, alias="TESTING")
 
     @classmethod
+    def parse_obj(cls, obj: t.Any):
+        db_cfg_type = get_db_module(obj["DB"]["TYPE"]).db_config_type()
+        obj["DB"] = db_cfg_type.parse_obj(obj["DB"])
+        return super().parse_obj(obj)
+
+    @classmethod
     def parse_yaml(cls, path: str) -> "Config":
         with open(path) as f:
             cfg = yaml.safe_load(f)
-            db_cfg_type = get_db_module(cfg["DB"]["TYPE"]).db_config_type()
-            cfg["DB"] = db_cfg_type.parse_obj(cfg["DB"])
         return cls.parse_obj(cfg)
