@@ -5,12 +5,11 @@ from flask import Flask, redirect, render_template, request, session
 from flask_babel import Babel
 from flask_minify import Minify
 
+from .blog import blog
 from .config import (
     Config,
     languages_dict,
 )
-
-from .blog import blog
 from .db.db_loader import get_db
 from .plugin_loader import plugify
 from .seo import seo

@@ -5,8 +5,8 @@ from unittest.mock import MagicMock
 import pytest
 from flask import Flask
 
-from goodmap.platzky.config import LanguageConfig, Languages, languages_dict
 from goodmap.core_api import core_pages
+from goodmap.platzky.config import LanguageConfig, Languages, languages_dict
 
 
 def fake_translation(key: str):
