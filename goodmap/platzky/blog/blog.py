@@ -3,12 +3,11 @@ from os.path import dirname
 from flask import Blueprint, make_response, render_template, request
 from markupsafe import Markup
 
-from goodmap.platzky.config import Config
 from . import comment_form, post_formatter
 
 
-def create_blog_blueprint(db, config: Config, locale_func):
-    url_prefix = config.blog_prefix
+def create_blog_blueprint(db, blog_prefix: str, locale_func):
+    url_prefix = blog_prefix
     blog = Blueprint(
         "blog",
         __name__,
