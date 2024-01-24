@@ -32,7 +32,7 @@ def db_from_config(config: GraphQlDbConfig):
 
 class GraphQL(DB):
     def __init__(self, endpoint, token):
-        self.module_name = "google_json_db"
+        self.module_name = "graph_ql_db"
         self.db_name = "GoogleJsonDb"
         full_token = "bearer " + token
         transport = AIOHTTPTransport(url=endpoint, headers={"Authorization": full_token})
