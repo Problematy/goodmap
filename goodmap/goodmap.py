@@ -1,4 +1,4 @@
-from flask import Blueprint, redirect, render_template
+from flask import Blueprint, render_template
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 
 from goodmap.platzky import platzky
