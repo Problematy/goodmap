@@ -6,10 +6,6 @@ from .db import DBConfig
 from .json_db import Json
 
 
-def db_type():
-    return JsonFile
-
-
 def db_config_type():
     return JsonFileDbConfig
 

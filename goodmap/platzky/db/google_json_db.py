@@ -7,10 +7,6 @@ from .db import DBConfig
 from .json_db import Json
 
 
-def db_type():
-    return GoogleJsonDb
-
-
 def db_config_type():
     return GoogleJsonDbConfig
 

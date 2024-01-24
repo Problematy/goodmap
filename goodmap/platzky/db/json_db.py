@@ -6,10 +6,6 @@ from pydantic import Field
 from .db import DB, DBConfig
 
 
-def db_type():
-    return Json
-
-
 def db_config_type():
     return JsonDbConfig
 
