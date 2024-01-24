@@ -14,12 +14,9 @@ LANGUAGES:
     name: polski
     flag: pl
 
-#TODO this should not be necessary argument
-ROUTE_OVERWRITES:
-  /static/map.js: https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.1.7
-
 
 PLUGINS:
+  redirections: {}  # TODO plugins should allow empty config (it should be list with optional configuration)
   sendmail:
     PORT: 465
     SERVER: "smtp.gmail.com"

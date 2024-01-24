@@ -72,5 +72,8 @@
         "primary_color": "#000000",
         "secondary_color": "#245466",
         "left_bar_width": "300px"
+    },
+    "redirections": {
+        "/static/map.js": "https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.1.7"
     }
 }

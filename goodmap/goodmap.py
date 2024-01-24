@@ -22,11 +22,6 @@ def create_app_from_config(config: Config) -> platzky.Engine:
     cp = core_pages(app.db, languages_dict(config.languages), app.notify, generate_csrf)
     app.register_blueprint(cp)
     goodmap = Blueprint("goodmap", __name__, url_prefix="/", template_folder="templates")
-    for source, destination in config.route_overwrites.items():
-
-        @goodmap.route(source)
-        def testing_map():
-            return redirect(destination)
 
     @goodmap.route("/")
     def index():
