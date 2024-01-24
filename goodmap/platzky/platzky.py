@@ -5,7 +5,7 @@ from flask import Flask, redirect, render_template, request, session
 from flask_babel import Babel
 from flask_minify import Minify
 
-from goodmap.config import (
+from goodmap.config import (  # TODO remove this circular import
     Config,
     languages_dict,
 )
