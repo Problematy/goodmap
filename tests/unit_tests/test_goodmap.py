@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from goodmap import goodmap
-from goodmap.config import Config
+from goodmap.platzky.config import Config
 from goodmap.platzky.db.json_db import JsonDbConfig
 
 config = Config(
