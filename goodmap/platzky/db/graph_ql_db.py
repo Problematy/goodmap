@@ -9,10 +9,6 @@ from pydantic import Field
 from .db import DB, DBConfig
 
 
-def db_type():
-    return GraphQL
-
-
 def db_config_type():
     return GraphQlDbConfig
 
