@@ -87,3 +87,6 @@ class Json(DB):
             i for i in range(len(self.data["posts"])) if self.data["posts"][i]["slug"] == post_slug
         )
         self.data["posts"][post_index]["comments"].append(comment)
+
+    def get_plugins_data(self):
+        return self.data.get("plugins", [])

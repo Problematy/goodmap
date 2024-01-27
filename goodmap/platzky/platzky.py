@@ -125,7 +125,7 @@ def create_engine(config: Config, db) -> Engine:
     def page_not_found(e):
         return render_template("404.html", title="404"), 404
 
-    return plugify(app, config.plugins)
+    return plugify(app)
 
 
 def create_app_from_config(config: Config) -> Engine:
