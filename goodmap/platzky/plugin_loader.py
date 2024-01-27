@@ -1,6 +1,5 @@
 import importlib.util
 import os
-import pkgutil
 import sys
 from os.path import abspath, dirname
 
