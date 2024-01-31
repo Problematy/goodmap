@@ -1,3 +1,4 @@
+import sys
 import typing as t
 
 import yaml
@@ -50,6 +51,9 @@ class Config(StrictBaseModel):
 
     @classmethod
     def parse_yaml(cls, path: str) -> "Config":
-        with open(path) as f:
-            cfg = yaml.safe_load(f)
-        return cls.parse_obj(cfg)
+        try:
+            with open(path, "r") as f:
+                return cls.parse_obj(yaml.safe_load(f))
+        except FileNotFoundError:
+            print(f"Config file not found: {path}", file=sys.stderr)
+            raise SystemExit(1)
