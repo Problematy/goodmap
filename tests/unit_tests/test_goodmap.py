@@ -19,7 +19,6 @@ def test_create_app():
 
 
 def test_create_app_from_config():
-    dir(goodmap.get_data)
     with patch(
         "goodmap.goodmap.platzky.create_app_from_config", MagicMock()
     ) as mock_platzky_app_creation:
