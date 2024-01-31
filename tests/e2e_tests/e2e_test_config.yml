@@ -13,17 +13,3 @@ LANGUAGES:
   pl:
     name: polski
     flag: pl
-
-#TODO this should not be necessary argument
-ROUTE_OVERWRITES:
-  /static/map.js: https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.1.7
-
-
-PLUGINS:
-  sendmail:
-    PORT: 465
-    SERVER: "smtp.gmail.com"
-    ADDRESS: "my@gmail.com"
-    PASSWORD: "PA$$WORD"
-    DEFAULT_SENDER: "sender@gmail.com"
-    ADMIN_EMAIL: "help.desk@gmail.com"

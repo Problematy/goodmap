@@ -1,4 +1,4 @@
-from goodmap.config import Config, languages_dict
+from goodmap.platzky.config import Config, languages_dict
 
 
 def test_parse_template_config() -> None:

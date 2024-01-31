@@ -1,10 +1,13 @@
 import json
-import os.path
 
 from pydantic import Field
 
-from goodmap.platzky.blog.db import DBConfig
-from goodmap.platzky.db.json_db import Json
+from .db import DBConfig
+from .json_db import Json
+
+
+def db_config_type():
+    return JsonFileDbConfig
 
 
 class JsonFileDbConfig(DBConfig):
@@ -13,16 +16,21 @@ class JsonFileDbConfig(DBConfig):
 
 def get_db(config):
     json_file_db_config = JsonFileDbConfig.parse_obj(config)
-    db_path = os.path.abspath(json_file_db_config.path)
-    return JsonFile(db_path)
+    return JsonFile(json_file_db_config.path)
+
+
+def db_from_config(config: JsonFileDbConfig):
+    return JsonFile(config.path)
 
 
 class JsonFile(Json):
-    def __init__(self, file_path):
-        self.data_file_path = file_path
+    def __init__(self, path: str):
+        self.data_file_path = path
         with open(self.data_file_path) as json_file:
             data = json.load(json_file)
             super().__init__(data)
+        self.module_name = "json_file_db"
+        self.db_name = "JsonFileDb"
 
     def _save_file(self):
         with open(self.data_file_path, "w") as json_file:

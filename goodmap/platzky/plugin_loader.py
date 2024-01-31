@@ -1,48 +1,39 @@
 import importlib.util
 import os
-import pkgutil
 import sys
 from os.path import abspath, dirname
 
 
-def get_selected_not_installed_plugins(enabled_plugins):
-    plugins_root_dir = os.path.join(dirname(abspath(__file__)), "plugins")
-    plugins_dirs = set(os.listdir(plugins_root_dir))
-    return enabled_plugins - plugins_dirs
-
-
-def find_plugins(enabled_plugins):
+def find_plugin(plugin_name):
+    """Find plugin by name and return it as module.
+    :param plugin_name: name of plugin to find
+    :return: module of plugin
+    """
     plugins_dir = os.path.join(dirname(abspath(__file__)), "plugins")
-    plugins = []
-
-    if selected_not_enabled := get_selected_not_installed_plugins(enabled_plugins):
-        raise Exception(
-            f"Plugins {selected_not_enabled} has been selected in config, "
-            + "but has not been installed."
-        )
-
-    for plugin_dir in enabled_plugins:
-        module_name = plugin_dir.removesuffix(".py")
-        spec = importlib.util.spec_from_file_location(
-            module_name, os.path.join(plugins_dir, plugin_dir, "entrypoint.py")
-        )
-        assert spec is not None
-        plugin = importlib.util.module_from_spec(spec)
-        sys.modules[module_name] = plugin
-        assert spec.loader is not None
-        spec.loader.exec_module(plugin)
-        plugins.append(plugin)
-
-    for _, name, _ in pkgutil.iter_modules():
-        if name.startswith("platzky_"):
-            plugins.append(importlib.import_module(name))
-
-    return plugins
+    module_name = plugin_name.removesuffix(".py")
+    spec = importlib.util.spec_from_file_location(
+        module_name, os.path.join(plugins_dir, plugin_name, "entrypoint.py")
+    )
+    assert spec is not None
+    plugin = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = plugin
+    assert spec.loader is not None
+    spec.loader.exec_module(plugin)
+    return plugin
 
 
-def plugify(app, plugins_configs):
-    plugins_names = plugins_configs.keys()
-    plugins = find_plugins(plugins_names)
-    for plugin in plugins:
-        plugin.process(app, plugins_configs[plugin.__name__])
+def plugify(app):
+    """Load plugins and run their entrypoints.
+    :param app: Flask app
+    :return: Flask app
+    """
+
+    plugins_data = app.db.get_plugins_data()
+
+    for plugin_data in plugins_data:
+        plugin_config = plugin_data["config"]
+        plugin_name = plugin_data["name"]
+        plugin = find_plugin(plugin_name)
+        plugin.process(app, plugin_config)
+
     return app

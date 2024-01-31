@@ -1,12 +1,17 @@
 import datetime
+from typing import Any, Dict
 
 from pydantic import Field
 
-from goodmap.platzky.blog.db import DB, DBConfig
+from .db import DB, DBConfig
+
+
+def db_config_type():
+    return JsonDbConfig
 
 
 class JsonDbConfig(DBConfig):
-    data: dict = Field(alias="DATA")  # type: ignore
+    data: Dict[str, Any] = Field(alias="DATA")
 
 
 def get_db(config):
@@ -14,25 +19,35 @@ def get_db(config):
     return Json(json_db_config.data)
 
 
+def db_from_config(config: JsonDbConfig):
+    return Json(config.data)
+
+
 class Json(DB):
-    def __init__(self, data_dict):
-        self.data = data_dict
+    def __init__(self, data: Dict[str, Any]):
+        super().__init__()
+        self.data: Dict[str, Any] = data
+        self.module_name = "json_db"
+        self.db_name = "JsonDb"
 
     def get_all_posts(self, lang):
         return [post for post in self.data.get("posts", ()) if post["language"] == lang]
 
     def get_post(self, slug):
-        return next(post for post in self.data.get("posts") if post["slug"] == slug)
+        all_posts = self.data.get("posts")
+        if all_posts is None:
+            raise Exception("Posts should not be None")
+        return next(post for post in all_posts if post["slug"] == slug)
 
     # TODO: add test for non-existing page
     def get_page(self, slug):
         return next(
-            (page for page in self.data.get("site_content").get("pages") if page["slug"] == slug),
+            (page for page in self.get_site_content().get("pages") if page["slug"] == slug),
             None,
         )
 
     def get_menu_items(self):
-        post = self.data.get("site_content").get("menu_items", [])
+        post = self.get_site_content().get("menu_items", [])
         return post
 
     def get_posts_by_tag(self, tag, lang):
@@ -44,17 +59,23 @@ class Json(DB):
     def get_all_questions(self):
         return self.data["questions"]
 
+    def get_site_content(self):
+        content = self.data.get("site_content")
+        if content is None:
+            raise Exception("Content should not be None")
+        return content
+
     def get_logo_url(self):
-        return self.data.get("site_content").get("logo_url", "")
+        return self.get_site_content().get("logo_url", "")
 
     def get_font(self):
-        return self.data.get("site_content").get("font", "")
+        return self.get_site_content().get("font", "")
 
     def get_primary_color(self):
-        return self.data.get("site_content").get("primary_color", "white")
+        return self.get_site_content().get("primary_color", "white")
 
     def get_secondary_color(self):
-        return self.data.get("site_content").get("secondary_color", "navy")
+        return self.get_site_content().get("secondary_color", "navy")
 
     def add_comment(self, author_name, comment, post_slug):
         comment = {
@@ -66,3 +87,6 @@ class Json(DB):
             i for i in range(len(self.data["posts"])) if self.data["posts"][i]["slug"] == post_slug
         )
         self.data["posts"][post_index]["comments"].append(comment)
+
+    def get_plugins_data(self):
+        return self.data.get("plugins", [])

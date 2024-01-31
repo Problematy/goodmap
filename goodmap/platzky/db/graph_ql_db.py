@@ -6,7 +6,11 @@ from gql import Client, gql
 from gql.transport.aiohttp import AIOHTTPTransport
 from pydantic import Field
 
-from goodmap.platzky.blog.db import DB, DBConfig
+from .db import DB, DBConfig
+
+
+def db_config_type():
+    return GraphQlDbConfig
 
 
 class GraphQlDbConfig(DBConfig):
@@ -18,11 +22,18 @@ def get_db(config: GraphQlDbConfig):
     return GraphQL(config.endpoint, config.token)
 
 
+def db_from_config(config: GraphQlDbConfig):
+    return GraphQL(config.endpoint, config.token)
+
+
 class GraphQL(DB):
     def __init__(self, endpoint, token):
+        self.module_name = "graph_ql_db"
+        self.db_name = "GraphQLDb"
         full_token = "bearer " + token
         transport = AIOHTTPTransport(url=endpoint, headers={"Authorization": full_token})
         self.client = Client(transport=transport)
+        super().__init__()
 
     def get_all_posts(self, lang):
         all_posts = gql(

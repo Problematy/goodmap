@@ -12,24 +12,28 @@ def send_mail(sender_email, password, smtp_server, port, receiver_email, subject
     server.close()
 
 
-def process(app, plugin_config):
+class SendMailConfig(BaseModel):
+    user: str = Field(alias="sender_email")
+    password: str = Field(alias="password")
+    server: str = Field(alias="smtp_server")
+    port: int = Field(alias="port")
+    receiver: str = Field(alias="receiver_email")
+    subject: str = Field(alias="subject")
+
+
+def process(app, config):
+    plugin_config = SendMailConfig.parse_obj(config)
+
     def notify(message):
         send_mail(
-            sender_email=plugin_config["USER"],
-            password=plugin_config["PASSWORD"],
-            smtp_server=plugin_config["SERVER"],
-            port=plugin_config["PORT"],
-            receiver_email=plugin_config["RECEIVER"],
-            subject=plugin_config["SUBJECT"],
+            sender_email=plugin_config.user,
+            password=plugin_config.password,
+            smtp_server=plugin_config.server,
+            port=plugin_config.port,
+            receiver_email=plugin_config.receiver,
+            subject=plugin_config.subject,
             message=message,
         )
 
     app.add_notifier(notify)
     return app
-
-
-class SendMailPlugin(BaseModel):
-    port: str = Field(alias="PORT")
-    server: str = Field(alias="SERVER")
-    user: str = Field(alias="USER")
-    password: str = Field(alias="PASSWORD")

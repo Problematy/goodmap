@@ -5,12 +5,11 @@ from flask import Flask, redirect, render_template, request, session
 from flask_babel import Babel
 from flask_minify import Minify
 
-from goodmap.config import (
+from .blog import blog
+from .config import (
     Config,
     languages_dict,
 )
-
-from .blog import blog
 from .db.db_loader import get_db
 from .plugin_loader import plugify
 from .seo import seo
@@ -94,6 +93,9 @@ def create_engine(config: Config, db) -> Engine:
     def logo():
         return redirect("https://www.problematy.pl/wp-content/uploads/2023/08/kolor_poziom.png")
 
+    def url_link(x: str) -> str:
+        return urllib.parse.quote(x, safe="")
+
     @app.context_processor
     def utils():
         locale = app.get_locale()
@@ -103,7 +105,7 @@ def create_engine(config: Config, db) -> Engine:
             "languages": languages_dict(config.languages),
             "current_flag": flag,
             "current_language": locale,
-            "url_link": lambda x: urllib.parse.quote(x, safe=""),  # pyright: ignore
+            "url_link": url_link,
             "menu_items": app.db.get_menu_items(),
             "logo_url": app.db.get_logo_url(),
             "font": app.db.get_font(),
@@ -123,14 +125,14 @@ def create_engine(config: Config, db) -> Engine:
     def page_not_found(e):
         return render_template("404.html", title="404"), 404
 
-    return plugify(app, config.plugins)
+    return plugify(app)
 
 
 def create_app_from_config(config: Config) -> Engine:
     engine = create_engine_from_config(config)
     blog_blueprint = blog.create_blog_blueprint(
         db=engine.db,
-        config=config,
+        blog_prefix=config.blog_prefix,
         locale_func=engine.get_locale,
     )
     seo_blueprint = seo.create_seo_blueprint(db=engine.db, config=engine.config)

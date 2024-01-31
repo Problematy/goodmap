@@ -8,8 +8,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from goodmap.config import Config
 from goodmap.platzky.blog import blog
+from goodmap.platzky.config import Config
 from goodmap.platzky.platzky import create_engine
 
 mocked_post = {
@@ -56,7 +56,7 @@ def test_app():
         }
     )
     app = create_engine(config, db_mock)
-    blog_blueprint = blog.create_blog_blueprint(db_mock, config, app.get_locale)
+    blog_blueprint = blog.create_blog_blueprint(db_mock, config.blog_prefix, app.get_locale)
 
     app.register_blueprint(blog_blueprint)
     return app.test_client()

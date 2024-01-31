@@ -2,7 +2,7 @@ from os.path import dirname
 
 from flask import Flask
 
-from goodmap.config import Config
+from goodmap.platzky.config import Config
 from goodmap.platzky.platzky import create_engine_from_config
 
 
