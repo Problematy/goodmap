@@ -72,5 +72,27 @@
         "primary_color": "#000000",
         "secondary_color": "#245466",
         "left_bar_width": "300px"
-    }
+    },
+    "plugins": [
+        {
+            "name": "redirections",
+            "config": {
+                "/test": "/blog/page/about",
+                "/static/map.js": "https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.1.7"
+            }
+        },
+        {
+            "name": "sendmail",
+            "config":
+            {
+                "port": 465,
+                "smtp_server": "smtp.gmail.com",
+                "receiver_email": "my@gmail.com",
+                "password": "PA$$WORD",
+                "sender_email": "sender@gmail.com",
+                "admin_email": "help.desk@gmail.com",
+                "subject": "New message from website"
+            }
+        }
+    ]
 }
