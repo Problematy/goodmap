@@ -1,0 +1,13 @@
+stages:
+  - merge
+
+merge_dev_to_main:
+  stage: merge
+  only:
+    - dev
+  script:
+    - git config user.email "your_email@example.com"
+    - git config user.name "Your Name"
+    - git checkout main
+    - git merge --no-ff dev
+    - git push origin main

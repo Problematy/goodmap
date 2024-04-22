@@ -1,0 +1,65 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <title>{% block title %}{% endblock title %} | Adminto - Responsive Admin Dashboard Template</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="A fully featured admin theme which can be used to build CRM, CMS, etc." name="description"/>
+    <meta content="Coderthemes" name="author"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <!-- App favicon -->
+    <link rel="shortcut icon" href="{% static 'images/favicon.ico' %}">
+
+    {% block css %}
+        {% block extra_css %} {% endblock extra_css %}
+        {% include "partials/head-css.html" %}
+    {% endblock css %}
+</head>
+
+<body class="loading" data-layout-color="light" data-layout-mode="default" data-layout-size="fluid"
+      data-topbar-color="light" data-leftbar-position="fixed" data-leftbar-color="light" data-leftbar-size='default'
+      data-sidebar-user='true'>
+
+        <!-- Pre-loader -->
+        <div id="preloader">
+            <div id="status">
+                <div class="spinner">Loading...</div>
+            </div>
+        </div>
+        <!-- End Preloader-->
+
+<div id="wrapper">
+
+    {% block topbar %}
+    {% endblock topbar %}
+
+    {% include "partials/left-sidebar.html" %}
+
+    <div class="content-page">
+        <div class="content">
+
+            <div class="container-fluid">
+                {% block content %}
+                {% endblock content %}
+            </div>
+
+        </div>
+
+        {% include "partials/footer.html" %}
+
+    </div>
+
+</div>
+
+{% include "partials/right-sidebar.html" %}
+
+{% include "partials/vendor.html" %}
+
+{% block extra_js %} {% endblock extra_js %}
+
+<!-- App js-->
+<script src="{% static 'js/app.min.js' %}"></script>
+
+</body>
+</html>

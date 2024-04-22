@@ -1,0 +1,30 @@
+{% extends "partials/layout-vertical.html" %}
+
+{% load static %}
+
+{% block title %}Dashboard{% endblock title %}
+
+{% block extra_css %}
+
+{% endblock extra_css %}
+
+{% block topbar %}
+    {% include "partials/topbar.html" with pagetitle="Dashboard" %}
+{% endblock topbar %}
+
+{% block content %}
+
+{% endblock content %}
+
+{% block extra_js %}
+    <!-- knob plugin -->
+    <script src="{% static 'libs/jquery-knob/jquery.knob.min.js' %}"></script>
+
+    <!--Morris Chart-->
+    <script src="{% static 'libs/morris.js06/morris.min.js' %}"></script>
+    <script src="{% static 'libs/raphael/raphael.min.js' %}"></script>
+
+    <!-- Dashboar init js-->
+    <script src="{% static 'js/pages/dashboard.init.js' %}"></script>
+{% endblock extra_js %}
+
