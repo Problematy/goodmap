@@ -7,7 +7,44 @@ Map engine to serve all the people ;)
 
 ## Setup
 
-Use python 3.10, install poetry: `pip install poetry` and then install dependencies: `poetry install`
+#### 1. Use python 3.10.
+If you have a different version of Python on your system, install python 3.10 alongside. \
+If you can't or don't know how to install another version of python on your system, you can use [`pyenv`](https://github.com/pyenv/pyenv). In this case follow these steps, refering to to `pyenv` [documentation](https://github.com/pyenv/pyenv?tab=readme-ov-file#installation) for details:
+- Install and set up `pyenv` (get the package and modify rc file of your shell)
+- Using `pyenv` install Python version 3.10
+```
+pyenv install 3.10
+```
+- You can enter the pyenv environemnt by
+```
+pyenv shell 3.10
+```
+To view installed versions of python in pyenv, run `pyenv versions`.
+You can always test which python version is currently used in your shell session by running `python --version` or `which python`.
+
+#### 2. Set up `poetry` virtualenv.
+`poetry` can create virtualenvs associated with a project
+- Install `poetry`. **Note:** you need to install it based on Python 3.10. If you use `pyenv` make sure you are in the pyenv environment as shown above.
+
+```
+pip install poetry
+```
+- Create `poetry` virtual env
+```
+poetry env use
+```
+To view poetry virtualenvs associated with the current project, run `poetry env list`. \
+To view information on the currrent virtualenv, run `poetry env info`.
+
+#### 3. Install dependencies
+```
+poetry install
+```
+
+Now you have a ready environment. If everything worked fine, from now on you don't have to invoke `pyenv` at all. Any time you enter the project directory, `poetry` will automatically detect the virtualenv it created. Then you can invoke any commands in your project like this:
+```
+poetry run <command>
+```
 
 ## Running App locally
 
