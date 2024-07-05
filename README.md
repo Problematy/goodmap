@@ -7,24 +7,13 @@ Map engine to serve all the people ;)
 
 ## Setup
 
-#### 1. Use python 3.10.
-If you have a different version of Python on your system, install python 3.10 alongside. \
-If you can't or don't know how to install another version of python on your system, you can use [`pyenv`](https://github.com/pyenv/pyenv). In this case follow these steps, refering to to `pyenv` [documentation](https://github.com/pyenv/pyenv?tab=readme-ov-file#installation) for details:
-- Install and set up `pyenv` (get the package and modify rc file of your shell)
-- Using `pyenv` install Python version 3.10
-```
-pyenv install 3.10
-```
-- You can enter the pyenv environemnt by
-```
-pyenv shell 3.10
-```
-To view installed versions of python in pyenv, run `pyenv versions`.
-You can always test which python version is currently used in your shell session by running `python --version` or `which python`.
+#### 1. Use python 3.10
+If you have a different version of Python on your system, install python 3.10 alongside. For that, you can use [`pyenv`](https://github.com/pyenv/pyenv). Follow the [documentation](https://github.com/pyenv/pyenv?tab=readme-ov-file#installation). Useful commands: `pyenv install`, `pyenv shell`, `pyenv versions`.
 
-#### 2. Set up `poetry` virtualenv.
-`poetry` can create virtualenvs associated with a project
-- Install `poetry`. **Note:** you need to install it based on Python 3.10. If you use `pyenv` make sure you are in the pyenv environment as shown above.
+#### 2. Set up `poetry`
+`poetry` can create virtual environments associated with a project
+- make sure you are in the Python 3.10 environment.
+- Install `poetry`
 
 ```
 pip install poetry
@@ -33,15 +22,16 @@ pip install poetry
 ```
 poetry env use
 ```
-To view poetry virtualenvs associated with the current project, run `poetry env list`. \
-To view information on the currrent virtualenv, run `poetry env info`.
+ Useful commands: `poetry env list`, `poetry env info`.
 
 #### 3. Install dependencies
 ```
 poetry install
 ```
 
-Now you have a ready environment. If everything worked fine, from now on you don't have to invoke `pyenv` at all. Any time you enter the project directory, `poetry` will automatically detect the virtualenv it created. Then you can invoke any commands in your project like this:
+#### 4. You're ready
+
+When you enter the project directory, you can invoke any commands in your project like this:
 ```
 poetry run <command>
 ```
