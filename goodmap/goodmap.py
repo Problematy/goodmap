@@ -1,8 +1,8 @@
 from flask import Blueprint, render_template
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 
-from goodmap.platzky import platzky
-from goodmap.platzky.config import Config, languages_dict
+from goodmap.platzky.platzky import platzky
+from goodmap.platzky.platzky.config import Config, languages_dict
 
 from .core_api import core_pages
 from .db import get_data
