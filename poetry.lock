@@ -1365,7 +1365,7 @@ description = "Not only blog engine"
 optional = false
 python-versions = "^3.10"
 files = []
-develop = true
+develop = false
 
 [package.dependencies]
 aiohttp = "^3.9.5"
@@ -1380,8 +1380,10 @@ pydantic = "^2.7.1"
 PyYAML = "^6.0"
 
 [package.source]
-type = "directory"
-url = "goodmap/platzky"
+type = "git"
+url = "https://github.com/Problematy/platzky.git"
+reference = "HEAD"
+resolved_reference = "2a061c002fe1a80e21935713fb6171483829f409"
 
 [[package]]
 name = "pluggy"
@@ -2291,4 +2293,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "cee08e4c10958db541333b033ca22c21c289bfba8d0d75b653d5475b4624a566"
+content-hash = "500f1b331d158d14aa7034a084f347047be9d99eb1cb7c542927c80e39b38584"
