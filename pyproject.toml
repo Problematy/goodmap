@@ -22,6 +22,7 @@ Flask-Minify = "^0.42"
 pydantic = "^2.7.1"
 
 platzky = {git = "https://github.com/Problematy/platzky.git"} # TODO remove this line after publishing platzky in stable version
+#platzky = {path = "../platzky", develop = true} # TODO remove this line after publishing platzky in stable version
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.2"
