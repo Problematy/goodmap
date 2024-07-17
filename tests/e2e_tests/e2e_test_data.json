@@ -40,7 +40,8 @@
             ]
         },
         "visible_data": [
-            "accessible_by"
+            "accessible_by",
+            "type_of_place"
         ],
         "meta_data": [
             "UUID"

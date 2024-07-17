@@ -1,8 +1,7 @@
 from flask import Blueprint, jsonify, make_response, request
 from flask_babel import gettext
 from flask_restx import Api, Resource, fields
-
-from goodmap.platzky.config import LanguagesMapping
+from platzky.config import LanguagesMapping
 
 from .core import get_queried_data
 from .formatter import prepare_pin
