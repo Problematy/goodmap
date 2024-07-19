@@ -1382,8 +1382,8 @@ PyYAML = "^6.0"
 [package.source]
 type = "git"
 url = "https://github.com/Problematy/platzky.git"
-reference = "HEAD"
-resolved_reference = "71cfa5697a64c6bf727c42868eeebb5228cee632"
+reference = "28cddb6"
+resolved_reference = "28cddb654e30258196b8cb91cfdd2b4d967f0bea"
 
 [[package]]
 name = "pluggy"
@@ -2293,4 +2293,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "500f1b331d158d14aa7034a084f347047be9d99eb1cb7c542927c80e39b38584"
+content-hash = "e385bb1d20c3a70c1c1f2ffbd0c3292e935978ac5405b8f0ff88dfae68667e51"
