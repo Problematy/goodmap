@@ -21,7 +21,7 @@ aiohttp = "^3.8.4"
 Flask-Minify = "^0.42"
 pydantic = "^2.7.1"
 
-platzky = {git = "https://github.com/Problematy/platzky.git", rev="28cddb6"} # TODO remove this line after publishing platzky in stable version
+platzky = {git = "https://github.com/Problematy/platzky.git", rev="28cddb654e30258196b8cb91cfdd2b4d967f0bea"} # TODO remove this line after publishing platzky in stable version
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.2"
