@@ -8,21 +8,15 @@ Map engine to serve all the people ;)
 ## Setup
 
 #### 1. Use python 3.10
-If you have a different version of Python on your system, install python 3.10 alongside. For that, you can use [`pyenv`](https://github.com/pyenv/pyenv). Follow the [documentation](https://github.com/pyenv/pyenv?tab=readme-ov-file#installation). Useful commands: `pyenv install`, `pyenv shell`, `pyenv versions`.
+If you have a different version of Python on your system, install python 3.10 alongside. For that, you can use [`pyenv`](https://github.com/pyenv/pyenv). Follow the [documentation](https://github.com/pyenv/pyenv?tab=readme-ov-file#installation). Useful commands: `pyenv help <command>`, `pyenv install`, `pyenv shell`, `pyenv versions`.
 
-#### 2. Set up `poetry`
-`poetry` can create virtual environments associated with a project
-- make sure you are in the Python 3.10 environment.
-- Install `poetry`
-
+#### 2. Install `poetry` in Python 3.10
+`poetry` can create virtual environments associated with a project. \
+Make sure you are in the Python 3.10 environment and install:
 ```
 pip install poetry
 ```
-- Create `poetry` virtual env
-```
-poetry env use
-```
- Useful commands: `poetry env list`, `poetry env info`.
+Useful commands: `poetry -h <command>`, `poetry env list`, `poetry env info`.
 
 #### 3. Install dependencies
 ```
