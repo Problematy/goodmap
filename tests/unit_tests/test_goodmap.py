@@ -1,10 +1,10 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+from platzky.config import Config
+from platzky.db.json_db import JsonDbConfig
 
 from goodmap import goodmap
-from goodmap.platzky.config import Config
-from goodmap.platzky.db.json_db import JsonDbConfig
 
 config = Config(
     APP_NAME="test",
@@ -19,9 +19,7 @@ def test_create_app():
 
 
 def test_create_app_from_config():
-    with patch(
-        "goodmap.goodmap.platzky.create_app_from_config", MagicMock()
-    ) as mock_platzky_app_creation:
+    with patch("platzky.platzky.create_app_from_config", MagicMock()) as mock_platzky_app_creation:
         with patch("goodmap.goodmap.get_data", MagicMock()) as mock_get_data:
             goodmap.create_app_from_config(config)
 
