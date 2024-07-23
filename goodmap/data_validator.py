@@ -25,6 +25,7 @@ def validate_json_data(json_file_path):
             json_data = json.load(json_file)
         except json.JSONDecodeError as e:
             print("ERROR: the file does not contain valid json")
+            print(e)
             exit(-1)
 
     categories = json_data["map"]["categories"]
