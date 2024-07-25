@@ -48,32 +48,29 @@ Afterwards run it with:
 
 ## Database
 
-Database consists of three sections:
+The database is stored in a JSON file in the `map` section. The first subsection `data` consists of the actual datapoints, representing points on a map.
 
-- `categories` - which informs on what categories data of points is divided
-- `visible_data` - list of categories which will be visible by application users
-- `data` - actual data split into `categories`
+Datapoints have fields. The schema of these fields in defined in the rest of the subsections:
+- `obligatory-filterable` - fields that are required for every datapoint and by which datapoints can be filtered in the app. These fields will have specified domains and every datapoint must have these fields set to one of the values from the domain. E.g.
+```
+  "type_of_place": [
+    "big bridge",
+    "small bridge"
+]
+```
+- `obligatory` - the rest of the fields that are required for every datapoint. E.g.
+```
+"position",
+"name"
+```
+- `visible_data` - when a datapoint will be rendered as a pin on a map, these are the fields that will be shown in the box when clicking on a pin. E.g.
+```
+"type_of_place"
+```
+- `meta-data` - ??
 
-
-### `categories`
-Fully configurable map where key is name of category and value is list of allowed types. E.g.
-* "car_elements": ["mirror", "wheel", "steering wheel"]
-* "color": ["red", "blue", "green"]
-
-### `data`
-Data consists of two parts:
-* obligatory and constant
-  * `name` - name of the object
-  * `position` - coordinates of object
-* category dependent - depending on your `categories` setup it varies. See example of config below.
-
-#### `custom data`
-You can define your own, more complex data types as dictionary.
-* obligatory fields in dictionary:
-  * `type` - type of data
-  * `value` - value of data
-* optional fields in dictionary:
-  * `displayValue` - value to display instead of `value`
+You can define the fields in all these sections, keeping in mind the assumptions about them specified above. The app relies on these assumptions.
+Besides these types of fields, there is no restriction on the number of fields a datapoint can have.
 
 ## Examples
 
