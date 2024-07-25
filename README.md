@@ -50,26 +50,25 @@ Afterwards run it with:
 
 The database is stored in a JSON file in the `map` section. The first subsection `data` consists of the actual datapoints, representing points on a map.
 
-Datapoints have fields. The schema of these fields in defined in the rest of the subsections:
-- `obligatory-filterable` - fields that are required for every datapoint and by which datapoints can be filtered in the app. These fields will have specified domains and every datapoint must have these fields set to one of the values from the domain. E.g.
+Datapoints have fields. The schema of these fields is defined in the subsections:
+- `filters` - fields by which datapoints can be filtered in the app. Every filter has a specified domain. Filters are obligatory fields for every datapoint and the value of a filter can be any subset of the filter's domain. For example if a database defines the filter `accessible_by` with the domain `["bikes", "cars", "pedestrians"]` then:
 ```
-  "type_of_place": [
-    "big bridge",
-    "small bridge"
-]
+"accessible_by": ["bikes", "pedestrians"]
 ```
-- `obligatory` - the rest of the fields that are required for every datapoint. E.g.
+is a valid value of the field `accessible_by` for a datapoint.
+- `obligatory` - the fields that are obligatory for every datapoint but are not filters. E.g.
 ```
 "position",
 "name"
 ```
-- `visible_data` - when a datapoint will be rendered as a pin on a map, these are the fields that will be shown in the box when clicking on a pin. E.g.
+- `visible_data` - when a datapoint will be rendered as a pin on a map, these fields will be shown in the box when clicking on a pin. E.g.
 ```
+"name",
 "type_of_place"
 ```
 - `meta-data` - ??
 
-You can define the fields in all these sections, keeping in mind the assumptions about them specified above. The app relies on these assumptions.
+You can define the fields in all these subsections, keeping in mind the assumptions about them specified above. The app relies on these assumptions.
 Besides these types of fields, there is no restriction on the number of fields a datapoint can have.
 
 ## Examples
