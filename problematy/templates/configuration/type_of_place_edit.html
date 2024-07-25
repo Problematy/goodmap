@@ -1,0 +1,77 @@
+{% extends "partials/base.html" %}
+
+{% load static %}
+
+{% block title %}Edit Type of Place{% endblock %}
+
+{% block extra_css %}
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet"/>
+{% endblock %}
+
+{% block topbar %}
+    {% include "partials/topbar.html" with pagetitle="Edit Type of Place" %}
+{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="card-title text-center">Edit Type of Place</h4>
+                </div>
+                <div class="card-body">
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger" role="alert">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <form method="post" id="typeOfPlaceForm" novalidate>
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="typeName" class="form-label">Type of Place Name</label>
+                            <input type="text" id="typeName" name="name" class="form-control"
+                                   placeholder="Enter type of place name" required value="{{ form.name.value }}">
+                            {% for error in form.name.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <!-- Поля для ввода URL и комментариев с проверкой чекбоксов -->
+                        <div class="form-check">
+                            <input type="checkbox" name="enable_website" id="enable_website" class="form-check-input"
+                                   {% if object.enable_website %}checked{% endif %}>
+                            <label for="enable_website" class="form-check-label">Website</label>
+                        </div>
+                        <br>
+                        <div class="form-check">
+                            <input type="checkbox" name="enable_comments" id="enable_comments" class="form-check-input"
+                                   {% if object.enable_comments %}checked{% endif %}>
+                            <label for="enable_comments" class="form-check-label">Comments</label>
+                        </div>
+                        <br>
+
+                        <!-- Динамически добавляемый контейнер для атрибутов -->
+                        <div id="dynamic-attributes-container" class="mb-3"></div>
+                        <button type="button" id="add-attribute-btn" class="btn btn-info mb-3">Add attribute</button>
+
+                        <div class="mt-3 text-right">
+                            <button type="submit" class="btn btn-primary">Save</button>
+                            <a href="{% url 'type_of_place_list' %}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div> <!-- end card-body -->
+            </div> <!-- end card -->
+        </div><!-- end col -->
+    </div><!-- end row -->
+{% endblock content %}
+
+{% block extra_js %}
+    {{ block.super }}
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
+    <script type="text/javascript">
+        window.existingAttributes = {{ existingAttributes|safe }};
+    </script>
+    <script src="{% static 'js/pages/type_of_place_edit.js' %}"></script>
+{% endblock extra_js %}

@@ -1,0 +1,160 @@
+{% extends "partials/base.html" %}
+
+{% load static %}
+
+{% block title %}Edit Location{% endblock %}
+
+{% block extra_css %}
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
+{% endblock %}
+
+{% block topbar %}
+    {% include "partials/topbar.html" with pagetitle="Edit Location" %}
+{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="card-title text-left">Edit Location</h4>
+                </div>
+                <div class="card-body">
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger" role="alert">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <form method="post" class="form-horizontal" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="row">
+                            <!-- Name and Type of Place on one row -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="{{ form.name.id_for_label }}"
+                                           class="form-label">{{ form.name.label }}</label>
+                                    {{ form.name }}
+                                    {% for error in form.name.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="{{ form.type_of_place.id_for_label }}"
+                                           class="form-label">{{ form.type_of_place.label }}</label>
+                                    {{ form.type_of_place }}
+                                    {% for error in form.type_of_place.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <div class="col-md-12" id="website-container">
+                                <div class="form-group mb-3">
+                                    <label for="{{ form.website.id_for_label }}"
+                                           class="form-label">{{ form.website.label }}</label>
+                                    {{ form.website }}
+                                    {% for error in form.website.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <div class="col-md-12" id="comments-container">
+                                <div class="form-group mb-3">
+                                    <label for="{{ form.comments.id_for_label }}"
+                                           class="form-label">{{ form.comments.label }}</label>
+                                    {{ form.comments }}
+                                    {% for error in form.comments.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <div id="attributes-container"></div>
+
+                            <!-- Status and Check Date on one row -->
+                            <div class="col-md-6 mt-2">
+                                <div class="form-group mb-3">
+                                    <label for="{{ form.status.id_for_label }}"
+                                           class="form-label">{{ form.status.label }}</label>
+                                    {{ form.status }}
+                                    {% for error in form.status.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-md-6 mt-2">
+                                <div class="form-group mb-3">
+                                    <label for="{{ form.check_status.id_for_label }}"
+                                           class="form-label">{{ form.check_status.label }}</label>
+                                    {{ form.check_status }}
+                                    {% for error in form.check_status.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                        </div>
+                        <!-- Coordinates and Image on one row -->
+                        <div class="row">
+                            <!-- Latitude and Longitude each take up a quarter of the row -->
+                            <div class="col-md-3">
+                                <div class="form-group mb-3">
+                                    <label for="{{ form.latitude.id_for_label }}"
+                                           class="form-label">{{ form.latitude.label }}</label>
+                                    {{ form.latitude }}
+                                    {% for error in form.latitude.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group mb-3">
+                                    <label for="{{ form.longitude.id_for_label }}"
+                                           class="form-label">{{ form.longitude.label }}</label>
+                                    {{ form.longitude }}
+                                    {% for error in form.longitude.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <!-- Image takes up half of the row -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="id_image" class="form-label">{{ form.image.label }}</label>
+                                    {{ form.image }}
+                                    {% for error in form.image.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="map" style="height: 400px;"></div>
+                        <div class="mt-3 text-right">
+                            <button type="submit" class="btn btn-primary">Save</button>
+                            <a href="{% url 'location_list' %}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div> <!-- end card-body -->
+            </div> <!-- end card -->
+        </div><!-- end col -->
+    </div><!-- end row -->
+
+{% endblock content %}
+
+{% block extra_js %}
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script type="text/javascript">
+        window.existingAttributes = {{ existingAttributes|safe }};
+        window.selectedValues = {{ selectedValues|safe }};
+    </script>
+    <script src="{% static 'js/pages/location_edit.js' %}"></script>
+{% endblock extra_js %}
+

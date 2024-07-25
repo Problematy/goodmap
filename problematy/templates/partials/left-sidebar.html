@@ -1,0 +1,74 @@
+{% load custom_tags %}
+{% load static %}
+<!-- ========== Left Sidebar Start ========== -->
+<div class="left-side-menu">
+
+    <div class="h-100" data-simplebar>
+        <div id="sidebar-menu">
+            <ul id="side-menu">
+                {% if request.user.is_superuser or can_add_locations or can_edit_locations or can_delete_locations or can_check_locations %}
+                    <li>
+                        <a href="{% url 'location_list' %}">
+                            <i class="mdi mdi-tag-multiple"></i> Locations
+                        </a>
+                    </li>
+                {% endif %}
+                {% if request.user.is_superuser or can_manage_users %}
+                    <li>
+                        <a href="{% url 'user_list' %}">
+                            <i class="mdi mdi-account-multiple-outline"></i> User Management
+                        </a>
+                    </li>
+                {% endif %}
+                {% if request.user.is_superuser or can_configurate_roles or can_configurate_attributes_and_values or can_configurate_type_of_places or can_configurate_general_settings %}
+                    <li>
+                        <a href="#sidebarComponents" data-bs-toggle="collapse">
+                            <i class="mdi mdi-briefcase-outline"></i>
+                            <span> Configuration </span>
+                            <span class="menu-arrow"></span>
+                        </a>
+                        <div class="collapse" id="sidebarComponents">
+                            <ul class="nav-second-level">
+                                {% if request.user.is_superuser or can_configurate_roles %}
+                                    <li>
+                                        <a href="{% url 'role_list' %}">
+                                            <i class="mdi mdi-key"></i> User Roles
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                {% if request.user.is_superuser or can_configurate_attributes_and_values %}
+                                    <li>
+                                        <a href="{% url 'attribute_list' %}">
+                                            <i class="mdi mdi-tag-multiple"></i> Attributes & Values
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                {% if request.user.is_superuser or can_configurate_type_of_places %}
+                                    <li>
+                                        <a href="{% url 'type_of_place_list' %}">
+                                            <i class="mdi mdi-map-marker-outline"></i> Types of Places
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                {% if request.user.is_superuser or can_configurate_general_settings %}
+                                    <li>
+                                        <a href="{% url 'general_settings' %}">
+                                            <i class="mdi mdi-cog-outline"></i> General settings
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+        <!-- End Sidebar -->
+
+        <div class="clearfix"></div>
+
+    </div>
+    <!-- Sidebar -left -->
+
+</div>
+<!-- Left Sidebar End -->

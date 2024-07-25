@@ -1,0 +1,131 @@
+{% extends "partials/base.html" %}
+{% load custom_tags %}
+
+{% load static %}
+
+{% block title %}Table Editable{% endblock %}
+
+{% block extra_css %}
+    <!-- Дополнительные стили, если необходимы -->
+{% endblock %}
+
+{% block topbar %}
+    {% include "partials/topbar.html" with pagetitle="Table Editable" %}
+{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="card-title">Users {{ has_manage_users_permission }}</h4>
+                    {% if request.user.is_superuser or can_manage_users %}
+                        <a href="{% url 'create_user' %}" class="btn btn-success">Add User</a>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-centered mb-0" id="btn-editable">
+                            <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Created</th>
+                                <th class="text-nowrap">Last Login</th>
+                                <th>
+                                    <div class="d-flex align-items-center justify-content-center gap-2">
+                                        Actions
+                                    </div>
+                                </th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for user in users %}
+                                <tr data-user-id="{{ user.id }}">
+                                    <td>{{ forloop.counter0|add:start_index }}</td>
+                                    <td>{{ user.get_full_name }}</td>
+                                    <td>{{ user.email }}</td>
+                                    {% if not user.is_superuser %}
+                                        <td>{{ user.role.name }}</td>
+                                    {% else %}
+                                        <td>Admin</td>
+                                    {% endif %}
+                                    <td>{{ user.date_joined|date:"Y-m-d H:i" }}</td>
+                                    <td>{{ user.last_login|date:"Y-m-d H:i" }}</td>
+                                    {% if user.is_superuser %}
+                                        {% if request.user.is_superuser %}
+                                            <td>
+                                                <div class="d-flex align-items-center justify-content-center gap-2">
+                                                    <button class="edit-role-button btn btn-primary"
+                                                            data-user-id="{{ user.id }}">Edit
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        {% else %}
+                                            <td>
+                                                <div class="d-flex align-items-center justify-content-center gap-2">
+                                                    Restricted
+                                                </div>
+                                            </td>
+                                        {% endif %}
+                                    {% else %}
+                                        {% if can_manage_users %}
+                                            <td>
+                                                <div class="d-flex align-items-center justify-content-center gap-2">
+                                                    <button class="edit-role-button btn btn-primary"
+                                                            data-user-id="{{ user.id }}">Edit
+                                                    </button>
+                                                    <button class="delete-role-button btn btn-danger"
+                                                            data-user-id="{{ user.id }}">Delete
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        {% else %}
+                                            <td>Restricted</td>
+                                        {% endif %}
+                                    {% endif %}
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                        <br>
+                        <nav aria-label="User pagination">
+                            <ul class="pagination">
+                                {% if users.has_previous %}
+                                    <li class="page-item"><a class="page-link" href="?page=1">&laquo; First</a></li>
+                                    <li class="page-item"><a class="page-link"
+                                                             href="?page={{ users.previous_page_number }}">Previous</a>
+                                    </li>
+                                {% endif %}
+                                {% for num in users.paginator.page_range %}
+                                    {% if users.number == num %}
+                                        <li class="page-item active"><a
+                                                class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                                    {% elif num > users.number|add:'-3' and num < users.number|add:'3' %}
+                                        <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                {% if users.has_next %}
+                                    <li class="page-item"><a class="page-link"
+                                                             href="?page={{ users.next_page_number }}">Next</a></li>
+                                    <li class="page-item"><a class="page-link"
+                                                             href="?page={{ users.paginator.num_pages }}">Last
+                                        &raquo;</a></li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div> <!-- end .table-responsive-->
+                </div> <!-- end card-body -->
+            </div> <!-- end card -->
+        </div> <!-- end col -->
+    </div> <!-- end row -->
+{% endblock content %}
+
+{% block extra_js %}
+    <!-- Ваши скрипты для инициализации таблицы -->
+    <script src="{% static 'libs/jquery-tabledit/jquery.tabledit.min.js' %}"></script>
+    <script src="{% static 'js/pages/user_list.init.js' %}"></script>
+{% endblock extra_js %}

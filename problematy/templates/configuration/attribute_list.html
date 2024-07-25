@@ -1,0 +1,112 @@
+{% extends "partials/base.html" %}
+
+{% load static %}
+
+{% block title %}Attributes Management{% endblock %}
+
+{% block extra_css %}
+    <!-- Стили, если необходимы -->
+{% endblock %}
+
+{% block topbar %}
+    {% include "partials/topbar.html" with pagetitle="Attributes Management" %}
+{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="card-title">Attributes & Values</h4>
+                    <a href="{% url 'attribute_create' %}" class="btn btn-success">Add Attribute</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-centered mb-0" id="btn-editable">
+                            <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Attribute</th>
+                                <th>Values</th>
+                                <th>Visible in "Categories"</th>
+                                <th>Visible in "Visible Data"</th>
+                                <th>
+                                    <div class="d-flex align-items-center justify-content-center gap-2">
+                                        Actions
+                                    </div>
+                                </th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for attribute in attributes %}
+                                <tr data-attribute-id="{{ attribute.id }}">
+                                    <td>{{ forloop.counter0|add:start_index }}</td>
+                                    <td>{{ attribute.name }}</td>
+                                    <td>{{ attribute.get_values_list|join:", " }}</td>
+                                    <td>
+                                        {% if attribute.visible_in_categories %}
+                                            <i class="fas fa-check-circle text-success"></i>
+                                        {% else %}
+                                            <i class="fas fa-times-circle text-danger"></i>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if attribute.visible_in_visible_data %}
+                                            <i class="fas fa-check-circle text-success"></i>
+                                        {% else %}
+                                            <i class="fas fa-times-circle text-danger"></i>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center justify-content-center gap-2">
+                                            <a href="{% url 'attribute_edit' attribute.id %}"
+                                               class="btn btn-sm btn-primary">Edit</a>
+                                            <button class="btn btn-sm btn-danger delete-attribute-button"
+                                                    data-attribute-id="{{ attribute.id }}">Delete
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                        <br>
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination">
+                                {% if page.has_previous %}
+                                    <li class="page-item"><a class="page-link" href="?page=1">&laquo; First</a></li>
+                                    <li class="page-item"><a class="page-link"
+                                                             href="?page={{ page.previous_page_number }}">Previous</a>
+                                    </li>
+                                {% endif %}
+                                {% for num in page.paginator.page_range %}
+                                    {% if page.number == num %}
+                                        <li class="page-item active"><a class="page-link"
+                                                                        href="?page={{ num }}">{{ num }}</a></li>
+                                    {% elif num > page.number|add:'-3' and num < page.number|add:'3' %}
+                                        <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                {% if page.has_next %}
+                                    <li class="page-item"><a class="page-link"
+                                                             href="?page={{ page.next_page_number }}">Next</a></li>
+                                    <li class="page-item"><a class="page-link"
+                                                             href="?page={{ page.paginator.num_pages }}">Last
+                                        &raquo;</a></li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <!-- Table Editable plugin-->
+    <script src="{% static 'libs/jquery-tabledit/jquery.tabledit.min.js' %}"></script>
+    <!-- Table editable init-->
+    <script src="{% static 'js/pages/attribute_list.init.js' %}"></script>
+{% endblock %}

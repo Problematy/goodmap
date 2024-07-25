@@ -1,0 +1,75 @@
+{% extends "partials/base.html" %}
+
+{% block title %}Location History{% endblock %}
+
+{% block topbar %}
+    {% include "partials/topbar.html" with pagetitle="Location History" %}
+{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="card-title">Location Changes History</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-centered mb-0">
+                            <thead>
+                            <tr>
+                                <th>#</th>
+                                <th class="text-nowrap">Change Description</th>
+                                <th class="text-nowrap">Changed By</th>
+                                <th class="text-nowrap">Change Date</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for log in history %}
+                                <tr>
+                                    <td>{{ forloop.counter0|add:start_index }}</td>
+                                    <td>{{ log.change_description|safe }}</td>
+                                    <td>{{ log.user.get_full_name }}</td>
+                                    <td>{{ log.change_date|date:"Y-m-d H:i" }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center">No history records found</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    <br>
+                        <!-- Pagination -->
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination">
+                                {% if page.has_previous %}
+                                    <li class="page-item"><a class="page-link" href="?page=1">&laquo; First</a></li>
+                                    <li class="page-item"><a class="page-link"
+                                                             href="?page={{ page.previous_page_number }}">Previous</a>
+                                    </li>
+                                {% endif %}
+                                {% for num in page.paginator.page_range %}
+                                    {% if page.number == num %}
+                                        <li class="page-item active"><a class="page-link"
+                                                                        href="?page={{ num }}">{{ num }}</a></li>
+                                    {% elif num > page.number|add:'-3' and num < page.number|add:'3' %}
+                                        <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                {% if page.has_next %}
+                                    <li class="page-item"><a class="page-link"
+                                                             href="?page={{ page.next_page_number }}">Next</a></li>
+                                    <li class="page-item"><a class="page-link"
+                                                             href="?page={{ page.paginator.num_pages }}">Last
+                                        &raquo;</a></li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

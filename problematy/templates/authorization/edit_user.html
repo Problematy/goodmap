@@ -1,0 +1,94 @@
+{% extends "partials/base.html" %}
+
+{% load static %}
+
+{% block title %}Edit User{% endblock %}
+
+{% block extra_css %}
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet"/>
+{% endblock %}
+
+{% block topbar %}
+    {% include "partials/topbar.html" with pagetitle="Edit User" %}
+{% endblock %}
+
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="card-title">Edit User</h4>
+                </div>
+                <div class="card-body">
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger" role="alert">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="firstName" class="form-label">First Name</label>
+                                <input type="text" id="firstName" name="first_name" class="form-control"
+                                       placeholder="Enter first name" required value="{{ user.first_name }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="lastName" class="form-label">Last Name</label>
+                                <input type="text" id="lastName" name="last_name" class="form-control"
+                                       placeholder="Enter last name" required value="{{ user.last_name }}">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">Email Address</label>
+                                <input type="email" id="email" name="email" class="form-control"
+                                       placeholder="Enter email address" readonly value="{{ user.email }}">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="roleSelect" class="form-label">Role</label>
+                                {% if user.is_superuser %}
+                                    <input type="text" class="form-control" value="Admin" readonly>
+                                    <input type="hidden" name="role" value="{{ user.role.id }}">
+                                {% else %}
+                                    <select class="form-control" id="roleSelect" name="role">
+                                        {% for role in roles %}
+                                            <option value="{{ role.id }}"
+                                                    {% if role.id == user.role.id %}selected{% endif %}>
+                                                {{ role.name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                {% endif %}
+                            </div>
+
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="password" class="form-label">New Password</label>
+                                <input type="password" id="password1" name="password1" class="form-control"
+                                       placeholder="Enter new password">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="password2" class="form-label">Confirm New Password</label>
+                                <input type="password" id="password2" name="password2" class="form-control"
+                                       placeholder="Confirm new password">
+                            </div>
+                        </div>
+                        <div class="mt-3 text-right">
+                            <button type="submit" class="btn btn-primary">Save</button>
+                            <a href="{% url 'user_list' %}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div> <!-- end card-body -->
+            </div> <!-- end card -->
+        </div><!-- end col -->
+    </div><!-- end row -->
+{% endblock content %}
+
+{% block extra_js %}
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
+{% endblock extra_js %}
