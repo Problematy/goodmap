@@ -57,6 +57,7 @@ Datapoints have fields. The next subsections define special types of fields:
 "name",
 "accessible_by"
 ```
+TODO: `obligatory_fields` is a new subsection, start using it in the actual application
 - `categories` - fields that can somehow be used in the app, for example by which datapoints can be filtered. Every category has a specified list of allowed values. E.g.
 ```
 "accessible_by": ["bikes", "cars", "pedestrians"]
