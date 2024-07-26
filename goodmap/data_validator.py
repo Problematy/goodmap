@@ -9,20 +9,20 @@ def check_obligatory_fields(datapoints, obligatory_fields):
     for p in datapoints:
         for field in obligatory_fields:
             if field not in p.keys():
-                raise Exception(f'ERROR datapoint: \n {p} \nis missing obligatory field: "{field}"')
+                print(f'ERROR, datapoint: \n {p} \n is missing obligatory field: "{field}"')
 
 def check_categories_values(datapoints, categories):
     for p in datapoints:
-        for category in categories:
+        for category in categories & p.keys():
             if category not in p.keys():
-                raise Exception(f'ERROR datapoint: \n {p} \nis missing obligatory category: "{category}"')
+                print(f'ERROR, datapoint: \n {p} \n is missing obligatory category: "{category}"')
             if type(p[category]) is list: 
                 for attribute_value in p[category]:
                     if attribute_value not in categories[category]:
-                        raise Exception(f'ERROR, datapoint: \n {p} \nhas an invalid value for category: "{category}"')
+                        print(f'ERROR, datapoint: \n {p} \n has an invalid value for category: "{category}"')
             else:
                 if p[category] not in categories[category]:
-                    raise Exception(f'ERROR, datapoint: \n {p} \nhas an invalid value for category: "{category}"')
+                    print(f'ERROR, datapoint: \n {p} \n has an invalid value for category: "{category}"')
 
 
 def check_for_null_values(datapoints):
@@ -30,7 +30,7 @@ def check_for_null_values(datapoints):
     ### check for null values in non-obligatory fields    
         for attribute in p.keys():
             if p[attribute] is None:
-                raise Exception(f'ERROR, datapoint: \n {p} \nhas a null value for field: "{attribute}"')
+                print(f'ERROR, datapoint: \n {p} \n has a null value for field: "{attribute}"')
 
 
 def validate_from_json(json_file_path):
@@ -38,7 +38,7 @@ def validate_from_json(json_file_path):
         try:
             json_data = check_json_validaty(json_file)
         except json.JSONDecodeError as e:
-            print("ERROR: the file does not contain valid json")
+            print("ERROR: invalid json format")
             print(e)
             exit(-1)
 
@@ -46,23 +46,8 @@ def validate_from_json(json_file_path):
     categories = json_data["map"]["categories"]
     obligatory_fields = json_data["map"]["obligatory_fields"]
 
-    try:
-        check_obligatory_fields(datapoints, obligatory_fields)
-    except Exception as e:
-        print(e)
-        exit(-1)
-    try:
-        check_categories_values(datapoints, categories)
-    except Exception as e:
-        print(e)
-        exit(-1)
-    try:
-        check_for_null_values(datapoints)
-    except Exception as e:
-        print(e)
-        exit(-1)
-
-    print("The data satisfies conditions")
-
+    check_obligatory_fields(datapoints, obligatory_fields)
+    check_categories_values(datapoints, categories)
+    check_for_null_values(datapoints)
 
 validate_from_json(argv[1])
