@@ -1,5 +1,5 @@
 import json
-
+from sys import argv
 
 def check_json_validaty(json_file):
     json_data = json.load(json_file)
@@ -52,4 +52,4 @@ def validate_from_json(json_file_path):
     print("The data satisfies conditions")
 
 
-validate_from_json("./tests/e2e_tests/e2e_test_data.json")
+validate_from_json(argv[1])
