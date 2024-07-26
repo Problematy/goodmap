@@ -48,28 +48,30 @@ Afterwards run it with:
 
 ## Database
 
-The database is stored in a JSON file in the `map` section. The first subsection `data` consists of the actual datapoints, representing points on a map.
+The database is stored in JSON, in the `map` section. For an example database see `tests/e2e_tests/e2e_test_data.json`. The first subsection `data` consists of the actual datapoints, representing points on a map.
 
-Datapoints have fields. The schema of these fields is defined in the subsections:
-- `filters` - fields by which datapoints can be filtered in the app. Every filter has a specified domain. Filters are obligatory fields for every datapoint and the value of a filter can be any subset of the filter's domain. For example if a database defines the filter `accessible_by` with the domain `["bikes", "cars", "pedestrians"]` then:
-```
-"accessible_by": ["bikes", "pedestrians"]
-```
-is a valid value of the field `accessible_by` for a datapoint.
-- `obligatory` - the fields that are obligatory for every datapoint but are not filters. E.g.
+Datapoints have fields. The next subsections define special types of fields:
+- `obligatory_fields` - here are explicitely stated all the fields that the application assumes are presnt in all datapoints. E.g.
 ```
 "position",
-"name"
+"name",
+"accessible_by"
+```
+- `categories` - fields that can somehow be used in the app, for example by which datapoints can be filtered. Every category has a specified list of allowed values. E.g.
+```
+"accessible_by": ["bikes", "cars", "pedestrians"]
 ```
 - `visible_data` - when a datapoint will be rendered as a pin on a map, these fields will be shown in the box when clicking on a pin. E.g.
 ```
 "name",
 "type_of_place"
 ```
-- `meta-data` - ??
+- `meta-data` - some special data like 
+```
+"UUID"
+```
 
-You can define the fields in all these subsections, keeping in mind the assumptions about them specified above. The app relies on these assumptions.
-Besides these types of fields, there is no restriction on the number of fields a datapoint can have.
+You can define the fields in all these subsections. Besides these types of fields, there is no restriction on the number of fields a datapoint can have.
 
 ## Examples
 
