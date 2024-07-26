@@ -1,28 +1,34 @@
-# from goodmap.core import get_queried_data
 import json
 
-def does_fulfill_requirement(entry, requirements):
-    matches = []
-    for category, values in requirements:
-        if not values:
-            continue
-        matches.append(all(entry_value in entry[category] for entry_value in values))
-    return all(matches)
 
-def get_queried_data(all_data, categories, query_params):
-    requirements = []
-    for key in categories.keys():
-        requirements.append((key, query_params.get(key)))
+def check_json_validaty(json_file):
+    json_data = json.load(json_file)
+    return json_data
 
-    filtered_data = [x for x in all_data if does_fulfill_requirement(x, requirements)]
-    return filtered_data
+def check_obligatory_fields(datapoints, categories):
+    for p in datapoints:
+        for category in categories:
+            if category not in p.keys():
+                raise Exception(f"ERROR datapoint: \n {p} \nis missing field: {category}")
+            if type(p[category]) is list: 
+                for attribute_value in p[category]:
+                    if attribute_value not in categories[category]:
+                        raise Exception(f"ERROR, datapoint: \n {p} \nhas an invalid value for category: {category}")
+            else:
+                if p[category] not in categories[category]:
+                    raise Exception(f"ERROR, datapoint: \n {p} \nhas an invalid value for category: {category}")
 
+def check_for_null_values(datapoints):
+    for p in datapoints:
+    ### check for null values in non-obligatory fields    
+        for attribute in p.keys():
+            if p[attribute] is None:
+                raise Exception(f"ERROR, datapoint: \n {p} \nhas a null value for field: {attribute}")
 
-def validate_json_data(json_file_path):
+def validate_from_json(json_file_path):
     with open(json_file_path) as json_file:
-    ### check if valid json file
         try:
-            json_data = json.load(json_file)
+            json_data = check_json_validaty(json_file)
         except json.JSONDecodeError as e:
             print("ERROR: the file does not contain valid json")
             print(e)
@@ -31,34 +37,19 @@ def validate_json_data(json_file_path):
     categories = json_data["map"]["categories"]
     points = json_data["map"]["data"]
 
-    for p in points:
-    ### check for obligatory fields
-        for category in categories:
-            preparated_param = {category: categories[category][:1]}
-            try:
-                get_queried_data([p], categories, preparated_param)
-            except:
-                print("ERROR get_queried_data failed")
-                print(" -> invalid point:", p)
-                print(" -> failing category:", category)
-                exit(-1)
-            # if category not in p.keys():
-            #     raise Exception("point missing category")
+    try:
+        check_obligatory_fields(points, categories)
+    except Exception as e:
+        print(e)
+        exit(-1)
 
-    ### check for null values in non-obligatory fields    
-        for attribute in p.keys():
-            if attribute not in categories.keys():
-                try:
-                    if p[attribute] is None:
-                        raise Exception("ERROR: non obligatory attribute is null")
-                except Exception as e:
-                    print(e)
-                    print(" -> invalid point:", p)
-                    print(" -> failing attribute:", attribute)
-                    print("This attribute is not required. If it's value is null, delete this attribute for this point.")
-                    exit(-1)
+    try:
+        check_for_null_values(points)
+    except Exception as e:
+        print(e)
+        exit(-1)
 
     print("The data satisfies conditions")
 
 
-validate_json_data("./tests/e2e_tests/e2e_test_data.json")
+validate_from_json("./tests/e2e_tests/e2e_test_data.json")
