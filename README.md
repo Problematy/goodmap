@@ -48,32 +48,31 @@ Afterwards run it with:
 
 ## Database
 
-Database consists of three sections:
+The database is stored in JSON, in the `map` section. For an example database see `tests/e2e_tests/e2e_test_data.json`. The first subsection `data` consists of the actual datapoints, representing points on a map.
 
-- `categories` - which informs on what categories data of points is divided
-- `visible_data` - list of categories which will be visible by application users
-- `data` - actual data split into `categories`
+Datapoints have fields. The next subsections define special types of fields:
+- `obligatory_fields` - here are explicitely stated all the fields that the application assumes are presnt in all datapoints. E.g.
+```
+"position",
+"name",
+"accessible_by"
+```
+TODO: `obligatory_fields` is a new subsection, start using it in the actual application
+- `categories` - fields that can somehow be used in the app, for example by which datapoints can be filtered. Every category has a specified list of allowed values. E.g.
+```
+"accessible_by": ["bikes", "cars", "pedestrians"]
+```
+- `visible_data` - when a datapoint will be rendered as a pin on a map, these fields will be shown in the box when clicking on a pin. E.g.
+```
+"name",
+"type_of_place"
+```
+- `meta-data` - some special data like 
+```
+"UUID"
+```
 
-
-### `categories`
-Fully configurable map where key is name of category and value is list of allowed types. E.g.
-* "car_elements": ["mirror", "wheel", "steering wheel"]
-* "color": ["red", "blue", "green"]
-
-### `data`
-Data consists of two parts:
-* obligatory and constant
-  * `name` - name of the object
-  * `position` - coordinates of object
-* category dependent - depending on your `categories` setup it varies. See example of config below.
-
-#### `custom data`
-You can define your own, more complex data types as dictionary.
-* obligatory fields in dictionary:
-  * `type` - type of data
-  * `value` - value of data
-* optional fields in dictionary:
-  * `displayValue` - value to display instead of `value`
+You can define the fields in all these subsections. Besides these types of fields, there is no restriction on the number of fields a datapoint can have.
 
 ## Examples
 
