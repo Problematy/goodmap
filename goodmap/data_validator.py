@@ -21,12 +21,14 @@ def check_categories_values(datapoints, categories):
                 for attribute_value in p[category]:
                     if attribute_value not in categories[category]:
                         print(
-                            f'ERROR, datapoint: \n {p} \n has an invalid value for category: "{category}"'
+                            f'ERROR, datapoint: \n {p} \n \
+                             has an invalid value for category: "{category}"'
                         )
             else:
                 if p[category] not in categories[category]:
                     print(
-                        f'ERROR, datapoint: \n {p} \n has an invalid value for category: "{category}"'
+                        f'ERROR, datapoint: \n {p} \n \
+                             has an invalid value for category: "{category}"'
                     )
 
 
