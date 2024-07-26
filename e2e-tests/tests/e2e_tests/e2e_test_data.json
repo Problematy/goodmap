@@ -28,6 +28,13 @@
                 "UUID": "dattarro"
             }
         ],
+        "obligatory_fields": [
+            "position",
+            "name",
+            "accessible_by",
+            "type_of_place",
+            "UUID"
+        ],
         "categories": {
             "accessible_by": [
                 "bikes",
