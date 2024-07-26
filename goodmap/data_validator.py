@@ -14,8 +14,6 @@ def check_obligatory_fields(datapoints, obligatory_fields):
 def check_categories_values(datapoints, categories):
     for p in datapoints:
         for category in categories & p.keys():
-            if category not in p.keys():
-                print(f'ERROR, datapoint: \n {p} \n is missing obligatory category: "{category}"')
             if type(p[category]) is list: 
                 for attribute_value in p[category]:
                     if attribute_value not in categories[category]:
