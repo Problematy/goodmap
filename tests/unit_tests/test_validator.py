@@ -1,63 +1,33 @@
-from goodmap.data_validator import validate_from_json, are_obligatory_fields_present, are_categories_values_valid, are_null_values_present
+from goodmap.data_validator import validate_from_json
 
 fully_valid_data = {
     "map": {
         "data": [
             {
                 "name": "Grunwaldzki",
-                "position": [
-                    51.1095,
-                    17.0525
-                ],
-                "accessible_by": [
-                    "pedestrians",
-                    "cars"
-                ],
+                "position": [51.1095, 17.0525],
+                "accessible_by": ["pedestrians", "cars"],
                 "type_of_place": "big bridge",
-                "UUID": "hidden"
+                "UUID": "hidden",
             },
             {
                 "name": "Zwierzyniecka",
-                "position": [
-                    51.10655,
-                    17.0555
-                ],
-                "accessible_by": [
-                    "bikes",
-                    "pedestrians"
-                ],
+                "position": [51.10655, 17.0555],
+                "accessible_by": ["bikes", "pedestrians"],
                 "type_of_place": "small bridge",
-                "UUID": "dattarro"
-            }
+                "UUID": "dattarro",
+            },
         ],
-        "obligatory_fields": [
-            "position",
-            "name",
-            "accessible_by",
-            "type_of_place",
-            "UUID"
-        ],
+        "obligatory_fields": ["position", "name", "accessible_by", "type_of_place", "UUID"],
         "categories": {
-            "accessible_by": [
-                "bikes",
-                "cars",
-                "pedestrians"
-            ],
-            "type_of_place": [
-                "big bridge",
-                "small bridge"
-            ]
+            "accessible_by": ["bikes", "cars", "pedestrians"],
+            "type_of_place": ["big bridge", "small bridge"],
         },
-        "visible_data": [
-            "accessible_by",
-            "type_of_place"
-        ],
-        "meta_data": [
-            "UUID"
-        ]
+        "visible_data": ["accessible_by", "type_of_place"],
+        "meta_data": ["UUID"],
     },
     "site_content": {},
-    "plugins": []
+    "plugins": [],
 }
 
 fully_valid_msg = []
@@ -67,36 +37,32 @@ missing_obligatory_fields_data = {
         "data": [
             {
                 "name": "Grunwaldzki",
-                "position": [ 51.1095, 17.0525 ],
+                "position": [51.1095, 17.0525],
             },
-            {
-                "position": [ 51.10655, 17.0555 ],
-                "type_of_place": "small bridge"
-            }
+            {"position": [51.10655, 17.0555], "type_of_place": "small bridge"},
         ],
         "obligatory_fields": [
             "position",
             "name",
             "type_of_place",
         ],
-        "categories": {
-            "type_of_place": [
-                "big bridge",
-                "small bridge"
-            ]
-        }
+        "categories": {"type_of_place": ["big bridge", "small bridge"]},
     },
     "site_content": {},
-    "plugins": []
+    "plugins": [],
 }
 
 missing_obligatory_fields_msg = [
-    ('missing obligatory field', 
-        {"name": "Grunwaldzki", "position": [ 51.1095, 17.0525 ]},
-        "type_of_place"),
-    ('missing obligatory field', 
-        {"position": [ 51.10655, 17.0555 ], "type_of_place": "small bridge"},
-        "name")
+    (
+        "missing obligatory field",
+        {"name": "Grunwaldzki", "position": [51.1095, 17.0525]},
+        "type_of_place",
+    ),
+    (
+        "missing obligatory field",
+        {"position": [51.10655, 17.0555], "type_of_place": "small bridge"},
+        "name",
+    ),
 ]
 
 invalid_category_value_data = {
@@ -104,92 +70,54 @@ invalid_category_value_data = {
         "data": [
             {
                 "name": "Grunwaldzki",
-                "position": [
-                    51.1095,
-                    17.0525
-                ],
-                "accessible_by": [
-                    "pedestrians",
-                    "cars"
-                ],
+                "position": [51.1095, 17.0525],
+                "accessible_by": ["pedestrians", "cars"],
                 "type_of_place": "vacuum cleaners shop",
-                "UUID": "hidden"
+                "UUID": "hidden",
             },
             {
                 "name": "Zwierzyniecka",
-                "position": [
-                    51.10655,
-                    17.0555
-                ],
-                "accessible_by": [
-                    "bikes",
-                    "penguins"
-                ],
+                "position": [51.10655, 17.0555],
+                "accessible_by": ["bikes", "penguins"],
                 "type_of_place": "small bridge",
-                "UUID": "dattarro"
-            }
+                "UUID": "dattarro",
+            },
         ],
-        "obligatory_fields": [
-            "position",
-            "name",
-            "accessible_by",
-            "type_of_place",
-            "UUID"
-        ],
+        "obligatory_fields": ["position", "name", "accessible_by", "type_of_place", "UUID"],
         "categories": {
-            "accessible_by": [
-                "bikes",
-                "cars",
-                "pedestrians"
-            ],
-            "type_of_place": [
-                "big bridge",
-                "small bridge"
-            ]
+            "accessible_by": ["bikes", "cars", "pedestrians"],
+            "type_of_place": ["big bridge", "small bridge"],
         },
-        "visible_data": [
-            "accessible_by",
-            "type_of_place"
-        ],
-        "meta_data": [
-            "UUID"
-        ]
+        "visible_data": ["accessible_by", "type_of_place"],
+        "meta_data": ["UUID"],
     },
     "site_content": {},
-    "plugins": []
+    "plugins": [],
 }
 
 invalid_category_value_msg = [
-    ('invalid category value', 
+    (
+        "invalid category value",
         {
             "name": "Grunwaldzki",
-            "position": [
-                51.1095,
-                17.0525
-            ],
-            "accessible_by": [
-                "pedestrians",
-                "cars"
-            ],
+            "position": [51.1095, 17.0525],
+            "accessible_by": ["pedestrians", "cars"],
             "type_of_place": "vacuum cleaners shop",
-            "UUID": "hidden"
+            "UUID": "hidden",
         },
-        "type_of_place"),
-    ('invalid category value', 
+        "type_of_place",
+    ),
+    (
+        "invalid category value",
         {
             "name": "Zwierzyniecka",
-            "position": [
-                51.10655,
-                17.0555
-            ],
-            "accessible_by": [
-                "bikes",
-                "penguins"
-            ],
+            "position": [51.10655, 17.0555],
+            "accessible_by": ["bikes", "penguins"],
             "type_of_place": "small bridge",
-            "UUID": "dattarro"
+            "UUID": "dattarro",
         },
-        "accessible_by")
+        "accessible_by",
+    ),
 ]
 
 null_values_data = {
@@ -197,95 +125,66 @@ null_values_data = {
         "data": [
             {
                 "name": "Grunwaldzki",
-                "position": [
-                    51.1095,
-                    17.0525
-                ],
-                "accessible_by": [
-                    "pedestrians",
-                    "cars"
-                ],
+                "position": [51.1095, 17.0525],
+                "accessible_by": ["pedestrians", "cars"],
                 "type_of_place": "big bridge",
-                "UUID": None
+                "UUID": None,
             },
             {
                 "name": "Zwierzyniecka",
-                "position": [
-                    51.10655,
-                    17.0555
-                ],
-                "accessible_by": [
-                    "bikes",
-                    "pedestrians"
-                ],
+                "position": [51.10655, 17.0555],
+                "accessible_by": ["bikes", "pedestrians"],
                 "type_of_place": "small bridge",
                 "UUID": "dattarro",
-                "website": None
-            }
+                "website": None,
+            },
         ],
-        "obligatory_fields": [
-            "position",
-            "name",
-            "accessible_by",
-            "type_of_place",
-            "UUID"
-        ],
+        "obligatory_fields": ["position", "name", "accessible_by", "type_of_place", "UUID"],
         "categories": {
-            "accessible_by": [
-                "bikes",
-                "cars",
-                "pedestrians"
-            ],
-            "type_of_place": [
-                "big bridge",
-                "small bridge"
-            ]
+            "accessible_by": ["bikes", "cars", "pedestrians"],
+            "type_of_place": ["big bridge", "small bridge"],
         },
     },
 }
 
 null_values_msg = [
-    ('null value', 
+    (
+        "null value",
         {
             "name": "Grunwaldzki",
-            "position": [
-                51.1095,
-                17.0525
-            ],
-            "accessible_by": [
-                "pedestrians",
-                "cars"
-            ],
+            "position": [51.1095, 17.0525],
+            "accessible_by": ["pedestrians", "cars"],
             "type_of_place": "big bridge",
-            "UUID": None
+            "UUID": None,
         },
-        "UUID"),
-    ('null value', 
+        "UUID",
+    ),
+    (
+        "null value",
         {
             "name": "Zwierzyniecka",
-            "position": [
-                51.10655,
-                17.0555
-            ],
-            "accessible_by": [
-                "bikes",
-                "pedestrians"
-            ],
+            "position": [51.10655, 17.0555],
+            "accessible_by": ["bikes", "pedestrians"],
             "type_of_place": "small bridge",
             "UUID": "dattarro",
-            "website": None
+            "website": None,
         },
-        "website")
+        "website",
+    ),
 ]
 
+
 def test_fully_valid_data():
-        assert validate_from_json(fully_valid_data) == fully_valid_msg
+    assert validate_from_json(fully_valid_data) == fully_valid_msg
+
 
 def test_obligagory_fields_present():
     assert validate_from_json(missing_obligatory_fields_data) == missing_obligatory_fields_msg
 
+
 def test_invalid_category_value():
     assert validate_from_json(invalid_category_value_data) == invalid_category_value_msg
+
 
 def test_null_values():
     assert validate_from_json(null_values_data) == null_values_msg
