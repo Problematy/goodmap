@@ -1,61 +1,64 @@
 import json
-from sys import argv
+from sys import argv, stderr
 
 
-def check_json_validaty(json_file):
-    json_data = json.load(json_file)
-    return json_data
-
-
-def check_obligatory_fields(datapoints, obligatory_fields):
+def are_obligatory_fields_present(datapoints, obligatory_fields):
+    message = []
     for p in datapoints:
         for field in obligatory_fields:
             if field not in p.keys():
-                print(f'ERROR, datapoint: \n {p} \n is missing obligatory field: "{field}"')
+                message.append(('missing obligatory field', p, field ))
+    return message
 
 
-def check_categories_values(datapoints, categories):
+def are_categories_values_valid(datapoints, categories):
+    message = []
     for p in datapoints:
         for category in categories & p.keys():
             if type(p[category]) is list:
                 for attribute_value in p[category]:
                     if attribute_value not in categories[category]:
-                        print(
-                            f'ERROR, datapoint: \n {p} \n \
-                             has an invalid value for category: "{category}"'
-                        )
+                        message.append(('invalid category value', p, category))
             else:
                 if p[category] not in categories[category]:
-                    print(
-                        f'ERROR, datapoint: \n {p} \n \
-                             has an invalid value for category: "{category}"'
-                    )
+                    message.append(('invalid category value', p, category))
+    return message
 
 
-def check_for_null_values(datapoints):
+def are_null_values_present(datapoints):
+    message = []
     for p in datapoints:
-        ### check for null values in non-obligatory fields
         for attribute in p.keys():
             if p[attribute] is None:
-                print(f'ERROR, datapoint: \n {p} \n has a null value for field: "{attribute}"')
+                message.append(('null value', p, attribute))
+    return message
 
 
-def validate_from_json(json_file_path):
-    with open(json_file_path) as json_file:
-        try:
-            json_data = check_json_validaty(json_file)
-        except json.JSONDecodeError as e:
-            print("ERROR: invalid json format")
-            print(e)
-            exit(-1)
-
+def validate_from_json(json_data):
     datapoints = json_data["map"]["data"]
     categories = json_data["map"]["categories"]
     obligatory_fields = json_data["map"]["obligatory_fields"]
 
-    check_obligatory_fields(datapoints, obligatory_fields)
-    check_categories_values(datapoints, categories)
-    check_for_null_values(datapoints)
+    error_messages = []
+
+    error_messages += are_obligatory_fields_present(datapoints, obligatory_fields)
+    error_messages += are_categories_values_valid(datapoints, categories)
+    error_messages += are_null_values_present(datapoints)
+    
+    return error_messages
+
+def validate_from_json_file(path_to_json_file):
+    with open(path_to_json_file) as json_file:
+        try:
+            json_data = json.load(json_file)
+        except json.JSONDecodeError as e:
+            print("DATA ERROR: invalid json format", stderr)
+            print(e)
+            exit(-1)
+
+    return validate_from_json(json_data)
 
 
-validate_from_json(argv[1])
+if __name__ == "__main__":
+    msg = validate_from_json_file(argv[1])
+    print(msg)
