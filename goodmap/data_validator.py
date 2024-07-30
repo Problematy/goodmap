@@ -51,18 +51,35 @@ def validate_from_json(json_data):
     return invalid_points
 
 
+def print_error_messages(invalid_points):
+    if invalid_points == []:
+        print("All data is valid", file=stderr)
+    for msg in invalid_points:
+        print("", file=stderr)
+        msg_type, datapoint, attr = msg
+        if msg_type == "missing obligatory field":
+            print(f'DATA ERROR: missing obligatory field "{attr}" in datapoint:', file=stderr)
+            print(datapoint, file=stderr)
+        elif msg_type == "invalid category value":
+            print(f'DATA ERROR: invalid category value "{attr}" in datapoint:', file=stderr)
+            print(datapoint, file=stderr)
+        elif msg_type == "null value":
+            print(f'DATA ERROR: attribute "{attr}" has null value in datapoint:', file=stderr)
+            print(datapoint, file=stderr)
+
+
 def validate_from_json_file(path_to_json_file):
     with open(path_to_json_file) as json_file:
         try:
             json_database = json.load(json_file)
         except json.JSONDecodeError as e:
-            print("DATA ERROR: invalid json format", stderr)
-            print(e)
+            print("DATA ERROR: invalid json format", file=stderr)
+            print(e, file=stderr)
             exit(-1)
 
     return validate_from_json(json_database)
 
 
 if __name__ == "__main__":
-    msg = validate_from_json_file(argv[1])
-    print(msg)
+    invalid_points = validate_from_json_file(argv[1])
+    print_error_messages(invalid_points)
