@@ -1,6 +1,18 @@
-from goodmap.data_validator import validate_from_json
+from goodmap.data_validator import (
+    get_categories_with_invalid_values,
+    get_fields_with_null_values,
+    get_missing_obligatory_fields,
+    validate_from_json,
+)
 
-fully_valid_data = {
+obligatory_fields = ["position", "name", "accessible_by", "type_of_place", "UUID"]
+categories = {
+    "accessible_by": ["bikes", "cars", "pedestrians"],
+    "type_of_place": ["big bridge", "small bridge"],
+}
+
+
+fully_valid_database = {
     "map": {
         "data": [
             {
@@ -30,72 +42,64 @@ fully_valid_data = {
     "plugins": [],
 }
 
-fully_valid_msg = []
+empty_list_of_invalid_points = []
 
-missing_obligatory_fields_data = {
-    "map": {
-        "data": [
-            {
-                "name": "Grunwaldzki",
-                "position": [51.1095, 17.0525],
-            },
-            {"position": [51.10655, 17.0555], "type_of_place": "small bridge"},
-        ],
-        "obligatory_fields": [
-            "position",
-            "name",
-            "type_of_place",
-        ],
-        "categories": {"type_of_place": ["big bridge", "small bridge"]},
+missing_obligatory_fields_data = [
+    {
+        "name": "Grunwaldzki",
+        "position": [51.1095, 17.0525],
+        "accessible_by": ["pedestrians", "cars"],
+        "UUID": "hidden",
     },
-    "site_content": {},
-    "plugins": [],
-}
+    {
+        "position": [51.10655, 17.0555],
+        "type_of_place": "small bridge",
+        "accessible_by": ["bikes", "pedestrians"],
+        "UUID": "dattarro",
+    },
+]
 
-missing_obligatory_fields_msg = [
+points_with_missing_obligatory_fields = [
     (
         "missing obligatory field",
-        {"name": "Grunwaldzki", "position": [51.1095, 17.0525]},
+        {
+            "name": "Grunwaldzki",
+            "position": [51.1095, 17.0525],
+            "accessible_by": ["pedestrians", "cars"],
+            "UUID": "hidden",
+        },
         "type_of_place",
     ),
     (
         "missing obligatory field",
-        {"position": [51.10655, 17.0555], "type_of_place": "small bridge"},
+        {
+            "position": [51.10655, 17.0555],
+            "type_of_place": "small bridge",
+            "accessible_by": ["bikes", "pedestrians"],
+            "UUID": "dattarro",
+        },
         "name",
     ),
 ]
 
-invalid_category_value_data = {
-    "map": {
-        "data": [
-            {
-                "name": "Grunwaldzki",
-                "position": [51.1095, 17.0525],
-                "accessible_by": ["pedestrians", "cars"],
-                "type_of_place": "vacuum cleaners shop",
-                "UUID": "hidden",
-            },
-            {
-                "name": "Zwierzyniecka",
-                "position": [51.10655, 17.0555],
-                "accessible_by": ["bikes", "penguins"],
-                "type_of_place": "small bridge",
-                "UUID": "dattarro",
-            },
-        ],
-        "obligatory_fields": ["position", "name", "accessible_by", "type_of_place", "UUID"],
-        "categories": {
-            "accessible_by": ["bikes", "cars", "pedestrians"],
-            "type_of_place": ["big bridge", "small bridge"],
-        },
-        "visible_data": ["accessible_by", "type_of_place"],
-        "meta_data": ["UUID"],
+invalid_category_value_data = [
+    {
+        "name": "Grunwaldzki",
+        "position": [51.1095, 17.0525],
+        "accessible_by": ["pedestrians", "cars"],
+        "type_of_place": "vacuum cleaners shop",
+        "UUID": "hidden",
     },
-    "site_content": {},
-    "plugins": [],
-}
+    {
+        "name": "Zwierzyniecka",
+        "position": [51.10655, 17.0555],
+        "accessible_by": ["bikes", "penguins"],
+        "type_of_place": "small bridge",
+        "UUID": "dattarro",
+    },
+]
 
-invalid_category_value_msg = [
+points_with_invalid_category_value = [
     (
         "invalid category value",
         {
@@ -120,34 +124,25 @@ invalid_category_value_msg = [
     ),
 ]
 
-null_values_data = {
-    "map": {
-        "data": [
-            {
-                "name": "Grunwaldzki",
-                "position": [51.1095, 17.0525],
-                "accessible_by": ["pedestrians", "cars"],
-                "type_of_place": "big bridge",
-                "UUID": None,
-            },
-            {
-                "name": "Zwierzyniecka",
-                "position": [51.10655, 17.0555],
-                "accessible_by": ["bikes", "pedestrians"],
-                "type_of_place": "small bridge",
-                "UUID": "dattarro",
-                "website": None,
-            },
-        ],
-        "obligatory_fields": ["position", "name", "accessible_by", "type_of_place", "UUID"],
-        "categories": {
-            "accessible_by": ["bikes", "cars", "pedestrians"],
-            "type_of_place": ["big bridge", "small bridge"],
-        },
+null_values_data = [
+    {
+        "name": "Grunwaldzki",
+        "position": [51.1095, 17.0525],
+        "accessible_by": ["pedestrians", "cars"],
+        "type_of_place": "big bridge",
+        "UUID": None,
     },
-}
+    {
+        "name": "Zwierzyniecka",
+        "position": [51.10655, 17.0555],
+        "accessible_by": ["bikes", "pedestrians"],
+        "type_of_place": "small bridge",
+        "UUID": "dattarro",
+        "website": None,
+    },
+]
 
-null_values_msg = [
+points_with_null_values = [
     (
         "null value",
         {
@@ -174,17 +169,23 @@ null_values_msg = [
 ]
 
 
-def test_fully_valid_data():
-    assert validate_from_json(fully_valid_data) == fully_valid_msg
+def test_returns_empty_on_valid_data():
+    assert validate_from_json(fully_valid_database) == empty_list_of_invalid_points
 
 
-def test_obligagory_fields_present():
-    assert validate_from_json(missing_obligatory_fields_data) == missing_obligatory_fields_msg
+def test_returns_points_missing_obligatory_fields():
+    assert (
+        get_missing_obligatory_fields(missing_obligatory_fields_data, obligatory_fields)
+        == points_with_missing_obligatory_fields
+    )
 
 
-def test_invalid_category_value():
-    assert validate_from_json(invalid_category_value_data) == invalid_category_value_msg
+def test_returns_points_with_invalid_category_value():
+    assert (
+        get_categories_with_invalid_values(invalid_category_value_data, categories)
+        == points_with_invalid_category_value
+    )
 
 
 def test_null_values():
-    assert validate_from_json(null_values_data) == null_values_msg
+    assert get_fields_with_null_values(null_values_data) == points_with_null_values
