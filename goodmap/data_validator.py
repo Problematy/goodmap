@@ -2,7 +2,7 @@ import json
 from sys import argv, stderr
 
 
-def are_obligatory_fields_present(datapoints, obligatory_fields):
+def get_missing_obligatory_fields(datapoints, obligatory_fields):
     message = []
     for p in datapoints:
         for field in obligatory_fields:
@@ -11,39 +11,42 @@ def are_obligatory_fields_present(datapoints, obligatory_fields):
     return message
 
 
-def are_categories_values_valid(datapoints, categories):
+def get_categories_with_invalid_values(datapoints, categories):
     message = []
     for p in datapoints:
         for category in categories & p.keys():
-            if type(p[category]) is list:
-                for attribute_value in p[category]:
-                    if attribute_value not in categories[category]:
+            category_value = p[category]
+            valid_values_set = categories[category]
+            if type(category_value) is list:
+                for attribute_value in category_value:
+                    if attribute_value not in valid_values_set:
                         message.append(("invalid category value", p, category))
             else:
-                if p[category] not in categories[category]:
+                if category_value not in valid_values_set:
                     message.append(("invalid category value", p, category))
     return message
 
 
-def are_null_values_present(datapoints):
+def get_fields_with_null_values(datapoints):
     message = []
     for p in datapoints:
-        for attribute in p.keys():
-            if p[attribute] is None:
+        for attribute, value in p.items():
+            if value is None:
                 message.append(("null value", p, attribute))
     return message
 
 
 def validate_from_json(json_data):
-    datapoints = json_data["map"]["data"]
-    categories = json_data["map"]["categories"]
-    obligatory_fields = json_data["map"]["obligatory_fields"]
+    map_data = json_data["map"]
+    datapoints = map_data["data"]
+    categories = map_data["categories"]
+    obligatory_fields = map_data["obligatory_fields"]
 
     error_messages = []
 
-    error_messages += are_obligatory_fields_present(datapoints, obligatory_fields)
-    error_messages += are_categories_values_valid(datapoints, categories)
-    error_messages += are_null_values_present(datapoints)
+    error_messages += get_missing_obligatory_fields(datapoints, obligatory_fields)
+    error_messages += get_categories_with_invalid_values(datapoints, categories)
+    error_messages += get_fields_with_null_values(datapoints)
 
     return error_messages
 
