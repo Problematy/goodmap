@@ -28,3 +28,10 @@ html-cov: coverage
 
 run-e2e-env:
 	poetry run flask --app "goodmap.goodmap:create_app(config_path='tests/e2e_tests/e2e_test_config.yml')" --debug run
+
+verify-json-data:
+ifndef JSON_DATA_FILE
+	$(error "Missing required argument JSON_DATA_FILE: make verify-json-data JSON_DATA_FILE=path/to/json")
+else
+	poetry run python -m goodmap.data_validator $(JSON_DATA_FILE)
+endif
