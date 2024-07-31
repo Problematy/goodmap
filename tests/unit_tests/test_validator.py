@@ -1,8 +1,12 @@
+import json
+from unittest.mock import mock_open, patch
+
 from goodmap.data_validator import (
     get_categories_with_invalid_values,
     get_fields_with_null_values,
     get_missing_obligatory_fields,
     validate_from_json,
+    validate_from_json_file,
 )
 
 obligatory_fields = ["position", "name", "accessible_by", "type_of_place", "UUID"]
@@ -189,3 +193,75 @@ def test_returns_points_with_invalid_category_value():
 
 def test_null_values():
     assert get_fields_with_null_values(null_values_data) == points_with_null_values
+
+
+def test_validation_from_json_file():
+    mock_file_path = "./tests/e2e_tests/e2e_test_data.json"
+    mock_file_content = {
+        "map": {
+            "data": [
+                {
+                    "name": "Grunwaldzki",
+                    "position": [51.1095, 17.0525],
+                    "accessible_by": ["pedestrians", "cars"],
+                    "UUID": "hidden",
+                },
+                {
+                    "name": None,
+                    "position": [51.10655, 17.0555],
+                    "accessible_by": ["bikes", "pedestrians"],
+                    "type_of_place": "small bridgeeeeeeeeee",
+                    "UUID": "dattarro",
+                },
+            ],
+            "obligatory_fields": ["position", "name", "accessible_by", "type_of_place", "UUID"],
+            "categories": {
+                "accessible_by": ["bikes", "cars", "pedestrians"],
+                "type_of_place": ["big bridge", "small bridge"],
+            },
+            "visible_data": ["accessible_by", "type_of_place"],
+            "meta_data": ["UUID"],
+        },
+        "site_content": {},
+        "plugins": [],
+    }
+
+    expected_result = [
+        (
+            "missing obligatory field",
+            {
+                "name": "Grunwaldzki",
+                "position": [51.1095, 17.0525],
+                "accessible_by": ["pedestrians", "cars"],
+                "UUID": "hidden",
+            },
+            "type_of_place",
+        ),
+        (
+            "invalid category value",
+            {
+                "name": None,
+                "position": [51.10655, 17.0555],
+                "accessible_by": ["bikes", "pedestrians"],
+                "type_of_place": "small bridgeeeeeeeeee",
+                "UUID": "dattarro",
+            },
+            "type_of_place",
+        ),
+        (
+            "null value",
+            {
+                "name": None,
+                "position": [51.10655, 17.0555],
+                "accessible_by": ["bikes", "pedestrians"],
+                "type_of_place": "small bridgeeeeeeeeee",
+                "UUID": "dattarro",
+            },
+            "name",
+        ),
+    ]
+
+    with patch("builtins.open", mock_open(read_data=json.dumps(mock_file_content))) as mock_file:
+        result = validate_from_json_file(mock_file_path)
+        assert result == expected_result
+        mock_file.assert_called_once_with(mock_file_path)
