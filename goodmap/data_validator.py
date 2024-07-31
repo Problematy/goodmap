@@ -20,10 +20,10 @@ def get_pts_with_invalid_values_in_categories(datapoints, categories):
             if type(category_value) is list:
                 for attribute_value in category_value:
                     if attribute_value not in valid_values_set:
-                        invalid_points.append(("invalid category value", p, category))
+                        invalid_points.append(("invalid value in category", p, category))
             else:
                 if category_value not in valid_values_set:
-                    invalid_points.append(("invalid category value", p, category))
+                    invalid_points.append(("invalid value in category", p, category))
     return invalid_points
 
 
@@ -60,8 +60,8 @@ def print_error_messages(invalid_points):
         if msg_type == "missing obligatory field":
             print(f'DATA ERROR: missing obligatory field "{attr}" in datapoint:', file=stderr)
             print(datapoint, file=stderr)
-        elif msg_type == "invalid category value":
-            print(f'DATA ERROR: invalid category value "{attr}" in datapoint:', file=stderr)
+        elif msg_type == "invalid value in category":
+            print(f'DATA ERROR: invalid value in category "{attr}" in datapoint:', file=stderr)
             print(datapoint, file=stderr)
         elif msg_type == "null value":
             print(f'DATA ERROR: attribute "{attr}" has null value in datapoint:', file=stderr)

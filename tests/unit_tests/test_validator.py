@@ -3,8 +3,8 @@ from unittest.mock import mock_open, patch
 
 from goodmap.data_validator import (
     get_pts_with_invalid_values_in_categories,
-    get_pts_with_null_values,
     get_pts_with_missing_obligatory_fields,
+    get_pts_with_null_values,
     validate_from_json,
     validate_from_json_file,
 )
@@ -63,7 +63,7 @@ missing_obligatory_fields_data = [
     },
 ]
 
-points_with_missing_obligatory_fields = [
+pts_with_missing_obligatory_fields = [
     (
         "missing obligatory field",
         {
@@ -86,7 +86,7 @@ points_with_missing_obligatory_fields = [
     ),
 ]
 
-invalid_category_value_data = [
+invalid_values_in_categories_data = [
     {
         "name": "Grunwaldzki",
         "position": [51.1095, 17.0525],
@@ -103,9 +103,9 @@ invalid_category_value_data = [
     },
 ]
 
-points_with_invalid_category_value = [
+pts_with_invalid_values_in_categories = [
     (
-        "invalid category value",
+        "invalid value in category",
         {
             "name": "Grunwaldzki",
             "position": [51.1095, 17.0525],
@@ -116,7 +116,7 @@ points_with_invalid_category_value = [
         "type_of_place",
     ),
     (
-        "invalid category value",
+        "invalid value in category",
         {
             "name": "Zwierzyniecka",
             "position": [51.10655, 17.0555],
@@ -146,7 +146,7 @@ null_values_data = [
     },
 ]
 
-points_with_null_values = [
+pts_with_null_values = [
     (
         "null value",
         {
@@ -180,19 +180,19 @@ def test_validator_returns_empty_list_on_valid_data():
 def test_validator_returns_points_missing_obligatory_fields():
     assert (
         get_pts_with_missing_obligatory_fields(missing_obligatory_fields_data, obligatory_fields)
-        == points_with_missing_obligatory_fields
+        == pts_with_missing_obligatory_fields
     )
 
 
 def test_validator_returns_points_with_invalid_value_in_category():
     assert (
-        get_pts_with_invalid_values_in_categories(invalid_category_value_data, categories)
-        == points_with_invalid_category_value
+        get_pts_with_invalid_values_in_categories(invalid_values_in_categories_data, categories)
+        == pts_with_invalid_values_in_categories
     )
 
 
 def test_validator_returns_points_with_null_values():
-    assert get_pts_with_null_values(null_values_data) == points_with_null_values
+    assert get_pts_with_null_values(null_values_data) == pts_with_null_values
 
 
 def test_validation_from_json_file():
@@ -238,7 +238,7 @@ def test_validation_from_json_file():
             "type_of_place",
         ),
         (
-            "invalid category value",
+            "invalid value in category",
             {
                 "name": None,
                 "position": [51.10655, 17.0555],
