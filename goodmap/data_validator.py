@@ -2,7 +2,7 @@ import json
 from sys import argv, stderr
 
 
-def get_missing_obligatory_fields(datapoints, obligatory_fields):
+def get_pts_with_missing_obligatory_fields(datapoints, obligatory_fields):
     invalid_points = []
     for p in datapoints:
         for field in obligatory_fields:
@@ -11,7 +11,7 @@ def get_missing_obligatory_fields(datapoints, obligatory_fields):
     return invalid_points
 
 
-def get_categories_with_invalid_values(datapoints, categories):
+def get_pts_with_invalid_values_in_categories(datapoints, categories):
     invalid_points = []
     for p in datapoints:
         for category in categories & p.keys():
@@ -27,7 +27,7 @@ def get_categories_with_invalid_values(datapoints, categories):
     return invalid_points
 
 
-def get_fields_with_null_values(datapoints):
+def get_pts_with_null_values(datapoints):
     invalid_points = []
     for p in datapoints:
         for attribute, value in p.items():
@@ -44,9 +44,9 @@ def validate_from_json(json_data):
 
     invalid_points = []
 
-    invalid_points += get_missing_obligatory_fields(datapoints, obligatory_fields)
-    invalid_points += get_categories_with_invalid_values(datapoints, categories)
-    invalid_points += get_fields_with_null_values(datapoints)
+    invalid_points += get_pts_with_missing_obligatory_fields(datapoints, obligatory_fields)
+    invalid_points += get_pts_with_invalid_values_in_categories(datapoints, categories)
+    invalid_points += get_pts_with_null_values(datapoints)
 
     return invalid_points
 

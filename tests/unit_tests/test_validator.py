@@ -2,9 +2,9 @@ import json
 from unittest.mock import mock_open, patch
 
 from goodmap.data_validator import (
-    get_categories_with_invalid_values,
-    get_fields_with_null_values,
-    get_missing_obligatory_fields,
+    get_pts_with_invalid_values_in_categories,
+    get_pts_with_null_values,
+    get_pts_with_missing_obligatory_fields,
     validate_from_json,
     validate_from_json_file,
 )
@@ -173,26 +173,26 @@ points_with_null_values = [
 ]
 
 
-def test_returns_empty_on_valid_data():
+def test_validator_returns_empty_list_on_valid_data():
     assert validate_from_json(fully_valid_database) == empty_list_of_invalid_points
 
 
-def test_returns_points_missing_obligatory_fields():
+def test_validator_returns_points_missing_obligatory_fields():
     assert (
-        get_missing_obligatory_fields(missing_obligatory_fields_data, obligatory_fields)
+        get_pts_with_missing_obligatory_fields(missing_obligatory_fields_data, obligatory_fields)
         == points_with_missing_obligatory_fields
     )
 
 
-def test_returns_points_with_invalid_category_value():
+def test_validator_returns_points_with_invalid_value_in_category():
     assert (
-        get_categories_with_invalid_values(invalid_category_value_data, categories)
+        get_pts_with_invalid_values_in_categories(invalid_category_value_data, categories)
         == points_with_invalid_category_value
     )
 
 
-def test_null_values():
-    assert get_fields_with_null_values(null_values_data) == points_with_null_values
+def test_validator_returns_points_with_null_values():
+    assert get_pts_with_null_values(null_values_data) == points_with_null_values
 
 
 def test_validation_from_json_file():
