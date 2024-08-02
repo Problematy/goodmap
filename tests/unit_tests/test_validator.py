@@ -2,21 +2,14 @@ import json
 from unittest.mock import mock_open, patch
 
 from goodmap.data_validator import (
-    get_pts_with_invalid_values_in_categories,
-    get_pts_with_missing_obligatory_fields,
-    get_pts_with_null_values,
-    validate_from_json,
-    validate_from_json_file,
+    FieldViolation,
+    FormatViolation,
+    ViolationType,
+    report_data_violations_from_json,
+    report_data_violations_from_json_file,
 )
 
-obligatory_fields = ["position", "name", "accessible_by", "type_of_place", "UUID"]
-categories = {
-    "accessible_by": ["bikes", "cars", "pedestrians"],
-    "type_of_place": ["big bridge", "small bridge"],
-}
-
-
-fully_valid_database = {
+database_fully_valid = {
     "map": {
         "data": [
             {
@@ -46,26 +39,39 @@ fully_valid_database = {
     "plugins": [],
 }
 
-empty_list_of_invalid_points = []
+empty_list_of_violations = []
 
-missing_obligatory_fields_data = [
-    {
-        "name": "Grunwaldzki",
-        "position": [51.1095, 17.0525],
-        "accessible_by": ["pedestrians", "cars"],
-        "UUID": "hidden",
+database_missing_obligatory_fields = {
+    "map": {
+        "data": [
+            {
+                "name": "Grunwaldzki",
+                "position": [51.1095, 17.0525],
+                "accessible_by": ["pedestrians", "cars"],
+                "UUID": "hidden",
+            },
+            {
+                "position": [51.10655, 17.0555],
+                "type_of_place": "small bridge",
+                "accessible_by": ["bikes", "pedestrians"],
+                "UUID": "dattarro",
+            },
+        ],
+        "obligatory_fields": ["position", "name", "accessible_by", "type_of_place", "UUID"],
+        "categories": {
+            "accessible_by": ["bikes", "cars", "pedestrians"],
+            "type_of_place": ["big bridge", "small bridge"],
+        },
+        "visible_data": ["accessible_by", "type_of_place"],
+        "meta_data": ["UUID"],
     },
-    {
-        "position": [51.10655, 17.0555],
-        "type_of_place": "small bridge",
-        "accessible_by": ["bikes", "pedestrians"],
-        "UUID": "dattarro",
-    },
-]
+    "site_content": {},
+    "plugins": [],
+}
 
-pts_with_missing_obligatory_fields = [
-    (
-        "missing obligatory field",
+violations_with_missing_obligatory_fields = [
+    FieldViolation(
+        ViolationType(1),
         {
             "name": "Grunwaldzki",
             "position": [51.1095, 17.0525],
@@ -74,8 +80,8 @@ pts_with_missing_obligatory_fields = [
         },
         "type_of_place",
     ),
-    (
-        "missing obligatory field",
+    FieldViolation(
+        ViolationType(1),
         {
             "position": [51.10655, 17.0555],
             "type_of_place": "small bridge",
@@ -86,26 +92,39 @@ pts_with_missing_obligatory_fields = [
     ),
 ]
 
-invalid_values_in_categories_data = [
-    {
-        "name": "Grunwaldzki",
-        "position": [51.1095, 17.0525],
-        "accessible_by": ["pedestrians", "cars"],
-        "type_of_place": "vacuum cleaners shop",
-        "UUID": "hidden",
+database_invalid_values_in_categories = {
+    "map": {
+        "data": [
+            {
+                "name": "Grunwaldzki",
+                "position": [51.1095, 17.0525],
+                "accessible_by": ["pedestrians", "cars"],
+                "type_of_place": "vacuum cleaners shop",
+                "UUID": "hidden",
+            },
+            {
+                "name": "Zwierzyniecka",
+                "position": [51.10655, 17.0555],
+                "accessible_by": ["bikes", "penguins"],
+                "type_of_place": "small bridge",
+                "UUID": "dattarro",
+            },
+        ],
+        "obligatory_fields": ["position", "name", "accessible_by", "type_of_place", "UUID"],
+        "categories": {
+            "accessible_by": ["bikes", "cars", "pedestrians"],
+            "type_of_place": ["big bridge", "small bridge"],
+        },
+        "visible_data": ["accessible_by", "type_of_place"],
+        "meta_data": ["UUID"],
     },
-    {
-        "name": "Zwierzyniecka",
-        "position": [51.10655, 17.0555],
-        "accessible_by": ["bikes", "penguins"],
-        "type_of_place": "small bridge",
-        "UUID": "dattarro",
-    },
-]
+    "site_content": {},
+    "plugins": [],
+}
 
-pts_with_invalid_values_in_categories = [
-    (
-        "invalid value in category",
+violations_with_invalid_values_in_categories = [
+    FieldViolation(
+        ViolationType(2),
         {
             "name": "Grunwaldzki",
             "position": [51.1095, 17.0525],
@@ -115,8 +134,8 @@ pts_with_invalid_values_in_categories = [
         },
         "type_of_place",
     ),
-    (
-        "invalid value in category",
+    FieldViolation(
+        ViolationType(2),
         {
             "name": "Zwierzyniecka",
             "position": [51.10655, 17.0555],
@@ -128,27 +147,41 @@ pts_with_invalid_values_in_categories = [
     ),
 ]
 
-null_values_data = [
-    {
-        "name": "Grunwaldzki",
-        "position": [51.1095, 17.0525],
-        "accessible_by": ["pedestrians", "cars"],
-        "type_of_place": "big bridge",
-        "UUID": None,
-    },
-    {
-        "name": "Zwierzyniecka",
-        "position": [51.10655, 17.0555],
-        "accessible_by": ["bikes", "pedestrians"],
-        "type_of_place": "small bridge",
-        "UUID": "dattarro",
-        "website": None,
-    },
-]
 
-pts_with_null_values = [
-    (
-        "null value",
+database_null_values = {
+    "map": {
+        "data": [
+            {
+                "name": "Grunwaldzki",
+                "position": [51.1095, 17.0525],
+                "accessible_by": ["pedestrians", "cars"],
+                "type_of_place": "big bridge",
+                "UUID": None,
+            },
+            {
+                "name": "Zwierzyniecka",
+                "position": [51.10655, 17.0555],
+                "accessible_by": ["bikes", "pedestrians"],
+                "type_of_place": "small bridge",
+                "UUID": "dattarro",
+                "website": None,
+            },
+        ],
+        "obligatory_fields": ["position", "name", "accessible_by", "type_of_place", "UUID"],
+        "categories": {
+            "accessible_by": ["bikes", "cars", "pedestrians"],
+            "type_of_place": ["big bridge", "small bridge"],
+        },
+        "visible_data": ["accessible_by", "type_of_place"],
+        "meta_data": ["UUID"],
+    },
+    "site_content": {},
+    "plugins": [],
+}
+
+violations_with_null_values = [
+    FieldViolation(
+        ViolationType(3),
         {
             "name": "Grunwaldzki",
             "position": [51.1095, 17.0525],
@@ -158,8 +191,8 @@ pts_with_null_values = [
         },
         "UUID",
     ),
-    (
-        "null value",
+    FieldViolation(
+        ViolationType(3),
         {
             "name": "Zwierzyniecka",
             "position": [51.10655, 17.0555],
@@ -173,26 +206,35 @@ pts_with_null_values = [
 ]
 
 
-def test_validator_returns_empty_list_on_valid_data():
-    assert validate_from_json(fully_valid_database) == empty_list_of_invalid_points
+def test_validator_returns_empty_list_on_valid_database():
+    assert report_data_violations_from_json(database_fully_valid) == empty_list_of_violations
+
+
+def assert_violations_are_as_expected(reported_violations, expected_violations):
+    assert len(reported_violations) == len(expected_violations)
+    for idx, violation in enumerate(reported_violations):
+        expected_violation = expected_violations[idx]
+        assert violation.violation_type == expected_violation.violation_type
+        assert violation.datapoint == expected_violation.datapoint
+        assert violation.violating_field == expected_violation.violating_field
 
 
 def test_validator_returns_points_missing_obligatory_fields():
-    assert (
-        get_pts_with_missing_obligatory_fields(missing_obligatory_fields_data, obligatory_fields)
-        == pts_with_missing_obligatory_fields
-    )
+    reported_violations = report_data_violations_from_json(database_missing_obligatory_fields)
+    expected_violations = violations_with_missing_obligatory_fields
+    assert_violations_are_as_expected(reported_violations, expected_violations)
 
 
 def test_validator_returns_points_with_invalid_value_in_category():
-    assert (
-        get_pts_with_invalid_values_in_categories(invalid_values_in_categories_data, categories)
-        == pts_with_invalid_values_in_categories
-    )
+    reported_violations = report_data_violations_from_json(database_invalid_values_in_categories)
+    expected_violations = violations_with_invalid_values_in_categories
+    assert_violations_are_as_expected(reported_violations, expected_violations)
 
 
 def test_validator_returns_points_with_null_values():
-    assert get_pts_with_null_values(null_values_data) == pts_with_null_values
+    reported_violations = report_data_violations_from_json(database_null_values)
+    expected_violations = violations_with_null_values
+    assert_violations_are_as_expected(reported_violations, expected_violations)
 
 
 def test_validation_from_json_file():
@@ -226,9 +268,9 @@ def test_validation_from_json_file():
         "plugins": [],
     }
 
-    expected_result = [
-        (
-            "missing obligatory field",
+    expected_violations = [
+        FieldViolation(
+            ViolationType(1),
             {
                 "name": "Grunwaldzki",
                 "position": [51.1095, 17.0525],
@@ -237,8 +279,8 @@ def test_validation_from_json_file():
             },
             "type_of_place",
         ),
-        (
-            "invalid value in category",
+        FieldViolation(
+            ViolationType(2),
             {
                 "name": None,
                 "position": [51.10655, 17.0555],
@@ -248,8 +290,8 @@ def test_validation_from_json_file():
             },
             "type_of_place",
         ),
-        (
-            "null value",
+        FieldViolation(
+            ViolationType(3),
             {
                 "name": None,
                 "position": [51.10655, 17.0555],
@@ -262,6 +304,19 @@ def test_validation_from_json_file():
     ]
 
     with patch("builtins.open", mock_open(read_data=json.dumps(mock_file_content))) as mock_file:
-        result = validate_from_json_file(mock_file_path)
-        assert result == expected_result
+        reported_violations = report_data_violations_from_json_file(mock_file_path)
+        assert_violations_are_as_expected(reported_violations, expected_violations)
+
+        mock_file.assert_called_once_with(mock_file_path)
+
+
+def test_invalid_format():
+    mock_file_path = "./tests/e2e_tests/e2e_test_data.json"
+
+    with patch("builtins.open", mock_open(read_data='{"map": }')) as mock_file:
+        reported_violations = report_data_violations_from_json_file(mock_file_path)
+        assert len(reported_violations) == 1
+        only_violation = reported_violations[0]
+        assert isinstance(only_violation, FormatViolation)
+        assert isinstance(only_violation.decode_error, ValueError)
         mock_file.assert_called_once_with(mock_file_path)
