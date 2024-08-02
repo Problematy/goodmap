@@ -1,85 +1,89 @@
 import json
 from sys import argv, stderr
+from enum import Enum
 
+class ViolationType(Enum):
+    INVALID_JSON_FORMAT = 0
+    MISSING_OBLIGATORY_FIELD = 1
+    INVALID_VALUE_IN_CATEGORY = 2
+    NULL_VALUE = 3
 
-def get_pts_with_missing_obligatory_fields(datapoints, obligatory_fields):
-    invalid_points = []
-    for p in datapoints:
-        for field in obligatory_fields:
-            if field not in p.keys():
-                invalid_points.append(("missing obligatory field", p, field))
-    return invalid_points
+class DataViolation():
+    def __init__(self, violation_type: ViolationType):
+        self.violation_type = violation_type
 
+class FormatViolation(DataViolation):
+    def __init__(self, decode_error):
+        super().__init__(ViolationType.INVALID_JSON_FORMAT)
+        self.decode_error = decode_error
 
-def get_pts_with_invalid_values_in_categories(datapoints, categories):
-    invalid_points = []
-    for p in datapoints:
-        for category in categories & p.keys():
-            category_value = p[category]
-            valid_values_set = categories[category]
-            if type(category_value) is list:
-                for attribute_value in category_value:
-                    if attribute_value not in valid_values_set:
-                        invalid_points.append(("invalid value in category", p, category))
-            else:
-                if category_value not in valid_values_set:
-                    invalid_points.append(("invalid value in category", p, category))
-    return invalid_points
+class FieldViolation(DataViolation):
+    def __init__(self, violation_type: ViolationType, datapoint, violating_field):
+        super().__init__(violation_type)
+        self.datapoint = datapoint
+        self.violating_field = violating_field
 
-
-def get_pts_with_null_values(datapoints):
-    invalid_points = []
-    for p in datapoints:
-        for attribute, value in p.items():
-            if value is None:
-                invalid_points.append(("null value", p, attribute))
-    return invalid_points
-
-
-def validate_from_json(json_data):
-    map_data = json_data["map"]
+def report_data_violations_from_json(json_database):
+    map_data = json_database["map"]
     datapoints = map_data["data"]
     categories = map_data["categories"]
     obligatory_fields = map_data["obligatory_fields"]
 
-    invalid_points = []
+    data_violations = []
 
-    invalid_points += get_pts_with_missing_obligatory_fields(datapoints, obligatory_fields)
-    invalid_points += get_pts_with_invalid_values_in_categories(datapoints, categories)
-    invalid_points += get_pts_with_null_values(datapoints)
+    for p in datapoints:
+        for field in obligatory_fields:
+            if field not in p.keys():
+                data_violations.append(FieldViolation(ViolationType.MISSING_OBLIGATORY_FIELD, p, field))
 
-    return invalid_points
+        for category in categories & p.keys():
+            category_value_in_point = p[category]
+            valid_values_set = categories[category]
+            if type(category_value_in_point) is list:
+                for attribute_value in category_value_in_point:
+                    if attribute_value not in valid_values_set:
+                        data_violations.append(FieldViolation(ViolationType.INVALID_VALUE_IN_CATEGORY, p, category))
+            else:
+                if category_value_in_point not in valid_values_set:
+                    data_violations.append(FieldViolation(ViolationType.INVALID_VALUE_IN_CATEGORY, p, category))
 
+        for attribute, value in p.items():
+            if value is None:
+                data_violations.append(FieldViolation(ViolationType.NULL_VALUE, p, attribute))
 
-def print_error_messages(invalid_points):
-    if invalid_points == []:
-        print("All data is valid", file=stderr)
-    for msg in invalid_points:
-        print("", file=stderr)
-        msg_type, datapoint, attr = msg
-        if msg_type == "missing obligatory field":
-            print(f'DATA ERROR: missing obligatory field "{attr}" in datapoint:', file=stderr)
-            print(datapoint, file=stderr)
-        elif msg_type == "invalid value in category":
-            print(f'DATA ERROR: invalid value in category "{attr}" in datapoint:', file=stderr)
-            print(datapoint, file=stderr)
-        elif msg_type == "null value":
-            print(f'DATA ERROR: attribute "{attr}" has null value in datapoint:', file=stderr)
-            print(datapoint, file=stderr)
+    return data_violations
 
-
-def validate_from_json_file(path_to_json_file):
+def report_data_violations_from_json_file(path_to_json_file):
     with open(path_to_json_file) as json_file:
         try:
             json_database = json.load(json_file)
         except json.JSONDecodeError as e:
+            return [FormatViolation(e)]
+    return report_data_violations_from_json(json_database)
+
+def print_reported_violations(data_violations):
+    for violation in data_violations:
+        if violation.violation_type == ViolationType.INVALID_JSON_FORMAT:
             print("DATA ERROR: invalid json format", file=stderr)
-            print(e, file=stderr)
-            exit(-1)
-
-    return validate_from_json(json_database)
-
+            print(violation.decode_error, file=stderr)
+        else:
+            print("", file=stderr)   
+            violation_type, datapoint, attr = violation.violation_type, violation.datapoint, violation.violating_field
+            if violation_type == ViolationType(1):
+                print(f'DATA ERROR: missing obligatory field "{attr}" in datapoint:', file=stderr)
+                print(datapoint, file=stderr)
+            elif violation_type == ViolationType(2):
+                print(f'DATA ERROR: invalid value in category "{attr}" in datapoint:', file=stderr)
+                print(datapoint, file=stderr)
+            elif violation_type == ViolationType(3):
+                print(f'DATA ERROR: attribute "{attr}" has null value in datapoint:', file=stderr)
+                print(datapoint, file=stderr)
 
 if __name__ == "__main__":
-    invalid_points = validate_from_json_file(argv[1])
-    print_error_messages(invalid_points)
+    data_violations = report_data_violations_from_json_file(argv[1])
+    if data_violations == []:
+        print("All data is valid", file=stderr)
+    else:
+        print_reported_violations(data_violations)
+
+
