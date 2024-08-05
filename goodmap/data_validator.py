@@ -37,6 +37,41 @@ class FieldViolation(DataViolation):
         self.violating_field = violating_field
 
 
+def get_missing_obligatory_fields_violations(p, obligatory_fields):
+    violations = []
+    for field in obligatory_fields:
+        if field not in p.keys():
+            violations.append(FieldViolation(ViolationType.MISSING_OBLIGATORY_FIELD, p, field))
+    return violations
+
+
+def get_invalid_value_in_category_violations(p, categories):
+    violations = []
+    for category in categories & p.keys():
+        category_value_in_point = p[category]
+        valid_values_set = categories[category]
+        if type(category_value_in_point) is list:
+            for attribute_value in category_value_in_point:
+                if attribute_value not in valid_values_set:
+                    violations.append(
+                        FieldViolation(ViolationType.INVALID_VALUE_IN_CATEGORY, p, category)
+                    )
+        else:
+            if category_value_in_point not in valid_values_set:
+                violations.append(
+                    FieldViolation(ViolationType.INVALID_VALUE_IN_CATEGORY, p, category)
+                )
+    return violations
+
+
+def get_null_values_violations(p):
+    violations = []
+    for attribute, value in p.items():
+        if value is None:
+            violations.append(FieldViolation(ViolationType.NULL_VALUE, p, attribute))
+    return violations
+
+
 def report_data_violations_from_json(json_database):
     map_data = json_database["map"]
     datapoints = map_data["data"]
@@ -46,30 +81,9 @@ def report_data_violations_from_json(json_database):
     data_violations = []
 
     for p in datapoints:
-        for field in obligatory_fields:
-            if field not in p.keys():
-                data_violations.append(
-                    FieldViolation(ViolationType.MISSING_OBLIGATORY_FIELD, p, field)
-                )
-
-        for category in categories & p.keys():
-            category_value_in_point = p[category]
-            valid_values_set = categories[category]
-            if type(category_value_in_point) is list:
-                for attribute_value in category_value_in_point:
-                    if attribute_value not in valid_values_set:
-                        data_violations.append(
-                            FieldViolation(ViolationType.INVALID_VALUE_IN_CATEGORY, p, category)
-                        )
-            else:
-                if category_value_in_point not in valid_values_set:
-                    data_violations.append(
-                        FieldViolation(ViolationType.INVALID_VALUE_IN_CATEGORY, p, category)
-                    )
-
-        for attribute, value in p.items():
-            if value is None:
-                data_violations.append(FieldViolation(ViolationType.NULL_VALUE, p, attribute))
+        data_violations += get_missing_obligatory_fields_violations(p, obligatory_fields)
+        data_violations += get_invalid_value_in_category_violations(p, categories)
+        data_violations += get_null_values_violations(p)
 
     return data_violations
 
@@ -77,10 +91,9 @@ def report_data_violations_from_json(json_database):
 def report_data_violations_from_json_file(path_to_json_file):
     with open(path_to_json_file) as json_file:
         try:
-            json_database = json.load(json_file)
+            return report_data_violations_from_json(json.load(json_file))
         except json.JSONDecodeError as e:
             return [FormatViolation(e)]
-    return report_data_violations_from_json(json_database)
 
 
 def print_reported_violations(data_violations):  # pragma: no cover
@@ -90,8 +103,11 @@ def print_reported_violations(data_violations):  # pragma: no cover
             print("DATA ERROR: invalid json format", file=stderr)
             print(violation.decoding_error, file=stderr)
         else:
+            violating_field = violation.violating_field
             violation_type_error = violation_type.get_error_message()
-            print(f"DATA ERROR: {violation_type_error} in datapoint:", file=stderr)
+            print(
+                f"DATA ERROR: {violation_type_error} {violating_field} in datapoint:", file=stderr
+            )
             print(violation.datapoint, file=stderr)
 
 
