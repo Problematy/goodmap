@@ -9,6 +9,15 @@ class ViolationType(Enum):
     INVALID_VALUE_IN_CATEGORY = 2
     NULL_VALUE = 3
 
+    def get_error_message(self):
+        error_message_dict = {
+            0: "invalid json format",
+            1: "missing obligatory field",
+            2: "invalid value in category",
+            3: "attribute has null value",
+        }
+        return error_message_dict[self.value]
+
 
 class DataViolation:
     def __init__(self, violation_type: ViolationType):
@@ -16,9 +25,9 @@ class DataViolation:
 
 
 class FormatViolation(DataViolation):
-    def __init__(self, decode_error):
+    def __init__(self, decoding_error):
         super().__init__(ViolationType.INVALID_JSON_FORMAT)
-        self.decode_error = decode_error
+        self.decoding_error = decoding_error
 
 
 class FieldViolation(DataViolation):
@@ -74,30 +83,19 @@ def report_data_violations_from_json_file(path_to_json_file):
     return report_data_violations_from_json(json_database)
 
 
-def print_reported_violations(data_violations):
+def print_reported_violations(data_violations):  # pragma: no cover
     for violation in data_violations:
-        if violation.violation_type == ViolationType.INVALID_JSON_FORMAT:
+        violation_type = violation.violation_type
+        if violation_type == ViolationType.INVALID_JSON_FORMAT:
             print("DATA ERROR: invalid json format", file=stderr)
-            print(violation.decode_error, file=stderr)
+            print(violation.decoding_error, file=stderr)
         else:
-            print("", file=stderr)
-            violation_type, datapoint, attr = (
-                violation.violation_type,
-                violation.datapoint,
-                violation.violating_field,
-            )
-            if violation_type == ViolationType(1):
-                print(f'DATA ERROR: missing obligatory field "{attr}" in datapoint:', file=stderr)
-                print(datapoint, file=stderr)
-            elif violation_type == ViolationType(2):
-                print(f'DATA ERROR: invalid value in category "{attr}" in datapoint:', file=stderr)
-                print(datapoint, file=stderr)
-            elif violation_type == ViolationType(3):
-                print(f'DATA ERROR: attribute "{attr}" has null value in datapoint:', file=stderr)
-                print(datapoint, file=stderr)
+            violation_type_error = violation_type.get_error_message()
+            print(f"DATA ERROR: {violation_type_error} in datapoint:", file=stderr)
+            print(violation.datapoint, file=stderr)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     data_violations = report_data_violations_from_json_file(argv[1])
     if data_violations == []:
         print("All data is valid", file=stderr)
