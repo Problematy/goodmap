@@ -315,8 +315,9 @@ def test_invalid_format():
 
     with patch("builtins.open", mock_open(read_data='{"map": }')) as mock_file:
         reported_violations = report_data_violations_from_json_file(mock_file_path)
-        assert len(reported_violations) == 1
+        EXPECTED_NUMBER_OF_VIOLATIONS = 1
+        assert len(reported_violations) == EXPECTED_NUMBER_OF_VIOLATIONS
         only_violation = reported_violations[0]
         assert isinstance(only_violation, FormatViolation)
-        assert isinstance(only_violation.decode_error, ValueError)
+        assert isinstance(only_violation.decoding_error, ValueError)
         mock_file.assert_called_once_with(mock_file_path)
