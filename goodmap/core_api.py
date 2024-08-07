@@ -1,3 +1,5 @@
+import importlib.metadata
+
 from flask import Blueprint, jsonify, make_response, request
 from flask_babel import gettext
 from flask_restx import Api, Resource, fields
@@ -57,6 +59,13 @@ def core_pages(
             queried_data = get_queried_data(data, categories, query_params)
             formatted_data = [prepare_pin(x, visible_data, meta_data) for x in queried_data]
             return jsonify(formatted_data)
+
+    @core_api.route("/version")
+    class Version(Resource):
+        def get(self):
+            """Shows backend version"""
+            version_info = {"backend": importlib.metadata.version("goodmap")}
+            return jsonify(version_info)
 
     @core_api.route("/categories")
     class Categories(Resource):
