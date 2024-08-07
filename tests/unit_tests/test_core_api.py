@@ -13,6 +13,10 @@ def fake_translation(key: str):
     return f"{key}-translated"
 
 
+def fake_version(s: str):
+    return "0.1.2"
+
+
 @pytest.fixture
 def notifier_function():
     return MagicMock()
@@ -103,7 +107,7 @@ def test_data_endpoint_returns_data(test_app):
     ]
 
 
-@mock.patch("importlib.metadata.version", new=lambda x: "0.1.2")
+@mock.patch("importlib.metadata.version", new=fake_version)
 def test_version_endpoint_returns_version(test_app):
     response = test_app.get("/api/version")
     assert response.status_code == 200
