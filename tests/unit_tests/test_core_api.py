@@ -103,11 +103,11 @@ def test_data_endpoint_returns_data(test_app):
     ]
 
 
-@mock.patch("importlib.metadata.version", new=lambda: "0.3.0")
+@mock.patch("importlib.metadata.version", new=lambda x: "0.1.2")
 def test_version_endpoint_returns_version(test_app):
     response = test_app.get("/api/version")
     assert response.status_code == 200
-    assert response.json == {"backend": "0.3.0"}
+    assert response.json == {"backend": "0.1.2"}
 
 
 @mock.patch("goodmap.core_api.gettext", fake_translation)
