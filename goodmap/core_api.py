@@ -1,4 +1,4 @@
-from importlib.metadata import version
+import importlib
 
 from flask import Blueprint, jsonify, make_response, request
 from flask_babel import gettext
@@ -64,7 +64,7 @@ def core_pages(
     class Version(Resource):
         def get(self):
             """Shows backend version"""
-            version_info = {"backend": version("goodmap")}
+            version_info = {"backend": importlib.metadata.version("goodmap")}
             return jsonify(version_info)
 
     @core_api.route("/categories")
