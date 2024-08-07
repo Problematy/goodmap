@@ -1,4 +1,4 @@
-import importlib
+import importlib.metadata
 
 from flask import Blueprint, jsonify, make_response, request
 from flask_babel import gettext
