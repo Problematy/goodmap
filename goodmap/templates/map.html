@@ -5,6 +5,12 @@
 {% endblock %}
 
 {% block content %}
+<div id="loading-message" style="color: red"> Loading! </div>
 <div id="map" class="map h-100 w-100"></div>
+<script type="text/javascript">
+    window.onload = (event) => {
+        document.getElementById("loading-message").style.color = 'green'
+    }
+</script>
 <script src="/static/map.js"></script>
 {% endblock %}
