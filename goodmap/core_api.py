@@ -3,10 +3,14 @@ import importlib.metadata
 from flask import Blueprint, jsonify, make_response, request
 from flask_babel import gettext
 from flask_restx import Api, Resource, fields
+from opentelemetry import trace
 from platzky.config import LanguagesMapping
 
 from .core import get_queried_data
 from .formatter import prepare_pin
+
+# Acquire a tracer
+tracer = trace.get_tracer("core_api.tracer")
 
 
 def make_tuple_translation(keys_to_translate):
@@ -50,15 +54,17 @@ def core_pages(
             Shows all data filtered by query parameters
             e.g. /api/data?category=category1&category=category2
             """
-            all_data = database.get_data()
-            query_params = request.args.to_dict(flat=False)
-            data = all_data["data"]
-            categories = all_data["categories"]
-            visible_data = all_data["visible_data"]
-            meta_data = all_data["meta_data"]
-            queried_data = get_queried_data(data, categories, query_params)
-            formatted_data = [prepare_pin(x, visible_data, meta_data) for x in queried_data]
-            return jsonify(formatted_data)
+            # This creates a new span that's the child of the current one
+            with tracer.start_as_current_span("get_data_span"):
+                all_data = database.get_data()
+                query_params = request.args.to_dict(flat=False)
+                data = all_data["data"]
+                categories = all_data["categories"]
+                visible_data = all_data["visible_data"]
+                meta_data = all_data["meta_data"]
+                queried_data = get_queried_data(data, categories, query_params)
+                formatted_data = [prepare_pin(x, visible_data, meta_data) for x in queried_data]
+                return jsonify(formatted_data)
 
     @core_api.route("/version")
     class Version(Resource):
