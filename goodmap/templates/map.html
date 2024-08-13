@@ -5,36 +5,90 @@
 {% endblock %}
 
 {% block content %}
+
+    <style>
+        .loading-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            font-size: 24px;
+            z-index: 1000;
+        }
+    </style>
+
+<div id="loadingPopup" class="loading-popup">
+    Loading...
+</div>
+
 <div id="map" class="map h-100 w-100"></div>
+
+
 <script type="text/javascript">
 
-    let activeFetchRequests = 0;
-    const originalFetch = window.fetch;
-    window.fetch = function(...args) {
-        activeFetchRequests++;
-        console.log('Fetch zapytanie rozpoczęte, aktywne:', activeFetchRequests);    return originalFetch(...args).then(response => {
-            activeFetchRequests--;
-            console.log('Fetch zapytanie zakończone, aktywne:', activeFetchRequests);
-            return response;
-        });
+(function() {
+    console.log("Interceptor script loaded");
+
+    // Intercept XMLHttpRequest
+    const originalOpen = XMLHttpRequest.prototype.open;
+    const originalSend = XMLHttpRequest.prototype.send;
+
+    XMLHttpRequest.prototype.open = function(method, url) {
+        console.log("XMLHttpRequest open", url);
+        if (url.includes('/api/data')) {  // Adjust this condition to match your API endpoint
+            this.addEventListener('loadstart', showLoading);
+            this.addEventListener('loadend', hideLoading);
+        }
+        return originalOpen.apply(this, arguments);
     };
 
-    // Funkcja do sprawdzenia czy coś się ładuje
-    function czyFetchLadowanieWTle() {
-        return activeFetchRequests > 0;
+    XMLHttpRequest.prototype.send = function() {
+        console.log("XMLHttpRequest send");
+        return originalSend.apply(this, arguments);
+    };
+
+    // Intercept fetch
+    const originalFetch = window.fetch;
+
+    window.fetch = async function(url, options) {
+        console.log("fetch", url);
+        if (url.includes('/api/data')) {  // Adjust this condition to match your API endpoint
+            showLoading();
+        }
+        try {
+            const response = await originalFetch(url, options);
+            return response;
+        } catch (error) {
+            throw error;
+        } finally {
+            if (url.includes('/api/data')) {
+                hideLoading();
+            }
+        }
+    };
+
+    function showLoading() {
+        const loadingPopup = document.getElementById('loadingPopup');
+        console.log("showLoading");
+        if (loadingPopup) {
+            loadingPopup.style.display = 'flex';
+        }
     }
 
-    let counter = 0;
-    const intervalId = setInterval(() => {
-        counter++;
-        if (czyFetchLadowanieWTle() === false) {
-            console.log("All done: Wszystkie zapytania się zakończyły")
-            clearInterval(intervalId);
+    function hideLoading() {
+        const loadingPopup = document.getElementById('loadingPopup');
+        console.log("hideLoading");
+        if (loadingPopup) {
+            loadingPopup.style.display = 'none';
         }
-        if (counter >= 20) {
-            clearInterval(intervalId); // Stop the interval eventually
-        }
-    }, 400);
+    }
+})();
 
 </script>
 <script src="/static/map.js"></script>
