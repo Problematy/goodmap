@@ -33,14 +33,12 @@
 <script type="text/javascript">
 
 (function() {
-    console.log("Interceptor script loaded");
 
     // Intercept XMLHttpRequest
     const originalOpen = XMLHttpRequest.prototype.open;
     const originalSend = XMLHttpRequest.prototype.send;
 
     XMLHttpRequest.prototype.open = function(method, url) {
-        console.log("XMLHttpRequest open", url);
         if (url.includes('/api/data')) {  // Adjust this condition to match your API endpoint
             this.addEventListener('loadstart', showLoading);
             this.addEventListener('loadend', hideLoading);
@@ -49,7 +47,6 @@
     };
 
     XMLHttpRequest.prototype.send = function() {
-        console.log("XMLHttpRequest send");
         return originalSend.apply(this, arguments);
     };
 
@@ -57,7 +54,6 @@
     const originalFetch = window.fetch;
 
     window.fetch = async function(url, options) {
-        console.log("fetch", url);
         if (url.includes('/api/data')) {  // Adjust this condition to match your API endpoint
             showLoading();
         }
@@ -72,26 +68,28 @@
             }
         }
     };
+let requestCount = 0;
 
-    let loadingTimeout;
-
-    function showLoading() {
-        clearTimeout(loadingTimeout);
-        loadingTimeout = setTimeout(() => {
-            const loadingPopup = document.getElementById('loadingPopup');
-            if (loadingPopup) {
-                loadingPopup.style.display = 'flex';
-            }
-        }, 100); // Adjust the delay as needed
+function showLoading() {
+    requestCount++;
+    if (requestCount === 1) { // Only show on the first request
+        const loadingPopup = document.getElementById('loadingPopup');
+        if (loadingPopup) {
+            loadingPopup.style.display = 'flex';
+        }
     }
+}
 
-    function hideLoading() {
-        clearTimeout(loadingTimeout);
+function hideLoading() {
+    requestCount--;
+    if (requestCount === 0) { // Only hide when all requests have completed
         const loadingPopup = document.getElementById('loadingPopup');
         if (loadingPopup) {
             loadingPopup.style.display = 'none';
         }
     }
+}
+
 })();
 
 </script>
