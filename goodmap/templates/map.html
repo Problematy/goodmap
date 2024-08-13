@@ -73,17 +73,21 @@
         }
     };
 
+    let loadingTimeout;
+
     function showLoading() {
-        const loadingPopup = document.getElementById('loadingPopup');
-        console.log("showLoading");
-        if (loadingPopup) {
-            loadingPopup.style.display = 'flex';
-        }
+        clearTimeout(loadingTimeout);
+        loadingTimeout = setTimeout(() => {
+            const loadingPopup = document.getElementById('loadingPopup');
+            if (loadingPopup) {
+                loadingPopup.style.display = 'flex';
+            }
+        }, 100); // Adjust the delay as needed
     }
 
     function hideLoading() {
+        clearTimeout(loadingTimeout);
         const loadingPopup = document.getElementById('loadingPopup');
-        console.log("hideLoading");
         if (loadingPopup) {
             loadingPopup.style.display = 'none';
         }
