@@ -33,6 +33,11 @@
 <script type="text/javascript">
 
 (function() {
+    // Following code will show a loading popup when an API request is in progress
+    // TODO Fetching /api/data code should be moved to a separate file and included in the base template.
+    //  Code could be refactored to use a more modern approach (e.g. fetch API, async/await) or even moved
+    //  to a goodmap-frontend code. For more check issue #95 (https://github.com/Problematy/goodmap/issues/95)
+
 
     // Intercept XMLHttpRequest
     const originalOpen = XMLHttpRequest.prototype.open;
