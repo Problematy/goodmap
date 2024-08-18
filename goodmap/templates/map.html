@@ -5,6 +5,98 @@
 {% endblock %}
 
 {% block content %}
+
+    <style>
+        .loading-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            font-size: 24px;
+            z-index: 1000;
+        }
+    </style>
+
+<div id="loadingPopup" class="loading-popup">
+    Loading...
+</div>
+
 <div id="map" class="map h-100 w-100"></div>
+
+
+<script type="text/javascript">
+
+(function() {
+    // Following code will show a loading popup when an API request is in progress
+    // TODO Fetching /api/data code should be moved to a separate file and included in the base template.
+    //  Code could be refactored to use a more modern approach (e.g. fetch API, async/await) or even moved
+    //  to a goodmap-frontend code. For more check issue #95 (https://github.com/Problematy/goodmap/issues/95)
+
+
+    // Intercept XMLHttpRequest
+    const originalOpen = XMLHttpRequest.prototype.open;
+    const originalSend = XMLHttpRequest.prototype.send;
+
+    XMLHttpRequest.prototype.open = function(method, url) {
+        if (url.includes('/api/data')) {  // Adjust this condition to match your API endpoint
+            this.addEventListener('loadstart', showLoading);
+            this.addEventListener('loadend', hideLoading);
+        }
+        return originalOpen.apply(this, arguments);
+    };
+
+    XMLHttpRequest.prototype.send = function() {
+        return originalSend.apply(this, arguments);
+    };
+
+    // Intercept fetch
+    const originalFetch = window.fetch;
+
+    window.fetch = async function(url, options) {
+        if (url.includes('/api/data')) {  // Adjust this condition to match your API endpoint
+            showLoading();
+        }
+        try {
+            const response = await originalFetch(url, options);
+            return response;
+        } catch (error) {
+            throw error;
+        } finally {
+            if (url.includes('/api/data')) {
+                hideLoading();
+            }
+        }
+    };
+let requestCount = 0;
+
+function showLoading() {
+    requestCount++;
+    if (requestCount === 1) { // Only show on the first request
+        const loadingPopup = document.getElementById('loadingPopup');
+        if (loadingPopup) {
+            loadingPopup.style.display = 'flex';
+        }
+    }
+}
+
+function hideLoading() {
+    requestCount--;
+    if (requestCount === 0) { // Only hide when all requests have completed
+        const loadingPopup = document.getElementById('loadingPopup');
+        if (loadingPopup) {
+            loadingPopup.style.display = 'none';
+        }
+    }
+}
+
+})();
+
+</script>
 <script src="/static/map.js"></script>
 {% endblock %}
