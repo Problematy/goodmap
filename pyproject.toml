@@ -18,10 +18,9 @@ humanize = "^4.6.0"
 Flask-WTF = "^1.2.1"
 gql = "^3.4.0"
 aiohttp = "^3.8.4"
-Flask-Minify = "^0.42"
 pydantic = "^2.7.1"
 
-platzky = {git = "https://github.com/Problematy/platzky.git", rev="01bf1776d706e1710e3ce15caf07d2f31a0d8346"} # TODO remove this line after publishing platzky in stable version
+platzky = {path = "vendor/platzky", develop = true}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.2"
@@ -29,7 +28,7 @@ coverage = "^6.4.3"
 coveralls = "^3.3.1"
 pyright = "^1.1.291"
 freezegun = "^1.2.2"
-black = "^23.1.0"
+black = "^24.8.0"
 ruff = "^0.0.257"
 
 [build-system]
@@ -72,6 +71,7 @@ select = [
 ignore = []
 
 [tool.pytest.ini_options]
+addopts = "--ignore=vendor"
 markers = [
     "skip_coverage: skip coverage for this test"
 ]

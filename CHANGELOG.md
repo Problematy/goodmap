@@ -4,7 +4,6 @@
   * added loading information
   * added /api/version endpoint
   * created json data validator
-  * removed platzky code from goodmap
   * fixed bottom bar on mobile
 
 #### 0.2.3
