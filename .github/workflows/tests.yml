@@ -17,7 +17,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
       with:
-        submodules: 'true'
+        submodules: 'true'  # TODO remove this line after the submodules are removed
     - name: Set up Python 3.10
       uses: actions/setup-python@v4
       with:
