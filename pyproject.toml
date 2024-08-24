@@ -29,7 +29,7 @@ coverage = "^6.4.3"
 coveralls = "^3.3.1"
 pyright = "^1.1.291"
 freezegun = "^1.2.2"
-black = "^23.1.0"
+black = "^24.8.0"
 ruff = "^0.0.257"
 
 [build-system]
