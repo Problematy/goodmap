@@ -1,6 +1,6 @@
 {
     "name": "@problematy/goodmap",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "engines": {
         "node": ">=16.0.0"
     },
@@ -31,7 +31,7 @@
         "@babel/preset-env": "^7.18.2",
         "@babel/preset-react": "^7.17.12",
         "@testing-library/jest-dom": "^5.16.5",
-        "@testing-library/react": "^13.4.0",
+        "@testing-library/react": "^16.0.1",
         "@types/leaflet": "^1.9.0",
         "babel-jest": "^28.1.1",
         "babel-loader": "^8.2.5",

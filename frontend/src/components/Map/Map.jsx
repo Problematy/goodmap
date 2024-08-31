@@ -6,7 +6,7 @@ import { Marker, Popup } from 'react-leaflet';
 import { httpService } from '../../services/http/httpService';
 import { FiltersForm } from '../FiltersForm/FiltersForm';
 import { MarkerPopup } from '../MarkerPopup/MarkerPopup';
-import { MapComponent } from './createBaseMap';
+import { MapComponent } from './MapComponent';
 
 const mapPlaceholder = ReactDOM.createRoot(document.getElementById('map'));
 const filtersPlaceholder = ReactDOM.createRoot(document.getElementById('filter-form'));
@@ -27,7 +27,7 @@ export async function getNewMarkers(categories) {
     const filtersUrlQueryString = allCheckboxes.filter(n => n).join('&');
     const locations = await httpService.getLocations(filtersUrlQueryString);
     return locations.map(location => (
-        <Marker position={location.position}>
+        <Marker position={location.position} key={location.metadata.UUID}>
             <Popup>
                 <MarkerPopup place={location} />
             </Popup>
@@ -41,6 +41,7 @@ export async function repaintMarkers(categories) {
         const mainMap = <MapComponent markers={newMarkers} />;
         mapPlaceholder.render(mainMap);
     } catch (error) {
+        // eslint-disable-next-line no-console
         console.error('Error repainting markers:', error);
     }
 }

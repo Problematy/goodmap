@@ -7,32 +7,29 @@ const isCustomValue = value => typeof value === 'object' && !(value instanceof A
 const mapDataToPopupContent = ([dataKey, value]) => {
     if (isCustomValue(value)) {
         const CustomDataComponent = mapCustomTypeToReactComponent(value);
-
         return (
             <PopupDataRow key={dataKey} fieldName={dataKey} valueToDisplay={CustomDataComponent} />
         );
     }
-
-    return (
-        <PopupDataRow
-            key={dataKey}
-            fieldName={dataKey}
-            valueToDisplay={getContentAsString(value)}
-        />
-    );
+    return <PopupDataRow key={dataKey} fieldName={dataKey} valueToDisplay={value} />;
 };
 
 const PopupDataRow = ({ fieldName, valueToDisplay }) => (
     <p key={fieldName} className="m-0">
         <b>{fieldName}</b>
         {`: `}
-        {valueToDisplay}
+        {getContentAsString(valueToDisplay)}
     </p>
 );
 
 PopupDataRow.propTypes = {
     fieldName: PropTypes.string.isRequired,
-    valueToDisplay: PropTypes.oneOfType([PropTypes.string, PropTypes.element]).isRequired,
+    valueToDisplay: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.number,
+        PropTypes.array,
+        PropTypes.element,
+    ]).isRequired,
 };
 
 export const MarkerPopup = ({ place }) => {
