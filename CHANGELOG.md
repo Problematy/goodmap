@@ -1,6 +1,7 @@
 # Changelog
-#### *
+#### 0.3.1
   * added endpoint for suggesting new places
+  * added setting colors for map
 
 #### 0.3.0
   * added loading information
