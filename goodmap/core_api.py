@@ -7,6 +7,7 @@ from platzky.config import LanguagesMapping
 
 from .core import get_queried_data
 from .formatter import prepare_pin
+from goodmap.data_models.location import Location
 
 
 def make_tuple_translation(keys_to_translate):
@@ -30,8 +31,8 @@ def core_pages(
     location_suggest_model = core_api.model(
         "LocationSuggestion",
         {
-            "organization": fields.String(required=True, description="Organization name"),
-            "position ": fields.String(required=True, description="Location of the suggestion"),
+            "name": fields.String(required=True, description="Organization name"),
+            "coordinates": fields.String(required=True, description="Location of the suggestion"),
             "photo": fields.String(required=False, description="Photo of the location"),
         }
     )
@@ -43,11 +44,14 @@ def core_pages(
             """Suggest new location"""
             try:
                 location_suggest = request.get_json()
+                location = Location(name=location_suggest['name'], coordinates=location_suggest['coordinates'])
                 message = (
-                    f"A new location has been suggested: '{location_suggest['organization']}' "
-                    f"at position: {location_suggest['position']}"
+                    f"A new location has been suggested: '{location.name}' "
+                    f"at position: {location.coordinates}"
                 )
                 notifier_function(message)
+            except ValueError as e:
+                return make_response(jsonify({"message": f"Invalid location data: {e}"}), 400)
             except Exception as e:
                 return make_response(jsonify({"message": f"Error sending notification : {e}"}), 400)
             return make_response(jsonify({"message": "Location suggested"}), 200)
