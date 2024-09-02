@@ -5,6 +5,8 @@ from flask_babel import gettext
 from flask_restx import Api, Resource, fields
 from platzky.config import LanguagesMapping
 
+from goodmap.data_models.location import Location
+
 from .core import get_queried_data
 from .formatter import prepare_pin
 
@@ -26,6 +28,34 @@ def core_pages(
             "description": fields.String(required=True, description="Description of the problem"),
         },
     )
+
+    location_suggest_model = core_api.model(
+        "LocationSuggestion",
+        {
+            "name": fields.String(required=True, description="Organization name"),
+            "coordinates": fields.String(required=True, description="Location of the suggestion"),
+            "photo": fields.String(required=False, description="Photo of the location"),
+        },
+    )
+
+    @core_api.route("/suggest-new-point")
+    class NewLocation(Resource):
+        @core_api.expect(location_suggest_model)
+        def post(self):
+            """Suggest new location"""
+            try:
+                location_suggest = request.get_json()
+                location = Location.model_validate(location_suggest)
+                message = (
+                    f"A new location has been suggested: '{location.name}' "
+                    f"at position: {location.coordinates}"
+                )
+                notifier_function(message)
+            except ValueError as e:
+                return make_response(jsonify({"message": f"Invalid location data: {e}"}), 400)
+            except Exception as e:
+                return make_response(jsonify({"message": f"Error sending notification : {e}"}), 400)
+            return make_response(jsonify({"message": "Location suggested"}), 200)
 
     @core_api.route("/report-location")
     class ReportLocation(Resource):
