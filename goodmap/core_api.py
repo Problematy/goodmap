@@ -5,9 +5,10 @@ from flask_babel import gettext
 from flask_restx import Api, Resource, fields
 from platzky.config import LanguagesMapping
 
+from goodmap.data_models.location import Location
+
 from .core import get_queried_data
 from .formatter import prepare_pin
-from goodmap.data_models.location import Location
 
 
 def make_tuple_translation(keys_to_translate):
@@ -34,7 +35,7 @@ def core_pages(
             "name": fields.String(required=True, description="Organization name"),
             "coordinates": fields.String(required=True, description="Location of the suggestion"),
             "photo": fields.String(required=False, description="Photo of the location"),
-        }
+        },
     )
 
     @core_api.route("/suggest-new-point")
@@ -44,7 +45,9 @@ def core_pages(
             """Suggest new location"""
             try:
                 location_suggest = request.get_json()
-                location = Location(name=location_suggest['name'], coordinates=location_suggest['coordinates'])
+                location = Location(
+                    name=location_suggest["name"], coordinates=location_suggest["coordinates"]
+                )
                 message = (
                     f"A new location has been suggested: '{location.name}' "
                     f"at position: {location.coordinates}"

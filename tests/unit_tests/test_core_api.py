@@ -145,12 +145,10 @@ def test_getting_token(test_app):
 def test_suggest_new_location_with_valid_data(test_app):
     response = test_app.post(
         "/api/suggest-new-point",
-        data=json.dumps({
-            "name": "Test Organization",
-            "coordinates": [50, 50],
-            "photo": "Test Photo"
-        }),
-        content_type='application/json',
+        data=json.dumps(
+            {"name": "Test Organization", "coordinates": [50, 50], "photo": "Test Photo"}
+        ),
+        content_type="application/json",
     )
     assert response.status_code == 200
     assert response.get_json() == {"message": "Location suggested"}
@@ -159,10 +157,8 @@ def test_suggest_new_location_with_valid_data(test_app):
 def test_suggest_new_location_without_required_fields(test_app):
     response = test_app.post(
         "/api/suggest-new-point",
-        data=json.dumps({
-            "photo": "Test Photo"
-        }),
-        content_type='application/json',
+        data=json.dumps({"photo": "Test Photo"}),
+        content_type="application/json",
     )
     assert response.status_code == 400
 
@@ -171,7 +167,7 @@ def test_suggest_new_location_with_empty_data(test_app):
     response = test_app.post(
         "/api/suggest-new-point",
         data=json.dumps({}),
-        content_type='application/json',
+        content_type="application/json",
     )
     assert response.status_code == 400
 
@@ -179,11 +175,7 @@ def test_suggest_new_location_with_empty_data(test_app):
 def test_suggest_new_location_with_invalid_data(test_app):
     response = test_app.post(
         "/api/suggest-new-point",
-        data=json.dumps({
-            "name": 123,
-            "coordinates": 456,
-            "photo": "Test Photo"
-        }),
-        content_type='application/json',
+        data=json.dumps({"name": 123, "coordinates": 456, "photo": "Test Photo"}),
+        content_type="application/json",
     )
     assert response.status_code == 400
