@@ -179,3 +179,16 @@ def test_suggest_new_location_with_invalid_data(test_app):
         content_type="application/json",
     )
     assert response.status_code == 400
+
+
+def test_suggest_new_location_with_error_during_sending_notification(test_app, notifier_function):
+    notifier_function.side_effect = Exception("Test Error")
+    response = test_app.post(
+        "/api/suggest-new-point",
+        data=json.dumps(
+            {"name": "Test Organization", "coordinates": [50, 50], "photo": "Test Photo"}
+        ),
+        content_type="application/json",
+    )
+    assert response.status_code == 400
+    assert response.get_json() == {"message": "Error sending notification : Test Error"}
