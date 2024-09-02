@@ -27,6 +27,31 @@ def core_pages(
         },
     )
 
+    location_suggest_model = core_api.model(
+        "LocationSuggestion",
+        {
+            "organization": fields.String(required=True, description="Organization name"),
+            "position ": fields.String(required=True, description="Location of the suggestion"),
+            "photo": fields.String(required=False, description="Photo of the location"),
+        }
+    )
+
+    @core_api.route("/suggest-new-point")
+    class NewLocation(Resource):
+        @core_api.expect(location_suggest_model)
+        def post(self):
+            """Suggest new location"""
+            try:
+                location_suggest = request.get_json()
+                message = (
+                    f"A new location has been suggested: '{location_suggest['organization']}' "
+                    f"at position: {location_suggest['position']}"
+                )
+                notifier_function(message)
+            except Exception as e:
+                return make_response(jsonify({"message": f"Error sending notification : {e}"}), 400)
+            return make_response(jsonify({"message": "Location suggested"}), 200)
+
     @core_api.route("/report-location")
     class ReportLocation(Resource):
         @core_api.expect(location_report_model)
