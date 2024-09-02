@@ -1,4 +1,6 @@
 # Changelog
+#### *
+  * added endpoint for suggesting new places
 
 #### 0.3.0
   * added loading information
