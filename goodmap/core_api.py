@@ -45,9 +45,7 @@ def core_pages(
             """Suggest new location"""
             try:
                 location_suggest = request.get_json()
-                location = Location(
-                    name=location_suggest["name"], coordinates=location_suggest["coordinates"]
-                )
+                location = Location.model_validate(location_suggest)
                 message = (
                     f"A new location has been suggested: '{location.name}' "
                     f"at position: {location.coordinates}"
