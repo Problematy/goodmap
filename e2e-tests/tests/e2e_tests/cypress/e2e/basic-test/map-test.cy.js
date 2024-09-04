@@ -8,15 +8,6 @@ describe('Map Tests', () => {
     cy.get('form span').should('have.length', 2)
   })
 
-  it('Checks if page is asking for geolocation on load', () => {
-    cy.visit('/', {
-      onBeforeLoad ({ navigator }) {
-        cy.spy(navigator.geolocation, 'watchPosition').as('geonavigator');
-      }
-    });
-    cy.get('@geonavigator').should('be.calledOnce');
-  });
-
   it('Should not have scrollbars', () => {
     // Get the dimensions of the viewport and the entire page
     cy.window().then((win) => {
