@@ -3,6 +3,7 @@ const TerserPlugin = require('terser-webpack-plugin');
 
 module.exports = (env, argv) => {
     const IS_PROD = argv.mode === 'production';
+    const runOnAllInterfaces = env && env.serve === 'network';
 
     return {
         devtool: 'source-map',
@@ -35,5 +36,16 @@ module.exports = (env, argv) => {
                 },
             ],
         },
+        devServer: {
+            host: runOnAllInterfaces ? '0.0.0.0' : 'localhost',
+            port: 8080,
+            headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+                'Access-Control-Allow-Headers': 'X-Requested-With, content-type, Authorization'
+            },
+            allowedHosts: runOnAllInterfaces ? 'all' : 'localhost',
+        },
     };
+
 };

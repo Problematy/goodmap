@@ -17,3 +17,9 @@ lint-fix:
 
 coverage:
 	npm run coverage
+
+serve:
+	npm run serve:local
+
+serve-network:
+	npm run serve:network

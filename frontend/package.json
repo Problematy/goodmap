@@ -1,16 +1,17 @@
 {
     "name": "@problematy/goodmap",
-    "version": "0.2.1",
+    "version": "0.2.2",
     "engines": {
         "node": ">=16.0.0"
     },
     "description": "Fronted scripts for map",
     "main": "dist/index.js",
     "scripts": {
+        "serve:local": "webpack-dev-server --mode development --env serve=local",
+        "serve:network": "webpack-dev-server --mode development --env serve=network",
         "build": "webpack --mode production --progress --config webpack.config.js",
         "dev-build": "webpack --progress --mode development --config webpack.config.js",
         "watch": "webpack --progress -d --config webpack.config.js --watch",
-        "serve": "webpack-dev-server --mode development",
         "test": "jest --config jest.config.js",
         "coverage": "jest --coverage --config jest.config.js",
         "lint-fix": "eslint src/**/*.jsx tests/**/*.jsx --fix",
