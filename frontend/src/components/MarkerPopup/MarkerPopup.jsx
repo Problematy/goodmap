@@ -1,16 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { getContentAsString, mapCustomTypeToReactComponent } from './mapCustomTypeToReactComponent';
+import { Marker, Popup } from 'react-leaflet';
+import { buttonStyleSmall } from '../../styles/buttonStyle';
+import ExploreIcon from '@mui/icons-material/Explore';
+import { ReportProblemForm } from './ReportProblemForm';
 
 const isCustomValue = value => typeof value === 'object' && !(value instanceof Array);
 
-const mapDataToPopupContent = ([dataKey, value]) => {
-    if (isCustomValue(value)) {
-        const CustomDataComponent = mapCustomTypeToReactComponent(value);
-        return (
-            <PopupDataRow key={dataKey} fieldName={dataKey} valueToDisplay={CustomDataComponent} />
-        );
-    }
+const mapDataToPopupContent = ([dataKey, rawValue]) => {
+    let value = isCustomValue(rawValue) ? mapCustomTypeToReactComponent(rawValue) : rawValue;
     return <PopupDataRow key={dataKey} fieldName={dataKey} valueToDisplay={value} />;
 };
 
@@ -32,17 +31,48 @@ PopupDataRow.propTypes = {
     ]).isRequired,
 };
 
-export const MarkerPopup = ({ place }) => {
+export const MarkerContent = ({ place }) => {
     const categoriesWithSubcategories = Object.entries(place.data);
-
+    const [showForm, setShowForm] = useState(false);
+    const toggleForm = () => setShowForm(!showForm);
     return (
-        <div className="place-data m-0">
-            <p className="point-title m-0">
-                <b>{place.title}</b>
+        <>
+            <div className="place-data m-0">
+                <p className="point-title m-0">
+                    <b>{place.title}</b>
+                </p>
+                <p className="point-subtitle mt-0 mb-2">{place.subtitle}</p>
+                {categoriesWithSubcategories.map(mapDataToPopupContent)}
+            </div>
+            <a href={`geo:${place.position[0]},${place.position[1]}`}>
+                <p
+                    style={{
+                        ...buttonStyleSmall,
+                        justifyContent: 'center',
+                        display: 'flex',
+                        alignItems: 'center',
+                    }}
+                >
+                    <ExploreIcon style={{ color: 'white', marginRight: '10px' }} />
+                    <span>Navigate me</span>
+                </p>
+            </a>
+
+            <p onClick={toggleForm} style={{ cursor: 'pointer', textAlign: 'right', color: 'red' }}>
+                report an problem
             </p>
-            <p className="point-subtitle mt-0 mb-2">{place.subtitle}</p>
-            {categoriesWithSubcategories.map(mapDataToPopupContent)}
-        </div>
+            {showForm && <ReportProblemForm placeId={place.metadata.UUID} />}
+        </>
+    );
+};
+
+export const MarkerPopup = ({ place }) => {
+    return (
+        <Marker position={place.position} key={place.metadata.UUID}>
+            <Popup>
+                <MarkerContent place={place} />
+            </Popup>
+        </Marker>
     );
 };
 

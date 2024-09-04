@@ -12,7 +12,7 @@ const categories = [
     ],
 ];
 
-test('Creates good filter_form box', async () => {
+test('Creates good filter_form box', () => {
     const { asFragment } = render(<FiltersForm categoriesData={categories} onClick={() => {}} />);
 
     expect(asFragment()).toMatchInlineSnapshot(`

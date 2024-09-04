@@ -1,5 +1,5 @@
 {
-    "extends": ["airbnb", "prettier"],
+    "extends": ["airbnb", "prettier", "wikimedia/client/es6"],
     "plugins": ["prettier", "eslint-plugin-react", "eslint-plugin-react-hooks"],
     "parser": "@babel/eslint-parser",
     "parserOptions": {
@@ -10,18 +10,24 @@
         "navigator": true
     },
     "env": {
-        "jest": true
+        "jest": true,
+        "browser": true
     },
     "rules": {
+        "array-bracket-spacing": "off",
+        "space-in-parens": "off",
         "prettier/prettier": "error",
         "no-unused-vars": "warn",
         "no-console": "warn",
-        "func-names": "off",
-        "no-process-exit": "off",
-        "object-shorthand": "off",
-        "class-methods-use-this": "off",
-        "import/prefer-default-export": "off",
-        "react/require-default-props": "off",
+        "func-names": "error",
+        "no-process-exit": "error",
+        "object-shorthand": "error",
+        "class-methods-use-this": "error",
+        "import/prefer-default-export": "error",
+        "react/require-default-props": "error",
+        "comma-dangle": "off",
+        "es-x/no-rest-spread-properties": "off",
+        "indent": ["error", 4],
         "react/function-component-definition": [
             2,
             {

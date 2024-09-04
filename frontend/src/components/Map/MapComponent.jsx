@@ -3,7 +3,10 @@ import { MapContainer, TileLayer, ZoomControl } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import PropTypes from 'prop-types';
 import { LocationControl } from './components/LocationControl';
+import { SuggestNewPointButton } from './components/SuggestNewPointButton';
 import { mapConfig } from './map.config';
+import { CustomZoomControl } from './components/ZoomControl';
+import Control from 'react-leaflet-custom-control';
 
 export const MapComponent = ({ markers }) => {
     const [, setUserPosition] = useState(null);
@@ -20,9 +23,14 @@ export const MapComponent = ({ markers }) => {
                 attribution='&amp;copy <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
                 maxZoom={mapConfig.maxMapZoom}
             />
+            {process.env.NODE_ENV === 'development' && (
+                <Control position="bottomright" prepend>
+                    <SuggestNewPointButton />
+                </Control>
+            )}
             <MarkerClusterGroup>{markers}</MarkerClusterGroup>
             <LocationControl setUserPosition={setUserPosition} />
-            <ZoomControl position="topright" />
+            <CustomZoomControl position="topright" />
         </MapContainer>
     );
 };

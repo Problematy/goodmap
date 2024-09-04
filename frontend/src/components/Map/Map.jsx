@@ -1,8 +1,6 @@
 import ReactDOM from 'react-dom/client';
 import React from 'react';
 
-import { Marker, Popup } from 'react-leaflet';
-
 import { httpService } from '../../services/http/httpService';
 import { FiltersForm } from '../FiltersForm/FiltersForm';
 import { MarkerPopup } from '../MarkerPopup/MarkerPopup';
@@ -26,13 +24,7 @@ export async function getNewMarkers(categories) {
     );
     const filtersUrlQueryString = allCheckboxes.filter(n => n).join('&');
     const locations = await httpService.getLocations(filtersUrlQueryString);
-    return locations.map(location => (
-        <Marker position={location.position} key={location.metadata.UUID}>
-            <Popup>
-                <MarkerPopup place={location} />
-            </Popup>
-        </Marker>
-    ));
+    return locations.map(location => <MarkerPopup place={location} key={location.metadata.UUID} />);
 }
 
 export async function repaintMarkers(categories) {

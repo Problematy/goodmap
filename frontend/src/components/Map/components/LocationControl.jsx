@@ -4,9 +4,9 @@ import { Marker, CircleMarker, useMap } from 'react-leaflet';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import ReactDOMServer from 'react-dom/server';
 import L from 'leaflet';
-import { Snackbar } from '@mui/material';
-
-import { LocationButton } from './LocationButton';
+import { Snackbar, Button } from '@mui/material';
+import { buttonStyle } from '../../../styles/buttonStyle';
+import Control from 'react-leaflet-custom-control';
 
 const createLocationIcon = () => {
     const locationIconJSX = <MyLocationIcon sx={{ color: 'black', fontSize: 22 }} />;
@@ -26,37 +26,49 @@ const LocationControl = ({ setUserPosition: setUserPositionProp }) => {
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const map = useMap();
 
+    const flyToLocation = (location, mapInstance) => {
+        const zoomLevel = mapInstance.getZoom() < 16 ? 16 : mapInstance.getZoom();
+        mapInstance.flyTo(location, zoomLevel);
+    };
+
     const handleLocationFound = e => {
         setUserPosition(e.latlng);
         setUserPositionProp(e.latlng);
-        map.flyTo(e.latlng, map.getZoom());
+        flyToLocation(e.latlng, map);
     };
 
     const handleLocationError = e => {
         if (e.code === 1) {
             // User denied Geolocation
             setSnackbarOpen(true);
+            setUserPosition(null);
         }
+        map.stopLocate();
     };
 
     const handleSnackbarClose = (event, reason) => {
         if (reason === 'clickaway') {
             return;
         }
-
         setSnackbarOpen(false);
+    };
+
+    const handleFlyToLocationClick = () => {
+        map.locate({ setView: false, maxZoom: 16, watch: true });
+        if (userPosition) {
+            flyToLocation(userPosition, map);
+        }
     };
 
     useEffect(() => {
         map.on('locationfound', handleLocationFound);
         map.on('locationerror', handleLocationError);
+
         return () => {
             map.off('locationfound', handleLocationFound);
             map.off('locationerror', handleLocationError);
         };
     }, [map]);
-
-    map.locate({ setView: false, maxZoom: 16, watch: true });
 
     const { lat, lng } = userPosition || {};
     const radius = (userPosition && userPosition.accuracy / 2) || 0;
@@ -69,13 +81,18 @@ const LocationControl = ({ setUserPosition: setUserPositionProp }) => {
                     <Marker position={userPosition} icon={createLocationIcon()} />
                 </>
             )}
-            <LocationButton userPosition={userPosition} map={map} />
-            <Snackbar
-                open={snackbarOpen}
-                autoHideDuration={6000}
-                onClose={handleSnackbarClose}
-                message="Location access was denied. Please enable it in your browser settings to use this feature."
-            />
+            <Control prepend position="bottomright">
+                <Button onClick={handleFlyToLocationClick} style={buttonStyle} variant="contained">
+                    <MyLocationIcon style={{ color: 'white', fontSize: 24 }} />
+                </Button>
+
+                <Snackbar
+                    open={snackbarOpen}
+                    autoHideDuration={4000}
+                    onClose={handleSnackbarClose}
+                    message="Please enable location services to see your location on the map."
+                />
+            </Control>
         </>
     );
 };
