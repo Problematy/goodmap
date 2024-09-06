@@ -5,6 +5,7 @@ import { Marker, Popup } from 'react-leaflet';
 import { buttonStyleSmall } from '../../styles/buttonStyle';
 import ExploreIcon from '@mui/icons-material/Explore';
 import { ReportProblemForm } from './ReportProblemForm';
+import { isMobile } from 'react-device-detect';
 
 const isCustomValue = value => typeof value === 'object' && !(value instanceof Array);
 
@@ -31,6 +32,27 @@ PopupDataRow.propTypes = {
     ]).isRequired,
 };
 
+const NavigateMeButton = ({ place }) => {
+    return (
+        <a
+            href={`geo:${place.position[0]},${place.position[1]}?q=${place.position[0]},${place.position[1]}`}
+            style={{ textDecoration: 'none' }}
+        >
+            <p
+                style={{
+                    ...buttonStyleSmall,
+                    justifyContent: 'center',
+                    display: 'flex',
+                    alignItems: 'center',
+                }}
+            >
+                <ExploreIcon style={{ color: 'white', marginRight: '10px' }} />
+                <span>Navigate me</span>
+            </p>
+        </a>
+    );
+};
+
 export const MarkerContent = ({ place }) => {
     const categoriesWithSubcategories = Object.entries(place.data);
     const [showForm, setShowForm] = useState(false);
@@ -44,22 +66,7 @@ export const MarkerContent = ({ place }) => {
                 <p className="point-subtitle mt-0 mb-2">{place.subtitle}</p>
                 {categoriesWithSubcategories.map(mapDataToPopupContent)}
             </div>
-            <a
-                href={`geo:${place.position[0]},${place.position[1]}?q=${place.position[0]},${place.position[1]}`}
-                style={{ textDecoration: 'none' }}
-            >
-                <p
-                    style={{
-                        ...buttonStyleSmall,
-                        justifyContent: 'center',
-                        display: 'flex',
-                        alignItems: 'center',
-                    }}
-                >
-                    <ExploreIcon style={{ color: 'white', marginRight: '10px' }} />
-                    <span>Navigate me</span>
-                </p>
-            </a>
+            {isMobile && <NavigateMeButton place={place} />}
 
             <p onClick={toggleForm} style={{ cursor: 'pointer', textAlign: 'right', color: 'red' }}>
                 report a problem

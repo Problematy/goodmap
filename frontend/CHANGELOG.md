@@ -1,6 +1,9 @@
 # x.x.x
 - Feature: Suggesting new points button
 
+# 0.2.3
+- Fix: Disabled the navigate me button on desktop (it was not working) 
+
 # 0.2.2
 - Fix: No more typo in reporting issues
 - Fix: Navigate me button have pin in third party maps
