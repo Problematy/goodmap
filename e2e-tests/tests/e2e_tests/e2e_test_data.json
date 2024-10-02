@@ -59,6 +59,16 @@
             {
                 "title": "About",
                 "slug": "about",
+                "coverImage":{
+                  "url": "",
+                  "alternateText": ""
+                },
+                "date": "01-01-2024",
+                "author": "",
+                "comments": [],
+                "excerpt": "",
+                "tags": [],
+                "language": "pl",		
                 "contentInMarkdown": "about"
             }
         ],
