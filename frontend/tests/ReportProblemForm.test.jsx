@@ -53,4 +53,14 @@ describe('ReportProblemForm', () => {
             );
         });
     });
+
+    it('does not render submit button when no problem type is selected', async () => {
+        const { queryByText, getByLabelText } = render(<ReportProblemForm placeId="test-id" />);
+
+        const select = getByLabelText(/Problem:/i);
+        expect(select.value).toBe('');
+
+        const submitButton = queryByText(/Submit/i);
+        expect(submitButton).toBeNull();
+    });
 });
