@@ -15,9 +15,6 @@ lint-fix:
 	npm run lint-fix
 	npm run prettier-fix
 
-coverage:
-	npm run coverage
-
 serve:
 	npm run serve:local
 
