@@ -1,29 +1,26 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { getContentAsString, mapCustomTypeToReactComponent } from './mapCustomTypeToReactComponent';
 import { Marker, Popup } from 'react-leaflet';
-import { buttonStyleSmall } from '../../styles/buttonStyle';
 import ExploreIcon from '@mui/icons-material/Explore';
-import { ReportProblemForm } from './ReportProblemForm';
 import { isMobile } from 'react-device-detect';
+import { getContentAsString, mapCustomTypeToReactComponent } from './mapCustomTypeToReactComponent';
+import { buttonStyleSmall } from '../../styles/buttonStyle';
+import { ReportProblemForm } from './ReportProblemForm';
 
 const isCustomValue = value => typeof value === 'object' && !(value instanceof Array);
 
-const mapDataToPopupContent = ([dataKey, rawValue]) => {
-    let value = isCustomValue(rawValue) ? mapCustomTypeToReactComponent(rawValue) : rawValue;
-    return <PopupDataRow key={dataKey} fieldName={dataKey} valueToDisplay={value} />;
+const PopupValue = ({ valueToDisplay }) => {
+    const value = isCustomValue(valueToDisplay)
+        ? mapCustomTypeToReactComponent(valueToDisplay)
+        : valueToDisplay;
+    return (
+        <p className="m-0">
+            <b>{getContentAsString(value)}</b>
+        </p>
+    );
 };
 
-const PopupDataRow = ({ fieldName, valueToDisplay }) => (
-    <p key={fieldName} className="m-0">
-        <b>{fieldName}</b>
-        {`: `}
-        {getContentAsString(valueToDisplay)}
-    </p>
-);
-
-PopupDataRow.propTypes = {
-    fieldName: PropTypes.string.isRequired,
+PopupValue.propTypes = {
     valueToDisplay: PropTypes.oneOfType([
         PropTypes.string,
         PropTypes.number,
@@ -32,26 +29,24 @@ PopupDataRow.propTypes = {
     ]).isRequired,
 };
 
-const NavigateMeButton = ({ place }) => {
-    return (
-        <a
-            href={`geo:${place.position[0]},${place.position[1]}?q=${place.position[0]},${place.position[1]}`}
-            style={{ textDecoration: 'none' }}
+const NavigateMeButton = ({ place }) => (
+    <a
+        href={`geo:${place.position[0]},${place.position[1]}?q=${place.position[0]},${place.position[1]}`}
+        style={{ textDecoration: 'none' }}
+    >
+        <p
+            style={{
+                ...buttonStyleSmall,
+                justifyContent: 'center',
+                display: 'flex',
+                alignItems: 'center',
+            }}
         >
-            <p
-                style={{
-                    ...buttonStyleSmall,
-                    justifyContent: 'center',
-                    display: 'flex',
-                    alignItems: 'center',
-                }}
-            >
-                <ExploreIcon style={{ color: 'white', marginRight: '10px' }} />
-                <span>Navigate me</span>
-            </p>
-        </a>
-    );
-};
+            <ExploreIcon style={{ color: 'white', marginRight: '10px' }} />
+            <span>Navigate me</span>
+        </p>
+    </a>
+);
 
 export const MarkerContent = ({ place }) => {
     const categoriesWithSubcategories = Object.entries(place.data);
@@ -60,11 +55,39 @@ export const MarkerContent = ({ place }) => {
     return (
         <>
             <div className="place-data m-0">
-                <p className="point-title m-0">
-                    <b>{place.title}</b>
-                </p>
-                <p className="point-subtitle mt-0 mb-2">{place.subtitle}</p>
-                {categoriesWithSubcategories.map(mapDataToPopupContent)}
+                <div style={{ width: '100%', justifyContent: 'center', display: 'flex' }}>
+                    <p className="point-title m-0" style={{ fontSize: 14, fontWeight: 'bold' }}>
+                        <b>{place.title}</b>
+                    </p>
+                </div>
+                <div style={{ width: '100%', justifyContent: 'center', display: 'flex' }}>
+                    <p className="point-subtitle mt-0 mb-2" style={{ fontSize: 10 }}>
+                        {place.subtitle}
+                    </p>
+                </div>
+
+                <div
+                    style={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        marginRight: 25,
+                        marginLeft: 25,
+                        marginTop: 10,
+                    }}
+                >
+                    <div>
+                        {categoriesWithSubcategories.map(([category]) => (
+                            <p className="m-0" key={category}>
+                                {`${category}: `}
+                            </p>
+                        ))}
+                    </div>
+                    <div style={{ marginLeft: 10 }}>
+                        {categoriesWithSubcategories.map(([_category, value]) => (
+                            <PopupValue key={value} valueToDisplay={value} />
+                        ))}
+                    </div>
+                </div>
             </div>
             {isMobile && <NavigateMeButton place={place} />}
 
@@ -76,15 +99,13 @@ export const MarkerContent = ({ place }) => {
     );
 };
 
-export const MarkerPopup = ({ place }) => {
-    return (
-        <Marker position={place.position} key={place.metadata.UUID}>
-            <Popup>
-                <MarkerContent place={place} />
-            </Popup>
-        </Marker>
-    );
-};
+export const MarkerPopup = ({ place }) => (
+    <Marker position={place.position} key={place.metadata.UUID}>
+        <Popup>
+            <MarkerContent place={place} />
+        </Popup>
+    </Marker>
+);
 
 MarkerPopup.propTypes = {
     place: PropTypes.shape({

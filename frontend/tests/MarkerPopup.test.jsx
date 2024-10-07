@@ -50,16 +50,16 @@ describe('should render marker popup correctly', () => {
     describe('should render data', () => {
         it('should render data keys', () => {
             dataKeys.forEach(key => {
-                expect(screen.getByText(key)).toBeInTheDocument();
+                expect(screen.getByText(`${key}:`)).toBeInTheDocument();
             });
         });
 
         it('should render data with primitive value', () => {
-            expect(screen.getByText(/: 112\.5/i)).toBeInTheDocument();
+            expect(screen.getByText(/112\.5/i)).toBeInTheDocument();
         });
 
         it('should render data with array value', () => {
-            expect(screen.getByText(/: pedestrians, cars/i)).toBeInTheDocument();
+            expect(screen.getByText(/pedestrians, cars/i)).toBeInTheDocument();
         });
 
         describe('should render complex data', () => {
@@ -75,7 +75,7 @@ describe('should render marker popup correctly', () => {
 
             it('should render unknown data type as text', () => {
                 expect(
-                    screen.getByText(/: example value for unknown data type/i),
+                    screen.getByText(/example value for unknown data type/i),
                 ).toBeInTheDocument();
             });
         });
