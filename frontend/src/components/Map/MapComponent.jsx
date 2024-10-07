@@ -7,9 +7,11 @@ import { SuggestNewPointButton } from './components/SuggestNewPointButton';
 import { mapConfig } from './map.config';
 import { CustomZoomControl } from './components/ZoomControl';
 import Control from 'react-leaflet-custom-control';
+import MapAutocomplete from './components/MapAutocomplete';
 
 export const MapComponent = ({ markers }) => {
     const [, setUserPosition] = useState(null);
+
     return (
         <MapContainer
             center={mapConfig.initialMapCoordinates}
@@ -31,6 +33,7 @@ export const MapComponent = ({ markers }) => {
             <MarkerClusterGroup>{markers}</MarkerClusterGroup>
             <LocationControl setUserPosition={setUserPosition} />
             <CustomZoomControl position="topright" />
+            <MapAutocomplete />
         </MapContainer>
     );
 };

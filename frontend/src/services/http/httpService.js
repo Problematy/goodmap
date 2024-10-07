@@ -1,4 +1,4 @@
-import { CATEGORIES, CATEGORY, DATA, LANGUAGES } from './endpoints';
+import { CATEGORIES, CATEGORY, DATA, LANGUAGES, SEARCH_ADDRESS } from './endpoints';
 
 export const httpService = {
     getCategories: () => fetch(CATEGORIES).then(response => response.json()),
@@ -29,4 +29,17 @@ export const httpService = {
     },
 
     getLanguages: () => fetch(LANGUAGES).then(response => response.json()),
+
+    getSearchAddress: (search) => {
+        const params = {
+            format: 'json',
+            limit: 5,
+            q: search,
+            'accept-language': window.APP_LANG || 'pl',
+        };
+
+        const queryString = new URLSearchParams(params).toString();
+
+        return fetch(`${SEARCH_ADDRESS}?${queryString}`).then(response => response.json());
+    },
 };

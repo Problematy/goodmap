@@ -22,17 +22,21 @@ module.exports = (env, argv) => {
         module: {
             rules: [
                 {
-                    test: /\.(js|jsx)?/,
+                    test: /\.(js|jsx)$/,
                     loader: 'babel-loader',
                     exclude: /node_modules/,
                 },
                 {
                     test: /\.css$/,
-                    use: ['style-loader', 'css-loader'], // Use both style-loader and css-loader
+                    use: ['style-loader', 'css-loader'],
                 },
                 {
-                    test: /\.(jpe?g|png|gif|woff|woff2|eot|ttf|svg)(\?[a-z0-9=.]+)?$/,
+                    test: /\.(jpe?g|png|gif|woff|woff2|eot|ttf|svg)$/i,
                     loader: 'url-loader',
+                    options: {
+                        limit: 8192,
+                        name: '[path][name].[ext]',
+                    },
                 },
             ],
         },
@@ -42,10 +46,9 @@ module.exports = (env, argv) => {
             headers: {
                 'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-                'Access-Control-Allow-Headers': 'X-Requested-With, content-type, Authorization'
+                'Access-Control-Allow-Headers': 'X-Requested-With, content-type, Authorization',
             },
             allowedHosts: runOnAllInterfaces ? 'all' : 'localhost',
         },
     };
-
 };
