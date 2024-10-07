@@ -19,7 +19,9 @@ def prepare_pin(place, visible_fields, meta_data):
             gettext(field): safe_gettext(place[field]) for field in meta_data if field in place
         },
         "data": [
-            [gettext(field), safe_gettext(place[field])] for field in visible_fields if field in place
+            [gettext(field), safe_gettext(place[field])]
+            for field in visible_fields
+            if field in place
         ],
     }
     return pin_data
