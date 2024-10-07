@@ -5,7 +5,7 @@ const {
 
 module.exports = defineConfig({
   e2e: {
-    baseUrl: "http://www.localhost:5000/",
+    baseUrl: "http://www.goodmap.localhost:5000/",
     setupNodeEvents(on, config) {
       config = cypressBrowserPermissionsPlugin(on, config)
       return config;
