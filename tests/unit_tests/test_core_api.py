@@ -25,7 +25,7 @@ def db_mock():
 
 @pytest.fixture
 def test_app(notifier_function, db_mock):
-    b = LanguageConfig(name="English", flag="uk")
+    b = LanguageConfig(name="English", flag="uk", country="GB")
     a = Languages({"en": b})
     languages = languages_dict(a)
     app = Flask(__name__)
