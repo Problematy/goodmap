@@ -6,12 +6,13 @@ def does_fulfill_requirement(entry, requirements):
         matches.append(all(entry_value in entry[category] for entry_value in values))
     return all(matches)
 
+
 def sort_by_lat_lon(data, query_params):
-    try: 
+    try:
         if "lat" in query_params and "lon" in query_params:
             lat = float(query_params["lat"][0])
             lon = float(query_params["lon"][0])
-            data.sort(key=lambda x: (x['position'][0] - lat) ** 2 + (x['position'][1] - lon) ** 2)
+            data.sort(key=lambda x: (x["position"][0] - lat) ** 2 + (x["position"][1] - lon) ** 2)
             return data
         return data
     except:
@@ -19,7 +20,7 @@ def sort_by_lat_lon(data, query_params):
 
 
 def limit(data, query_params, limit):
-    try: 
+    try:
         if "limit" in query_params:
             limit = int(query_params["limit"][0])
             data = data[:limit]
@@ -27,7 +28,7 @@ def limit(data, query_params, limit):
         return data
     except:
         return data
-        
+
 
 def get_queried_data(all_data, categories, query_params):
     requirements = []
