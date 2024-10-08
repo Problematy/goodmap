@@ -1,4 +1,7 @@
 # Changelog
+#### 0.4.0
+  * changed api between backend and frontend
+
 #### 0.3.1
   * added endpoint for suggesting new places
   * added setting colors for map
