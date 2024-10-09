@@ -7,17 +7,20 @@ const correctMarkerData = {
     title: 'Most Grunwaldzki',
     position: [51.1095, 17.0525],
     subtitle: 'big bridge',
-    data: {
-        length: 112.5,
-        accessible_by: ['pedestrians', 'cars'],
-        website: { type: 'hyperlink', value: 'https://www.google.com' },
-        websiteWithDisplayValue: {
-            type: 'hyperlink',
-            value: 'https://www.google.com',
-            displayValue: 'testWebsite',
-        },
-        unknownDataType: { type: 'unknown', value: 'example value for unknown data type' },
-    },
+    data: [
+        ['length', 112.5],
+        ['accessible_by', ['pedestrians', 'cars']],
+        ['website', { type: 'hyperlink', value: 'https://www.google.com' }],
+        [
+            'websiteWithDisplayValue',
+            {
+                type: 'hyperlink',
+                value: 'https://www.google.com',
+                displayValue: 'testWebsite',
+            },
+        ],
+        ['unknownDataType', { type: 'unknown', value: 'example value for unknown data type' }],
+    ],
     metadata: {
         UUID: '21231',
     },
@@ -27,12 +30,8 @@ const incorrectComplexMarkerData = {
     title: 'Most Grunwaldzki',
     position: [51.1095, 17.0525],
     subtitle: 'big bridge',
-    data: {
-        website: { wrongTypeAttribute: 'hyperlink', value: 'https://www.google.com' },
-    },
+    data: [['website', { wrongTypeAttribute: 'hyperlink', value: 'https://www.google.com' }]],
 };
-
-const dataKeys = Object.keys(correctMarkerData.data);
 
 describe('should render marker popup correctly', () => {
     beforeEach(() => {
@@ -49,8 +48,8 @@ describe('should render marker popup correctly', () => {
 
     describe('should render data', () => {
         it('should render data keys', () => {
-            dataKeys.forEach(key => {
-                expect(screen.getByText(`${key}:`)).toBeInTheDocument();
+            correctMarkerData.data.forEach(key => {
+                expect(screen.getByText(`${key[0]}:`)).toBeInTheDocument();
             });
         });
 

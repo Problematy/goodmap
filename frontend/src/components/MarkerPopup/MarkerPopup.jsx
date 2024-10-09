@@ -49,7 +49,7 @@ const NavigateMeButton = ({ place }) => (
 );
 
 export const MarkerContent = ({ place }) => {
-    const categoriesWithSubcategories = Object.entries(place.data);
+    const categoriesWithSubcategories = place.data;
     const [showForm, setShowForm] = useState(false);
     const toggleForm = () => setShowForm(!showForm);
     return (
