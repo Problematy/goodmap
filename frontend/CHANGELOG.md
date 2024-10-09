@@ -3,9 +3,14 @@
 
 # 0.3.0
 - Aligned with goodmap 0.4.0 API
+- Added text for location target info
+- Added proper aria-labels for filter
+- Added search bar
+- Fixed pin formatting
+- Rendering submitButton only when problemType is selected
 
 # 0.2.3
-- Fix: Disabled the navigate me button on desktop (it was not working) 
+- Fix: Disabled the navigate me button on desktop (it was not working)
 
 # 0.2.2
 - Fix: No more typo in reporting issues
