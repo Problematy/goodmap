@@ -1,6 +1,6 @@
 # Changelog
 #### 0.4.0
-  * changed api between backend and frontend
+  * changed API, now on /api/data pin attribute "data" is served as an array of pairs, not as a dict
 
 #### 0.3.1
   * added endpoint for suggesting new places
