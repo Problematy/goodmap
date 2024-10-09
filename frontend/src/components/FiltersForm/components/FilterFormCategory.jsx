@@ -7,8 +7,14 @@ export const FilterFormCategory = ({ filtersData, onClick }) => {
     const subcategoryData = filtersData[1];
 
     return (
-        <div key={`${categoryData[0]} ${categoryData[1]}`}>
-            <span> {categoryData[1]}</span>
+        <div
+            key={`${categoryData[0]} ${categoryData[1]}`}
+            aria-labelledby={`filter-label-${categoryData[0]}-${categoryData[1]}`}
+        >
+            <span id={`filter-label-${categoryData[0]}-${categoryData[1]}`}>
+                {' '}
+                {categoryData[1]}
+            </span>
             {subcategoryData.map(([name, translation]) => (
                 <Checkbox
                     key={name}

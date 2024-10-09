@@ -18,8 +18,12 @@ test('Creates good filter_form box', () => {
     expect(asFragment()).toMatchInlineSnapshot(`
 <DocumentFragment>
   <form>
-    <div>
-      <span>
+    <div
+      aria-labelledby="filter-label-types-typy"
+    >
+      <span
+        id="filter-label-types-typy"
+      >
          typy
       </span>
       <div
