@@ -1,3 +1,5 @@
 {
-    "search": "Szukaj"
+    "search": "Szukaj",
+    "centerButtonAriaLabel": "Ikona celu lokalizacji, używana do określenia lokalizacji na mapie."
+
 }

@@ -1,3 +1,4 @@
 {
-    "search": "Search"
+    "search": "Search",
+    "centerButtonAriaLabel": "Location target icon, used to determine your location on the map"
 }

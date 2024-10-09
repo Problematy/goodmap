@@ -5,8 +5,9 @@ import MyLocationIcon from '@mui/icons-material/MyLocation';
 import ReactDOMServer from 'react-dom/server';
 import L from 'leaflet';
 import { Snackbar, Button } from '@mui/material';
-import { buttonStyle } from '../../../styles/buttonStyle';
 import Control from 'react-leaflet-custom-control';
+import { useTranslation } from 'react-i18next';
+import { buttonStyle } from '../../../styles/buttonStyle';
 
 const createLocationIcon = () => {
     const locationIconJSX = <MyLocationIcon sx={{ color: 'black', fontSize: 22 }} />;
@@ -22,6 +23,7 @@ const createLocationIcon = () => {
 };
 
 const LocationControl = ({ setUserPosition: setUserPositionProp }) => {
+    const { t } = useTranslation();
     const [userPosition, setUserPosition] = useState(null);
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const map = useMap();
@@ -82,7 +84,12 @@ const LocationControl = ({ setUserPosition: setUserPositionProp }) => {
                 </>
             )}
             <Control prepend position="bottomright">
-                <Button onClick={handleFlyToLocationClick} style={buttonStyle} variant="contained">
+                <Button
+                    onClick={handleFlyToLocationClick}
+                    style={buttonStyle}
+                    variant="contained"
+                    aria-label={t('centerButtonAriaLabel')}
+                >
                     <MyLocationIcon style={{ color: 'white', fontSize: 24 }} />
                 </Button>
 
