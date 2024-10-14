@@ -6,6 +6,6 @@ coverage.lcov
 **/__pycache__
 htmlcov
 
-# IDE-specific folders
+# IDE-specific directories
 .vscode
 .idea
