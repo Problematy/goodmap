@@ -2,3 +2,7 @@ node_modules
 dist
 .npmrc
 coverage
+
+# IDE-specific directories
+.vscode
+.idea
