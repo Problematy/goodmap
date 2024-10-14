@@ -5,3 +5,7 @@ data.json
 coverage.lcov
 **/__pycache__
 htmlcov
+
+# IDE-specific directories
+.vscode
+.idea
