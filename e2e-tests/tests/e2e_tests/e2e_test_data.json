@@ -96,7 +96,7 @@
             "name": "redirections",
             "config": {
                 "/test": "/blog/page/about",
-                "/static/map.js": "https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.2.2"
+                "/static/map.js": "https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.3.0"
             }
         },
         {
