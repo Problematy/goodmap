@@ -1,3 +1,6 @@
+from typing import Any, Dict, List
+
+
 def does_fulfill_requirement(entry, requirements):
     matches = []
     for category, values in requirements:
@@ -7,7 +10,7 @@ def does_fulfill_requirement(entry, requirements):
     return all(matches)
 
 
-def sort_by_lat_lon(data, query_params):
+def sort_by_lat_lon(data: List[Dict[str, Any]], query_params: Dict[str, List[str]]):
     try:
         if "lat" in query_params and "lon" in query_params:
             lat = float(query_params["lat"][0])
@@ -15,18 +18,18 @@ def sort_by_lat_lon(data, query_params):
             data.sort(key=lambda x: (x["position"][0] - lat) ** 2 + (x["position"][1] - lon) ** 2)
             return data
         return data
-    except:
+    except (ValueError, KeyError, IndexError):
         return data
 
 
-def limit(data, query_params, limit):
+def limit(data, query_params, limit: int):
     try:
         if "limit" in query_params:
             limit = int(query_params["limit"][0])
             data = data[:limit]
             return data
         return data
-    except:
+    except (ValueError, KeyError, IndexError):
         return data
 
 
