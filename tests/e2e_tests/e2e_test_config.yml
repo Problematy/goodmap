@@ -10,6 +10,8 @@ LANGUAGES:
   en:
     name: English
     flag: gb
+    country: GB
   pl:
     name: polski
     flag: pl
+    country: PL
