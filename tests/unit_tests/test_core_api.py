@@ -94,7 +94,7 @@ def test_data_endpoint_returns_data(test_app):
     assert response.status_code == 200
     assert response.json == [
         {
-            "data": {"name-translated": "test-translated"},
+            "data": [["name-translated", "test-translated"]],
             "metadata": {},
             "position": [50, 50],
             "subtitle": "test-place-translated",
@@ -119,7 +119,7 @@ def test_data_endpoint_returns_filtered_data(test_app):
     assert response.status_code == 200
     assert response.json == [
         {
-            "data": {"name-translated": "test-translated"},
+            "data": [["name-translated", "test-translated"]],
             "metadata": {},
             "position": [50, 50],
             "subtitle": "test-place-translated",
