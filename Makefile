@@ -35,3 +35,11 @@ ifndef JSON_DATA_FILE
 else
 	poetry run python -m goodmap.data_validator $(JSON_DATA_FILE)
 endif
+
+extract-translations:
+	poetry run pybabel extract ./goodmap -o extracted.pot -F ./babel.cfg --project=goodmap
+	poetry run pybabel update -i extracted.pot -d goodmap/locale --ignore-pot-creation-date --ignore-obsolete
+
+build:
+	poetry run pybabel compile -d goodmap/locale
+	poetry build
