@@ -49,7 +49,8 @@ const NavigateMeButton = ({ place }) => (
 );
 
 export const MarkerContent = ({ place }) => {
-    const categoriesWithSubcategories = place.data;
+    const categoriesWithSubcategories = place.data.filter(([category]) => !(category === 'CTA'));
+    const CTACategories = place.data.filter(([category]) => category === 'CTA');
     const [showForm, setShowForm] = useState(false);
     const toggleForm = () => setShowForm(!showForm);
     return (
@@ -87,6 +88,19 @@ export const MarkerContent = ({ place }) => {
                             <PopupValue key={value} valueToDisplay={value} />
                         ))}
                     </div>
+                </div>
+                <div
+                    style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        marginRight: 25,
+                        marginLeft: 25,
+                        marginTop: 10,
+                    }}
+                >
+                    {CTACategories.map(([_category, value]) => (
+                        <PopupValue key={value} valueToDisplay={value} />
+                    ))}
                 </div>
             </div>
             {isMobile && <NavigateMeButton place={place} />}
