@@ -1,4 +1,4 @@
-describe('CTA Tests', () => {
+describe('Popup Tests', () => {
   beforeEach(() => {
     cy.visit('/');
     cy.wait(3000);
@@ -12,7 +12,7 @@ describe('CTA Tests', () => {
     subtitle: "small bridge",
   };
 
-  it('displays CTA button', () => {
+  it('displays title and subtitle in the popup', () => {
     const zoomInTimes = 1;
     for (let i = 0; i < zoomInTimes; i++) {
       cy.get('.leaflet-marker-icon').first().click();
