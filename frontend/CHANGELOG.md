@@ -1,5 +1,8 @@
 - Feature: Suggesting new points button
 
+# 0.3.2
+- fix: marker popup one-line value
+
 # 0.3.1
 - Feature: displaying CTA
 - Fix: Map centering on user location all the time
