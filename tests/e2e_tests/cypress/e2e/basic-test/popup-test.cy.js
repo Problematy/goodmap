@@ -36,6 +36,7 @@ describe('Popup Tests', () => {
       cy.wait(500);
     }
 
+    // TODO - Find a way to search for a specific point, not iterate over all of them
     cy.get('.leaflet-marker-icon').each(($marker) => {
       cy.wrap($marker).click();
       cy.wait(500);
