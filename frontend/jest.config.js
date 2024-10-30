@@ -1,4 +1,5 @@
 const config = {
+    setupFiles: ['<rootDir>/src/i18n'],
     verbose: true,
     testEnvironment: 'jsdom',
     setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],

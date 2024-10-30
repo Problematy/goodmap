@@ -1,4 +1,10 @@
 {
     "search": "Search",
-    "centerButtonAriaLabel": "Location target icon, used to determine your location on the map"
+    "centerButtonAriaLabel": "Location target icon, used to determine your location on the map",
+    "ReportIssueButton": "report a problem",
+    "reportChooseOption": "Please choose an option",
+    "reportNotHere": "this point is not here",
+    "reportOverload": "it's overloaded",
+    "reportBroken": "it's broken",
+    "reportOther": "other"
 }

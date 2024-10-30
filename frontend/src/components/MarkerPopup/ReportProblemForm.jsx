@@ -2,6 +2,7 @@ import axios from 'axios';
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 
 const Form = styled.form`
     display: flex;
@@ -40,6 +41,7 @@ const SubmitButton = styled.input`
 `;
 
 export const ReportProblemForm = ({ placeId }) => {
+    const { t } = useTranslation();
     const [problem, setProblem] = useState('');
     const [problemType, setProblemType] = useState('');
     const [isSubmitted, setIsSubmitted] = useState(false);
@@ -81,11 +83,11 @@ export const ReportProblemForm = ({ placeId }) => {
             <Label>
                 Problem:
                 <Select value={problemType} onChange={e => setProblemType(e.target.value)}>
-                    <option value="">--Please choose an option--</option>
-                    <option value="this point is not here">This point is not here</option>
-                    <option value="it's overloaded">It's overloaded</option>
-                    <option value="it's broken">It's broken</option>
-                    <option value="other">Other</option>
+                    <option value="">--{t('reportChooseOption')}--</option>
+                    <option value={t('reportNotHere')}>{t('reportNotHere')}</option>
+                    <option value={t('reportOverload')}>{t('reportOverload')}</option>
+                    <option value={t('reportBroken')}>{t('reportBroken')}</option>
+                    <option value={t('reportOther')}>{t('reportOther')}</option>
                 </Select>
             </Label>
             {problemType === 'other' && (

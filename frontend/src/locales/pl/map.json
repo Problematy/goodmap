@@ -1,5 +1,10 @@
 {
     "search": "Szukaj",
-    "centerButtonAriaLabel": "Ikona celu lokalizacji, używana do określenia lokalizacji na mapie."
-
+    "centerButtonAriaLabel": "Ikona celu lokalizacji, używana do określenia lokalizacji na mapie.",
+    "ReportIssueButton": "zgłoś problem",
+    "reportChooseOption": "Wybierz opcję",
+    "reportNotHere": "punktu nie ma w tym miejscu",
+    "reportOverload": "przepełniony",
+    "reportBroken": "punkt jest zniszczony",
+    "reportOther": "inny"
 }

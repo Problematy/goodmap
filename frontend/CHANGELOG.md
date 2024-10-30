@@ -1,5 +1,9 @@
-# x.x.x
 - Feature: Suggesting new points button
+
+# 0.3.1
+- Feature: displaying CTA
+- Fix: Map centering on user location all the time
+- Fix: reporting issue is now translated
 
 # 0.3.0
 - Aligned with goodmap 0.4.0 API

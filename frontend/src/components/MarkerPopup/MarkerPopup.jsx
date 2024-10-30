@@ -6,6 +6,7 @@ import { isMobile } from 'react-device-detect';
 import { getContentAsString, mapCustomTypeToReactComponent } from './mapCustomTypeToReactComponent';
 import { buttonStyleSmall } from '../../styles/buttonStyle';
 import { ReportProblemForm } from './ReportProblemForm';
+import { useTranslation } from 'react-i18next';
 
 const isCustomValue = value => typeof value === 'object' && !(value instanceof Array);
 
@@ -49,6 +50,7 @@ const NavigateMeButton = ({ place }) => (
 );
 
 export const MarkerContent = ({ place }) => {
+    const { t } = useTranslation();
     const categoriesWithSubcategories = place.data.filter(([category]) => !(category === 'CTA'));
     const CTACategories = place.data.filter(([category]) => category === 'CTA');
     const [showForm, setShowForm] = useState(false);
@@ -106,7 +108,7 @@ export const MarkerContent = ({ place }) => {
             {isMobile && <NavigateMeButton place={place} />}
 
             <p onClick={toggleForm} style={{ cursor: 'pointer', textAlign: 'right', color: 'red' }}>
-                report a problem
+                {t('ReportIssueButton')}
             </p>
             {showForm && <ReportProblemForm placeId={place.metadata.UUID} />}
         </>
