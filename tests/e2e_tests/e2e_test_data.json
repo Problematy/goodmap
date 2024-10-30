@@ -12,7 +12,12 @@
                     "cars"
                 ],
                 "type_of_place": "big bridge",
-                "UUID": "hidden"
+                "UUID": "hidden",
+                "CTA": {
+                    "type": "CTA",
+                    "value": "https://www.example.com",
+                    "displayValue": "Visit example.org!"
+                }
             },
             {
                 "name": "Zwierzyniecka",
@@ -48,7 +53,8 @@
         },
         "visible_data": [
             "accessible_by",
-            "type_of_place"
+            "type_of_place",
+            "CTA"
         ],
         "meta_data": [
             "UUID"
@@ -96,7 +102,7 @@
             "name": "redirections",
             "config": {
                 "/test": "/blog/page/about",
-                "/static/map.js": "https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.3.0"
+                "/static/map.js": "https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.3.1"
             }
         },
         {
