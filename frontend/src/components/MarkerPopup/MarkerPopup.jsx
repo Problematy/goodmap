@@ -71,25 +71,31 @@ export const MarkerContent = ({ place }) => {
 
                 <div
                     style={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                        marginRight: 25,
-                        marginLeft: 25,
-                        marginTop: 10,
+                        display: 'grid',
+                        gridTemplateColumns: '100px 1fr',
+                        columnGap: '10px',
+                        rowGap: '5px',
+                        margin: '10px 25px',
+                        alignItems: 'start',
                     }}
                 >
-                    <div>
-                        {categoriesWithSubcategories.map(([category]) => (
-                            <p className="m-0" key={category}>
-                                {`${category}: `}
+                    {categoriesWithSubcategories.map(([category, value]) => (
+                        <>
+                            <p key={`${category}-label`} className="m-0" style={{ margin: 0 }}>
+                                {`${category}:`}
                             </p>
-                        ))}
-                    </div>
-                    <div style={{ marginLeft: 10 }}>
-                        {categoriesWithSubcategories.map(([_category, value]) => (
-                            <PopupValue key={value} valueToDisplay={value} />
-                        ))}
-                    </div>
+                            <div
+                                key={`${category}-value`}
+                                style={{
+                                    overflowWrap: 'break-word',
+                                    wordBreak: 'break-word',
+                                    maxWidth: '100%',
+                                }}
+                            >
+                                <PopupValue valueToDisplay={value} />
+                            </div>
+                        </>
+                    ))}
                 </div>
                 <div
                     style={{
