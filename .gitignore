@@ -1,11 +1,26 @@
-dist
-config.yml
+**/__pycache__
 data.json
+config.yml
+**/node_modules
+tests/e2e_tests/cypress/screenshots/
+**/package-lock.json
+**/package.json
+
+
+# coverage based artifacts
+htmlcov
 .coverage
 coverage.lcov
-**/__pycache__
-htmlcov
+
+# build specific artifacts
+dist
+
 
 # IDE-specific directories
 .vscode
 .idea
+*~
+
+# translation specific files
+goodmap/locale/*/LC_MESSAGES/*.mo
+*.pot

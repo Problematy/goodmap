@@ -1,3 +1,5 @@
+import os
+
 from flask import Blueprint, render_template
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from platzky import platzky
@@ -13,9 +15,12 @@ def create_app(config_path: str) -> platzky.Engine:
 
 
 def create_app_from_config(config: Config) -> platzky.Engine:
+    directory = os.path.dirname(os.path.realpath(__file__))
+    locale_dir = os.path.join(directory, "locale")
+    config.translation_directories.append(locale_dir)
     app = platzky.create_app_from_config(config)
-
     app.db.extend("get_data", get_data(app.db))
+
     CSRFProtect(app)
 
     cp = core_pages(app.db, languages_dict(config.languages), app.notify, generate_csrf)
