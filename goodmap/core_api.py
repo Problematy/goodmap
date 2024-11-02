@@ -1,4 +1,5 @@
 import importlib.metadata
+import deprecation
 
 from flask import Blueprint, jsonify, make_response, request
 from flask_babel import gettext
@@ -75,6 +76,9 @@ def core_pages(
 
     @core_api.route("/data")
     class Data(Resource):
+        @deprecation.deprecated(deprecated_in="0.4.1", removed_in="0.5.0",
+                                current_version=importlib.metadata.version("goodmap"),
+                                details="Use /points or /point/<point_id> instead")
         def get(self):
             """
             Shows all data filtered by query parameters
@@ -89,6 +93,24 @@ def core_pages(
             queried_data = get_queried_data(data, categories, query_params)
             formatted_data = [prepare_pin(x, visible_data, meta_data) for x in queried_data]
             return jsonify(formatted_data)
+
+    @core_api.route("/points")
+    class Points(Resource):
+        def get(self):
+            """
+            Shows list of points with UUID and position
+            """
+            all_points = database.get_points()
+            return jsonify(all_points)
+
+    @core_api.route("/point/<point_id>")
+    class Point(Resource):
+        def get(self, point_id):
+            """
+            Shows list of points with UUID and position
+            """
+            point = database.get_point(point_id)
+            return jsonify(point)
 
     @core_api.route("/version")
     class Version(Resource):
