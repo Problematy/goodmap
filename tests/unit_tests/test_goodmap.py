@@ -21,7 +21,11 @@ def test_create_app():
 def test_create_app_from_config():
     with patch("platzky.platzky.create_app_from_config", MagicMock()) as mock_platzky_app_creation:
         with patch("goodmap.goodmap.get_data", MagicMock()) as mock_get_data:
-            goodmap.create_app_from_config(config)
+            with patch("goodmap.goodmap.get_location", MagicMock()) as mock_get_location:
+                with patch("goodmap.goodmap.get_locations", MagicMock()) as mock_get_locations:
+                    goodmap.create_app_from_config(config)
 
-            mock_platzky_app_creation.assert_called_once_with(config)
-            mock_get_data.assert_called_once()
+                    mock_platzky_app_creation.assert_called_once_with(config)
+                    mock_get_data.assert_called_once()
+                    mock_get_location.assert_called_once()
+                    mock_get_locations.assert_called_once()

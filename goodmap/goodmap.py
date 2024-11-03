@@ -6,7 +6,7 @@ from platzky import platzky
 from platzky.config import Config, languages_dict
 
 from .core_api import core_pages
-from .db import get_data, get_points, get_point
+from .db import get_data, get_location, get_locations
 
 
 def create_app(config_path: str) -> platzky.Engine:
@@ -20,8 +20,8 @@ def create_app_from_config(config: Config) -> platzky.Engine:
     config.translation_directories.append(locale_dir)
     app = platzky.create_app_from_config(config)
     app.db.extend("get_data", get_data(app.db))
-    # app.db.extend("get_points", get_points(app.db))
-    # app.db.extend("get_point", get_point(app.db))
+    app.db.extend("get_locations", get_locations(app.db))
+    app.db.extend("get_locationp", get_location(app.db))
 
     CSRFProtect(app)
 

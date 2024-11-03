@@ -1,6 +1,6 @@
 import importlib.metadata
-import deprecation
 
+import deprecation
 from flask import Blueprint, jsonify, make_response, request
 from flask_babel import gettext
 from flask_restx import Api, Resource, fields
@@ -8,8 +8,8 @@ from platzky.config import LanguagesMapping
 
 from goodmap.data_models.location import Location
 
-from .core import get_queried_data
-from .formatter import prepare_pin
+from goodmap.core import get_queried_data
+from goodmap.formatter import prepare_pin
 
 
 def make_tuple_translation(keys_to_translate):
@@ -76,9 +76,12 @@ def core_pages(
 
     @core_api.route("/data")
     class Data(Resource):
-        @deprecation.deprecated(deprecated_in="0.4.1", removed_in="0.5.0",
-                                current_version=importlib.metadata.version("goodmap"),
-                                details="Use /points or /point/<point_id> instead")
+        @deprecation.deprecated(
+            deprecated_in="0.4.1",
+            removed_in="0.5.0",
+            current_version=importlib.metadata.version("goodmap"),
+            details="Use /locations or /location/<point_id> instead",
+        )
         def get(self):
             """
             Shows all data filtered by query parameters
@@ -94,20 +97,20 @@ def core_pages(
             formatted_data = [prepare_pin(x, visible_data, meta_data) for x in queried_data]
             return jsonify(formatted_data)
 
-    @core_api.route("/points")
-    class Points(Resource):
+    @core_api.route("/locations")
+    class GetLocations(Resource):
         def get(self):
             """
-            Shows list of points with UUID and position
+            Shows list of locations with UUID and position
             """
             all_points = database.get_points()
             return jsonify(all_points)
 
-    @core_api.route("/point/<point_id>")
-    class Point(Resource):
+    @core_api.route("/location/<point_id>")
+    class GetLocation(Resource):
         def get(self, point_id):
             """
-            Shows list of points with UUID and position
+            Shows a single location with all data
             """
             point = database.get_point(point_id)
             return jsonify(point)
