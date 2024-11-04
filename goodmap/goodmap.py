@@ -5,8 +5,8 @@ from flask_wtf.csrf import CSRFProtect, generate_csrf
 from platzky import platzky
 from platzky.config import Config, languages_dict
 
-from .core_api import core_pages
-from .db import get_data, get_location, get_locations
+from goodmap.core_api import core_pages
+from goodmap.db import get_data, get_location, get_locations
 
 
 def create_app(config_path: str) -> platzky.Engine:
