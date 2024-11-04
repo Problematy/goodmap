@@ -2,7 +2,7 @@ from pydantic import BaseModel, field_validator
 
 
 class Location(BaseModel):
-    name: str
+    id: str
     coordinates: tuple[float, float]
 
     @field_validator("coordinates")

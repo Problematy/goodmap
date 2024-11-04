@@ -175,7 +175,7 @@ def test_getting_token(test_app):
 def test_suggest_new_location_with_valid_data(test_app):
     response = test_app.post(
         "/api/suggest-new-point",
-        data=json.dumps({"name": "Test Organization", "coordinates": [50, 50]}),
+        data=json.dumps({"id":"one", "name": "Test Organization", "coordinates": [50, 50]}),
         content_type="application/json",
     )
     assert response.status_code == 200

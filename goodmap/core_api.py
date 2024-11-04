@@ -5,6 +5,7 @@ from flask import Blueprint, jsonify, make_response, request
 from flask_babel import gettext
 from flask_restx import Api, Resource, fields
 from platzky.config import LanguagesMapping
+import uuid
 
 from goodmap.core import get_queried_data
 from goodmap.data_models.location import Location
@@ -29,10 +30,10 @@ def core_pages(
         },
     )
 
-    location_suggest_model = core_api.model(
+    suggested_location_model = core_api.model(
         "LocationSuggestion",
         {
-            "name": fields.String(required=True, description="Organization name"),
+            "name": fields.String(required=False, description="Organization name"),
             "coordinates": fields.String(required=True, description="Location of the suggestion"),
             "photo": fields.String(required=False, description="Photo of the location"),
         },
@@ -40,14 +41,15 @@ def core_pages(
 
     @core_api.route("/suggest-new-point")
     class NewLocation(Resource):
-        @core_api.expect(location_suggest_model)
+        @core_api.expect(suggested_location_model)
         def post(self):
             """Suggest new location"""
             try:
-                location_suggest = request.get_json()
-                location = Location.model_validate(location_suggest)
+                suggested_location = request.get_json()
+                suggested_location.update({"id": str(uuid.uuid4())})
+                location = Location.model_validate(suggested_location)
                 message = (
-                    f"A new location has been suggested: '{location.name}' "
+                    f"A new location has been suggested under id: '{location.id}' "
                     f"at position: {location.coordinates}"
                 )
                 notifier_function(message)
