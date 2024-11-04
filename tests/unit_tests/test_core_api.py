@@ -51,12 +51,12 @@ def test_app(notifier_function, db_mock):
         "meta_data": {"test": "test"},
         "visible_data": ["name"],
     }
-    db_mock.get_points.return_value = [
+    db_mock.get_locations.return_value = [
         {"position": [50, 50], "UUID": "1"},
         {"position": [60, 60], "UUID": "2"},
     ]
 
-    db_mock.get_point.return_value = {
+    db_mock.get_location.return_value = {
         "name": "test",
         "position": [50, 50],
         "test-category": "test",
@@ -222,7 +222,7 @@ def test_suggest_new_location_with_error_during_sending_notification(test_app, n
     assert response.get_json() == {"message": "Error sending notification : Test Error"}
 
 
-def test_get_points(test_app):
+def test_get_locations(test_app):
     response = test_app.get("/api/locations")
     assert response.status_code == 200
     assert response.json == [
@@ -231,7 +231,7 @@ def test_get_points(test_app):
     ]
 
 
-def test_get_point(test_app):
+def test_get_location(test_app):
     response = test_app.get("/api/location/1")
     assert response.status_code == 200
     assert response.json == {
