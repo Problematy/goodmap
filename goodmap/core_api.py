@@ -6,9 +6,8 @@ from flask_babel import gettext
 from flask_restx import Api, Resource, fields
 from platzky.config import LanguagesMapping
 
-from goodmap.data_models.location import Location
-
 from goodmap.core import get_queried_data
+from goodmap.data_models.location import Location
 from goodmap.formatter import prepare_pin
 
 

@@ -38,28 +38,30 @@ def test_app(notifier_function, db_mock):
                 "position": [50, 50],
                 "test-category": "test",
                 "type_of_place": "test-place",
-                "UUID": "1"
+                "UUID": "1",
             },
             {
                 "name": "test2",
                 "position": [60, 60],
                 "test-category": "second-category",
                 "type_of_place": "test-place2",
-                "UUID": "2"
-            }
-
+                "UUID": "2",
+            },
         ],
         "meta_data": {"test": "test"},
         "visible_data": ["name"],
     }
-    db_mock.get_points.return_value = [{"position": [50, 50], "UUID": "1"}, {"position": [60, 60], "UUID": "2"}]
+    db_mock.get_points.return_value = [
+        {"position": [50, 50], "UUID": "1"},
+        {"position": [60, 60], "UUID": "2"},
+    ]
 
     db_mock.get_point.return_value = {
         "name": "test",
         "position": [50, 50],
         "test-category": "test",
         "type_of_place": "test-place",
-        "UUID": "1"
+        "UUID": "1",
     }
 
     app.register_blueprint(core_pages(db_mock, languages, notifier_function, lambda: "csrf"))
@@ -127,8 +129,7 @@ def test_data_endpoint_returns_data(test_app):
             "position": [60, 60],
             "subtitle": "test-place2-translated",
             "title": "test2",
-        }
-
+        },
     ]
 
 
@@ -174,9 +175,7 @@ def test_getting_token(test_app):
 def test_suggest_new_location_with_valid_data(test_app):
     response = test_app.post(
         "/api/suggest-new-point",
-        data=json.dumps(
-            {"name": "Test Organization", "coordinates": [50, 50]}
-        ),
+        data=json.dumps({"name": "Test Organization", "coordinates": [50, 50]}),
         content_type="application/json",
     )
     assert response.status_code == 200
@@ -231,6 +230,7 @@ def test_get_points(test_app):
         {"UUID": "2", "position": [60, 60]},
     ]
 
+
 def test_get_point(test_app):
     response = test_app.get("/api/location/1")
     assert response.status_code == 200
@@ -239,5 +239,5 @@ def test_get_point(test_app):
         "position": [50, 50],
         "test-category": "test",
         "type_of_place": "test-place",
-        "UUID": "1"
+        "UUID": "1",
     }
