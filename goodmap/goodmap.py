@@ -21,7 +21,7 @@ def create_app_from_config(config: Config) -> platzky.Engine:
     app = platzky.create_app_from_config(config)
     app.db.extend("get_data", get_data(app.db))
     app.db.extend("get_locations", get_locations(app.db))
-    app.db.extend("get_locationp", get_location(app.db))
+    app.db.extend("get_location", get_location(app.db))
 
     CSRFProtect(app)
 

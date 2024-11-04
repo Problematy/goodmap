@@ -102,7 +102,7 @@ def core_pages(
             """
             Shows list of locations with UUID and position
             """
-            all_points = database.get_points()
+            all_points = database.get_locations()
             return jsonify(all_points)
 
     @core_api.route("/location/<point_id>")
@@ -111,7 +111,7 @@ def core_pages(
             """
             Shows a single location with all data
             """
-            point = database.get_point(point_id)
+            point = database.get_location(point_id)
             return jsonify(point)
 
     @core_api.route("/version")
