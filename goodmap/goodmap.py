@@ -10,13 +10,9 @@ from goodmap.data_models.location import create_location_model
 from goodmap.db import get_data, get_location, get_locations
 
 
-def get_location_obligatory_fields() -> list[str]:
+def get_location_obligatory_fields() -> list[tuple[str, str]]:
     # TODO this should be fetched from the database
-    return [
-        "name",
-        "accessible_by",
-        "type_of_place",
-    ]
+    return [("name", "str"), ("accessible_by", "list"), ("type_of_place", "str")]
 
 
 def create_app(config_path: str) -> platzky.Engine:

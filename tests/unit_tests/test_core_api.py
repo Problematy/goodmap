@@ -26,8 +26,10 @@ def db_mock():
 
 @pytest.fixture
 def test_app(notifier_function, db_mock):
-    CustomLocation = create_location_model(["test_category", "type_of_place", "name"])
-    b = LanguageConfig(name="English", flag="uk", country="GB")
+    CustomLocation = create_location_model(
+        [("test_category", "list[str]"), ("type_of_place", "str"), ("name", "str")]
+    )
+    b = LanguageConfig(name="English", flag="uk")
     a = Languages({"en": b})
     languages = languages_dict(a)
     app = Flask(__name__)
@@ -38,14 +40,14 @@ def test_app(notifier_function, db_mock):
             {
                 "name": "test",
                 "position": [50, 50],
-                "test-category": "test",
+                "test-category": ["test"],
                 "type_of_place": "test-place",
                 "UUID": "1",
             },
             {
                 "name": "test2",
                 "position": [60, 60],
-                "test-category": "second-category",
+                "test-category": ["second-category"],
                 "type_of_place": "test-place2",
                 "UUID": "2",
             },
@@ -59,7 +61,7 @@ def test_app(notifier_function, db_mock):
     ]
 
     db_mock.get_location.return_value = CustomLocation(
-        position=(50, 50), UUID="1", test_category="test", type_of_place="test-place", name="test"
+        position=(50, 50), UUID="1", test_category=["test"], type_of_place="test-place", name="test"
     )
 
     app.register_blueprint(
@@ -180,7 +182,7 @@ def test_suggest_new_location_with_valid_data(test_app):
                 "UUID": "one",
                 "name": "Test Organization",
                 "type_of_place": "type",
-                "test_category": "test",
+                "test_category": ["test"],
                 "position": [50, 50],
             }
         ),
@@ -225,7 +227,7 @@ def test_suggest_new_location_with_error_during_sending_notification(test_app, n
             {
                 "name": "Test Organization",
                 "position": [50, 50],
-                "test_category": "test",
+                "test_category": ["test"],
                 "type_of_place": "type",
                 "photo": "Test Photo",
             }
@@ -251,7 +253,7 @@ def test_get_location(test_app):
     assert response.json == {
         "name": "test",
         "position": [50, 50],
-        "test_category": "test",
+        "test_category": ["test"],
         "type_of_place": "test-place",
         "UUID": "1",
     }

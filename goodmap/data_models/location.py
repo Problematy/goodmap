@@ -20,8 +20,12 @@ class LocationBase(BaseModel):
         return {"UUID": self.UUID, "position": self.position}
 
 
-def create_location_model(obligatory_fields: list[str]) -> Type[BaseModel]:
-    fields = {field_name: (str, Field(...)) for field_name in obligatory_fields}
+def create_location_model(obligatory_fields: list[tuple[str, Type]]) -> Type[BaseModel]:
+    print(obligatory_fields)
+    fields = {
+        field_name: (field_type, Field(...)) for (field_name, field_type) in obligatory_fields
+    }
+
     return create_model(
         "Location",
         __config__=None,

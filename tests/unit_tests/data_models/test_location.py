@@ -4,7 +4,7 @@ from goodmap.data_models.location import create_location_model
 
 
 def test_proper_creation():
-    Location = create_location_model(obligatory_fields=["name"])
+    Location = create_location_model(obligatory_fields=[("name", "str")])
     try:
         Location(UUID="1", name="test-name", position=(50, 50))
     except Exception as e:
@@ -12,7 +12,7 @@ def test_proper_creation():
 
 
 def test_missing_field_creation():
-    Location = create_location_model(obligatory_fields=["name"])
+    Location = create_location_model(obligatory_fields=[("nome", "str")])
     with pytest.raises(ValueError):
         Location(UUID="1", position=(50, 50))
 
