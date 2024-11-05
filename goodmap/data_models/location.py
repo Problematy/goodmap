@@ -24,6 +24,11 @@ def create_location_model(obligatory_fields: list[str]) -> Type[BaseModel]:
     fields = {field_name: (str, Field(...)) for field_name in obligatory_fields}
     return create_model(
         "Location",
+        __config__=None,
+        __doc__=None,
+        __module__="Location",
+        __validators__=None,
         __base__=LocationBase,
+        __cls_kwargs__=None,
         **fields,
     )
