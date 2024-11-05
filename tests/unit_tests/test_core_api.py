@@ -54,12 +54,12 @@ def test_app(notifier_function, db_mock):
         "visible_data": ["name"],
     }
     db_mock.get_locations.return_value = [
-        LocationBase(position=[50, 50], UUID="1"),
-        LocationBase(position=[60, 60], UUID="2"),
+        LocationBase(position=(50, 50), UUID="1"),
+        LocationBase(position=(60, 60), UUID="2"),
     ]
 
     db_mock.get_location.return_value = CustomLocation(
-        position=[50, 50], UUID="1", test_category="test", type_of_place="test-place", name="test"
+        position=(50, 50), UUID="1", test_category="test", type_of_place="test-place", name="test"
     )
 
     app.register_blueprint(

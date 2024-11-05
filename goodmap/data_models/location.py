@@ -1,4 +1,6 @@
-from pydantic import BaseModel, create_model, field_validator
+from typing import Type
+
+from pydantic import BaseModel, Field, create_model, field_validator
 
 
 class LocationBase(BaseModel):
@@ -18,8 +20,10 @@ class LocationBase(BaseModel):
         return {"UUID": self.UUID, "position": self.position}
 
 
-# Generowanie dynamicznego modelu na podstawie konfiguracji
-def create_location_model(obligatory_fields):
-    fields = {field: (str, ...) for field in obligatory_fields}
-    Location = create_model("Location", **fields, __base__=LocationBase)
-    return Location
+def create_location_model(obligatory_fields: list[str]) -> Type[BaseModel]:
+    fields = {field_name: (str, Field(...)) for field_name in obligatory_fields}
+    return create_model(
+        "Location",
+        __base__=LocationBase,
+        **fields,
+    )
