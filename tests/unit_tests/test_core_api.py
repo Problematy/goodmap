@@ -8,6 +8,7 @@ from platzky.config import LanguageConfig, Languages, languages_dict
 
 from goodmap.core_api import core_pages
 
+from goodmap.data_models.location import LocationBase, create_location_model
 
 def fake_translation(key: str):
     return f"{key}-translated"
@@ -25,6 +26,7 @@ def db_mock():
 
 @pytest.fixture
 def test_app(notifier_function, db_mock):
+    CustomLocation = create_location_model(["test_category", "type_of_place", "name"])
     b = LanguageConfig(name="English", flag="uk", country="GB")
     a = Languages({"en": b})
     languages = languages_dict(a)
@@ -52,25 +54,19 @@ def test_app(notifier_function, db_mock):
         "visible_data": ["name"],
     }
     db_mock.get_locations.return_value = [
-        {"position": [50, 50], "UUID": "1"},
-        {"position": [60, 60], "UUID": "2"},
+        LocationBase(position=[50, 50], UUID="1"),
+        LocationBase(position=[60, 60], UUID="2"),
     ]
 
-    db_mock.get_location.return_value = {
-        "name": "test",
-        "position": [50, 50],
-        "test-category": "test",
-        "type_of_place": "test-place",
-        "UUID": "1",
-    }
+    db_mock.get_location.return_value = CustomLocation(
+        position=[50, 50], UUID="1", test_category="test", type_of_place="test-place", name="test"
+    )
 
-    app.register_blueprint(core_pages(db_mock, languages, notifier_function, lambda: "csrf"))
+    app.register_blueprint(core_pages(db_mock, languages, notifier_function, lambda: "csrf", location_model=CustomLocation))
     return app.test_client()
 
 
-def test_reporting_location_is_sending_message_with_name_and_coordinates(
-    test_app, notifier_function
-):
+def test_reporting_location_is_sending_message_with_name_and_position(test_app, notifier_function):
     data = {"id": "location-id", "description": "some error"}
     headers = {"Content-Type": "application/json"}
     response = test_app.post("/api/report-location", data=json.dumps(data), headers=headers)
@@ -82,7 +78,7 @@ def test_reporting_location_is_sending_message_with_name_and_coordinates(
 
 
 def test_reporting_returns_error_when_wrong_json(test_app, notifier_function):
-    data = {"name": "location-id", "coordinates": 50}
+    data = {"name": "location-id", "position": 50}
     headers = {"Content-Type": "application/json"}
     response = test_app.post("/api/report-location", data=json.dumps(data), headers=headers)
     assert response.status_code == 400
@@ -175,7 +171,7 @@ def test_getting_token(test_app):
 def test_suggest_new_location_with_valid_data(test_app):
     response = test_app.post(
         "/api/suggest-new-point",
-        data=json.dumps({"id":"one", "name": "Test Organization", "coordinates": [50, 50]}),
+        data=json.dumps({"UUID": "one", "name": "Test Organization", "type_of_place": "type", "test_category": "test", "position": [50, 50]}),
         content_type="application/json",
     )
     assert response.status_code == 200
@@ -203,7 +199,7 @@ def test_suggest_new_location_with_empty_data(test_app):
 def test_suggest_new_location_with_invalid_data(test_app):
     response = test_app.post(
         "/api/suggest-new-point",
-        data=json.dumps({"name": 123, "coordinates": 456, "photo": "Test Photo"}),
+        data=json.dumps({"name": 123, "position": 456, "photo": "Test Photo"}),
         content_type="application/json",
     )
     assert response.status_code == 400
@@ -213,9 +209,7 @@ def test_suggest_new_location_with_error_during_sending_notification(test_app, n
     notifier_function.side_effect = Exception("Test Error")
     response = test_app.post(
         "/api/suggest-new-point",
-        data=json.dumps(
-            {"name": "Test Organization", "coordinates": [50, 50], "photo": "Test Photo"}
-        ),
+        data=json.dumps({"name": "Test Organization", "position": [50, 50], "test_category": "test", "type_of_place": "type", "photo": "Test Photo"}),
         content_type="application/json",
     )
     assert response.status_code == 400
@@ -237,7 +231,7 @@ def test_get_location(test_app):
     assert response.json == {
         "name": "test",
         "position": [50, 50],
-        "test-category": "test",
+        "test_category": "test",
         "type_of_place": "test-place",
         "UUID": "1",
     }

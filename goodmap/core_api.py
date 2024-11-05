@@ -1,14 +1,14 @@
 import importlib.metadata
+import uuid
 
 import deprecation
 from flask import Blueprint, jsonify, make_response, request
 from flask_babel import gettext
 from flask_restx import Api, Resource, fields
 from platzky.config import LanguagesMapping
-import uuid
 
 from goodmap.core import get_queried_data
-from goodmap.data_models.location import Location
+from goodmap.data_models.location import create_location_model
 from goodmap.formatter import prepare_pin
 
 
@@ -17,8 +17,7 @@ def make_tuple_translation(keys_to_translate):
 
 
 def core_pages(
-    database, languages: LanguagesMapping, notifier_function, csrf_generator
-) -> Blueprint:
+    database, languages: LanguagesMapping, notifier_function, csrf_generator, location_model) -> Blueprint:
     core_api_blueprint = Blueprint("api", __name__, url_prefix="/api")
     core_api = Api(core_api_blueprint, doc="/doc", version="0.1")
 
@@ -34,7 +33,7 @@ def core_pages(
         "LocationSuggestion",
         {
             "name": fields.String(required=False, description="Organization name"),
-            "coordinates": fields.String(required=True, description="Location of the suggestion"),
+            "position": fields.String(required=True, description="Location of the suggestion"),
             "photo": fields.String(required=False, description="Photo of the location"),
         },
     )
@@ -46,11 +45,11 @@ def core_pages(
             """Suggest new location"""
             try:
                 suggested_location = request.get_json()
-                suggested_location.update({"id": str(uuid.uuid4())})
-                location = Location.model_validate(suggested_location)
+                suggested_location.update({"UUID": str(uuid.uuid4())})
+                location = location_model.model_validate(suggested_location)
                 message = (
-                    f"A new location has been suggested under id: '{location.id}' "
-                    f"at position: {location.coordinates}"
+                    f"A new location has been suggested under UUID: '{location.UUID}' "
+                    f"at position: {location.position}"
                 )
                 notifier_function(message)
             except ValueError as e:
@@ -105,7 +104,7 @@ def core_pages(
             Shows list of locations with UUID and position
             """
             all_points = database.get_locations()
-            return jsonify(all_points)
+            return jsonify([x.dict() for x in all_points])
 
     @core_api.route("/location/<point_id>")
     class GetLocation(Resource):
@@ -114,7 +113,7 @@ def core_pages(
             Shows a single location with all data
             """
             point = database.get_location(point_id)
-            return jsonify(point)
+            return jsonify(point.dict())
 
     @core_api.route("/version")
     class Version(Resource):
