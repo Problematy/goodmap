@@ -29,7 +29,7 @@ def create_app_from_config(config: Config) -> platzky.Engine:
 
     @goodmap.route("/")
     def index():
-        return render_template("map.html")
+        return render_template("map.html", is_suggest_location_enabled=config.is_suggest_location_enabled)
 
     app.register_blueprint(goodmap)
     return app
