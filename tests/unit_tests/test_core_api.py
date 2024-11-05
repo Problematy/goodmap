@@ -27,7 +27,7 @@ def db_mock():
 @pytest.fixture
 def test_app(notifier_function, db_mock):
     CustomLocation = create_location_model(
-        [("test_category", "list[str]"), ("type_of_place", "str"), ("name", "str")]
+        [("test_category", list[str]), ("type_of_place", str), ("name", str)]
     )
     b = LanguageConfig(name="English", flag="uk")
     a = Languages({"en": b})

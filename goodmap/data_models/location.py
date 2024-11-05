@@ -1,4 +1,4 @@
-from typing import Type
+from typing import Any, Type
 
 from pydantic import BaseModel, Field, create_model, field_validator
 
@@ -20,7 +20,7 @@ class LocationBase(BaseModel):
         return {"UUID": self.UUID, "position": self.position}
 
 
-def create_location_model(obligatory_fields: list[tuple[str, Type]]) -> Type[BaseModel]:
+def create_location_model(obligatory_fields: list[tuple[str, Type[Any]]]) -> Type[BaseModel]:
     print(obligatory_fields)
     fields = {
         field_name: (field_type, Field(...)) for (field_name, field_type) in obligatory_fields
