@@ -8,7 +8,6 @@ from flask_restx import Api, Resource, fields
 from platzky.config import LanguagesMapping
 
 from goodmap.core import get_queried_data
-from goodmap.data_models.location import create_location_model
 from goodmap.formatter import prepare_pin
 
 
@@ -17,7 +16,8 @@ def make_tuple_translation(keys_to_translate):
 
 
 def core_pages(
-    database, languages: LanguagesMapping, notifier_function, csrf_generator, location_model) -> Blueprint:
+    database, languages: LanguagesMapping, notifier_function, csrf_generator, location_model
+) -> Blueprint:
     core_api_blueprint = Blueprint("api", __name__, url_prefix="/api")
     core_api = Api(core_api_blueprint, doc="/doc", version="0.1")
 

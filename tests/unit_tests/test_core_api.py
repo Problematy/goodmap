@@ -7,8 +7,8 @@ from flask import Flask
 from platzky.config import LanguageConfig, Languages, languages_dict
 
 from goodmap.core_api import core_pages
-
 from goodmap.data_models.location import LocationBase, create_location_model
+
 
 def fake_translation(key: str):
     return f"{key}-translated"
@@ -62,7 +62,11 @@ def test_app(notifier_function, db_mock):
         position=[50, 50], UUID="1", test_category="test", type_of_place="test-place", name="test"
     )
 
-    app.register_blueprint(core_pages(db_mock, languages, notifier_function, lambda: "csrf", location_model=CustomLocation))
+    app.register_blueprint(
+        core_pages(
+            db_mock, languages, notifier_function, lambda: "csrf", location_model=CustomLocation
+        )
+    )
     return app.test_client()
 
 
@@ -171,7 +175,15 @@ def test_getting_token(test_app):
 def test_suggest_new_location_with_valid_data(test_app):
     response = test_app.post(
         "/api/suggest-new-point",
-        data=json.dumps({"UUID": "one", "name": "Test Organization", "type_of_place": "type", "test_category": "test", "position": [50, 50]}),
+        data=json.dumps(
+            {
+                "UUID": "one",
+                "name": "Test Organization",
+                "type_of_place": "type",
+                "test_category": "test",
+                "position": [50, 50],
+            }
+        ),
         content_type="application/json",
     )
     assert response.status_code == 200
@@ -209,7 +221,15 @@ def test_suggest_new_location_with_error_during_sending_notification(test_app, n
     notifier_function.side_effect = Exception("Test Error")
     response = test_app.post(
         "/api/suggest-new-point",
-        data=json.dumps({"name": "Test Organization", "position": [50, 50], "test_category": "test", "type_of_place": "type", "photo": "Test Photo"}),
+        data=json.dumps(
+            {
+                "name": "Test Organization",
+                "position": [50, 50],
+                "test_category": "test",
+                "type_of_place": "type",
+                "photo": "Test Photo",
+            }
+        ),
         content_type="application/json",
     )
     assert response.status_code == 400

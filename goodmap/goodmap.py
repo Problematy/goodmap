@@ -13,10 +13,10 @@ from goodmap.db import get_data, get_location, get_locations
 def get_location_obligatory_fields() -> list[str]:
     # TODO this should be fetched from the database
     return [
-            "name",
-            "accessible_by",
-            "type_of_place",
-        ]
+        "name",
+        "accessible_by",
+        "type_of_place",
+    ]
 
 
 def create_app(config_path: str) -> platzky.Engine:
@@ -38,7 +38,9 @@ def create_app_from_config(config: Config) -> platzky.Engine:
 
     CSRFProtect(app)
 
-    cp = core_pages(app.db, languages_dict(config.languages), app.notify, generate_csrf, location_model)
+    cp = core_pages(
+        app.db, languages_dict(config.languages), app.notify, generate_csrf, location_model
+    )
     app.register_blueprint(cp)
     goodmap = Blueprint("goodmap", __name__, url_prefix="/", template_folder="templates")
 

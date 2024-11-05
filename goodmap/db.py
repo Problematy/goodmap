@@ -1,5 +1,4 @@
 import json
-
 from functools import partial
 
 # TODO file is temporary solution to be compatible with old, static code,
@@ -8,10 +7,6 @@ from functools import partial
 
 # ------------------------------------------------
 # get_location
-
-
-
-
 
 
 # ------------------------------------------------
@@ -33,7 +28,6 @@ def json_db_get_data(self):
 
 def get_data(db):
     return globals()[f"{db.module_name}_get_data"]
-
 
 
 def get_location_from_raw_data(raw_data, UUID, location_model):
@@ -58,7 +52,6 @@ def json_db_get_location(self, UUID, location_model):
 
 def get_location(db, location_model):
     return partial(globals()[f"{db.module_name}_get_location"], location_model=location_model)
-
 
 
 # ------------------------------------------------
