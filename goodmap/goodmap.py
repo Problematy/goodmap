@@ -11,8 +11,11 @@ from goodmap.db import get_data, get_location, get_locations
 
 
 def get_location_obligatory_fields() -> list[tuple[str, type]]:
-    # TODO this should be fetched from the database
-    return [("name", str), ("accessible_by", list[str]), ("type_of_place", str)]
+    if True:  # TODO Change condition based on feature flag when feature flags are implemented
+        # TODO this should be fetched from the database
+        return [("name", str), ("accessible_by", list[str]), ("type_of_place", str)]
+    else:
+        return []
 
 
 def create_app(config_path: str) -> platzky.Engine:
