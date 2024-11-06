@@ -33,7 +33,6 @@ def create_app_from_config(config: Config) -> platzky.Engine:
     app = platzky.create_app_from_config(config)
     app.db = goodmap_db_extended_app(app.db, location_model)
 
-
     CSRFProtect(app)
 
     cp = core_pages(

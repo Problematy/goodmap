@@ -5,7 +5,6 @@ from functools import partial
 #  it should be replaced with dynamic solution
 
 
-
 # ------------------------------------------------
 # get_data
 
@@ -78,8 +77,11 @@ def get_locations(db, location_model):
     return partial(globals()[f"{db.module_name}_get_locations"], location_model=location_model)
 
 
-#TODO extension function should be replaced with simple extend which would take a db plugin
-3# it could look like that: `db.extend(goodmap_db_plugin)` in plugin all those functions would be organized
+# TODO extension function should be replaced with simple extend which would take a db plugin
+# it could look like that:
+#   `db.extend(goodmap_db_plugin)` in plugin all those functions would be organized
+
+
 def goodmap_db_extended_app(db, location_model):
     db.extend("get_data", get_data(db))
     db.extend("get_locations", get_locations(db, location_model))
