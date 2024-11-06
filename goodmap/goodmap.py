@@ -11,11 +11,8 @@ from goodmap.db import goodmap_db_extended_app
 
 
 def get_location_obligatory_fields() -> list[tuple[str, type]]:
-    if True:  # TODO Change condition based on feature flag when feature flags are implemented
-        # TODO this should be fetched from the database
-        return [("name", str), ("accessible_by", list[str]), ("type_of_place", str)]
-    else:
-        return []
+    # TODO this should be fetched from the database
+    return [("name", str), ("accessible_by", list[str]), ("type_of_place", str)]
 
 
 def create_app(config_path: str) -> platzky.Engine:
@@ -26,7 +23,12 @@ def create_app(config_path: str) -> platzky.Engine:
 def create_app_from_config(config: Config) -> platzky.Engine:
     directory = os.path.dirname(os.path.realpath(__file__))
 
-    location_model = create_location_model(get_location_obligatory_fields())
+    if True:  # TODO Change condition based on feature flag when feature flags are implemented
+        location_obligatory_fields = get_location_obligatory_fields()
+    else:
+        location_obligatory_fields = []
+
+    location_model = create_location_model(location_obligatory_fields)
 
     locale_dir = os.path.join(directory, "locale")
     config.translation_directories.append(locale_dir)
