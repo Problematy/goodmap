@@ -7,7 +7,7 @@ from platzky.config import Config, languages_dict
 
 from goodmap.core_api import core_pages
 from goodmap.data_models.location import create_location_model
-from goodmap.db import get_data, get_location, get_locations
+from goodmap.db import goodmap_db_extended_app
 
 
 def get_location_obligatory_fields() -> list[tuple[str, type]]:
@@ -31,9 +31,8 @@ def create_app_from_config(config: Config) -> platzky.Engine:
     locale_dir = os.path.join(directory, "locale")
     config.translation_directories.append(locale_dir)
     app = platzky.create_app_from_config(config)
-    app.db.extend("get_data", get_data(app.db))
-    app.db.extend("get_locations", get_locations(app.db, location_model))
-    app.db.extend("get_location", get_location(app.db, location_model))
+    app.db = goodmap_db_extended_app(app.db, location_model)
+
 
     CSRFProtect(app)
 
