@@ -5,7 +5,8 @@ DB:
   TYPE: json_file
   PATH: tests/e2e_tests/e2e_test_data.json
 
-IS_SUGGEST_LOCATION_ENABLED: True
+FEATURE_FLAGS:
+  SHOW_SUGGEST_POINT_BUTTON: True
 
 #TODO this should not be necessary argument
 LANGUAGES:
