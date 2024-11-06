@@ -12,9 +12,9 @@ def test_goodmap_json_db_extended():
     data = {"data": [{"position": [50, 50], "UUID": "1"}, {"position": [10, 10], "UUID": "2"}]}
     db = Json(data)
     goodmap_db_extended_app(db, LocationBase)
-    assert db.get_location("1") == LocationBase(position=(50, 50), UUID="1")
-    assert len(db.get_locations()) == 2
-    assert db.get_data() == data
+    assert db.get_location("1") == LocationBase(position=(50, 50), UUID="1")  # pyright: ignore
+    assert len(db.get_locations()) == 2  # pyright: ignore
+    assert db.get_data() == data  # pyright: ignore
 
 
 @mock.patch(
@@ -30,9 +30,9 @@ def test_goodmap_json_db_file_extended():
     }
     db = JsonFile("/fake/path/file.json")
     goodmap_db_extended_app(db, LocationBase)
-    assert db.get_location("1") == LocationBase(position=(50, 50), UUID="1")
-    assert len(db.get_locations()) == 2
-    assert db.get_data() == expected_data
+    assert db.get_location("1") == LocationBase(position=(50, 50), UUID="1")  # pyright: ignore
+    assert len(db.get_locations()) == 2  # pyright: ignore
+    assert db.get_data() == expected_data  # pyright: ignore
 
 
 @mock.patch("platzky.db.google_json_db.Client")
@@ -41,8 +41,8 @@ def test_goodmap_google_json_db_extended(mock_cli):
       "map":{"data":[{"position": [50, 50], "UUID": "1"}, {"position": [10, 10], "UUID": "2"}]}}'
     db = GoogleJsonDb("bucket", "blob")
     goodmap_db_extended_app(db, LocationBase)
-    assert db.get_location("1") == LocationBase(position=(50, 50), UUID="1")
-    assert len(db.get_locations()) == 2
-    assert db.get_data() == {
+    assert db.get_location("1") == LocationBase(position=(50, 50), UUID="1")  # pyright: ignore
+    assert len(db.get_locations()) == 2  # pyright: ignore
+    assert db.get_data() == {  # pyright: ignore
         "data": [{"position": [50, 50], "UUID": "1"}, {"position": [10, 10], "UUID": "2"}]
     }
