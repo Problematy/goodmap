@@ -5,12 +5,16 @@ from platzky.db.google_json_db import GoogleJsonDb
 from platzky.db.json_db import Json
 from platzky.db.json_file_db import JsonFile
 
-from goodmap.data_models.location import LocationBase, create_location_model
-from goodmap.db import goodmap_db_extended_app, get_location_obligatory_fields
+from goodmap.data_models.location import create_location_model
+from goodmap.db import get_location_obligatory_fields, goodmap_db_extended_app
 
-data = {"data": [{"position": [50, 50], "UUID": "1", "name": "one"},
-                 {"position": [10, 10], "UUID": "2", "name": "two"}],
-        "location_obligatory_fields": [["name", "str"]]}
+data = {
+    "data": [
+        {"position": [50, 50], "UUID": "1", "name": "one"},
+        {"position": [10, 10], "UUID": "2", "name": "two"},
+    ],
+    "location_obligatory_fields": [["name", "str"]],
+}
 data_json = json.dumps({"map": data})
 
 
