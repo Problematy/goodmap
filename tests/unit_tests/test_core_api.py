@@ -72,7 +72,9 @@ def test_language_endpoint_returns_languages(test_app):
     response = test_app.get("/api/languages")
     assert response.status_code == 200
     # TODO domain should not be in response if its None
-    assert response.json == {'en': {'country': 'GB', 'domain': None, 'flag': 'uk', 'name': 'English'}}
+    assert response.json == {
+        "en": {"country": "GB", "domain": None, "flag": "uk", "name": "English"}
+    }
 
 
 # TODO change db_mock of below tests to real json db
