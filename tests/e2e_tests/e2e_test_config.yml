@@ -6,7 +6,8 @@ DB:
   PATH: tests/e2e_tests/e2e_test_data.json
 
 FEATURE_FLAGS:
-  SHOW_SUGGEST_POINT_BUTTON: True
+  SHOW_SUGGEST_POINT_BUTTON: False
+  SHOW_SEARCH_BAR: False
 
 #TODO this should not be necessary argument
 LANGUAGES:
