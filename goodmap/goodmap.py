@@ -7,12 +7,12 @@ from platzky.config import Config, languages_dict
 
 from goodmap.core_api import core_pages
 from goodmap.data_models.location import create_location_model
-from goodmap.db import goodmap_db_extended_app
+from goodmap.db import get_location_obligatory_fields, goodmap_db_extended_app
 
-
-def get_location_obligatory_fields() -> list[tuple[str, type]]:
-    # TODO this should be fetched from the database
-    return [("name", str), ("accessible_by", list[str]), ("type_of_place", str)]
+# def get_location_obligatory_fields(db) -> list[tuple[str, type]]:
+#
+#     # TODO this should be fetched from the database
+#     return [("name", str), ("accessible_by", list[str]), ("type_of_place", str)]
 
 
 def create_app(config_path: str) -> platzky.Engine:
@@ -23,16 +23,17 @@ def create_app(config_path: str) -> platzky.Engine:
 def create_app_from_config(config: Config) -> platzky.Engine:
     directory = os.path.dirname(os.path.realpath(__file__))
 
-    if True:  # TODO Change condition based on feature flag when feature flags are implemented
-        location_obligatory_fields = get_location_obligatory_fields()
+    locale_dir = os.path.join(directory, "locale")
+    config.translation_directories.append(locale_dir)
+    app = platzky.create_app_from_config(config)
+
+    if False:  # TODO Change condition based on feature flag when feature flags are implemented
+        location_obligatory_fields = get_location_obligatory_fields(app.db)
     else:
         location_obligatory_fields = []
 
     location_model = create_location_model(location_obligatory_fields)
 
-    locale_dir = os.path.join(directory, "locale")
-    config.translation_directories.append(locale_dir)
-    app = platzky.create_app_from_config(config)
     app.db = goodmap_db_extended_app(app.db, location_model)
 
     CSRFProtect(app)

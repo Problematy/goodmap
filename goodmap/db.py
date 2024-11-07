@@ -6,9 +6,28 @@ from functools import partial
 
 
 # ------------------------------------------------
+# get_location_obligatory_fields
+
+
+def json_db_get_location_obligatory_fields(db):
+    return db.data["location_obligatory_fields"]
+
+
+def json_file_db_get_location_obligatory_fields(db):
+    with open(db.data_file_path, "r") as file:
+        return json.load(file)["map"]["location_obligatory_fields"]
+
+
+def google_json_db_get_location_obligatory_fields(db):
+    return json.loads(db.blob.download_as_text(client=None))["map"]["location_obligatory_fields"]
+
+
+def get_location_obligatory_fields(db):
+    return globals()[f"{db.module_name}_get_location_obligatory_fields"](db)
+
+
+# ------------------------------------------------
 # get_data
-
-
 def google_json_db_get_data(self):
     return json.loads(self.blob.download_as_text(client=None))["map"]
 

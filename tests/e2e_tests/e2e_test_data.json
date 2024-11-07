@@ -33,7 +33,7 @@
                 "UUID": "dattarro"
             }
         ],
-        "added_location_obligatory_fields": [
+        "location_obligatory_fields": [
             ["name", "string"],
             ["accessible_by", "list"],
             ["type_of_place", "string"]

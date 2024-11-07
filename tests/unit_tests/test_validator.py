@@ -27,7 +27,13 @@ database_fully_valid = {
                 "UUID": "dattarro",
             },
         ],
-        "obligatory_fields": ["position", "name", "accessible_by", "type_of_place", "UUID"],
+        "location_obligatory_fields": [
+            "position",
+            "name",
+            "accessible_by",
+            "type_of_place",
+            "UUID",
+        ],
         "categories": {
             "accessible_by": ["bikes", "cars", "pedestrians"],
             "type_of_place": ["big bridge", "small bridge"],
@@ -57,7 +63,13 @@ database_missing_obligatory_fields = {
                 "UUID": "dattarro",
             },
         ],
-        "obligatory_fields": ["position", "name", "accessible_by", "type_of_place", "UUID"],
+        "location_obligatory_fields": [
+            "position",
+            "name",
+            "accessible_by",
+            "type_of_place",
+            "UUID",
+        ],
         "categories": {
             "accessible_by": ["bikes", "cars", "pedestrians"],
             "type_of_place": ["big bridge", "small bridge"],
@@ -110,7 +122,13 @@ database_invalid_values_in_categories = {
                 "UUID": "dattarro",
             },
         ],
-        "obligatory_fields": ["position", "name", "accessible_by", "type_of_place", "UUID"],
+        "location_obligatory_fields": [
+            "position",
+            "name",
+            "accessible_by",
+            "type_of_place",
+            "UUID",
+        ],
         "categories": {
             "accessible_by": ["bikes", "cars", "pedestrians"],
             "type_of_place": ["big bridge", "small bridge"],
@@ -167,7 +185,13 @@ database_null_values = {
                 "website": None,
             },
         ],
-        "obligatory_fields": ["position", "name", "accessible_by", "type_of_place", "UUID"],
+        "location_obligatory_fields": [
+            "position",
+            "name",
+            "accessible_by",
+            "type_of_place",
+            "UUID",
+        ],
         "categories": {
             "accessible_by": ["bikes", "cars", "pedestrians"],
             "type_of_place": ["big bridge", "small bridge"],
@@ -256,7 +280,13 @@ def test_validation_from_json_file():
                     "UUID": "dattarro",
                 },
             ],
-            "obligatory_fields": ["position", "name", "accessible_by", "type_of_place", "UUID"],
+            "location_obligatory_fields": [
+                "position",
+                "name",
+                "accessible_by",
+                "type_of_place",
+                "UUID",
+            ],
             "categories": {
                 "accessible_by": ["bikes", "cars", "pedestrians"],
                 "type_of_place": ["big bridge", "small bridge"],
