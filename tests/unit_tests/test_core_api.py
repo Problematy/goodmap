@@ -30,8 +30,7 @@ def test_app(notifier_function, db_mock):
         [("test_category", list[str]), ("type_of_place", str), ("name", str)]
     )
     language_config = LanguageConfig(name="English", flag="uk", country="GB")
-    langs = Languages({"en": language_config})
-    languages = languages_dict(langs)
+    languages = languages_dict(Languages({"en": language_config}))
     app = Flask(__name__)
     db_mock.get_data.return_value = {
         "categories": {"test-category": ["test", "test2"]},
