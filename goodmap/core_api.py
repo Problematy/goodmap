@@ -106,14 +106,14 @@ def core_pages(
             all_points = database.get_locations()
             return jsonify([x.basic_info() for x in all_points])
 
-    @core_api.route("/location/<point_id>")
+    @core_api.route("/location/<location_id>")
     class GetLocation(Resource):
-        def get(self, point_id):
+        def get(self, location_id):
             """
             Shows a single location with all data
             """
-            point = database.get_location(point_id)
-            return jsonify(point.dict())
+            location = database.get_location(location_id)
+            return jsonify(location.model_dump())
 
     @core_api.route("/version")
     class Version(Resource):
