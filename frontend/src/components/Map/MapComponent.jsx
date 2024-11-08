@@ -11,7 +11,6 @@ import MapAutocomplete from './components/MapAutocomplete';
 
 export const MapComponent = ({ markers }) => {
     const [, setUserPosition] = useState(null);
-
     return (
         <MapContainer
             center={mapConfig.initialMapCoordinates}
@@ -25,7 +24,7 @@ export const MapComponent = ({ markers }) => {
                 attribution='&amp;copy <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
                 maxZoom={mapConfig.maxMapZoom}
             />
-            {process.env.NODE_ENV === 'development' && (
+            {window.SHOW_SUGGEST_NEW_POINT_BUTTON && (
                 <Control position="bottomright" prepend>
                     <SuggestNewPointButton />
                 </Control>
@@ -33,7 +32,7 @@ export const MapComponent = ({ markers }) => {
             <MarkerClusterGroup>{markers}</MarkerClusterGroup>
             <LocationControl setUserPosition={setUserPosition} />
             <CustomZoomControl position="topright" />
-            <MapAutocomplete />
+            {window.SHOW_SEARCH_BAR && <MapAutocomplete />}
         </MapContainer>
     );
 };
