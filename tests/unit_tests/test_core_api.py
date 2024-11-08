@@ -29,7 +29,7 @@ def test_app(notifier_function, db_mock):
     CustomLocation = create_location_model(
         [("test_category", list[str]), ("type_of_place", str), ("name", str)]
     )
-    b = LanguageConfig(name="English", flag="uk")
+    b = LanguageConfig(name="English", flag="uk", country="GB")
     a = Languages({"en": b})
     languages = languages_dict(a)
     app = Flask(__name__)

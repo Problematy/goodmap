@@ -15,6 +15,11 @@ def create_app(config_path: str) -> platzky.Engine:
     return create_app_from_config(config)
 
 
+# TODO Checking if there is a feature flag secition should be part of configs logic not client app
+def is_feature_enabled(config: Config, feature: str) -> bool:
+    return "feature_flags" in config and getattr(config.feature_flags, feature)
+
+
 def create_app_from_config(config: Config) -> platzky.Engine:
     directory = os.path.dirname(os.path.realpath(__file__))
 
@@ -22,7 +27,7 @@ def create_app_from_config(config: Config) -> platzky.Engine:
     config.translation_directories.append(locale_dir)
     app = platzky.create_app_from_config(config)
 
-    if False:  # TODO Change condition based on feature flag when feature flags are implemented
+    if is_feature_enabled(config, "USE_LOCATION_OBLIGATORY_FIELDS"):
         location_obligatory_fields = get_location_obligatory_fields(app.db)
     else:
         location_obligatory_fields = []
