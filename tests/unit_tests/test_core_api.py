@@ -25,7 +25,7 @@ def db_mock():
 
 @pytest.fixture
 def test_app(notifier_function, db_mock):
-    b = LanguageConfig(name="English", flag="uk")
+    b = LanguageConfig(name="English", flag="uk", country="GB")
     a = Languages({"en": b})
     languages = languages_dict(a)
     app = Flask(__name__)
@@ -72,7 +72,9 @@ def test_language_endpoint_returns_languages(test_app):
     response = test_app.get("/api/languages")
     assert response.status_code == 200
     # TODO domain should not be in response if its None
-    assert response.json == {"en": {"domain": None, "name": "English", "flag": "uk"}}
+    assert response.json == {
+        "en": {"country": "GB", "domain": None, "flag": "uk", "name": "English"}
+    }
 
 
 # TODO change db_mock of below tests to real json db

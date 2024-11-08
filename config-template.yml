@@ -12,9 +12,11 @@ LANGUAGES:
   en:
     name: English
     flag: uk
+    country: GB
   pl:
     name: polski
     flag: pl
+    country: PL
 
 # -- Database configuration
 
