@@ -5,8 +5,6 @@ DB:
   TYPE: json_file
   PATH: tests/e2e_tests/e2e_test_data.json
 
-FEATURE_FLAGS:
-
 #TODO this should not be necessary argument
 LANGUAGES:
   en:
