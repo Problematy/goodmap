@@ -17,7 +17,7 @@ def create_app(config_path: str) -> platzky.Engine:
 
 # TODO Checking if there is a feature flag secition should be part of configs logic not client app
 def is_feature_enabled(config: Config, feature: str) -> bool:
-    return "feature_flags" in config and getattr(config.feature_flags, feature)
+    return hasattr(config, "feature_flags") and config.feature_flags.get(feature, False)
 
 
 def create_app_from_config(config: Config) -> platzky.Engine:
