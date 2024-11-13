@@ -49,9 +49,7 @@ def get_data(db):
 
 def get_location_from_raw_data(raw_data, UUID, location_model):
     point = next((point for point in raw_data["data"] if point["UUID"] == UUID), None)
-    print(point)
     pot_point = location_model.model_validate(point) if point else None
-    print(pot_point)
     return location_model.model_validate(point) if point else None
 
 
@@ -80,7 +78,6 @@ def get_location(db, location_model):
 
 
 def get_locations_list_from_raw_data(map_data, query, location_model):
-    print(map_data)
     filtered_locations = get_queried_data(map_data["data"], map_data["categories"], query)
     return [location_model.model_validate(point) for point in filtered_locations]
 
