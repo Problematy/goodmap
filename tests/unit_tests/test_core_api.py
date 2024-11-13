@@ -250,9 +250,12 @@ def test_get_location(test_app):
     response = test_app.get("/api/location/1")
     assert response.status_code == 200
     assert response.json == {
-        "name": "test",
-        "position": [50, 50],
-        "test_category": ["test"],
-        "type_of_place": "test-place",
-        "UUID": "1",
+        "data": [
+            ["position", [50.0, 50.0]],
+            ["UUID", "1"],
+            ["test_category", ["test"]],
+            ["type_of_place", "test-place"],
+            ["name", "test"],
+        ],
+        "metadata": {"UUID": "1"},
     }

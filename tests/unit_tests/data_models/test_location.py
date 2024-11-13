@@ -5,10 +5,7 @@ from goodmap.data_models.location import create_location_model
 
 def test_proper_creation():
     Location = create_location_model(obligatory_fields=[("name", str)])
-    try:
-        Location(UUID="1", name="test-name", position=(50, 50))
-    except Exception as e:
-        assert False, f"{e} was raised"
+    Location(UUID="1", name="test-name", position=(50, 50))
 
 
 def test_missing_field_creation():

@@ -10,9 +10,10 @@ from goodmap.db import get_location_obligatory_fields, goodmap_db_extended_app
 
 data = {
     "data": [
-        {"position": [50, 50], "UUID": "1", "name": "one"},
-        {"position": [10, 10], "UUID": "2", "name": "two"},
+        {"position": [50, 50], "UUID": "1", "name": "one", "test-category": "searchable"},
+        {"position": [10, 10], "UUID": "2", "name": "two", "test-category": "unsearchable"},
     ],
+    "categories": {"test-category": ["searchable", "unsearchable"]},
     "location_obligatory_fields": [["name", "str"]],
 }
 data_json = json.dumps({"map": data})
@@ -23,11 +24,13 @@ def initialize_and_assert_db(db, data):
     location_model = create_location_model(location_obligatory_fields)
     goodmap_db_extended_app(db, location_model)
 
+    query = {"test-category": "searchable"}
+
     location = db.get_location("1")
     assert location.position == (50, 50)
     assert location.UUID == "1"
 
-    assert len(db.get_locations()) == 2
+    assert len(db.get_locations(query)) == 2
     assert db.get_data() == data
 
 
