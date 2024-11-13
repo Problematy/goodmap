@@ -34,9 +34,9 @@
             }
         ],
         "location_obligatory_fields": [
-            ["name", "string"],
+            ["name", "str"],
             ["accessible_by", "list"],
-            ["type_of_place", "string"]
+            ["type_of_place", "str"]
         ],
         "categories": {
             "accessible_by": [

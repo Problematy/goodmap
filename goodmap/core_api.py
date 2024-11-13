@@ -103,6 +103,7 @@ def core_pages(
             """
             Shows list of locations with UUID and position
             """
+            query_params = request.args.to_dict(flat=False)
             all_points = database.get_locations()
             return jsonify([x.basic_info() for x in all_points])
 
@@ -113,7 +114,8 @@ def core_pages(
             Shows a single location with all data
             """
             location = database.get_location(location_id)
-            return jsonify(location.model_dump())
+            dump_list = [(key, value) for key, value in location.model_dump().items()]
+            return jsonify({"data":dump_list, "metadata": {"UUID": location.UUID} })
 
     @core_api.route("/version")
     class Version(Resource):

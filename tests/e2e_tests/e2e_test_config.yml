@@ -15,3 +15,6 @@ LANGUAGES:
     name: polski
     flag: pl
     country: PL
+
+FEATURE_FLAGS:
+  USE_LOCATION_OBLIGATORY_FIELDS: true

@@ -21,7 +21,6 @@ class LocationBase(BaseModel):
 
 
 def create_location_model(obligatory_fields: list[tuple[str, Type[Any]]]) -> Type[BaseModel]:
-    print(obligatory_fields)
     fields = {
         field_name: (field_type, Field(...)) for (field_name, field_type) in obligatory_fields
     }
