@@ -49,7 +49,7 @@ def get_data(db):
 
 def get_location_from_raw_data(raw_data, UUID, location_model):
     point = next((point for point in raw_data["data"] if point["UUID"] == UUID), None)
-    pot_point = location_model.model_validate(point) if point else None
+    location_model.model_validate(point) if point else None
     return location_model.model_validate(point) if point else None
 
 
