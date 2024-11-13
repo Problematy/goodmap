@@ -115,7 +115,7 @@ def core_pages(
             """
             location = database.get_location(location_id)
             dump_list = [(key, value) for key, value in location.model_dump().items()]
-            return jsonify({"data":dump_list, "metadata": {"UUID": location.UUID} })
+            return jsonify({"data": dump_list, "metadata": {"UUID": location.UUID}})
 
     @core_api.route("/version")
     class Version(Resource):

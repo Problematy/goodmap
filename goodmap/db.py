@@ -1,5 +1,6 @@
 import json
 from functools import partial
+
 from goodmap.core import get_queried_data
 
 # TODO file is temporary solution to be compatible with old, static code,
@@ -49,7 +50,7 @@ def get_data(db):
 def get_location_from_raw_data(raw_data, UUID, location_model):
     point = next((point for point in raw_data["data"] if point["UUID"] == UUID), None)
     print(point)
-    pot_point =location_model.model_validate(point) if point else None
+    pot_point = location_model.model_validate(point) if point else None
     print(pot_point)
     return location_model.model_validate(point) if point else None
 
@@ -77,6 +78,7 @@ def get_location(db, location_model):
 # ------------------------------------------------
 # get_locations
 
+
 def get_locations_list_from_raw_data(map_data, query, location_model):
     print(map_data)
     filtered_locations = get_queried_data(map_data["data"], map_data["categories"], query)
@@ -95,7 +97,7 @@ def json_file_db_get_locations(self, query, location_model):
 
 
 def json_db_get_locations(self, query, location_model):
-    return get_locations_list_from_raw_data(self.data, location_model)
+    return get_locations_list_from_raw_data(self.data, query, location_model)
 
 
 def get_locations(db, location_model):
