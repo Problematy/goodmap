@@ -1,5 +1,6 @@
 import json
 from functools import partial
+from goodmap.core import get_queried_data
 
 # TODO file is temporary solution to be compatible with old, static code,
 #  it should be replaced with dynamic solution
@@ -62,7 +63,6 @@ def google_json_db_get_location(self, UUID, location_model):
 def json_file_db_get_location(self, UUID, location_model):
     with open(self.data_file_path, "r") as file:
         point = get_location_from_raw_data(json.load(file)["map"], UUID, location_model)
-        print(point)
         return point
 
 
@@ -77,23 +77,24 @@ def get_location(db, location_model):
 # ------------------------------------------------
 # get_locations
 
+def get_locations_list_from_raw_data(map_data, query, location_model):
+    print(map_data)
+    filtered_locations = get_queried_data(map_data["data"], map_data["categories"], query)
+    return [location_model.model_validate(point) for point in filtered_locations]
 
-def get_locations_list_from_raw_data(raw_data, location_model):
-    return [location_model.model_validate(point) for point in raw_data["data"]]
 
-
-def google_json_db_get_locations(self, location_model):
+def google_json_db_get_locations(self, query, location_model):
     return get_locations_list_from_raw_data(
-        json.loads(self.blob.download_as_text(client=None))["map"], location_model
+        json.loads(self.blob.download_as_text(client=None))["map"], query, location_model
     )
 
 
-def json_file_db_get_locations(self, location_model):
+def json_file_db_get_locations(self, query, location_model):
     with open(self.data_file_path, "r") as file:
-        return get_locations_list_from_raw_data(json.load(file)["map"], location_model)
+        return get_locations_list_from_raw_data(json.load(file)["map"], query, location_model)
 
 
-def json_db_get_locations(self, location_model):
+def json_db_get_locations(self, query, location_model):
     return get_locations_list_from_raw_data(self.data, location_model)
 
 
