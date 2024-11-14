@@ -1,9 +1,9 @@
 from typing import Any, Type
 
-from pydantic import BaseModel, Field, create_model, field_validator, Extra
+from pydantic import BaseModel, Field, create_model, field_validator
 
 
-class LocationBase(BaseModel, extra=Extra.allow):
+class LocationBase(BaseModel, extra="allow"):
     position: tuple[float, float]
     UUID: str
 

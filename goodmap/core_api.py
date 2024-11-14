@@ -115,7 +115,9 @@ def core_pages(
             """
             location = database.get_location(location_id)
 
-            # TODO getting visible_data and meta_data should be taken from db.get_visible_data(), etc.
+            # TODO getting visible_data and meta_data should be taken from db methods
+            #    e.g. db.get_visible_data() and db.get_meta_data()
+            #    visible_data and meta_data should be models
             all_data = database.get_data()
             visible_data = all_data["visible_data"]
             meta_data = all_data["meta_data"]

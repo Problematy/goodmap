@@ -46,8 +46,10 @@ def json_db_get_data(self):
 def get_data(db):
     return globals()[f"{db.module_name}_get_data"]
 
+
 # ------------------------------------------------
 # get_location
+
 
 def get_location_from_raw_data(raw_data, UUID, location_model):
     point = next((point for point in raw_data["data"] if point["UUID"] == UUID), None)
