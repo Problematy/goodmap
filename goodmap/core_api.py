@@ -114,8 +114,14 @@ def core_pages(
             Shows a single location with all data
             """
             location = database.get_location(location_id)
-            dump_list = [(key, value) for key, value in location.model_dump().items()]
-            return jsonify({"data": dump_list, "metadata": {"UUID": location.UUID}})
+
+            # TODO getting visible_data and meta_data should be taken from db.get_visible_data(), etc.
+            all_data = database.get_data()
+            visible_data = all_data["visible_data"]
+            meta_data = all_data["meta_data"]
+
+            formatted_data = prepare_pin(location.model_dump(), visible_data, meta_data)
+            return jsonify(formatted_data)
 
     @core_api.route("/version")
     class Version(Resource):

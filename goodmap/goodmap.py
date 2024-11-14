@@ -27,7 +27,7 @@ def create_app_from_config(config: Config) -> platzky.Engine:
     config.translation_directories.append(locale_dir)
     app = platzky.create_app_from_config(config)
 
-    if is_feature_enabled(config, "USE_LOCATION_OBLIGATORY_FIELDS"):
+    if is_feature_enabled(config, "USE_LAZY_LOADING"):
         location_obligatory_fields = get_location_obligatory_fields(app.db)
     else:
         location_obligatory_fields = []

@@ -1,0 +1,13 @@
+diff --git a/tests/e2e_tests/e2e_test_data.json b/tests/e2e_tests/e2e_test_data.json
+index 4baeca6..eafcb51 100644
+--- a/tests/e2e_tests/e2e_test_data.json
++++ b/tests/e2e_tests/e2e_test_data.json
+@@ -100,7 +100,7 @@
+             "name": "redirections",
+             "config": {
+                 "/test": "/blog/page/about",
+-                "/static/map.js": "https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.3.1"
++                "/static/map.js": "http://localhost:8080/index.js"
+             }
+         },
+         {

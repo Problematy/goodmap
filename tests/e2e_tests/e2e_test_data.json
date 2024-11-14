@@ -91,7 +91,7 @@
             "name": "Poppins",
             "url": "https://fonts.googleapis.com/css2?family=Poppins"
         },
-        "primary_color": "#000000",
+        "primary_color": "#FFFFFF",
         "secondary_color": "#245466",
         "left_bar_width": "300px"
     },
@@ -100,7 +100,7 @@
             "name": "redirections",
             "config": {
                 "/test": "/blog/page/about",
-                "/static/map.js": "https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.3.1"
+                "/static/map.js": "http://localhost:8080/index.js"
             }
         },
         {
