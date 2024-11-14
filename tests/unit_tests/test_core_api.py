@@ -51,8 +51,8 @@ def test_app(notifier_function, db_mock):
                 "UUID": "2",
             },
         ],
-        "meta_data": {"test": "test"},
-        "visible_data": ["name"],
+        "meta_data": ["UUID"],
+        "visible_data": ["name", "test_category", "type_of_place"],
     }
     db_mock.get_locations.return_value = [
         LocationBase(position=(50, 50), UUID="1"),
@@ -118,15 +118,21 @@ def test_data_endpoint_returns_data(test_app):
     assert response.status_code == 200
     assert response.json == [
         {
-            "data": [["name-translated", "test-translated"]],
-            "metadata": {},
+            "data": [
+                ["name-translated", "test-translated"],
+                ["type_of_place-translated", "test-place-translated"],
+            ],
+            "metadata": {"UUID-translated": "1-translated"},
             "position": [50, 50],
             "subtitle": "test-place-translated",
             "title": "test",
         },
         {
-            "data": [["name-translated", "test2-translated"]],
-            "metadata": {},
+            "data": [
+                ["name-translated", "test2-translated"],
+                ["type_of_place-translated", "test-place2-translated"],
+            ],
+            "metadata": {"UUID-translated": "2-translated"},
             "position": [60, 60],
             "subtitle": "test-place2-translated",
             "title": "test2",
@@ -150,12 +156,15 @@ def test_data_endpoint_returns_filtered_data(test_app):
     assert response.status_code == 200
     assert response.json == [
         {
-            "data": [["name-translated", "test-translated"]],
-            "metadata": {},
+            "data": [
+                ["name-translated", "test-translated"],
+                ["type_of_place-translated", "test-place-translated"],
+            ],
+            "metadata": {"UUID-translated": "1-translated"},
             "position": [50, 50],
             "subtitle": "test-place-translated",
             "title": "test",
-        }
+        },
     ]
 
 
@@ -246,16 +255,20 @@ def test_get_locations(test_app):
     ]
 
 
+@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("goodmap.formatter.gettext", fake_translation)
+@mock.patch("flask_babel.gettext", fake_translation)
 def test_get_location(test_app):
     response = test_app.get("/api/location/1")
     assert response.status_code == 200
     assert response.json == {
         "data": [
-            ["position", [50.0, 50.0]],
-            ["UUID", "1"],
-            ["test_category", ["test"]],
-            ["type_of_place", "test-place"],
-            ["name", "test"],
+            ["name-translated", "test-translated"],
+            ["test_category-translated", ["test-translated"]],
+            ["type_of_place-translated", "test-place-translated"],
         ],
-        "metadata": {"UUID": "1"},
+        "metadata": {"UUID-translated": "1-translated"},
+        "position": [50.0, 50.0],
+        "subtitle": "test-place-translated",
+        "title": "test",
     }
