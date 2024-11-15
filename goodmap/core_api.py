@@ -29,7 +29,7 @@ def core_pages(
         },
     )
 
-    #TODO get this from Location pydantic model
+    # TODO get this from Location pydantic model
     suggested_location_model = core_api.model(
         "LocationSuggestion",
         {
