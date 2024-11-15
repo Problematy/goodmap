@@ -1,7 +1,7 @@
 import React from 'react';
 import '@testing-library/jest-dom';
 import { render, fireEvent } from '@testing-library/react';
-import { MarkerContent } from '../src/components/MarkerPopup/MarkerPopup';
+import { MarkerContent } from '../src/components/MarkerPopup/MarkerContent';
 
 const correctMarkerData = {
     title: 'Most Grunwaldzki',
