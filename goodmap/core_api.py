@@ -105,8 +105,8 @@ def core_pages(
             Shows list of locations with UUID and position
             """
             query_params = request.args.to_dict(flat=False)
-            all_points = database.get_locations(query_params)
-            return jsonify([x.basic_info() for x in all_points])
+            all_locations = database.get_locations(query_params)
+            return jsonify([x.basic_info() for x in all_locations
 
     @core_api.route("/location/<location_id>")
     class GetLocation(Resource):
