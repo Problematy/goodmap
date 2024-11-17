@@ -234,9 +234,9 @@ def test_suggest_new_location_with_error_during_sending_notification(test_app, n
         data=json.dumps(
             {
                 "name": "Test Organization",
-                "position": [50, 50],
-                "test_category": ["test"],
                 "type_of_place": "type",
+                "test_category": ["test"],
+                "position": [50, 50],
                 "photo": "Test Photo",
             }
         ),
