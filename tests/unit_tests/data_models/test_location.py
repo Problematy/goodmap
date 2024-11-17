@@ -4,12 +4,12 @@ from goodmap.data_models.location import create_location_model
 
 
 def test_proper_creation():
-    Location = create_location_model(obligatory_fields=[("name", str)])
-    Location(UUID="1", name="test-name", position=(50, 50))
+    Location = create_location_model(obligatory_fields=[("used_obligatory_field", str)])
+    Location(UUID="1", used_obligatory_field="test-name", position=(50, 50))
 
 
 def test_missing_field_creation():
-    Location = create_location_model(obligatory_fields=[("nome", str)])
+    Location = create_location_model(obligatory_fields=[("not_used_obligatory_field", str)])
     with pytest.raises(ValueError):
         Location(UUID="1", position=(50, 50))
 
