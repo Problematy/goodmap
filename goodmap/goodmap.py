@@ -7,7 +7,7 @@ from platzky.config import Config, languages_dict
 
 from goodmap.core_api import core_pages
 from goodmap.data_models.location import create_location_model
-from goodmap.db import get_location_obligatory_fields, extend_db_with_goodmap_queries
+from goodmap.db import extend_db_with_goodmap_queries, get_location_obligatory_fields
 
 
 def create_app(config_path: str) -> platzky.Engine:

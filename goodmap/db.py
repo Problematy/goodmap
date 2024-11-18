@@ -108,6 +108,7 @@ def get_locations(db, location_model):
 # it could look like that:
 #   `db.extend(goodmap_db_plugin)` in plugin all those functions would be organized
 
+
 def extend_db_with_goodmap_queries(db, location_model):
     db.extend("get_data", get_data(db))
     db.extend("get_locations", get_locations(db, location_model))

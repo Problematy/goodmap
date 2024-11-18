@@ -6,7 +6,7 @@ from platzky.db.json_db import Json
 from platzky.db.json_file_db import JsonFile
 
 from goodmap.data_models.location import create_location_model
-from goodmap.db import get_location_obligatory_fields, goodmap_db_extended_app
+from goodmap.db import extend_db_with_goodmap_queries, get_location_obligatory_fields
 
 data = {
     "data": [
@@ -22,7 +22,7 @@ data_json = json.dumps({"map": data})
 def initialize_and_assert_db(db, data):
     location_obligatory_fields = get_location_obligatory_fields(db)
     location_model = create_location_model(location_obligatory_fields)
-    goodmap_db_extended_app(db, location_model)
+    extend_db_with_goodmap_queries(db, location_model)
 
     query = {"test-category": "searchable"}
 

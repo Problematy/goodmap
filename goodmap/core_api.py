@@ -106,7 +106,7 @@ def core_pages(
             """
             query_params = request.args.to_dict(flat=False)
             all_locations = database.get_locations(query_params)
-            return jsonify([x.basic_info() for x in all_locations
+            return jsonify([x.basic_info() for x in all_locations])
 
     @core_api.route("/location/<location_id>")
     class GetLocation(Resource):
