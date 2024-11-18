@@ -33,12 +33,10 @@
                 "UUID": "dattarro"
             }
         ],
-        "obligatory_fields": [
-            "position",
-            "name",
-            "accessible_by",
-            "type_of_place",
-            "UUID"
+        "location_obligatory_fields": [
+            ["name", "str"],
+            ["accessible_by", "list"],
+            ["type_of_place", "str"]
         ],
         "categories": {
             "accessible_by": [
@@ -74,7 +72,7 @@
                 "comments": [],
                 "excerpt": "",
                 "tags": [],
-                "language": "pl",		
+                "language": "pl",
                 "contentInMarkdown": "about"
             }
         ],
@@ -93,7 +91,7 @@
             "name": "Poppins",
             "url": "https://fonts.googleapis.com/css2?family=Poppins"
         },
-        "primary_color": "#000000",
+        "primary_color": "#FFFFFF",
         "secondary_color": "#245466",
         "left_bar_width": "300px"
     },

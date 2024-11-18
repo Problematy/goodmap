@@ -1,20 +1,26 @@
 import pytest
 
-from goodmap.data_models.location import Location
+from goodmap.data_models.location import create_location_model
 
 
 def test_proper_creation():
-    try:
-        Location(name="test-name", coordinates=(50, 50))
-    except Exception as e:
-        assert False, f"{e} was raised"
+    Location = create_location_model(obligatory_fields=[("used_obligatory_field", str)])
+    Location(UUID="1", used_obligatory_field="test-name", position=(50, 50))
+
+
+def test_missing_field_creation():
+    Location = create_location_model(obligatory_fields=[("not_used_obligatory_field", str)])
+    with pytest.raises(ValueError):
+        Location(UUID="1", position=(50, 50))
 
 
 def test_latitude_out_of_scope():
+    Location = create_location_model(obligatory_fields=[])
     with pytest.raises(ValueError):
-        Location(name="test-name", coordinates=(150, 50))
+        Location(UUID="1", position=(150, 50))
 
 
 def test_longitude_out_of_scope():
+    Location = create_location_model(obligatory_fields=[])
     with pytest.raises(ValueError):
-        Location(name="test-name", coordinates=(50, 350))
+        Location(UUID="one", position=(50, 350))

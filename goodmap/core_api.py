@@ -1,14 +1,14 @@
 import importlib.metadata
+import uuid
 
+import deprecation
 from flask import Blueprint, jsonify, make_response, request
 from flask_babel import gettext
 from flask_restx import Api, Resource, fields
 from platzky.config import LanguagesMapping
 
-from goodmap.data_models.location import Location
-
-from .core import get_queried_data
-from .formatter import prepare_pin
+from goodmap.core import get_queried_data
+from goodmap.formatter import prepare_pin
 
 
 def make_tuple_translation(keys_to_translate):
@@ -16,7 +16,7 @@ def make_tuple_translation(keys_to_translate):
 
 
 def core_pages(
-    database, languages: LanguagesMapping, notifier_function, csrf_generator
+    database, languages: LanguagesMapping, notifier_function, csrf_generator, location_model
 ) -> Blueprint:
     core_api_blueprint = Blueprint("api", __name__, url_prefix="/api")
     core_api = Api(core_api_blueprint, doc="/doc", version="0.1")
@@ -29,26 +29,28 @@ def core_pages(
         },
     )
 
-    location_suggest_model = core_api.model(
+    # TODO get this from Location pydantic model
+    suggested_location_model = core_api.model(
         "LocationSuggestion",
         {
-            "name": fields.String(required=True, description="Organization name"),
-            "coordinates": fields.String(required=True, description="Location of the suggestion"),
+            "name": fields.String(required=False, description="Organization name"),
+            "position": fields.String(required=True, description="Location of the suggestion"),
             "photo": fields.String(required=False, description="Photo of the location"),
         },
     )
 
     @core_api.route("/suggest-new-point")
     class NewLocation(Resource):
-        @core_api.expect(location_suggest_model)
+        @core_api.expect(suggested_location_model)
         def post(self):
             """Suggest new location"""
             try:
-                location_suggest = request.get_json()
-                location = Location.model_validate(location_suggest)
+                suggested_location = request.get_json()
+                suggested_location.update({"UUID": str(uuid.uuid4())})
+                location = location_model.model_validate(suggested_location)
                 message = (
-                    f"A new location has been suggested: '{location.name}' "
-                    f"at position: {location.coordinates}"
+                    f"A new location has been suggested under UUID: '{location.UUID}' "
+                    f"at position: {location.position}"
                 )
                 notifier_function(message)
             except ValueError as e:
@@ -75,6 +77,12 @@ def core_pages(
 
     @core_api.route("/data")
     class Data(Resource):
+        @deprecation.deprecated(
+            deprecated_in="0.4.1",
+            removed_in="0.5.0",
+            current_version=importlib.metadata.version("goodmap"),
+            details="Use /locations or /location/<point_id> instead",
+        )
         def get(self):
             """
             Shows all data filtered by query parameters
@@ -88,6 +96,34 @@ def core_pages(
             meta_data = all_data["meta_data"]
             queried_data = get_queried_data(data, categories, query_params)
             formatted_data = [prepare_pin(x, visible_data, meta_data) for x in queried_data]
+            return jsonify(formatted_data)
+
+    @core_api.route("/locations")
+    class GetLocations(Resource):
+        def get(self):
+            """
+            Shows list of locations with UUID and position
+            """
+            query_params = request.args.to_dict(flat=False)
+            all_locations = database.get_locations(query_params)
+            return jsonify([x.basic_info() for x in all_locations])
+
+    @core_api.route("/location/<location_id>")
+    class GetLocation(Resource):
+        def get(self, location_id):
+            """
+            Shows a single location with all data
+            """
+            location = database.get_location(location_id)
+
+            # TODO getting visible_data and meta_data should be taken from db methods
+            #    e.g. db.get_visible_data() and db.get_meta_data()
+            #    visible_data and meta_data should be models
+            all_data = database.get_data()
+            visible_data = all_data["visible_data"]
+            meta_data = all_data["meta_data"]
+
+            formatted_data = prepare_pin(location.model_dump(), visible_data, meta_data)
             return jsonify(formatted_data)
 
     @core_api.route("/version")

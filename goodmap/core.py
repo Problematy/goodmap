@@ -1,3 +1,6 @@
+# TODO move filtering to db site
+
+
 def does_fulfill_requirement(entry, requirements):
     matches = []
     for category, values in requirements:

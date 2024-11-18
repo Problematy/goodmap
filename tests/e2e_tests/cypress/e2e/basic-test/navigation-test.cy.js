@@ -1,7 +1,7 @@
 describe('Navigation Bar Test for small devices', () => {
   const viewports = ['iphone-6', 'ipad-2', 'samsung-s10']
   beforeEach(() => {
-    cy.visit('http://localhost:5000');
+    cy.visit('/');
     cy.wait(100);  // TODO - replace with a better way to wait for the page to load
   });
 

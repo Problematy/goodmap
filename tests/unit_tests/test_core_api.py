@@ -7,6 +7,7 @@ from flask import Flask
 from platzky.config import LanguageConfig, Languages, languages_dict
 
 from goodmap.core_api import core_pages
+from goodmap.data_models.location import LocationBase, create_location_model
 
 
 def fake_translation(key: str):
@@ -25,9 +26,11 @@ def db_mock():
 
 @pytest.fixture
 def test_app(notifier_function, db_mock):
-    b = LanguageConfig(name="English", flag="uk", country="GB")
-    a = Languages({"en": b})
-    languages = languages_dict(a)
+    CustomLocation = create_location_model(
+        [("test_category", list[str]), ("type_of_place", str), ("name", str)]
+    )
+    language_config = LanguageConfig(name="English", flag="uk", country="GB")
+    languages = languages_dict(Languages({"en": language_config}))
     app = Flask(__name__)
     db_mock.get_data.return_value = {
         "categories": {"test-category": ["test", "test2"]},
@@ -36,20 +39,39 @@ def test_app(notifier_function, db_mock):
             {
                 "name": "test",
                 "position": [50, 50],
-                "test-category": "test",
+                "test-category": ["test"],
                 "type_of_place": "test-place",
-            }
+                "UUID": "1",
+            },
+            {
+                "name": "test2",
+                "position": [60, 60],
+                "test-category": ["second-category"],
+                "type_of_place": "test-place2",
+                "UUID": "2",
+            },
         ],
-        "meta_data": {"test": "test"},
-        "visible_data": ["name"],
+        "meta_data": ["UUID"],
+        "visible_data": ["name", "test_category", "type_of_place"],
     }
-    app.register_blueprint(core_pages(db_mock, languages, notifier_function, lambda: "csrf"))
+    db_mock.get_locations.return_value = [
+        LocationBase(position=(50, 50), UUID="1"),
+        LocationBase(position=(60, 60), UUID="2"),
+    ]
+
+    db_mock.get_location.return_value = CustomLocation(
+        position=(50, 50), UUID="1", test_category=["test"], type_of_place="test-place", name="test"
+    )
+
+    app.register_blueprint(
+        core_pages(
+            db_mock, languages, notifier_function, lambda: "csrf", location_model=CustomLocation
+        )
+    )
     return app.test_client()
 
 
-def test_reporting_location_is_sending_message_with_name_and_coordinates(
-    test_app, notifier_function
-):
+def test_reporting_location_is_sending_message_with_name_and_position(test_app, notifier_function):
     data = {"id": "location-id", "description": "some error"}
     headers = {"Content-Type": "application/json"}
     response = test_app.post("/api/report-location", data=json.dumps(data), headers=headers)
@@ -61,7 +83,7 @@ def test_reporting_location_is_sending_message_with_name_and_coordinates(
 
 
 def test_reporting_returns_error_when_wrong_json(test_app, notifier_function):
-    data = {"name": "location-id", "coordinates": 50}
+    data = {"name": "location-id", "position": 50}
     headers = {"Content-Type": "application/json"}
     response = test_app.post("/api/report-location", data=json.dumps(data), headers=headers)
     assert response.status_code == 400
@@ -96,12 +118,25 @@ def test_data_endpoint_returns_data(test_app):
     assert response.status_code == 200
     assert response.json == [
         {
-            "data": [["name-translated", "test-translated"]],
-            "metadata": {},
+            "data": [
+                ["name-translated", "test-translated"],
+                ["type_of_place-translated", "test-place-translated"],
+            ],
+            "metadata": {"UUID-translated": "1-translated"},
             "position": [50, 50],
             "subtitle": "test-place-translated",
             "title": "test",
-        }
+        },
+        {
+            "data": [
+                ["name-translated", "test2-translated"],
+                ["type_of_place-translated", "test-place2-translated"],
+            ],
+            "metadata": {"UUID-translated": "2-translated"},
+            "position": [60, 60],
+            "subtitle": "test-place2-translated",
+            "title": "test2",
+        },
     ]
 
 
@@ -121,12 +156,15 @@ def test_data_endpoint_returns_filtered_data(test_app):
     assert response.status_code == 200
     assert response.json == [
         {
-            "data": [["name-translated", "test-translated"]],
-            "metadata": {},
+            "data": [
+                ["name-translated", "test-translated"],
+                ["type_of_place-translated", "test-place-translated"],
+            ],
+            "metadata": {"UUID-translated": "1-translated"},
             "position": [50, 50],
             "subtitle": "test-place-translated",
             "title": "test",
-        }
+        },
     ]
 
 
@@ -148,7 +186,13 @@ def test_suggest_new_location_with_valid_data(test_app):
     response = test_app.post(
         "/api/suggest-new-point",
         data=json.dumps(
-            {"name": "Test Organization", "coordinates": [50, 50], "photo": "Test Photo"}
+            {
+                "UUID": "one",
+                "name": "Test Organization",
+                "type_of_place": "type",
+                "test_category": ["test"],
+                "position": [50, 50],
+            }
         ),
         content_type="application/json",
     )
@@ -177,7 +221,7 @@ def test_suggest_new_location_with_empty_data(test_app):
 def test_suggest_new_location_with_invalid_data(test_app):
     response = test_app.post(
         "/api/suggest-new-point",
-        data=json.dumps({"name": 123, "coordinates": 456, "photo": "Test Photo"}),
+        data=json.dumps({"name": 123, "position": 456, "photo": "Test Photo"}),
         content_type="application/json",
     )
     assert response.status_code == 400
@@ -188,9 +232,43 @@ def test_suggest_new_location_with_error_during_sending_notification(test_app, n
     response = test_app.post(
         "/api/suggest-new-point",
         data=json.dumps(
-            {"name": "Test Organization", "coordinates": [50, 50], "photo": "Test Photo"}
+            {
+                "name": "Test Organization",
+                "type_of_place": "type",
+                "test_category": ["test"],
+                "position": [50, 50],
+                "photo": "Test Photo",
+            }
         ),
         content_type="application/json",
     )
     assert response.status_code == 400
     assert response.get_json() == {"message": "Error sending notification : Test Error"}
+
+
+def test_get_locations(test_app):
+    response = test_app.get("/api/locations")
+    assert response.status_code == 200
+    assert response.json == [
+        {"UUID": "1", "position": [50, 50]},
+        {"UUID": "2", "position": [60, 60]},
+    ]
+
+
+@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("goodmap.formatter.gettext", fake_translation)
+@mock.patch("flask_babel.gettext", fake_translation)
+def test_get_location(test_app):
+    response = test_app.get("/api/location/1")
+    assert response.status_code == 200
+    assert response.json == {
+        "data": [
+            ["name-translated", "test-translated"],
+            ["test_category-translated", ["test-translated"]],
+            ["type_of_place-translated", "test-place-translated"],
+        ],
+        "metadata": {"UUID-translated": "1-translated"},
+        "position": [50.0, 50.0],
+        "subtitle": "test-place-translated",
+        "title": "test",
+    }

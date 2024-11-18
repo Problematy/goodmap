@@ -2,6 +2,7 @@
 
 #### x.x.x
   * added translations to goodmap
+  * added lazy loading
 
 #### 0.4.0
   * changed API: /api/data pin attribute "data" is served as an array of pairs instead of dict

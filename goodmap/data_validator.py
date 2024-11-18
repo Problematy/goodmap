@@ -76,7 +76,7 @@ def report_data_violations_from_json(json_database):
     map_data = json_database["map"]
     datapoints = map_data["data"]
     categories = map_data["categories"]
-    obligatory_fields = map_data["obligatory_fields"]
+    obligatory_fields = map_data["location_obligatory_fields"]
 
     data_violations = []
 
