@@ -15,3 +15,6 @@ LANGUAGES:
     name: polski
     flag: pl
     country: PL
+
+FEATURE_FLAGS:
+  USE_LAZY_LOADING: false
