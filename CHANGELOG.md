@@ -1,6 +1,6 @@
 # Changelog
 
-#### x.x.x
+#### 0.4.1
   * added translations to goodmap
   * added lazy loading
 
