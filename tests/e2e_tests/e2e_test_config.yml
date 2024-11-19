@@ -17,4 +17,4 @@ LANGUAGES:
     country: PL
 
 FEATURE_FLAGS:
-  USE_LAZY_LOADING: false
+  USE_LAZY_LOADING: False
