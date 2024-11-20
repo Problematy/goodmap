@@ -1,5 +1,9 @@
 - Feature: Suggesting new points button
 
+# 0.3.3
+- Fix: lazy loading
+- Feature: infobox for mobiles
+
 # 0.3.2
 - fix: marker popup one-line value
 
