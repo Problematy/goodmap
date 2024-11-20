@@ -1,7 +1,7 @@
 import React from 'react';
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
-import { MarkerContent } from '../src/components/MarkerPopup/MarkerContent';
+import { LocationDetailsBox } from '../src/components/MarkerPopup/LocationDetails';
 
 const correctMarkerData = {
     title: 'Most Grunwaldzki',
@@ -35,7 +35,7 @@ const incorrectComplexMarkerData = {
 
 describe('should render marker popup correctly', () => {
     beforeEach(() => {
-        render(<MarkerContent place={correctMarkerData} />);
+        render(<LocationDetailsBox place={correctMarkerData} />);
     });
 
     it('should render marker popup name', () => {
@@ -85,9 +85,9 @@ describe('should render marker popup correctly', () => {
                 const consoleSpy = jest.spyOn(console, 'error');
                 consoleSpy.mockImplementation(() => {});
 
-                expect(() => render(<MarkerContent place={incorrectComplexMarkerData} />)).toThrow(
-                    'Custom value must have type and value properties',
-                );
+                expect(() =>
+                    render(<LocationDetailsBox place={incorrectComplexMarkerData} />),
+                ).toThrow('Custom value must have type and value properties');
 
                 consoleSpy.mockRestore();
             });

@@ -1,61 +1,80 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
-import { Marker, Popup, useMap } from 'react-leaflet';
+import { Marker, Popup } from 'react-leaflet';
 import { isMobile } from 'react-device-detect';
+import { httpService } from '../../services/http/httpService';
+import styled from 'styled-components';
 
-import { MarkerContent } from './MarkerContent';
+import { LocationDetailsBox } from './LocationDetails';
 import { MobilePopup } from './MobilePopup';
 
-const MobileMarker = ({ place }) => {
-    const [open, setOpen] = useState(false);
-    const map = useMap();
+const StyledPopup = styled(Popup)`
+    min-width: 300px;
+`;
 
-    const handleClickOpen = () => {
-        const offset = 0.003;
-        const newLat = place.position[0] - offset;
-        map.panTo([newLat, place.position[1]], { duration: 0.5 });
-        setOpen(true);
+// DesktopPopup is a workaround for not existing lazy loading Popup as
+// react-leaflet Popup doesn't support .open() function
+const DesktopPopup = ({ children }) => {
+    const popupRef = useRef(null);
+
+    useEffect(() => {
+        if (popupRef.current) {
+            const marker = popupRef.current._source;
+            if (marker) {
+                marker.openPopup();
+            }
+        }
+    }, []);
+
+    return <StyledPopup ref={popupRef}>{children}</StyledPopup>;
+};
+
+const LocationDetailsBoxWrapper = ({ theplace }) => {
+    const [place, setPlace] = useState(null);
+    const ChosenPopup = isMobile ? MobilePopup : DesktopPopup;
+
+    if (!window.USE_LAZY_LOADING) {
+        return (
+            <ChosenPopup>
+                <LocationDetailsBox place={theplace} />
+            </ChosenPopup>
+        );
+    }
+
+    useEffect(() => {
+        const fetchPlace = async () => {
+            const fetchedPlace = await httpService.getLocation(theplace.UUID);
+            setPlace(fetchedPlace);
+        };
+        fetchPlace();
+    }, [theplace.UUID]);
+
+    return (
+        <ChosenPopup>
+            {place ? <LocationDetailsBox place={place} /> : <p>Loading...</p>}
+        </ChosenPopup>
+    );
+};
+
+export const MarkerPopup = ({ place }) => {
+    const [isClicked, setIsClicked] = useState(false);
+    const handleMarkerClick = e => {
+        setIsClicked(true);
     };
-
-    const handleClose = () => {
-        setOpen(false);
-    };
-
     return (
         <Marker
             position={place.position}
-            key={place.metadata.UUID}
-            eventHandlers={{ click: handleClickOpen }}
+            eventHandlers={{
+                click: handleMarkerClick,
+            }}
         >
-            <MobilePopup isOpen={open} onCloseHandler={handleClose}>
-                <MarkerContent place={place} isMobileVariable={true} />
-            </MobilePopup>
+            {isClicked && <LocationDetailsBoxWrapper theplace={place} />}
         </Marker>
     );
-};
-
-const DesktopMarker = ({ place }) => {
-    return (
-        <Marker position={place.position} key={place.metadata.UUID}>
-            <Popup>
-                <MarkerContent place={place} isMobileVariable={false} />
-            </Popup>
-        </Marker>
-    );
-};
-
-// TODO Rename MarkerPopup because it is not a popup for mobile
-
-// Maybe ResponsiveMarker? The filename should be changed too.
-export const MarkerPopup = ({ place }) => {
-    if (isMobile) return <MobileMarker place={place} />;
-    else return <DesktopMarker place={place} />;
 };
 
 MarkerPopup.propTypes = {
     place: PropTypes.shape({
-        title: PropTypes.string.isRequired,
-        subtitle: PropTypes.string.isRequired,
-        data: PropTypes.shape({}).isRequired,
+        position: PropTypes.arrayOf(PropTypes.number).isRequired,
     }).isRequired,
 };

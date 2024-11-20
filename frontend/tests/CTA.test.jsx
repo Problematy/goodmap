@@ -1,7 +1,7 @@
 import React from 'react';
 import '@testing-library/jest-dom';
 import { render, fireEvent } from '@testing-library/react';
-import { MarkerContent } from '../src/components/MarkerPopup/MarkerContent';
+import { LocationDetailsBox } from '../src/components/MarkerPopup/LocationDetails';
 
 const correctMarkerData = {
     title: 'Most Grunwaldzki',
@@ -29,7 +29,7 @@ describe('CTA', () => {
     it('should redirect to a page specified by CTA when CTA button clicked', async () => {
         const mockOpen = jest.spyOn(window, 'open').mockImplementation(() => {});
 
-        const { getByText } = render(<MarkerContent place={correctMarkerData} />);
+        const { getByText } = render(<LocationDetailsBox place={correctMarkerData} />);
 
         const button = getByText('Visit example.org!');
 
