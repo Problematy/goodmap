@@ -1,5 +1,6 @@
-# TODO move filtering to db site
 from typing import Any, Dict, List
+
+# TODO move filtering to db site
 
 
 def does_fulfill_requirement(entry, requirements):
@@ -11,7 +12,7 @@ def does_fulfill_requirement(entry, requirements):
     return all(matches)
 
 
-def sort_by_lat_lon(data: List[Dict[str, Any]], query_params: Dict[str, List[str]]):
+def sort_by_distance(data: List[Dict[str, Any]], query_params: Dict[str, List[str]]):
     try:
         if "lat" in query_params and "lon" in query_params:
             lat = float(query_params["lat"][0])
@@ -23,7 +24,7 @@ def sort_by_lat_lon(data: List[Dict[str, Any]], query_params: Dict[str, List[str
         return data
 
 
-def limit(data, query_params, limit: int):
+def limit(data, query_params):
     try:
         if "limit" in query_params:
             limit = int(query_params["limit"][0])
@@ -40,6 +41,6 @@ def get_queried_data(all_data, categories, query_params):
         requirements.append((key, query_params.get(key)))
 
     filtered_data = [x for x in all_data if does_fulfill_requirement(x, requirements)]
-    final_data = sort_by_lat_lon(filtered_data, query_params)
-    final_data = limit(final_data, query_params, 10)
+    final_data = sort_by_distance(filtered_data, query_params)
+    final_data = limit(final_data, query_params)
     return final_data
