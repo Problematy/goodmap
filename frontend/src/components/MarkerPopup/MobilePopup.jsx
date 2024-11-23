@@ -51,12 +51,13 @@ export const MobilePopup = ({ children }) => {
                     bottom: 0,
                     margin: 0,
                     width: '100%',
-                    maxHeight: '50%',
+                    maxHeight: '90%',
                     borderRadius: '16px 16px 0 0',
+                    padding: '1px 1px',
                 },
             }}
         >
-            <DialogTitle style={{ textAlign: 'center', padding: '8px 16px' }}>
+            <DialogTitle style={{ textAlign: 'center', padding: '2px 16px' }}>
                 <IconButton
                     aria-label="close"
                     onClick={handleClose}
@@ -65,7 +66,7 @@ export const MobilePopup = ({ children }) => {
                     <CloseIcon />
                 </IconButton>
             </DialogTitle>
-            <DialogContent>{children}</DialogContent>
+            <DialogContent sx={{ padding: '8px' }}>{children}</DialogContent>
         </Dialog>
     );
 };

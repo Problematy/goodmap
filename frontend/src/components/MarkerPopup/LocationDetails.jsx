@@ -33,14 +33,15 @@ LocationDetailsValue.propTypes = {
 const NavigateMeButton = ({ place }) => (
     <a
         href={`geo:${place.position[0]},${place.position[1]}?q=${place.position[0]},${place.position[1]}`}
-        style={{ textDecoration: 'none' }}
+        style={{ textDecoration: 'none', alignItems: 'center', height: '20%' }}
     >
         <p
             style={{
                 ...buttonStyleSmall,
+                marginTop: '8px',
+                marginBottom: '8px',
                 justifyContent: 'center',
                 display: 'flex',
-                alignItems: 'center',
             }}
         >
             <ExploreIcon style={{ color: 'white', marginRight: '10px' }} />
@@ -72,8 +73,10 @@ const LocationDetails = ({ place }) => {
                     display: 'grid',
                     gridTemplateColumns: '100px 1fr',
                     columnGap: '10px',
-                    rowGap: '5px',
-                    margin: '10px 25px',
+                    rowGap: '10px',
+                    margin: '5px 5px',
+                    marginLeft: '10px',
+                    marginRight: '10px',
                     alignItems: 'start',
                     fontSize: 12,
                 }}
@@ -122,9 +125,28 @@ export const LocationDetailsBox = ({ place }) => {
         <React.Fragment>
             <LocationDetails place={place} />
 
-            {isMobile && <NavigateMeButton place={place} />}
+            <div
+                style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    marginRight: 25,
+                    marginLeft: 25,
+                    marginTop: 1,
+                }}
+            >
+                {isMobile && <NavigateMeButton place={place} />}
+            </div>
 
-            <p onClick={toggleForm} style={{ cursor: 'pointer', textAlign: 'right', color: 'red' }}>
+            <p
+                onClick={toggleForm}
+                style={{
+                    cursor: 'pointer',
+                    textAlign: 'right',
+                    color: 'red',
+                    marginTop: '5px',
+                    marginBottom: '5px',
+                }}
+            >
                 {t('ReportIssueButton')}
             </p>
             {showForm && <ReportProblemForm placeId={place.metadata.UUID} />}
