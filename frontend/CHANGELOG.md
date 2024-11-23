@@ -1,5 +1,8 @@
 - Feature: Suggesting new points button
 
+# 0.3.4
+- Fix: Fit details in Dialog box on mobile
+
 # 0.3.3
 - Fix: lazy loading
 - Feature: infobox for mobiles
