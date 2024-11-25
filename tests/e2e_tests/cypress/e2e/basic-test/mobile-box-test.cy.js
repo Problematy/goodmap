@@ -75,45 +75,49 @@ describe('Popup Tests on Mobile', () => {
                   verifyPopupContent(expectedPlace2);
                 }
               });
+        cy.contains('report a problem').should('exist').click({ force: true });
+
+  // Verify the form appears
+  cy.get('form').should('exist').within(() => {
+    // Open the dropdown by clicking on it
+    cy.get('select').should('exist')
+
+    cy.get('--Please choose an option--').should('exist').click();
+
+    // Verify dropdown options are displayed
+    cy.get('select option').then((options) => {
+      const optionValues = [...options].map(option => option.textContent.trim());
+      expect(optionValues).to.include.members([
+        '--Please choose an option--',
+        'Not here',
+        'Overloaded',
+        'Broken',
+        'Other',
+      ]);
+    });
+
+    // Select the "Other" option and verify the text input appears
+    cy.get('select').select('Other'); // Assuming "Other" is the visible text
+    cy.get('input[name="problem"]').should('exist'); // Text input for "Other"
+
+    // Fill out the form
+    cy.get('input[name="problem"]').type('Custom issue description');
+    cy.get('input[type="submit"]').should('exist').click();
+  });
+
           });
 
-        cy.contains('report a problem').should('exist').click();
 
-          // Verify the form appears
-          cy.get('form').should('exist').within(() => {
-            // Verify dropdown options
-            cy.get('select').should('exist').within(() => {
-              cy.get('option').then((options) => {
-                const optionValues = [...options].map(option => option.value);
-                expect(optionValues).to.include.members([
-                  '',
-                  'reportNotHere',
-                  'reportOverload',
-                  'reportBroken',
-                  'reportOther',
-                ]);
-              });
-            });
-
-            // Select a problem type and verify behavior
-            cy.get('select').select('reportOther'); // Assuming "Other" is localized correctly
-            cy.get('input[name="problem"]').should('exist'); // Text input for "Other"
-
-            // Fill out the form
-            cy.get('input[name="problem"]').type('Custom issue description');
-            cy.get('input[type="submit"]').should('exist').click();
-          });
-
-          // Verify the success message
-          cy.get('form').should('not.exist'); // Form should no longer be visible
-          cy.contains('p', /thank you/i).should('exist'); // Adjust message as per actual text
+        // Verify the success message
+        cy.get('form').should('not.exist'); // Form should no longer be visible
+        cy.contains('p', /thank you/i).should('exist'); // Adjust message as per actual text
 
         cy.get('.leaflet-popup-close-button').should('exist').then(($button) => {
           cy.wrap($button).click({ force: true });
           cy.wait(500);
         });
       });
-      });
+    });
   });
 
 });
