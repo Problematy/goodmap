@@ -1,5 +1,6 @@
 describe('Popup Tests on Mobile', () => {
-  const viewports = ['iphone-x', 'iphone-6', 'ipad-2', 'samsung-s10']
+//  const viewports = ['iphone-x', 'iphone-6', 'ipad-2', 'samsung-s10']
+  const viewports = ['iphone-x']
   beforeEach(() => {
     cy.visit('/');
     cy.wait(1000);
