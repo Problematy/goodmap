@@ -37,13 +37,13 @@ describe('Popup Tests on Mobile', () => {
 
       const zoomInTimes = 1;
       for (let i = 0; i < zoomInTimes; i++) {
-        cy.get('.leaflet-marker-icon').first().click({ force: true }); // Force click for mobile
+        cy.get('.leaflet-marker-icon').first().click({ force: true });
         cy.wait(500);
       }
 
       // TODO - Find a way to search for a specific point, not iterate over all of them
       cy.get('.leaflet-marker-icon').each(($marker) => {
-        cy.wrap($marker).click({ force: true }); // Force click for mobile
+        cy.wrap($marker).click({ force: true });
         cy.wait(500);
 
         cy.get('.leaflet-popup-content').should('exist')
@@ -77,9 +77,7 @@ describe('Popup Tests on Mobile', () => {
               });
         cy.contains('report a problem').should('exist').click({ force: true });
 
-  // Verify the form appears
   cy.get('form').should('exist').within(() => {
-  // Verify dropdown options
   cy.get('select').should('exist').within(() => {
     cy.get('option').then((options) => {
       const optionValues = [...options].map(option => option.textContent.trim());
@@ -93,21 +91,14 @@ describe('Popup Tests on Mobile', () => {
     });
   });
 
-    // Select the "Other" option and verify the text input appears
-    cy.get('select').select('other'); // Assuming "Other" is the visible text
-    cy.get('input[name="problem"]').should('exist'); // Text input for "Other"
+    cy.get('select').select('other');
+    cy.get('input[name="problem"]').should('exist');
 
-    // Fill out the form
     cy.get('input[name="problem"]').type('Custom issue description');
     cy.get('input[type="submit"]').should('exist').click();
   });
 
           });
-
-
-//        // Verify the success message
-//        cy.get('form').should('not.exist'); // Form should no longer be visible
-//        cy.contains('p', /thank you/i).should('exist'); // Adjust message as per actual text
 
         cy.get('.leaflet-popup-close-button').should('exist').then(($button) => {
           cy.wrap($button).click({ force: true });
