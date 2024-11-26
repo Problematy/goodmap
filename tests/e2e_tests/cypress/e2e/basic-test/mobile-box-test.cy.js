@@ -2,8 +2,7 @@ describe('Popup Tests on Mobile', () => {
 //  const viewports = ['iphone-x', 'iphone-6', 'ipad-2', 'samsung-s10']
   const viewports = ['iphone-x']
   beforeEach(() => {
-    cy.visit('/');
-    cy.wait(1000);
+
   });
 
   const expectedPlace1 = {
@@ -31,10 +30,36 @@ describe('Popup Tests on Mobile', () => {
   viewports.forEach((viewport) => {
 
     it(`displays title and subtitle in the popup on ${viewport}`, () => {
-      cy.viewport(viewport);
       cy.window().then((win) => {
         cy.stub(win, 'open').as('openStub');
+
+        const updateIsMobile = () => {
+          win.isMobile = win.innerWidth <= 7068; // Update `isMobile` dynamically
+        };
+
+        // Attach the event listener to the window object
+        win.addEventListener('resize', updateIsMobile);
+
+        // Perform an initial check
+        updateIsMobile();
       });
+
+
+      cy.on('window:before:load', (win) => {
+        Object.defineProperty(win.navigator, 'userAgent', {
+          value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1',
+        });
+      })
+    cy.visit('/');
+    cy.wait(1000);
+      cy.viewport(viewport);
+
+      cy.wait(1000);
+
+      cy.window().then((win) => {
+        expect(win.isMobile).to.be.true; // Should be true for 'iphone-6'
+      });
+
 
       const zoomInTimes = 1;
       for (let i = 0; i < zoomInTimes; i++) {
@@ -76,28 +101,28 @@ describe('Popup Tests on Mobile', () => {
                   verifyPopupContent(expectedPlace2);
                 }
               });
-        cy.contains('report a problem').should('exist').click({ force: true });
+            cy.contains('report a problem').should('exist').click({ force: true });
 
-  cy.get('form').should('exist').within(() => {
-  cy.get('select').should('exist').within(() => {
-    cy.get('option').then((options) => {
-      const optionValues = [...options].map(option => option.textContent.trim());
-      expect(optionValues).to.include.members([
-        '--Please choose an option--',
-        'this point is not here',
-        "it's overloaded",
-        "it's broken",
-        'other',
-      ]);
-    });
-  });
+            cy.get('form').should('exist').within(() => {
+              cy.get('select').should('exist').within(() => {
+                cy.get('option').then((options) => {
+                  const optionValues = [...options].map(option => option.textContent.trim());
+                  expect(optionValues).to.include.members([
+                    '--Please choose an option--',
+                    'this point is not here',
+                    "it's overloaded",
+                    "it's broken",
+                    'other',
+                  ]);
+                });
+              });
 
-    cy.get('select').select('other');
-    cy.get('input[name="problem"]').should('exist');
+              cy.get('select').select('other');
+              cy.get('input[name="problem"]').should('exist');
 
-    cy.get('input[name="problem"]').type('Custom issue description');
-    cy.get('input[type="submit"]').should('exist').click();
-  });
+              cy.get('input[name="problem"]').type('Custom issue description');
+              cy.get('input[type="submit"]').should('exist').click();
+            });
 
           });
 
