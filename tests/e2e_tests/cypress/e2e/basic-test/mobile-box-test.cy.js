@@ -1,9 +1,6 @@
 describe('Popup Tests on Mobile', () => {
-//  const viewports = ['iphone-x', 'iphone-6', 'ipad-2', 'samsung-s10']
-  const viewports = ['iphone-x']
-  beforeEach(() => {
-
-  });
+  const viewports = ['iphone-x', 'iphone-6', 'ipad-2', 'samsung-s10']
+//  const viewports = ['iphone-x']
 
   const expectedPlace1 = {
     title: "Grunwaldzki",
@@ -30,35 +27,23 @@ describe('Popup Tests on Mobile', () => {
   viewports.forEach((viewport) => {
 
     it(`displays title and subtitle in the popup on ${viewport}`, () => {
-      cy.window().then((win) => {
-        cy.stub(win, 'open').as('openStub');
-
-        const updateIsMobile = () => {
-          win.isMobile = win.innerWidth <= 7068; // Update `isMobile` dynamically
-        };
-
-        // Attach the event listener to the window object
-        win.addEventListener('resize', updateIsMobile);
-
-        // Perform an initial check
-        updateIsMobile();
-      });
-
 
       cy.on('window:before:load', (win) => {
         Object.defineProperty(win.navigator, 'userAgent', {
           value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1',
         });
       })
-    cy.visit('/');
-    cy.wait(1000);
       cy.viewport(viewport);
 
-      cy.wait(1000);
+//      cy.reload();
+      cy.visit('/');
+    cy.wait(500);
+
 
       cy.window().then((win) => {
-        expect(win.isMobile).to.be.true; // Should be true for 'iphone-6'
+        cy.stub(win, 'open').as('openStub');
       });
+
 
 
       const zoomInTimes = 1;
@@ -72,7 +57,7 @@ describe('Popup Tests on Mobile', () => {
         cy.wrap($marker).click({ force: true });
         cy.wait(500);
 
-        cy.get('.leaflet-popup-content').should('exist')
+        cy.get('.MuiDialogContent-root').should('exist')
           .within(() => {
 
             function verifyPopupContent(expectedContent) {
@@ -126,7 +111,7 @@ describe('Popup Tests on Mobile', () => {
 
           });
 
-        cy.get('.leaflet-popup-close-button').should('exist').then(($button) => {
+        cy.get('.MuiIconButton-root').should('exist').then(($button) => {
           cy.wrap($button).click({ force: true });
           cy.wait(500);
         });
