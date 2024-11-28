@@ -1,6 +1,5 @@
 describe('Popup Tests on Mobile', () => {
   const viewports = ['iphone-x', 'iphone-6', 'ipad-2', 'samsung-s10']
-//  const viewports = ['iphone-x']
 
   const expectedPlace1 = {
     title: "Grunwaldzki",
@@ -35,9 +34,8 @@ describe('Popup Tests on Mobile', () => {
       })
       cy.viewport(viewport);
 
-//      cy.reload();
       cy.visit('/');
-    cy.wait(500);
+      cy.wait(500);
 
 
       cy.window().then((win) => {
