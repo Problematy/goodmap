@@ -1,119 +1,145 @@
 {
-    "map": {
-        "data": [
-            {
-                "name": "Grunwaldzki",
-                "position": [
-                    51.1095,
-                    17.0525
-                ],
-                "accessible_by": [
-                    "pedestrians",
-                    "cars"
-                ],
-                "type_of_place": "big bridge",
-                "UUID": "hidden",
-                "CTA": {
-                    "type": "CTA",
-                    "value": "https://www.example.com",
-                    "displayValue": "Visit example.org!"
-                }
-            },
-            {
-                "name": "Zwierzyniecka",
-                "position": [
-                    51.10655,
-                    17.0555
-                ],
-                "accessible_by": [
-                    "bikes",
-                    "pedestrians"
-                ],
-                "type_of_place": "small bridge",
-                "UUID": "dattarro"
-            }
+  "map": {
+    "data": [
+      {
+        "name": "Grunwaldzki",
+        "position": [
+          51.1095,
+          17.0525
         ],
-        "location_obligatory_fields": [
-            ["name", "str"],
-            ["accessible_by", "list"],
-            ["type_of_place", "str"]
+        "accessible_by": [
+          "pedestrians",
+          "cars"
         ],
-        "categories": {
-            "accessible_by": [
-                "bikes",
-                "cars",
-                "pedestrians"
-            ],
-            "type_of_place": [
-                "big bridge",
-                "small bridge"
-            ]
-        },
-        "visible_data": [
-            "accessible_by",
-            "type_of_place",
-            "CTA"
-        ],
-        "meta_data": [
-            "UUID"
-        ]
-    },
-    "site_content": {
-        "pages": [
-            {
-                "title": "About",
-                "slug": "about",
-                "coverImage":{
-                  "url": "",
-                  "alternateText": ""
-                },
-                "date": "01-01-2024",
-                "author": "",
-                "comments": [],
-                "excerpt": "",
-                "tags": [],
-                "language": "pl",
-                "contentInMarkdown": "about"
-            }
-        ],
-        "menu_items": [
-            {
-                "name": "Map",
-                "url": "/"
-            },
-            {
-                "name": "about",
-                "url": "/blog/page/about"
-            }
-        ],
-        "logo_url": "https://www.problematy.pl/wp-content/uploads/2023/08/kolor_poziom-1.png",
-        "font": {
-            "name": "Poppins",
-            "url": "https://fonts.googleapis.com/css2?family=Poppins"
-        },
-        "primary_color": "#FFFFFF",
-        "secondary_color": "#245466",
-        "left_bar_width": "300px"
-    },
-    "plugins": [
-        {
-            "name": "redirections",
-            "config": {
-                "/test": "/blog/page/about",
-                "/static/map.js": "https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.3.1"
-            }
-        },
-        {
-            "name": "sendmail",
-            "config":
-            {
-                "port": 465,
-                "smtp_server": "smtp.gmail.com",
-                "receiver_email": "my@gmail.com",
-                "password": "PA$$WORD",
-                "sender_email": "sender@gmail.com",
-                "subject": "New message from website"
-            }
+        "type_of_place": "big bridge",
+        "UUID": "hidden",
+        "CTA": {
+          "type": "CTA",
+          "value": "https://www.example.com",
+          "displayValue": "Visit example.org!"
         }
+      },
+      {
+        "name": "Zwierzyniecka",
+        "position": [
+          51.10655,
+          17.0555
+        ],
+        "accessible_by": [
+          "bikes",
+          "pedestrians"
+        ],
+        "type_of_place": "small bridge",
+        "UUID": "dattarro"
+      }
+    ],
+    "location_obligatory_fields": [
+      ["name", "str"],
+      ["accessible_by", "list"],
+      ["type_of_place", "str"]
+    ],
+    "categories": {
+      "accessible_by": [
+        "bikes",
+        "cars",
+        "pedestrians"
+      ],
+      "type_of_place": [
+        "big bridge",
+        "small bridge"
+      ]
+    },
+    "visible_data": [
+      "accessible_by",
+      "type_of_place",
+      "CTA"
+    ],
+    "meta_data": [
+      "UUID"
     ]
+  },
+  "site_content": {
+    "pages": [
+      {
+        "title": "O nas",
+        "slug": "o-nas",
+        "coverImage": {
+          "url": "",
+          "alternateText": ""
+        },
+        "date": "01-01-2024",
+        "author": "",
+        "comments": [],
+        "excerpt": "",
+        "tags": [],
+        "language": "pl",
+        "contentInMarkdown": "o nas"
+      },
+      {
+        "title": "About",
+        "slug": "about",
+        "coverImage": {
+          "url": "",
+          "alternateText": ""
+        },
+        "date": "01-01-2024",
+        "author": "",
+        "comments": [],
+        "excerpt": "",
+        "tags": [],
+        "language": "en",
+        "contentInMarkdown": "about"
+      }
+    ],
+    "menu_items": {
+      "pl": [
+        {
+          "name": "Mapa",
+          "url": "/"
+        },
+        {
+          "name": "O nas",
+          "url": "/blog/page/o-nas"
+        }
+      ],
+      "en": [
+        {
+          "name": "Map",
+          "url": "/"
+        },
+        {
+          "name": "About",
+          "url": "/blog/page/about"
+        }
+      ]
+    },
+    "logo_url": "https://www.problematy.pl/wp-content/uploads/2023/08/kolor_poziom-1.png",
+    "font": {
+      "name": "Poppins",
+      "url": "https://fonts.googleapis.com/css2?family=Poppins"
+    },
+    "primary_color": "#FFFFFF",
+    "secondary_color": "#245466",
+    "left_bar_width": "300px"
+  },
+  "plugins": [
+    {
+      "name": "redirections",
+      "config": {
+        "/test": "/blog/page/about",
+        "/static/map.js": "https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.3.4"
+      }
+    },
+    {
+      "name": "sendmail",
+      "config": {
+        "port": 465,
+        "smtp_server": "smtp.gmail.com",
+        "receiver_email": "my@gmail.com",
+        "password": "PA$$WORD",
+        "sender_email": "sender@gmail.com",
+        "subject": "New message from website"
+      }
+    }
+  ]
 }
