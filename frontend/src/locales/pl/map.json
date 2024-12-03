@@ -6,5 +6,6 @@
     "reportNotHere": "punktu nie ma w tym miejscu",
     "reportOverload": "przepełniony",
     "reportBroken": "punkt jest zniszczony",
-    "reportOther": "inny"
+    "reportOther": "inny",
+    "submitProblem": "Wyślij"
 }
