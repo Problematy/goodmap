@@ -1,3 +1,27 @@
+  const expectedPlace1 = {
+    title: "Grunwaldzki",
+    subtitle: "big bridge",
+    categories: [
+      ["type_of_place", "big bridge"],
+      ["accessible_by", "pedestrians, cars"]
+    ],
+    CTA: {
+      "type": "CTA",
+      "value": "https://www.example.com",
+      "displayValue": "Visit example.org!"
+    }
+  };
+  const expectedPlace2 = {
+    title: "Zwierzyniecka",
+    subtitle: "small bridge",
+    categories: [
+      ["type_of_place", "small bridge"],
+      ["accessible_by", "bikes, pedestrians"]
+    ]
+  };
+
+export const expectedPlaces = [expectedPlace1, expectedPlace2];
+
 const zoomInTimes = 1;
 
 export function zoomInMap() {
@@ -6,23 +30,6 @@ export function zoomInMap() {
     cy.wait(500);
   }
 }
-
-export function verifyPopupContent(expectedContent) {
-    cy.get('.point-subtitle')
-      .should('have.text', expectedContent.subtitle);
-
-    expectedContent.categories.forEach(([category, value]) => {
-      cy.contains(category).should('exist');
-      cy.contains(value).should('exist');
-    });
-
-    if (expectedContent.CTA) {
-      cy.contains(expectedContent.CTA.displayValue).should('exist');
-      cy.contains('button', expectedContent.CTA.displayValue).click();
-      cy.get('@openStub').should('have.been.calledOnceWith',
-        expectedContent.CTA.value, '_blank');
-    }
-  }
 
 // TODO - Find a way to search for a specific point, not iterate over all of them
 export function verifyArbitraryPopupContent(expectedPlaces) {
@@ -38,34 +45,22 @@ export function verifyArbitraryPopupContent(expectedPlaces) {
         });
 }
 
+function verifyPopupContent(expectedContent) {
+    cy.get('.point-subtitle')
+      .should('have.text', expectedContent.subtitle);
 
-function desktopTest() {
-    zoomInMap();
-
-    cy.get('.leaflet-marker-icon').each(($marker) => {
-      cy.wrap($marker).click();
-      cy.wait(500);
-      verifyPopupElementsOnDesktop();
+    expectedContent.categories.forEach(([category, value]) => {
+      cy.contains(category).should('exist');
+      cy.contains(value).should('exist');
     });
-}
 
-function MobileTest() {
-      cy.on('window:before:load', (win) => {
-        Object.defineProperty(win.navigator, 'userAgent', {
-          value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1',
-        });
-      })
-
-    zoomInMap();
-
-    cy.get('.leaflet-marker-icon').each(($marker) => {
-      cy.wrap($marker).click();
-      cy.wait(500);
-      verifyPopupElementsOnMobile
-    });
-}
-
-
+    if (expectedContent.CTA) {
+      cy.contains(expectedContent.CTA.displayValue).should('exist');
+      cy.contains('button', expectedContent.CTA.displayValue).click();
+      cy.get('@openStub').should('have.been.calledOnceWith',
+        expectedContent.CTA.value, '_blank');
+    }
+  }
 
 export function verifyProblemForm() {
   cy.contains('report a problem').should('exist').click();
@@ -90,32 +85,4 @@ export function verifyProblemForm() {
     cy.get('input[name="problem"]').type('Custom issue description');
     cy.get('input[type="submit"]').should('exist').click();
   });
-
-}
-
-function verifyPopupElementsOnDesktop() {
-      cy.get('.leaflet-popup-content').should('exist')
-        .within(() => {
-          verifyArbitraryPopupContent(expectedPlaces);
-
-          verifyProblemForm();
-        });
-      cy.get('.leaflet-popup-close-button').should('exist').then(($button) => {
-        cy.wrap($button).click();
-        cy.wait(500);
-      });
-}
-
-function verifyPopupElementsOnMobile() {
-      cy.get('.MuiDialogContent-root').should('exist')
-        .within(() => {
-          verifyArbitraryPopupContent(expectedPlaces);
-
-          verifyProblemForm();
-          // Verify "navigate me" button
-        });
-        cy.get('.MuiIconButton-root').should('exist').then(($button) => {
-          cy.wrap($button).click();
-          cy.wait(500);
-        });
 }

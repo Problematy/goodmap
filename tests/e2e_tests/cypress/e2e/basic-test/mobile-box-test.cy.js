@@ -1,36 +1,11 @@
-import {zoomInMap, verifyPopupContent, verifyArbitraryPopupContent, verifyProblemForm} from "./commons.js"
-
-  const expectedPlace1 = {
-    title: "Grunwaldzki",
-    subtitle: "big bridge",
-    categories: [
-      ["type_of_place", "big bridge"],
-      ["accessible_by", "pedestrians, cars"]
-    ],
-    CTA: {
-      "type": "CTA",
-      "value": "https://www.example.com",
-      "displayValue": "Visit example.org!"
-    }
-  };
-  const expectedPlace2 = {
-    title: "Zwierzyniecka",
-    subtitle: "small bridge",
-    categories: [
-      ["type_of_place", "small bridge"],
-      ["accessible_by", "bikes, pedestrians"]
-    ]
-  };
-
-const expectedPlaces = [expectedPlace1, expectedPlace2];
+import {zoomInMap, verifyArbitraryPopupContent, verifyProblemForm, expectedPlaces} from "./commons.js"
 
 describe('Popup Tests on Mobile', () => {
-  const viewports = ['iphone-x', 'iphone-6', 'ipad-2', 'samsung-s10']
+  const viewports = ['iphone-x', 'iphone-6', 'ipad-2', 'samsung-s10'];
 
   viewports.forEach((viewport) => {
 
     it(`displays title and subtitle in the popup on ${viewport}`, () => {
-
       cy.on('window:before:load', (win) => {
         Object.defineProperty(win.navigator, 'userAgent', {
           value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1',

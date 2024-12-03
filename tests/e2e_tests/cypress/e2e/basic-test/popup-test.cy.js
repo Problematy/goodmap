@@ -1,34 +1,10 @@
-import {zoomInMap, verifyPopupContent, verifyArbitraryPopupContent, verifyProblemForm} from "./commons.js"
-
+import {zoomInMap, verifyArbitraryPopupContent, verifyProblemForm, expectedPlaces} from "./commons.js"
 
 describe('Popup Tests', () => {
   beforeEach(() => {
     cy.visit('/');
-    cy.wait(1000);
+    cy.wait(500);
   })
-  const expectedPlace1 = {
-    title: "Grunwaldzki",
-    subtitle: "big bridge",
-    categories: [
-      ["type_of_place", "big bridge"],
-      ["accessible_by", "pedestrians, cars"]
-    ],
-    CTA: {
-      "type": "CTA",
-      "value": "https://www.example.com",
-      "displayValue": "Visit example.org!"
-    }
-  }
-  const expectedPlace2 = {
-    title: "Zwierzyniecka",
-    subtitle: "small bridge",
-    categories: [
-      ["type_of_place", "small bridge"],
-      ["accessible_by", "bikes, pedestrians"]
-    ]
-  }
-const expectedPlaces = [expectedPlace1, expectedPlace2];
-
 
   it('displays title and subtitle in the popup', () => {
     cy.window().then((win) => {
@@ -44,7 +20,8 @@ const expectedPlaces = [expectedPlace1, expectedPlace2];
         .within(() => {
           verifyArbitraryPopupContent(expectedPlaces);
 
-//          verifyProblemForm();
+        // TODO BUG: when problem form is opened on desktop, the close button may be hidden
+        // Fix this and add checking problem form in this test
         });
       cy.get('.leaflet-popup-close-button').should('exist').then(($button) => {
         cy.wrap($button).click();
