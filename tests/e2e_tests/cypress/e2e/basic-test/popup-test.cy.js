@@ -1,4 +1,4 @@
-import {zoomInMap, verifyArbitraryPopupContent, verifyProblemForm, expectedPlaces} from "./commons.js"
+import { zoomInMap, verifyArbitraryPopupContent, expectedPlaces } from "./commons.js"
 
 describe('Popup Tests', () => {
   beforeEach(() => {
@@ -20,8 +20,8 @@ describe('Popup Tests', () => {
         .within(() => {
           verifyArbitraryPopupContent(expectedPlaces);
 
-        // TODO BUG: when problem form is opened on desktop, the close button may be hidden
-        // Fix this and add checking problem form in this test
+          // TODO BUG: when problem form is opened on desktop, the close button may be hidden
+          // Fix this and add checking problem form in this test
         });
       cy.get('.leaflet-popup-close-button').should('exist').then(($button) => {
         cy.wrap($button).click();

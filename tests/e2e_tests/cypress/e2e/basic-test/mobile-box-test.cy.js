@@ -1,4 +1,4 @@
-import {zoomInMap, verifyArbitraryPopupContent, verifyProblemForm, expectedPlaces} from "./commons.js"
+import { zoomInMap, verifyArbitraryPopupContent, verifyProblemForm, expectedPlaces } from "./commons.js"
 
 describe('Popup Tests on Mobile', () => {
   const viewports = ['iphone-x', 'iphone-6', 'ipad-2', 'samsung-s10'];
@@ -21,20 +21,20 @@ describe('Popup Tests on Mobile', () => {
 
       zoomInMap();
 
-        cy.get('.leaflet-marker-icon').each(($marker) => {
-          cy.wrap($marker).click();
-          cy.wait(500);
+      cy.get('.leaflet-marker-icon').each(($marker) => {
+        cy.wrap($marker).click();
+        cy.wait(500);
 
-          cy.get('.MuiDialogContent-root').should('exist')
-            .within(() => {
-              verifyArbitraryPopupContent(expectedPlaces);
-              verifyProblemForm();
-            });
-          cy.get('.MuiIconButton-root').should('exist').then(($button) => {
-            cy.wrap($button).click();
-            cy.wait(500);
+        cy.get('.MuiDialogContent-root').should('exist')
+          .within(() => {
+            verifyArbitraryPopupContent(expectedPlaces);
+            verifyProblemForm();
           });
+        cy.get('.MuiIconButton-root').should('exist').then(($button) => {
+          cy.wrap($button).click();
+          cy.wait(500);
         });
+      });
     });
   });
 });
