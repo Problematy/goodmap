@@ -1,13 +1,13 @@
 const zoomInTimes = 1;
 
-function zoomInMap() {
+export function zoomInMap() {
   for (let i = 0; i < zoomInTimes; i++) {
     cy.get('.leaflet-marker-icon').first().click();
     cy.wait(500);
   }
 }
 
-function verifyPopupContent(expectedContent) {
+export function verifyPopupContent(expectedContent) {
     cy.get('.point-subtitle')
       .should('have.text', expectedContent.subtitle);
 
@@ -24,9 +24,12 @@ function verifyPopupContent(expectedContent) {
     }
   }
 
-function verifyArbitraryPopupContent(expectedPlaces) {
+// TODO - Find a way to search for a specific point, not iterate over all of them
+export function verifyArbitraryPopupContent(expectedPlaces) {
       cy.get('.point-title').should('exist').invoke('text')
         .then((title) => {
+          const expectedPlace1 = expectedPlaces[0];
+          const expectedPlace2 = expectedPlaces[1];
           if (title === expectedPlace1.title) {
             verifyPopupContent(expectedPlace1);
           } else if (title === expectedPlace2.title) {
@@ -64,7 +67,7 @@ function MobileTest() {
 
 
 
-function verifyProblemForm() {
+export function verifyProblemForm() {
   cy.contains('report a problem').should('exist').click();
 
   cy.get('form').should('exist').within(() => {
@@ -110,7 +113,7 @@ function verifyPopupElementsOnMobile() {
 
           verifyProblemForm();
           // Verify "navigate me" button
-        }
+        });
         cy.get('.MuiIconButton-root').should('exist').then(($button) => {
           cy.wrap($button).click();
           cy.wait(500);

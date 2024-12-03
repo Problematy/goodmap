@@ -1,5 +1,4 @@
-describe('Popup Tests on Mobile', () => {
-  const viewports = ['iphone-x', 'iphone-6', 'ipad-2', 'samsung-s10']
+import {zoomInMap, verifyPopupContent, verifyArbitraryPopupContent, verifyProblemForm} from "./commons.js"
 
   const expectedPlace1 = {
     title: "Grunwaldzki",
@@ -23,6 +22,11 @@ describe('Popup Tests on Mobile', () => {
     ]
   };
 
+const expectedPlaces = [expectedPlace1, expectedPlace2];
+
+describe('Popup Tests on Mobile', () => {
+  const viewports = ['iphone-x', 'iphone-6', 'ipad-2', 'samsung-s10']
+
   viewports.forEach((viewport) => {
 
     it(`displays title and subtitle in the popup on ${viewport}`, () => {
@@ -33,88 +37,29 @@ describe('Popup Tests on Mobile', () => {
         });
       })
       cy.viewport(viewport);
-
       cy.visit('/');
       cy.wait(500);
-
 
       cy.window().then((win) => {
         cy.stub(win, 'open').as('openStub');
       });
 
+      zoomInMap();
 
-
-      const zoomInTimes = 1;
-      for (let i = 0; i < zoomInTimes; i++) {
-        cy.get('.leaflet-marker-icon').first().click({ force: true });
-        cy.wait(500);
-      }
-
-      // TODO - Find a way to search for a specific point, not iterate over all of them
-      cy.get('.leaflet-marker-icon').each(($marker) => {
-        cy.wrap($marker).click({ force: true });
-        cy.wait(500);
-
-        cy.get('.MuiDialogContent-root').should('exist')
-          .within(() => {
-
-            function verifyPopupContent(expectedContent) {
-              cy.get('.point-subtitle')
-                .should('have.text', expectedContent.subtitle);
-
-              expectedContent.categories.forEach(([category, value]) => {
-                cy.contains(category).should('exist');
-                cy.contains(value).should('exist');
-              });
-
-              if (expectedContent.CTA) {
-                cy.contains(expectedContent.CTA.displayValue).should('exist');
-                cy.contains('button', expectedContent.CTA.displayValue).click({ force: true });
-                cy.get('@openStub').should('have.been.calledOnceWith',
-                  expectedContent.CTA.value, '_blank');
-              }
-            }
-
-
-            cy.get('.point-title').should('exist').invoke('text')
-              .then((title) => {
-                if (title === expectedPlace1.title) {
-                  verifyPopupContent(expectedPlace1);
-                } else if (title === expectedPlace2.title) {
-                  verifyPopupContent(expectedPlace2);
-                }
-              });
-            cy.contains('report a problem').should('exist').click({ force: true });
-
-            cy.get('form').should('exist').within(() => {
-              cy.get('select').should('exist').within(() => {
-                cy.get('option').then((options) => {
-                  const optionValues = [...options].map(option => option.textContent.trim());
-                  expect(optionValues).to.include.members([
-                    '--Please choose an option--',
-                    'this point is not here',
-                    "it's overloaded",
-                    "it's broken",
-                    'other',
-                  ]);
-                });
-              });
-
-              cy.get('select').select('other');
-              cy.get('input[name="problem"]').should('exist');
-
-              cy.get('input[name="problem"]').type('Custom issue description');
-              cy.get('input[type="submit"]').should('exist').click();
-            });
-
-          });
-
-        cy.get('.MuiIconButton-root').should('exist').then(($button) => {
-          cy.wrap($button).click({ force: true });
+        cy.get('.leaflet-marker-icon').each(($marker) => {
+          cy.wrap($marker).click();
           cy.wait(500);
+
+          cy.get('.MuiDialogContent-root').should('exist')
+            .within(() => {
+              verifyArbitraryPopupContent(expectedPlaces);
+              verifyProblemForm();
+            });
+          cy.get('.MuiIconButton-root').should('exist').then(($button) => {
+            cy.wrap($button).click();
+            cy.wait(500);
+          });
         });
-      });
     });
   });
-
 });
