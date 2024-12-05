@@ -8,5 +8,6 @@
     "reportBroken": "punkt jest zniszczony",
     "reportOther": "inny",
     "submitProblem": "Wyślij",
-    "describeOtherProblem": "Opisz problem"
+    "describeOtherProblem": "Opisz problem",
+    "navigateMeButton": "Prowadź mnie"
 }

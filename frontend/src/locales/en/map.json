@@ -8,5 +8,6 @@
     "reportBroken": "it's broken",
     "reportOther": "other",
     "submitProblem": "Submit",
-    "describeOtherProblem": "Please describe"
+    "describeOtherProblem": "Please describe",
+    "navigateMeButton": "Navigate me"
 }

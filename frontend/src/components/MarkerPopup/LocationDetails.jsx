@@ -30,25 +30,28 @@ LocationDetailsValue.propTypes = {
     ]).isRequired,
 };
 
-const NavigateMeButton = ({ place }) => (
-    <a
-        href={`geo:${place.position[0]},${place.position[1]}?q=${place.position[0]},${place.position[1]}`}
-        style={{ textDecoration: 'none', alignItems: 'center', height: '20%' }}
-    >
-        <p
-            style={{
-                ...buttonStyleSmall,
-                marginTop: '8px',
-                marginBottom: '8px',
-                justifyContent: 'center',
-                display: 'flex',
-            }}
+const NavigateMeButton = ({ place }) => {
+    const { t } = useTranslation();
+    return (
+        <a
+            href={`geo:${place.position[0]},${place.position[1]}?q=${place.position[0]},${place.position[1]}`}
+            style={{ textDecoration: 'none', alignItems: 'center', height: '20%' }}
         >
-            <ExploreIcon style={{ color: 'white', marginRight: '10px' }} />
-            <span>Navigate me</span>
-        </p>
-    </a>
-);
+            <p
+                style={{
+                    ...buttonStyleSmall,
+                    marginTop: '8px',
+                    marginBottom: '8px',
+                    justifyContent: 'center',
+                    display: 'flex',
+                }}
+            >
+                <ExploreIcon style={{ color: 'white', marginRight: '10px' }} />
+                <span>{t('navigateMeButton')}</span>
+            </p>
+        </a>
+    );
+};
 
 const LocationDetails = ({ place }) => {
     const categoriesWithSubcategories = place.data.filter(([category]) => !(category === 'CTA'));

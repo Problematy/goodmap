@@ -1,5 +1,8 @@
 - Feature: Suggesting new points button
 
+# 0.3.7
+- Added translation for navigate me button
+
 # 0.3.6
 - Added UA translations
 
