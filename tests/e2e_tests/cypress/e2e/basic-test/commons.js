@@ -22,15 +22,6 @@ const expectedPlace2 = {
 
 export const expectedPlaces = [expectedPlace1, expectedPlace2];
 
-const zoomInTimes = 1;
-
-export function zoomInMap() {
-  for (let i = 0; i < zoomInTimes; i++) {
-    cy.get('.leaflet-marker-icon').first().click();
-    cy.wait(500);
-  }
-}
-
 // TODO - Find a way to search for a specific point, not iterate over all of them
 export function verifyArbitraryPopupContent(expectedPlaces) {
   cy.get('.point-title').should('exist').invoke('text')

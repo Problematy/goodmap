@@ -19,7 +19,8 @@ describe('Popup Tests on Mobile', () => {
         cy.stub(win, 'open').as('openStub');
       });
 
-      zoomInMap();
+      cy.get('.leaflet-marker-icon').first().click();
+      cy.wait(500);
 
       cy.get('.leaflet-marker-icon').each(($marker) => {
         cy.wrap($marker).click();
