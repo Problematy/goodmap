@@ -46,10 +46,10 @@ def core_pages(
             """Suggest new location"""
             try:
                 suggested_location = request.get_json()
-                suggested_location.update({"UUID": str(uuid.uuid4())})
+                suggested_location.update({"uuid": str(uuid.uuid4())})
                 location = location_model.model_validate(suggested_location)
                 message = (
-                    f"A new location has been suggested under UUID: '{location.UUID}' "
+                    f"A new location has been suggested under uuid: '{location.uuid}' "
                     f"at position: {location.position}"
                 )
                 notifier_function(message)
@@ -102,7 +102,7 @@ def core_pages(
     class GetLocations(Resource):
         def get(self):
             """
-            Shows list of locations with UUID and position
+            Shows list of locations with uuid and position
             """
             query_params = request.args.to_dict(flat=False)
             all_locations = database.get_locations(query_params)
