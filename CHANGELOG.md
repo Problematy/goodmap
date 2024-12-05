@@ -1,5 +1,8 @@
 # Changelog
 
+#### 0.4.2
+  * fixed wrong typing uuid
+
 #### 0.4.1
   * added translations to goodmap
   * added lazy loading

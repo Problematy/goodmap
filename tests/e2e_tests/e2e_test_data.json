@@ -12,7 +12,7 @@
           "cars"
         ],
         "type_of_place": "big bridge",
-        "UUID": "hidden",
+        "uuid": "hidden",
         "CTA": {
           "type": "CTA",
           "value": "https://www.example.com",
@@ -30,7 +30,7 @@
           "pedestrians"
         ],
         "type_of_place": "small bridge",
-        "UUID": "dattarro"
+        "uuid": "dattarro"
       }
     ],
     "location_obligatory_fields": [
@@ -55,7 +55,7 @@
       "CTA"
     ],
     "meta_data": [
-      "UUID"
+      "uuid"
     ]
   },
   "site_content": {
@@ -127,7 +127,7 @@
       "name": "redirections",
       "config": {
         "/test": "/blog/page/about",
-        "/static/map.js": "https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.3.4"
+        "/static/map.js": "https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.3.5"
       }
     }
   ]
