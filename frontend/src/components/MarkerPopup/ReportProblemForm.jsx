@@ -84,15 +84,15 @@ export const ReportProblemForm = ({ placeId }) => {
                 Problem:
                 <Select value={problemType} onChange={e => setProblemType(e.target.value)}>
                     <option value="">--{t('reportChooseOption')}--</option>
-                    <option value={t('reportNotHere')}>{t('reportNotHere')}</option>
-                    <option value={t('reportOverload')}>{t('reportOverload')}</option>
-                    <option value={t('reportBroken')}>{t('reportBroken')}</option>
-                    <option value={t('reportOther')}>{t('reportOther')}</option>
+                    <option value="notHere">{t('reportNotHere')}</option>
+                    <option value="overload">{t('reportOverload')}</option>
+                    <option value="broken">{t('reportBroken')}</option>
+                    <option value="other">{t('reportOther')}</option>
                 </Select>
             </Label>
             {problemType === 'other' && (
                 <Label>
-                    Please describe:
+                    {t('describeOtherProblem')}:
                     <Input
                         type="text"
                         name="problem"
@@ -101,7 +101,7 @@ export const ReportProblemForm = ({ placeId }) => {
                     />
                 </Label>
             )}
-            {problemType !== `` && <SubmitButton type="submit" value={t('submitProblem')} />}
+            {problemType !== '' && <SubmitButton type="submit" value={t('submitProblem')} />}
         </Form>
     );
 };

@@ -149,7 +149,7 @@ export const LocationDetailsBox = ({ place }) => {
             >
                 {t('ReportIssueButton')}
             </p>
-            {showForm && <ReportProblemForm placeId={place.metadata.UUID} />}
+            {showForm && <ReportProblemForm placeId={place.metadata.uuid} />}
         </React.Fragment>
     );
 };

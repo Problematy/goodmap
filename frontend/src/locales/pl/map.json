@@ -7,5 +7,6 @@
     "reportOverload": "przepełniony",
     "reportBroken": "punkt jest zniszczony",
     "reportOther": "inny",
-    "submitProblem": "Wyślij"
+    "submitProblem": "Wyślij",
+    "describeOtherProblem": "Opisz problem"
 }

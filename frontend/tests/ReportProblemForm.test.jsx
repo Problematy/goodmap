@@ -11,7 +11,7 @@ describe('ReportProblemForm', () => {
     it('submits the form with selected problem type', async () => {
         const { getByText, getByLabelText } = render(<ReportProblemForm placeId="test-id" />);
         const select = getByLabelText(/Problem:/i);
-        fireEvent.change(select, { target: { value: "it's broken" } });
+        fireEvent.change(select, { target: { value: 'broken' } });
 
         axios.get.mockResolvedValue({ data: { csrf_token: 'test-csrf-token' } });
         axios.post.mockResolvedValue({ data: { success: true } });
@@ -21,7 +21,7 @@ describe('ReportProblemForm', () => {
         await waitFor(() => {
             expect(axios.post).toHaveBeenCalledWith(
                 '/api/report-location',
-                { description: "it's broken", id: 'test-id' },
+                { description: 'broken', id: 'test-id' },
                 {
                     headers: {
                         'Content-Type': 'application/json',

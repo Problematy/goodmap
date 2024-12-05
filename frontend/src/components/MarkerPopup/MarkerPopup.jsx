@@ -43,11 +43,11 @@ const LocationDetailsBoxWrapper = ({ theplace }) => {
 
     useEffect(() => {
         const fetchPlace = async () => {
-            const fetchedPlace = await httpService.getLocation(theplace.UUID);
+            const fetchedPlace = await httpService.getLocation(theplace.uuid);
             setPlace(fetchedPlace);
         };
         fetchPlace();
-    }, [theplace.UUID]);
+    }, [theplace.uuid]);
 
     return (
         <ChosenPopup>

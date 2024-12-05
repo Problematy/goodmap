@@ -7,5 +7,6 @@
     "reportOverload": "it's overloaded",
     "reportBroken": "it's broken",
     "reportOther": "other",
-    "submitProblem": "Submit"
+    "submitProblem": "Submit",
+    "describeOtherProblem": "Please describe"
 }
