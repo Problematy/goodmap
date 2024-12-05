@@ -129,17 +129,6 @@
         "/test": "/blog/page/about",
         "/static/map.js": "https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.3.4"
       }
-    },
-    {
-      "name": "sendmail",
-      "config": {
-        "port": 465,
-        "smtp_server": "smtp.gmail.com",
-        "receiver_email": "my@gmail.com",
-        "password": "PA$$WORD",
-        "sender_email": "sender@gmail.com",
-        "subject": "New message from website"
-      }
     }
   ]
 }
