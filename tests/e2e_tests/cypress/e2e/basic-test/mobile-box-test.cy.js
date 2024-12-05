@@ -1,4 +1,4 @@
-import { zoomInMap, verifyArbitraryPopupContent, verifyProblemForm, expectedPlaces } from "./commons.js"
+import { verifyArbitraryPopupContent, verifyProblemForm, expectedPlaces } from "./commons.js"
 
 describe('Popup Tests on Mobile', () => {
   const viewports = ['iphone-x', 'iphone-6', 'ipad-2', 'samsung-s10'];

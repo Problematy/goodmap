@@ -1,4 +1,4 @@
-import { zoomInMap, verifyArbitraryPopupContent, expectedPlaces } from "./commons.js"
+import { verifyArbitraryPopupContent, expectedPlaces } from "./commons.js"
 
 describe('Popup Tests', () => {
   beforeEach(() => {
