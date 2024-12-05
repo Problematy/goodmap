@@ -1,0 +1,12 @@
+{
+    "search": "Пошук",
+    "centerButtonAriaLabel": "Іконка для визначення місцезнаходження, використовується для встановлення місця на карті.",
+    "ReportIssueButton": "повідомити про проблему",
+    "reportChooseOption": "Оберіть варіант",
+    "reportNotHere": "точка відсутня у цьому місці",
+    "reportOverload": "переповнений",
+    "reportBroken": "точка зруйнована",
+    "reportOther": "інше",
+    "submitProblem": "Відправити",
+    "describeOtherProblem": "Опишіть проблему"
+}

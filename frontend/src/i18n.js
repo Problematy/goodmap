@@ -3,6 +3,7 @@ import { initReactI18next } from 'react-i18next';
 
 import enMap from './locales/en/map.json';
 import plMap from './locales/pl/map.json';
+import uaMap from './locales/ua/map.json';
 
 i18n.use(initReactI18next).init({
     resources: {
@@ -11,6 +12,9 @@ i18n.use(initReactI18next).init({
         },
         pl: {
             map: plMap,
+        },
+        uk: {
+            map: uaMap,
         },
     },
     lng: window.APP_LANG,
