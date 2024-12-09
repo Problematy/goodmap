@@ -36,7 +36,7 @@ export function verifyArbitraryPopupContent(expectedPlaces) {
     });
 }
 
-function verifyPopupContent(expectedContent) {
+export function verifyPopupContent(expectedContent) {
   cy.get('.point-subtitle')
     .should('have.text', expectedContent.subtitle);
 
