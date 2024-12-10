@@ -19,17 +19,13 @@ describe("Recording 09/12/2024 at 11:45:39", () => {
         verifyPopupContent(expectedPlaces[1]);
       });
 
-    cy.get('[style="cursor: pointer; text-align: right; color: red; margin-top: 5px; margin-bottom: 5px;"]').click();
-    cy.get('.sc-egkSDF').select('broken');
-    cy.get('.sc-dntaoT').click();
     cy.wait(1000)
     cy.get('.leaflet-popup-close-button > span').click();
     cy.wait(1000)
+
     /* ==== Generated with Cypress Studio ==== */
-    cy.get('[style="margin-left: -12px; margin-top: -41px; width: 25px; height: 41px; transform: translate3d(311px, 190px, 0px); z-index: 190; opacity: 1;"]').click();
-    cy.wait(1000)
+    cy.get('[style="margin-left: -12px; margin-top: -41px; width: 25px; height: 41px; transform: translate3d(381px, 223px, 0px); z-index: 223; opacity: 1;"]').click();
     cy.get('b > button').click();
-    cy.wait(1000)
     cy.get('.leaflet-popup-close-button > span').click();
     /* ==== End Cypress Studio ==== */
   });
