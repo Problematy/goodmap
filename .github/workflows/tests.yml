@@ -49,6 +49,6 @@ jobs:
         sleep 3
         cd tests/e2e_tests && node_modules/cypress/bin/cypress run --browser chromium
         for run in {1..100}; do
-          cd tests/e2e_tests && node_modules/cypress/bin/cypress run --browser chromium --spec 'cypress/e2e/basic-test/recorded-test.cy.js'
+          node_modules/cypress/bin/cypress run --browser chromium --spec 'cypress/e2e/basic-test/recorded-test.cy.js'
         done
         shell: bash
