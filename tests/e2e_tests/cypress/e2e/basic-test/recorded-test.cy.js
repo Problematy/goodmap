@@ -7,6 +7,9 @@ describe("Recording 09/12/2024 at 11:45:39", () => {
     cy.wait(500);
   })
   it("tests Recording 09/12/2024 at 11:45:39", () => {
+    cy.window().then((win) => {
+      cy.stub(win, 'open').as('openStub');
+    });
     cy.get('.leaflet-marker-icon > div').click();
     cy.wait(1000)
     cy.get('[style="margin-left: -12px; margin-top: -41px; width: 25px; height: 41px; transform: translate3d(451px, 333px, 0px); z-index: 333; opacity: 1;"]').click();
@@ -22,5 +25,12 @@ describe("Recording 09/12/2024 at 11:45:39", () => {
     cy.wait(1000)
     cy.get('.leaflet-popup-close-button > span').click();
     cy.wait(1000)
+    /* ==== Generated with Cypress Studio ==== */
+    cy.get('[style="margin-left: -12px; margin-top: -41px; width: 25px; height: 41px; transform: translate3d(311px, 190px, 0px); z-index: 190; opacity: 1;"]').click();
+    cy.wait(1000)
+    cy.get('b > button').click();
+    cy.wait(1000)
+    cy.get('.leaflet-popup-close-button > span').click();
+    /* ==== End Cypress Studio ==== */
   });
 });
