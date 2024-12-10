@@ -5,6 +5,7 @@ module.exports = defineConfig({
     baseUrl: 'http://www.goodmap.localhost:5000/',
     setupNodeEvents(on, config) {
       return config;
-    }
+    },
+    experimentalStudio: true,
 }
 });
