@@ -36,6 +36,20 @@ export function verifyArbitraryPopupContent(expectedPlaces) {
     });
 }
 
+export function getRightmostMarker(markers) {
+    let rightmostMarker;
+    let maxX = -Infinity;
+
+    Cypress.$(markers).each((index, marker) => {
+    const rect = marker.getBoundingClientRect();
+    if (rect.x > maxX) {
+        maxX = rect.x;
+        rightmostMarker = marker;
+    }
+    });
+    return rightmostMarker;
+}
+
 export function verifyPopupContent(expectedContent) {
   cy.get('.point-subtitle')
     .should('have.text', expectedContent.subtitle);
