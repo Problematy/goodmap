@@ -71,6 +71,8 @@ def test_app(notifier_function, db_mock):
     return app.test_client()
 
 
+@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("flask_babel.gettext", fake_translation)
 def test_reporting_location_is_sending_message_with_name_and_position(test_app, notifier_function):
     data = {"id": "location-id", "description": "some error"}
     headers = {"Content-Type": "application/json"}
@@ -82,6 +84,8 @@ def test_reporting_location_is_sending_message_with_name_and_position(test_app, 
     assert response.status_code == 200
 
 
+@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("flask_babel.gettext", fake_translation)
 def test_reporting_returns_error_when_wrong_json(test_app, notifier_function):
     data = {"name": "location-id", "position": 50}
     headers = {"Content-Type": "application/json"}
