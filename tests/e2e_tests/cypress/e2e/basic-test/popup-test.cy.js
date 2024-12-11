@@ -20,8 +20,8 @@ describe("Popup Tests on desktop", () => {
 
     cy.get('.leaflet-popup-content').should('exist').within(() => {
       verifyPopupContent(expectedPlaces[1]);
-          // TODO BUG: when problem form is opened on desktop, the close button may be hidden
-          // Fix this and add checking problem form in this test
+      // TODO BUG: when problem form is opened on desktop, the close button may be hidden
+      // Fix this and add checking problem form in this test
     });
     cy.get('.leaflet-popup-close-button').should('exist').click();
   });
