@@ -19,7 +19,14 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.16.0\n"
 
+#: goodmap/core_api.py:75
+msgid "Error sending notification"
+msgstr "Błąd wysyłania powiadomienia"
+
+#: goodmap/core_api.py:77
+msgid "Location reported"
+msgstr "Lokalizacja zgłoszona"
+
 #: goodmap/templates/map.html:38
 msgid "Loading"
 msgstr "Ładowanie"
-
