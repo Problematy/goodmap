@@ -72,9 +72,9 @@ def core_pages(
                 )
                 notifier_function(message)
             except Exception as e:
-                error_message = gettext('Error sending notification')
+                error_message = gettext("Error sending notification")
                 return make_response(jsonify({"message": f"{error_message} : {e}"}), 400)
-            return make_response(jsonify({"message": gettext('Location reported')}), 200)
+            return make_response(jsonify({"message": gettext("Location reported")}), 200)
 
     @core_api.route("/data")
     class Data(Resource):
