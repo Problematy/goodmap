@@ -41,18 +41,19 @@ export function getRightmostMarker(markers) {
     let maxX = -Infinity;
 
     Cypress.$(markers).each((index, marker) => {
-    const rect = marker.getBoundingClientRect();
-    if (rect.x > maxX) {
-        maxX = rect.x;
-        rightmostMarker = marker;
-    }
+      const rect = marker.getBoundingClientRect();
+      if (rect.x > maxX) {
+          maxX = rect.x;
+                    rightmostMarker = marker;
+      }
     });
     return rightmostMarker;
 }
 
 export function verifyPopupContent(expectedContent) {
-  cy.get('.point-subtitle')
-    .should('have.text', expectedContent.subtitle);
+  cy.get('.point-title').should('have.text', expectedContent.title);
+
+  cy.get('.point-subtitle').should('have.text', expectedContent.subtitle);
 
   expectedContent.categories.forEach(([category, value]) => {
     cy.contains(category).should('exist');
