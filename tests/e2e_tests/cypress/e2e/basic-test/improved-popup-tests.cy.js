@@ -1,4 +1,4 @@
-import { verifyPopupContent, expectedPlaces } from "./commons.js"
+import { verifyPopupContent, expectedPlaces, getRightmostMarker } from "./commons.js"
 
 describe("Improved Popup Tests", () => {
   beforeEach(() => {
@@ -11,21 +11,11 @@ describe("Improved Popup Tests", () => {
     });
 
     cy.get('.leaflet-marker-icon').click();
-
     cy.get('.leaflet-marker-icon').should('have.length', 2);
 
     cy.get('.leaflet-marker-icon').then((markers) => {
-    let rightmostMarker;
-      let maxX = -Infinity;
-
-      Cypress.$(markers).each((index, marker) => {
-        const rect = marker.getBoundingClientRect();
-        if (rect.x > maxX) {
-          maxX = rect.x;
-          rightmostMarker = marker;
-        }
-      });
-    cy.wrap(rightmostMarker).click();
+        const rightmostMarker = getRightmostMarker(markers);
+        cy.wrap(rightmostMarker).click();
     });
 
     cy.get('.leaflet-popup-content').should('exist')
@@ -33,8 +23,8 @@ describe("Improved Popup Tests", () => {
         verifyPopupContent(expectedPlaces[1]);
       });
 
-      cy.get('.leaflet-popup-close-button').should('exist').then(($button) => {
-        cy.wrap($button).click();
-      });
+    cy.get('.leaflet-popup-close-button').should('exist').then(($button) => {
+      cy.wrap($button).click();
+    });
   });
 });
