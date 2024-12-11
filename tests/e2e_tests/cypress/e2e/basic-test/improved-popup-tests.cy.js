@@ -3,7 +3,6 @@ import { verifyPopupContent, expectedPlaces } from "./commons.js"
 describe("Improved Popup Tests", () => {
   beforeEach(() => {
     cy.visit('/');
-    cy.wait(500);
   })
   const wait_duration = 500;
 

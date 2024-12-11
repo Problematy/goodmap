@@ -49,6 +49,6 @@ jobs:
         sleep 3
         cd tests/e2e_tests
         for run in {1..200}; do
-          node_modules/cypress/bin/cypress run --browser chromium -q --spec 'cypress/e2e/basic-test/improved-popup-tests.cy.js'
+          node_modules/cypress/bin/cypress run --browser chromium --spec 'cypress/e2e/basic-test/improved-popup-tests.cy.js'
         done
         node_modules/cypress/bin/cypress run --browser chromium
