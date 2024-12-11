@@ -4,7 +4,6 @@ describe("Improved Popup Tests", () => {
   beforeEach(() => {
     cy.visit('/');
   })
-  const wait_duration = 500;
 
   it("displays popup subtitle and categories and CTA", () => {
     cy.window().then((win) => {
@@ -12,7 +11,6 @@ describe("Improved Popup Tests", () => {
     });
 
     cy.get('.leaflet-marker-icon').click();
-    cy.wait(wait_duration);
 
     cy.get('.leaflet-marker-icon').should('have.length', 2);
 
@@ -30,7 +28,6 @@ describe("Improved Popup Tests", () => {
     cy.wrap(rightmostMarker).click();
     });
 
-    cy.wait(wait_duration);
     cy.get('.leaflet-popup-content').should('exist')
       .within(() => {
         verifyPopupContent(expectedPlaces[1]);
