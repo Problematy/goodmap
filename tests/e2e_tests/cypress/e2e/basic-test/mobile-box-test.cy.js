@@ -1,4 +1,4 @@
-import { verifyPopupContent, verifyProblemForm, expectedPlaces, getRightmostMarker } from "./commons.js"
+import { verifyPopupContent, verifyProblemForm, expectedPlaceZwierzyniecka, getRightmostMarker } from "./commons.js"
 
 describe('Popup Tests on Mobile', () => {
   const viewports = ['iphone-x', 'iphone-6', 'ipad-2', 'samsung-s10'];
@@ -27,7 +27,7 @@ describe('Popup Tests on Mobile', () => {
       });
 
       cy.get('.MuiDialogContent-root').should('exist').within(() => {
-        verifyPopupContent(expectedPlaces[1]);
+        verifyPopupContent(expectedPlaceZwierzyniecka);
         verifyProblemForm();
       });
       cy.get('.MuiIconButton-root').should('exist').click();
