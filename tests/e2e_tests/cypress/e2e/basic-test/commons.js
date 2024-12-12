@@ -36,6 +36,8 @@ export function verifyArbitraryPopupContent(expectedPlaces) {
     });
 }
 
+# This is workaround for a problem with getting specific marker.
+# TODO Find a way of getting specific marker or marker in specific position
 export function getRightmostMarker(markers) {
     let rightmostMarker;
     let maxX = -Infinity;
