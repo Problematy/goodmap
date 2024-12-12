@@ -47,8 +47,4 @@ jobs:
       run: |
         PYTHONUNBUFFERED=1;FLASK_ENV=development;FLASK_APP="goodmap.goodmap:create_app(config_path='./tests/e2e_tests/e2e_test_config.yml')" poetry run flask run &
         sleep 3
-        cd tests/e2e_tests
-        for run in {1..20}; do
-          node_modules/cypress/bin/cypress run --browser chromium --spec 'cypress/e2e/basic-test/popup-test.cy.js'
-        done
         node_modules/cypress/bin/cypress run --browser chromium
