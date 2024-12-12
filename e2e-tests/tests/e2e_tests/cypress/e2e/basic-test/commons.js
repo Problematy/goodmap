@@ -1,17 +1,4 @@
-const expectedPlace1 = {
-  title: "Grunwaldzki",
-  subtitle: "big bridge",
-  categories: [
-    ["type_of_place", "big bridge"],
-    ["accessible_by", "pedestrians, cars"]
-  ],
-  CTA: {
-    "type": "CTA",
-    "value": "https://www.example.com",
-    "displayValue": "Visit example.org!"
-  }
-};
-const expectedPlace2 = {
+export const expectedPlaceZwierzyniecka = {
   title: "Zwierzyniecka",
   subtitle: "small bridge",
   categories: [
@@ -20,25 +7,26 @@ const expectedPlace2 = {
   ]
 };
 
-export const expectedPlaces = [expectedPlace1, expectedPlace2];
+// This is workaround for a problem with getting specific marker.
+// TODO Find a way of getting specific marker or marker in specific position
+export function getRightmostMarker(markers) {
+  let rightmostMarker;
+  let maxX = -Infinity;
 
-// TODO - Find a way to search for a specific point, not iterate over all of them
-export function verifyArbitraryPopupContent(expectedPlaces) {
-  cy.get('.point-title').should('exist').invoke('text')
-    .then((title) => {
-      const expectedPlace1 = expectedPlaces[0];
-      const expectedPlace2 = expectedPlaces[1];
-      if (title === expectedPlace1.title) {
-        verifyPopupContent(expectedPlace1);
-      } else if (title === expectedPlace2.title) {
-        verifyPopupContent(expectedPlace2);
-      }
-    });
+  Cypress.$(markers).each((index, marker) => {
+    const rect = marker.getBoundingClientRect();
+    if (rect.x > maxX) {
+      maxX = rect.x;
+      rightmostMarker = marker;
+    }
+  });
+  return rightmostMarker;
 }
 
-function verifyPopupContent(expectedContent) {
-  cy.get('.point-subtitle')
-    .should('have.text', expectedContent.subtitle);
+export function verifyPopupContent(expectedContent) {
+  cy.get('.point-title').should('have.text', expectedContent.title);
+
+  cy.get('.point-subtitle').should('have.text', expectedContent.subtitle);
 
   expectedContent.categories.forEach(([category, value]) => {
     cy.contains(category).should('exist');
