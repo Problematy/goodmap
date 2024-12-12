@@ -82,7 +82,7 @@ TODO: `obligatory_fields` is a new subsection, start using it in the actual appl
 ```
 - `meta-data` - some special data like 
 ```
-"UUID"
+"uuid"
 ```
 
 You can define the fields in all these subsections. Besides these types of fields, there is no restriction on the number of fields a datapoint can have.

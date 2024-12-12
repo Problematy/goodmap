@@ -51,25 +51,25 @@ def get_data(db):
 # get_location
 
 
-def get_location_from_raw_data(raw_data, UUID, location_model):
-    point = next((point for point in raw_data["data"] if point["UUID"] == UUID), None)
+def get_location_from_raw_data(raw_data, uuid, location_model):
+    point = next((point for point in raw_data["data"] if point["uuid"] == uuid), None)
     return location_model.model_validate(point) if point else None
 
 
-def google_json_db_get_location(self, UUID, location_model):
+def google_json_db_get_location(self, uuid, location_model):
     return get_location_from_raw_data(
-        json.loads(self.blob.download_as_text(client=None))["map"], UUID, location_model
+        json.loads(self.blob.download_as_text(client=None))["map"], uuid, location_model
     )
 
 
-def json_file_db_get_location(self, UUID, location_model):
+def json_file_db_get_location(self, uuid, location_model):
     with open(self.data_file_path, "r") as file:
-        point = get_location_from_raw_data(json.load(file)["map"], UUID, location_model)
+        point = get_location_from_raw_data(json.load(file)["map"], uuid, location_model)
         return point
 
 
-def json_db_get_location(self, UUID, location_model):
-    return get_location_from_raw_data(self.data, UUID, location_model)
+def json_db_get_location(self, uuid, location_model):
+    return get_location_from_raw_data(self.data, uuid, location_model)
 
 
 def get_location(db, location_model):
