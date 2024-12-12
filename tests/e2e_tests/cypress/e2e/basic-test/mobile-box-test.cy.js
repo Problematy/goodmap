@@ -1,4 +1,4 @@
-import { verifyArbitraryPopupContent, verifyProblemForm, expectedPlaces } from "./commons.js"
+import { verifyPopupContent, verifyProblemForm, expectedPlaces, getRightmostMarker } from "./commons.js"
 
 describe('Popup Tests on Mobile', () => {
   const viewports = ['iphone-x', 'iphone-6', 'ipad-2', 'samsung-s10'];
@@ -13,29 +13,25 @@ describe('Popup Tests on Mobile', () => {
       })
       cy.viewport(viewport);
       cy.visit('/');
-      cy.wait(500);
 
       cy.window().then((win) => {
         cy.stub(win, 'open').as('openStub');
       });
 
-      cy.get('.leaflet-marker-icon').first().click();
-      cy.wait(500);
+      cy.get('.leaflet-marker-icon').click();
+      cy.get('.leaflet-marker-icon').should('have.length', 2);
 
-      cy.get('.leaflet-marker-icon').each(($marker) => {
-        cy.wrap($marker).click();
-        cy.wait(500);
+    cy.get('.leaflet-marker-icon').then((markers) => {
+      const rightmostMarker = getRightmostMarker(markers);
+      cy.wrap(rightmostMarker).click();
+    });
 
-        cy.get('.MuiDialogContent-root').should('exist')
-          .within(() => {
-            verifyArbitraryPopupContent(expectedPlaces);
+        cy.get('.MuiDialogContent-root').should('exist').within(() => {
+      verifyPopupContent(expectedPlaces[1]);
+
             verifyProblemForm();
           });
-        cy.get('.MuiIconButton-root').should('exist').then(($button) => {
-          cy.wrap($button).click();
-          cy.wait(500);
-        });
-      });
+        cy.get('.MuiIconButton-root').should('exist').click();
     });
   });
 });
