@@ -1,5 +1,9 @@
 # Changelog
 
+#### 0.4.3
+  * fixed Polish translation
+  * added Ukrainian translation
+
 #### 0.4.2
   * fixed wrong typing uuid
 
