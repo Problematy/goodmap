@@ -10,7 +10,7 @@ describe('Popup Tests on Mobile', () => {
         Object.defineProperty(win.navigator, 'userAgent', {
           value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1',
         });
-      })
+      });
       cy.viewport(viewport);
       cy.visit('/');
 
@@ -21,17 +21,16 @@ describe('Popup Tests on Mobile', () => {
       cy.get('.leaflet-marker-icon').click();
       cy.get('.leaflet-marker-icon').should('have.length', 2);
 
-    cy.get('.leaflet-marker-icon').then((markers) => {
-      const rightmostMarker = getRightmostMarker(markers);
-      cy.wrap(rightmostMarker).click();
-    });
+      cy.get('.leaflet-marker-icon').then((markers) => {
+        const rightmostMarker = getRightmostMarker(markers);
+        cy.wrap(rightmostMarker).click();
+      });
 
-        cy.get('.MuiDialogContent-root').should('exist').within(() => {
-      verifyPopupContent(expectedPlaces[1]);
-
-            verifyProblemForm();
-          });
-        cy.get('.MuiIconButton-root').should('exist').click();
+      cy.get('.MuiDialogContent-root').should('exist').within(() => {
+        verifyPopupContent(expectedPlaces[1]);
+        verifyProblemForm();
+      });
+      cy.get('.MuiIconButton-root').should('exist').click();
     });
   });
 });

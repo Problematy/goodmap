@@ -1,11 +1,10 @@
 import { verifyPopupContent, expectedPlaces, getRightmostMarker } from "./commons.js"
 
 describe("Popup Tests on desktop", () => {
-  beforeEach(() => {
-    cy.visit('/');
-  });
 
   it("displays popup title, subtitle, categories and CTA", () => {
+    cy.visit('/');
+
     cy.window().then((win) => {
       cy.stub(win, 'open').as('openStub');
     });
