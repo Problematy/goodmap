@@ -88,11 +88,13 @@ const exampleMapResponseJson = [
 ];
 
 describe('should autocomplete work correctly', () => {
-    beforeEach(() => {
+    beforeEach(async () => {
         jest.spyOn(global, 'fetch').mockResolvedValue({
             json: jest.fn().mockResolvedValue(exampleMapResponseJson),
         });
-        render(<AutoComplete onClick={() => {}} />);
+        await act(async () => {
+            render(<AutoComplete onClick={() => {}} />);
+        });
     });
 
     it('should render proper list', async () => {

@@ -26,7 +26,9 @@
         "transform": {
             "^.+\\.(js|jsx)$": "babel-jest"
         },
-        "setupFilesAfterEnv": ["<rootDir>/jest.setup.js"]
+        "setupFilesAfterEnv": [
+            "<rootDir>/jest.setup.js"
+        ]
     },
     "license": "MIT",
     "devDependencies": {
@@ -52,6 +54,7 @@
         "eslint-plugin-react-hooks": "^4.6.0",
         "jest": "^28.1.1",
         "jest-environment-jsdom": "^29.3.1",
+        "jest-fail-on-console": "^3.3.1",
         "prettier": "^2.8.1",
         "prettier-eslint": "^16.3.0",
         "style-loader": "^3.3.3",
