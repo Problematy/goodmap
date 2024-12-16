@@ -20,7 +20,7 @@ describe("Accessibility table test", () => {
     const latitude = 51.10655;
     const longitude = 17.0555;
     cy.visit("/", fakeLocation(latitude, longitude));
-    cy.get('button[id="navigateMeButton"]').click();
+    cy.get('button[id="listViewButton"]').click();
   });
 
   it("should properly display places", () => {
