@@ -41,26 +41,26 @@ def test_app(notifier_function, db_mock):
                 "position": [50, 50],
                 "test-category": ["test"],
                 "type_of_place": "test-place",
-                "UUID": "1",
+                "uuid": "1",
             },
             {
                 "name": "test2",
                 "position": [60, 60],
                 "test-category": ["second-category"],
                 "type_of_place": "test-place2",
-                "UUID": "2",
+                "uuid": "2",
             },
         ],
-        "meta_data": ["UUID"],
+        "meta_data": ["uuid"],
         "visible_data": ["name", "test_category", "type_of_place"],
     }
     db_mock.get_locations.return_value = [
-        LocationBase(position=(50, 50), UUID="1"),
-        LocationBase(position=(60, 60), UUID="2"),
+        LocationBase(position=(50, 50), uuid="1"),
+        LocationBase(position=(60, 60), uuid="2"),
     ]
 
     db_mock.get_location.return_value = CustomLocation(
-        position=(50, 50), UUID="1", test_category=["test"], type_of_place="test-place", name="test"
+        position=(50, 50), uuid="1", test_category=["test"], type_of_place="test-place", name="test"
     )
 
     app.register_blueprint(
@@ -71,6 +71,8 @@ def test_app(notifier_function, db_mock):
     return app.test_client()
 
 
+@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("flask_babel.gettext", fake_translation)
 def test_reporting_location_is_sending_message_with_name_and_position(test_app, notifier_function):
     data = {"id": "location-id", "description": "some error"}
     headers = {"Content-Type": "application/json"}
@@ -82,6 +84,8 @@ def test_reporting_location_is_sending_message_with_name_and_position(test_app, 
     assert response.status_code == 200
 
 
+@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("flask_babel.gettext", fake_translation)
 def test_reporting_returns_error_when_wrong_json(test_app, notifier_function):
     data = {"name": "location-id", "position": 50}
     headers = {"Content-Type": "application/json"}
@@ -122,7 +126,7 @@ def test_data_endpoint_returns_data(test_app):
                 ["name-translated", "test-translated"],
                 ["type_of_place-translated", "test-place-translated"],
             ],
-            "metadata": {"UUID-translated": "1-translated"},
+            "metadata": {"uuid-translated": "1-translated"},
             "position": [50, 50],
             "subtitle": "test-place-translated",
             "title": "test",
@@ -132,7 +136,7 @@ def test_data_endpoint_returns_data(test_app):
                 ["name-translated", "test2-translated"],
                 ["type_of_place-translated", "test-place2-translated"],
             ],
-            "metadata": {"UUID-translated": "2-translated"},
+            "metadata": {"uuid-translated": "2-translated"},
             "position": [60, 60],
             "subtitle": "test-place2-translated",
             "title": "test2",
@@ -160,7 +164,7 @@ def test_data_endpoint_returns_filtered_data(test_app):
                 ["name-translated", "test-translated"],
                 ["type_of_place-translated", "test-place-translated"],
             ],
-            "metadata": {"UUID-translated": "1-translated"},
+            "metadata": {"uuid-translated": "1-translated"},
             "position": [50, 50],
             "subtitle": "test-place-translated",
             "title": "test",
@@ -187,7 +191,7 @@ def test_suggest_new_location_with_valid_data(test_app):
         "/api/suggest-new-point",
         data=json.dumps(
             {
-                "UUID": "one",
+                "uuid": "one",
                 "name": "Test Organization",
                 "type_of_place": "type",
                 "test_category": ["test"],
@@ -250,8 +254,8 @@ def test_get_locations(test_app):
     response = test_app.get("/api/locations")
     assert response.status_code == 200
     assert response.json == [
-        {"UUID": "1", "position": [50, 50]},
-        {"UUID": "2", "position": [60, 60]},
+        {"uuid": "1", "position": [50, 50]},
+        {"uuid": "2", "position": [60, 60]},
     ]
 
 
@@ -267,7 +271,7 @@ def test_get_location(test_app):
             ["test_category-translated", ["test-translated"]],
             ["type_of_place-translated", "test-place-translated"],
         ],
-        "metadata": {"UUID-translated": "1-translated"},
+        "metadata": {"uuid-translated": "1-translated"},
         "position": [50.0, 50.0],
         "subtitle": "test-place-translated",
         "title": "test",

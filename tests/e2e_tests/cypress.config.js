@@ -10,6 +10,7 @@ module.exports = defineConfig({
       config = cypressBrowserPermissionsPlugin(on, config)
       return config;
     },
+    experimentalStudio: true
   },
   env: {
     browserPermissions: {
