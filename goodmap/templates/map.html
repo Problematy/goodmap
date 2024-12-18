@@ -116,6 +116,7 @@ window.PRIMARY_COLOR = "{{ primary_color }}";
 window.SHOW_SUGGEST_NEW_POINT_BUTTON = {{ feature_flags.SHOW_SUGGEST_NEW_POINT_BUTTON | default(false) | tojson }};
 window.SHOW_SEARCH_BAR = {{ feature_flags.SHOW_SEARCH_BAR | default(false) | tojson }};
 window.USE_LAZY_LOADING = {{ feature_flags.USE_LAZY_LOADING | default(false) | tojson }};
+window.USE_SERVER_SIDE_CLUSTERING = {{ feature_flags.USE_SERVER_SIDE_CLUSTERING | default(false) | tojson }};
 </script>
 <script src="/static/map.js"></script>
 {% endblock %}
