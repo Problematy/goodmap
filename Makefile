@@ -11,7 +11,7 @@ lint-check:
 	poetry run pyright .
 
 unit-tests:
-	poetry run python -m pytest -s
+	poetry run python -m pytest
 
 unit-tests-no-coverage:
 	poetry run python -m pytest -m "skip_coverage"

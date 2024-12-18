@@ -286,7 +286,6 @@ def test_location_clustering_should_not_return_error(test_app):
 def test_location_clustering_should_return_not_clusters_on_high_zoom(test_app):
     response = test_app.get("/api/locations-clustered?zoom=16")
     assert response.status_code == 200
-    print(response.json)
     json = response.json
     assert json[0]["type"] == "point"
     assert json[1]["type"] == "point"
@@ -295,7 +294,6 @@ def test_location_clustering_should_return_not_clusters_on_high_zoom(test_app):
 def test_location_clustering_should_return_clusters_on_not_spread_points(test_app):
     response = test_app.get("/api/locations-clustered?zoom=1")
     assert response.status_code == 200
-    print(response.json)
     json = response.json
     assert len(json) == 1
     assert json[0]["type"] == "cluster"
