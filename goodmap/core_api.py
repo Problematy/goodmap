@@ -140,8 +140,8 @@ def core_pages(
             )
 
             clusters = index.getClusters(
-                top_left=(-180, 90),
-                bottom_right=(-90, 180),
+                top_left=(-180.0, 90.0),
+                bottom_right=(-90.0, 180.0),
                 zoom=zoom,
             )
 
