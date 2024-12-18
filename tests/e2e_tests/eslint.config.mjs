@@ -19,7 +19,7 @@ export default [
       'array-bracket-spacing': 'off',
       'comma-dangle': 'off',
       'es-x/no-rest-spread-properties': 'off',
-      'indent': ['error', 2],
+      'indent': ['error', 4],
       'space-in-parens': 'off',
     }
   }
