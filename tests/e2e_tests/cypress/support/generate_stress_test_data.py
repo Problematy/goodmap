@@ -30,7 +30,7 @@ def generate_data_item():
         "position": generate_random_position_within_poland(),
         "accessible_by": generate_random_accessible_by(),
         "type_of_place": generate_random_type_of_place(),
-        "UUID": str(uuid.uuid4()),
+        "uuid": str(uuid.uuid4()),
     }
 
 
