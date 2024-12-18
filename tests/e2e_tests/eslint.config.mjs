@@ -1,7 +1,9 @@
 import pluginCypress from 'eslint-plugin-cypress/flat';
+import eslintConfigPrettier from 'eslint-config-prettier';
 
 export default [
   pluginCypress.configs.recommended,
+  eslintConfigPrettier,
   {
     rules: {
       'cypress/unsafe-to-chain-command': 'error',
