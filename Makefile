@@ -1,6 +1,8 @@
 lint:
 	poetry run black .
 	poetry run ruff check --fix .
+	cd tests/e2e_tests && npm run lint-fix
+	cd tests/e2e_tests && npm run prettier-fix
 
 dev: lint
 	poetry run pyright .
@@ -9,6 +11,8 @@ lint-check:
 	poetry run black --check .
 	poetry run ruff check .
 	poetry run pyright .
+	cd tests/e2e_tests && npm run lint
+	cd tests/e2e_tests && npm run prettier
 
 unit-tests:
 	poetry run python -m pytest
