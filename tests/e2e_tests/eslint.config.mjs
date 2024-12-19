@@ -9,14 +9,13 @@ export default [
       'cypress/no-unnecessary-waiting': 'error',
       'cypress/unsafe-to-chain-command': 'error',
       'cypress/assertion-before-screenshot': 'error',
-      'cypress/require-data-selectors': 'warn',
-      'cypress/no-force': 'warn',
+      'cypress/no-force': 'error',
 
       'class-methods-use-this': 'error',
       'func-names': 'error',
       'no-console': 'error',
       'no-process-exit': 'error',
-      'no-unused-vars': 'warn',
+      'no-unused-vars': 'error',
       'object-shorthand': 'error',
 
       'array-bracket-spacing': 'off',
