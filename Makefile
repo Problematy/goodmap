@@ -1,10 +1,10 @@
-lint:
+lint-fix:
 	poetry run black .
 	poetry run ruff check --fix .
 	cd tests/e2e_tests && npm run lint-fix
 	cd tests/e2e_tests && npm run prettier-fix
 
-dev: lint
+dev: lint-fix
 	poetry run pyright .
 
 lint-check:
