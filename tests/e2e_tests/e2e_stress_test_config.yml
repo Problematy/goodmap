@@ -1,0 +1,20 @@
+APP_NAME: Bridges in Wroclaw
+SECRET_KEY: SECRET
+BLOG_PREFIX: "/blog"
+DB:
+  TYPE: json_file
+  PATH: tests/e2e_tests/e2e_stress_test_data.json
+
+#TODO this should not be necessary argument
+LANGUAGES:
+  en:
+    name: English
+    flag: gb
+    country: GB
+  pl:
+    name: polski
+    flag: pl
+    country: PL
+
+FEATURE_FLAGS:
+  USE_LAZY_LOADING: True
