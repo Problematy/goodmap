@@ -11,9 +11,8 @@ function lat2tile(lat, zoom) {
     );
 }
 
-let mockedLat = 37.7749;
-let mockedLon = -122.4194;
-
+let mockedLat = 51.919126;
+let mockedLon = 15.976627;
 
 describe('Go To My Location Button', () => {
     beforeEach(() => {
@@ -54,16 +53,14 @@ describe('Go To My Location Button', () => {
         cy.get('.leaflet-marker-icon').click();
 
         cy.get('.MuiButtonBase-root > [data-testid="MyLocationIcon"] > path').click();
-        cy.wait(500);
         cy.get('.MuiButtonBase-root > [data-testid="MyLocationIcon"] > path').click();
         const zoomLevel = 16;
         const expectedLat = lat2tile(mockedLat, zoomLevel);
         const expectedLon = lon2tile(mockedLon, zoomLevel);
-//        cy.log(`Expected lat: ${expectedLat}, Expected lon: ${expectedLon}`);
-        cy.intercept('GET', `https://c.tile.openstreetmap.org/${zoomLevel}/${expectedLon}/${expectedLat}.png`).as(
-            'tileRequest',
-        );
-        cy.wait('@tileRequest', {timeout: 14000}).then(interception => {
+        cy.log(`Expected lat: ${expectedLat}, Expected lon: ${expectedLon}`);
+        const regExpURL = new RegExp(`^https://[abc]\\.tile\\.openstreetmap\\.org/${zoomLevel}/${expectedLon}/${expectedLat}\\.png$`);
+        cy.intercept('GET', regExpURL).as('tileRequest');
+        cy.wait('@tileRequest', {timeout: 10000}).then(interception => {
             expect(interception.response.statusCode).to.eq(200);
             expect(interception.request.url).to.include(`${expectedLon}/${expectedLat}.png`);
         });
