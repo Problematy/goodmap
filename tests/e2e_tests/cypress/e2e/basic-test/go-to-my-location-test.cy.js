@@ -43,24 +43,26 @@ describe('Go To My Location Button', () => {
     });
 
     it('should click the go-to-my-location button and move the map', () => {
-        // Allow location services (if prompted)
         cy.window().then(win => {
             win.navigator.permissions.query = () =>
                 Promise.resolve({
-                    state: 'granted', // Mock permission as granted
+                    state: 'granted',
                 });
         });
         cy.get('.leaflet-marker-icon').click();
 
         cy.get('.MuiButtonBase-root > [data-testid="MyLocationIcon"] > path').click();
         cy.get('.MuiButtonBase-root > [data-testid="MyLocationIcon"] > path').click();
+
         const zoomLevel = 16;
         const expectedLat = lat2tile(mockedLat, zoomLevel);
         const expectedLon = lon2tile(mockedLon, zoomLevel);
-        cy.log(`Expected lat: ${expectedLat}, Expected lon: ${expectedLon}`);
-        const regExpURL = new RegExp(`^https://[abc]\\.tile\\.openstreetmap\\.org/${zoomLevel}/${expectedLon}/${expectedLat}\\.png$`);
+
+        const regExpURL = new RegExp(
+            `^https://[abc]\\.tile\\.openstreetmap\\.org/${zoomLevel}/${expectedLon}/${expectedLat}\\.png$`,
+        );
         cy.intercept('GET', regExpURL).as('tileRequest');
-        cy.wait('@tileRequest', {timeout: 10000}).then(interception => {
+        cy.wait('@tileRequest', { timeout: 10000 }).then(interception => {
             expect(interception.response.statusCode).to.eq(200);
             expect(interception.request.url).to.include(`${expectedLon}/${expectedLat}.png`);
         });
