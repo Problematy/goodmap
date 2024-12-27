@@ -1,4 +1,8 @@
-function lon2tile(lon, zoom) {
+// We will check if the map has moved to the correct location by checking
+// if the specific OSM (Open Street Map) tile file was requested.
+// Filename (URL) format is /zoom/column/tile.png
+// At a given zoom, column and tile are calculated for a specific lat and lon:
+function lon2column(lon, zoom) {
     return Math.floor(((lon + 180) / 360) * Math.pow(2, zoom));
 }
 function lat2tile(lat, zoom) {
@@ -10,31 +14,22 @@ function lat2tile(lat, zoom) {
             Math.pow(2, zoom),
     );
 }
+// formulas taken from:
+// https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Common_programming_languages
 
-let mockedLat = 51.919126;
 let mockedLon = 15.976627;
+let mockedLat = 51.919126;
 
 describe('Go To My Location Button', () => {
     beforeEach(() => {
         cy.visit('/', {
             onBeforeLoad(win) {
-                // Mock the geolocation API
-                cy.stub(win.navigator.geolocation, 'getCurrentPosition').callsFake(success => {
-                    success({
-                        coords: {
-                            latitude: mockedLat, // Mock latitude
-                            longitude: mockedLon, // Mock longitude
-                            accuracy: 100, // Mock accuracy in meters
-                        },
-                    });
-                });
-
                 cy.stub(win.navigator.geolocation, 'watchPosition').callsFake(success => {
                     success({
                         coords: {
-                            latitude: mockedLat, // Mock latitude
-                            longitude: mockedLon, // Mock longitude
-                            accuracy: 100, // Mock accuracy in meters
+                            longitude: mockedLon,
+                            latitude: mockedLat,
+                            accuracy: 100,
                         },
                     });
                 });
@@ -55,16 +50,16 @@ describe('Go To My Location Button', () => {
         cy.get('.MuiButtonBase-root > [data-testid="MyLocationIcon"] > path').click();
 
         const zoomLevel = 16;
-        const expectedLat = lat2tile(mockedLat, zoomLevel);
-        const expectedLon = lon2tile(mockedLon, zoomLevel);
+        const OSMColumn = lon2column(mockedLon, zoomLevel);
+        const OSMTile = lat2tile(mockedLat, zoomLevel);
 
         const regExpURL = new RegExp(
-            `^https://[abc]\\.tile\\.openstreetmap\\.org/${zoomLevel}/${expectedLon}/${expectedLat}\\.png$`,
+            `^https://[abc]\\.tile\\.openstreetmap\\.org/${zoomLevel}/${OSMColumn}/${OSMTile}\\.png$`,
         );
         cy.intercept('GET', regExpURL).as('tileRequest');
         cy.wait('@tileRequest', { timeout: 10000 }).then(interception => {
             expect(interception.response.statusCode).to.eq(200);
-            expect(interception.request.url).to.include(`${expectedLon}/${expectedLat}.png`);
+            expect(interception.request.url).to.include(`${OSMColumn}/${OSMTile}.png`);
         });
     });
 });
