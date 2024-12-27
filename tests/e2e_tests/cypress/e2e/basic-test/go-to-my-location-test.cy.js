@@ -1,7 +1,8 @@
-// We will check if the map has moved to the correct location by checking
+// Checks whether map has moved to the correct location by checking
 // if the specific OSM (Open Street Map) tile file was requested.
 // Filename (URL) format is /zoom/column/tile.png
-// At a given zoom, column and tile are calculated for a specific lat and lon:
+// Formulas that calculate tiles and columns can be found here:
+// https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Common_programming_languages
 function lon2column(lon, zoom) {
     return Math.floor(((lon + 180) / 360) * Math.pow(2, zoom));
 }
@@ -14,8 +15,6 @@ function lat2tile(lat, zoom) {
             Math.pow(2, zoom),
     );
 }
-// formulas taken from:
-// https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Common_programming_languages
 
 let mockedLon = 15.976627;
 let mockedLat = 51.919126;
