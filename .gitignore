@@ -3,8 +3,6 @@ data.json
 config.yml
 **/node_modules
 tests/e2e_tests/cypress/screenshots/
-**/package-lock.json
-**/package.json
 
 
 # coverage based artifacts
