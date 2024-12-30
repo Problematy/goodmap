@@ -22,3 +22,6 @@ dist
 # translation specific files
 goodmap/locale/*/LC_MESSAGES/*.mo
 *.pot
+
+# e2e stress test files
+e2e_stress_test_data.json
