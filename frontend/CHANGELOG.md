@@ -1,5 +1,8 @@
 - Feature: Suggesting new points button
 
+# 0.3.8
+- Feature: Added accessibility table
+
 # 0.3.7
 - Added translation for navigate me button
 
