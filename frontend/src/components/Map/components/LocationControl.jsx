@@ -55,21 +55,27 @@ const LocationControl = ({ setUserPosition: setUserPositionProp }) => {
     };
 
     const handleFlyToLocationClick = () => {
-        map.locate({ setView: false, maxZoom: 16, watch: true });
-        map.once('locationfound', e => {
-            flyToLocation(e.latlng, map);
-        });
+        if (userPosition) {
+            flyToLocation(userPosition, map);
+        }
     };
 
     useEffect(() => {
-        map.on('locationfound', handleLocationFound);
-        map.on('locationerror', handleLocationError);
-
-        return () => {
-            map.off('locationfound', handleLocationFound);
-            map.off('locationerror', handleLocationError);
-        };
-    }, [map]);
+        if ('geolocation' in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                position => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    handleLocationFound({ latlng: { lat, lng } });
+                },
+                () => {
+                    handleLocationError({ code: 1 });
+                },
+            );
+        } else {
+            handleLocationError({ code: 1 });
+        }
+    }, [navigator]);
 
     const { lat, lng } = userPosition || {};
     const radius = (userPosition && userPosition.accuracy / 2) || 0;

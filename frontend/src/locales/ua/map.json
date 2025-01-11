@@ -9,5 +9,7 @@
     "reportOther": "інше",
     "submitProblem": "Відправити",
     "describeOtherProblem": "Опишіть проблему",
+    "listView": "Перегляд списку",
+    "listViewButtonUserLocation": "Щоб увімкнути перегляд списку, дозвольте доступ до вашого місцезнаходження",
     "navigateMeButton": "Прокласти маршрут"
 }

@@ -39,6 +39,17 @@ export const httpService = {
         return response.json();
     },
 
+    getLocationsWithLatLon: async (lat, lon, allCheckboxes) => {
+        const filtersUrlParams = allCheckboxes.filter(n => n).join('&');
+        const response = await fetch(`${DATA}?${filtersUrlParams}&lat=${lat}&lon=${lon}&limit=10`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+        return response.json();
+    },
+
     getLanguages: () => fetch(LANGUAGES).then(response => response.json()),
 
     getSearchAddress: (search) => {

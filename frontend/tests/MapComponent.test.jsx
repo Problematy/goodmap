@@ -28,7 +28,7 @@ describe('MapComponent', () => {
 
     it('renders without crashing', () => {
         render(<MapComponent markers={mockMarkers} />);
-        expect(screen.getByRole('presentation')).toBeInTheDocument();
+        expect(screen.getAllByRole('presentation').length).toBeGreaterThan(0);
     });
 
     it('does not render markers if none are provided', () => {

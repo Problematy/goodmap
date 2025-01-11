@@ -1,5 +1,6 @@
 {
     "search": "Search",
+    "title": "Title",
     "centerButtonAriaLabel": "Location target icon, used to determine your location on the map",
     "ReportIssueButton": "report a problem",
     "reportChooseOption": "Please choose an option",
@@ -9,5 +10,7 @@
     "reportOther": "other",
     "submitProblem": "Submit",
     "describeOtherProblem": "Please describe",
+    "listView": "List view",
+    "listViewButtonUserLocation": "To enable the list view, please allow access to your location",
     "navigateMeButton": "Navigate me"
 }
