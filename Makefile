@@ -21,7 +21,7 @@ unit-tests-no-coverage:
 	poetry run python -m pytest -m "skip_coverage"
 
 e2e-tests:
-	cd tests/e2e_tests && node_modules/cypress/bin/cypress run --browser chromium --spec cypress/e2e/basic-test/*
+	cd tests/e2e_tests && node_modules/cypress/bin/cypress run --browser chromium --spec "cypress/e2e/basic-test/*.cy.js"
 
 e2e-stress-tests-generate-data:
 	python tests/e2e_tests/cypress/support/generate_stress_test_data.py

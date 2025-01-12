@@ -1,18 +1,7 @@
+import { fakeLocation } from '../../utils/fake-location';
+
 function rowElements() {
     return cy.get('tr');
-}
-
-function fakeLocation(latitude, longitude) {
-    return {
-        onBeforeLoad(win) {
-            cy.stub(win.navigator.geolocation, 'getCurrentPosition', (cb, err) => {
-                if (latitude && longitude) {
-                    return cb({ coords: { latitude, longitude } });
-                }
-                throw err({ code: 1 });
-            });
-        },
-    };
 }
 
 describe('Accessibility table test', () => {
