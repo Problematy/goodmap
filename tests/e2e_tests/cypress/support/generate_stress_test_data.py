@@ -38,6 +38,7 @@ def generate_data_set(num_items):
     return [generate_data_item() for _ in range(num_items)]
 
 
+random.seed(42)
 data = generate_data_set(100000)
 
 output = {
