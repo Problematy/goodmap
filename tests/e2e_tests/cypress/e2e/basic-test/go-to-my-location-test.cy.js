@@ -1,12 +1,12 @@
 import { fakeLocation } from '../../utils/fake-location';
 
-const RysyMountaintLat = 49.179;
-const RysyMountaintLon = 20.088;
+const RysyMountainLat = 49.179;
+const RysyMountainLon = 20.088;
 const RysyTileURL = 'https://c.tile.openstreetmap.org/16/36424/22456.png';
 
 describe('Go To My Location Button', () => {
     beforeEach(() => {
-        cy.visit('/', fakeLocation(RysyMountaintLat, RysyMountaintLon));
+        cy.visit('/', fakeLocation(RysyMountainLat, RysyMountainLon));
     });
 
     it('should click the go-to-my-location button and move the map', () => {
