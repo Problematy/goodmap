@@ -4,21 +4,22 @@ import { ReportProblemForm } from '../src/components/MarkerPopup/ReportProblemFo
 
 jest.mock('axios');
 const axios = require('axios');
-axios.get.mockResolvedValue({ data: { csrf_token: 'test-csrf-token' } });
+
+axios.get.mockResolvedValue({ data: { csrf_token: 'test-csrf-token' } }); // eslint-disable-line camelcase
 axios.post.mockResolvedValue({ data: { success: true } });
 
 describe('ReportProblemForm', () => {
-    it('submits the form with selected problem type', async () => {
+    it('submits the form with selected problem type', () => {
         const { getByText, getByLabelText } = render(<ReportProblemForm placeId="test-id" />);
         const select = getByLabelText(/Problem:/i);
         fireEvent.change(select, { target: { value: 'broken' } });
 
-        axios.get.mockResolvedValue({ data: { csrf_token: 'test-csrf-token' } });
+        axios.get.mockResolvedValue({ data: { csrf_token: 'test-csrf-token' } }); // eslint-disable-line camelcase
         axios.post.mockResolvedValue({ data: { success: true } });
 
         fireEvent.click(getByText(/Submit/i));
 
-        await waitFor(() => {
+        return waitFor(() => {
             expect(axios.post).toHaveBeenCalledWith(
                 '/api/report-location',
                 { description: 'broken', id: 'test-id' },
@@ -32,7 +33,7 @@ describe('ReportProblemForm', () => {
         });
     });
 
-    it('submits the form with custom problem description', async () => {
+    it('submits the form with custom problem description', () => {
         const { getByText, getByLabelText } = render(<ReportProblemForm placeId="test-id" />);
         const select = getByLabelText(/Problem:/i);
         fireEvent.change(select, { target: { value: 'other' } });
@@ -40,7 +41,7 @@ describe('ReportProblemForm', () => {
         fireEvent.change(input, { target: { value: 'Custom problem' } });
         fireEvent.click(getByText(/Submit/i));
 
-        await waitFor(() => {
+        return waitFor(() => {
             expect(axios.post).toHaveBeenCalledWith(
                 '/api/report-location',
                 { description: 'Custom problem', id: 'test-id' },
@@ -54,7 +55,7 @@ describe('ReportProblemForm', () => {
         });
     });
 
-    it('does not render submit button when no problem type is selected', async () => {
+    it('does not render submit button when no problem type is selected', () => {
         const { queryByText, getByLabelText } = render(<ReportProblemForm placeId="test-id" />);
 
         const select = getByLabelText(/Problem:/i);

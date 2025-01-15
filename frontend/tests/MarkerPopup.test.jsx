@@ -81,7 +81,8 @@ describe('should render marker popup correctly', () => {
 
         describe('should throw error when complex data is incorrect', () => {
             it('should throw error when data type is not given', () => {
-                // consoleSpy is used to suppress console.error output, which is expected in this test
+                // consoleSpy is used to suppress console.error output,
+                // which is expected in this test
                 const consoleSpy = jest.spyOn(console, 'error');
                 consoleSpy.mockImplementation(() => {});
 

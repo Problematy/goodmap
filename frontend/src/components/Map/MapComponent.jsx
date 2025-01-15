@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, ZoomControl } from 'react-leaflet';
-import MarkerClusterGroup from 'react-leaflet-cluster';
 import PropTypes from 'prop-types';
 import Control from 'react-leaflet-custom-control';
 import { LocationControl } from './components/LocationControl';
@@ -13,8 +12,9 @@ import AccessibilityTable from './components/AccessibilityTable';
 import { toast } from '../../utils/toast';
 import { useTranslation } from 'react-i18next';
 import { AppToaster } from '../common/AppToaster';
+import { Markers } from './components/Markers';
 
-export const MapComponent = ({ markers, categories, allCheckboxes }) => {
+export const MapComponent = () => {
     const { t } = useTranslation();
 
     const [userPosition, setUserPosition] = useState(null);
@@ -33,7 +33,6 @@ export const MapComponent = ({ markers, categories, allCheckboxes }) => {
             <AccessibilityTable
                 userPosition={userPosition}
                 setIsAccessibilityTableOpen={setIsListViewOpen}
-                allCheckboxes={allCheckboxes}
             />
         );
     }
@@ -58,7 +57,7 @@ export const MapComponent = ({ markers, categories, allCheckboxes }) => {
                         <SuggestNewPointButton />
                     </Control>
                 )}
-                <MarkerClusterGroup>{markers}</MarkerClusterGroup>
+                <Markers />
                 <LocationControl setUserPosition={setUserPosition} />
                 <CustomZoomControl position="topright" />
                 {window.SHOW_ACCESSIBILITY_TABLE && (
@@ -69,7 +68,7 @@ export const MapComponent = ({ markers, categories, allCheckboxes }) => {
         </>
     );
 };
-
-MapComponent.propTypes = {
-    markers: PropTypes.arrayOf(PropTypes.element).isRequired,
-};
+//
+// MapComponent.propTypes = {
+//     markers: PropTypes.arrayOf(PropTypes.element).isRequired,
+// };

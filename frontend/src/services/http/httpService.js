@@ -1,5 +1,11 @@
 import { CATEGORIES, CATEGORY, DATA, LANGUAGES, LOCATION, LOCATIONS, SEARCH_ADDRESS } from './endpoints';
 
+function filtersToQuery(filters) {
+    return Object.entries(filters)
+        .map(([key, values]) => values.map(value => `${key}=${value}`).join('&'))
+        .join('&');
+}
+
 export const httpService = {
     getCategories: () => fetch(CATEGORIES).then(response => response.json()),
 
@@ -18,8 +24,9 @@ export const httpService = {
         );
     },
 
-    getLocations: async filtersUrlParams => {
+    getLocations: async filters => {
       const ENDPOINT = window.USE_LAZY_LOADING ? LOCATIONS : DATA;
+      const filtersUrlParams = filtersToQuery(filters);
       const response = await fetch(`${ENDPOINT}?${filtersUrlParams}`, {
           method: 'GET',
           headers: {
@@ -39,9 +46,9 @@ export const httpService = {
         return response.json();
     },
 
-    getLocationsWithLatLon: async (lat, lon, allCheckboxes) => {
-        const filtersUrlParams = allCheckboxes.filter(n => n).join('&');
-        const response = await fetch(`${DATA}?${filtersUrlParams}&lat=${lat}&lon=${lon}&limit=10`, {
+    getLocationsWithLatLon: async (lat, lon, filters) => {
+        const query = filtersToQuery(filters);
+        const response = await fetch(`${DATA}?${query}&lat=${lat}&lon=${lon}&limit=10`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',

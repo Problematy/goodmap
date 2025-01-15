@@ -1,9 +1,10 @@
 import React from 'react';
-import { render, screen, act, waitFor } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import AutoComplete from '../src/components/common/Autocomplete';
 import '@testing-library/jest-dom/extend-expect';
 
+/* eslint-disable camelcase */
 const exampleMapResponseJson = [
     {
         place_id: 293025836,
@@ -86,28 +87,22 @@ const exampleMapResponseJson = [
         boundingbox: ['20.8943438', '20.9343438', '74.6680630', '74.7080630'],
     },
 ];
+/* eslint-enable camelcase */
 
 describe('should autocomplete work correctly', () => {
-    beforeEach(async () => {
+    beforeEach(() => {
         jest.spyOn(global, 'fetch').mockResolvedValue({
             json: jest.fn().mockResolvedValue(exampleMapResponseJson),
         });
-        await act(async () => {
-            render(<AutoComplete onClick={() => {}} />);
-        });
+        return act(() => render(<AutoComplete onClick={() => {}} />));
     });
 
-    it('should render proper list', async () => {
+    it('should render proper list', () => {
         const input = screen.getByRole('textbox');
-
-        await act(async () => {
-            await userEvent.type(input, 'War');
-        });
-
-        expect(screen.getByText('Warren County, Ohio, United States')).toBeInTheDocument();
-    });
-
-    afterEach(() => {
-        jest.restoreAllMocks();
+        return act(() =>
+            userEvent.type(input, 'War').then(() => {
+                expect(screen.getByText('Warren County, Ohio, United States')).toBeInTheDocument();
+            }),
+        );
     });
 });

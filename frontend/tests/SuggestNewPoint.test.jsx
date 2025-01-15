@@ -1,7 +1,8 @@
 import { render, fireEvent, waitFor, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { SuggestNewPointButton } from '../src/components/Map/components/SuggestNewPointButton';
 import React from 'react';
+import axios from 'axios';
+import { SuggestNewPointButton } from '../src/components/Map/components/SuggestNewPointButton';
 
 jest.mock('axios');
 
@@ -22,20 +23,20 @@ const mockUploadingFileWithSizeInMB = sizeInMB => {
 };
 
 describe('SuggestNewPointButton', () => {
-    it('displays error message when geolocation is not supported', async () => {
+    it('displays error message when geolocation is not supported', () => {
         global.navigator.geolocation = undefined;
 
         render(<SuggestNewPointButton />);
         clickSuggestionsButton();
 
-        await waitFor(() => {
+        return waitFor(() => {
             expect(
                 screen.getByText('Please enable location services to suggest a new point.'),
             ).toBeInTheDocument();
         });
     });
 
-    it('displays error message when location services are not enabled', async () => {
+    it('displays error message when location services are not enabled', () => {
         global.navigator.geolocation = {
             getCurrentPosition: jest.fn((success, error) => error()),
         };
@@ -44,14 +45,14 @@ describe('SuggestNewPointButton', () => {
 
         clickSuggestionsButton();
 
-        await waitFor(() => {
+        return waitFor(() => {
             expect(
                 screen.getByText('Please enable location services to suggest a new point.'),
             ).toBeInTheDocument();
         });
     });
 
-    it('opens new point suggestion box when location services are enabled', async () => {
+    it('opens new point suggestion box when location services are enabled', () => {
         global.navigator.geolocation = {
             getCurrentPosition: jest.fn(success =>
                 success({ coords: { latitude: 0, longitude: 0 } }),
@@ -62,12 +63,12 @@ describe('SuggestNewPointButton', () => {
 
         clickSuggestionsButton();
 
-        await waitFor(() => {
+        return waitFor(() => {
             expect(screen.getByRole('dialog')).toBeInTheDocument();
         });
     });
 
-    it('displays error message when selected file is too large', async () => {
+    it('displays error message when selected file is too large', () => {
         global.navigator.geolocation = {
             getCurrentPosition: jest.fn(success =>
                 success({ coords: { latitude: 0, longitude: 0 } }),
@@ -78,21 +79,20 @@ describe('SuggestNewPointButton', () => {
         URL.createObjectURL = jest.fn(() => 'blob:http://test-url/');
         clickSuggestionsButton();
 
-        await waitFor(() => {
+        return waitFor(() => {
             mockUploadingFileWithSizeInMB(6);
-        });
-
-        await waitFor(() => {
-            expect(
-                screen.getByText(
-                    'The selected file is too large. Please select a file smaller than 5MB.',
-                ),
-            ).toBeInTheDocument();
-        });
+        }).then(() =>
+            waitFor(() => {
+                expect(
+                    screen.getByText(
+                        'The selected file is too large. Please select a file smaller than 5MB.',
+                    ),
+                ).toBeInTheDocument();
+            }),
+        );
     });
 
-    it('submits new point suggestion when form is filled correctly', async () => {
-        const axios = require('axios');
+    it('submits new point suggestion when form is filled correctly', () => {
         axios.post.mockResolvedValue({});
 
         global.navigator.geolocation = {
@@ -105,24 +105,24 @@ describe('SuggestNewPointButton', () => {
 
         clickSuggestionsButton();
 
-        await waitFor(async () => {
-            await mockUploadingFileWithSizeInMB(4);
+        return waitFor(() => {
+            mockUploadingFileWithSizeInMB(4);
             fireEvent.change(screen.getByTestId('organization-select').querySelector('input'), {
                 target: { value: 'org-1' },
             });
             fireEvent.click(screen.getByRole('button', { name: /submit/i }));
-        });
-
-        await waitFor(() => {
-            expect(axios.post).toHaveBeenCalledWith(
-                '/api/suggest-new-point',
-                expect.any(FormData),
-                {
-                    headers: {
-                        'Content-Type': 'multipart/form-data',
+        }).then(() =>
+            waitFor(() => {
+                expect(axios.post).toHaveBeenCalledWith(
+                    '/api/suggest-new-point',
+                    expect.any(FormData),
+                    {
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                        },
                     },
-                },
-            );
-        });
+                );
+            }),
+        );
     });
 });

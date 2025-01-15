@@ -1,6 +1,12 @@
 {
-    "extends": ["airbnb", "prettier", "wikimedia/client/es6"],
-    "plugins": ["prettier", "eslint-plugin-react", "eslint-plugin-react-hooks"],
+    "extends": [
+        "eslint:recommended",
+        "plugin:react/recommended",
+        "plugin:prettier/recommended",
+        "airbnb",
+        "prettier",
+        "wikimedia/client/es6"],
+    "plugins": ["react", "prettier", "eslint-plugin-react", "eslint-plugin-react-hooks"],
     "parser": "@babel/eslint-parser",
     "parserOptions": {
         "sourceType": "module"
@@ -22,12 +28,17 @@
         "func-names": "error",
         "no-process-exit": "error",
         "object-shorthand": "error",
+        "template-curly-spacing": "off",
+        "computed-property-spacing": "off",
+        "arrow-parens": "off",
         "class-methods-use-this": "error",
         "import/prefer-default-export": "error",
         "react/require-default-props": "error",
         "comma-dangle": "off",
         "es-x/no-rest-spread-properties": "off",
+        "es-x/no-trailing-function-commas": "off",
         "indent": ["error", 4],
+        "implicit-arrow-linebreak": "off",
         "react/function-component-definition": [
             2,
             {

@@ -3,6 +3,8 @@ import '@testing-library/jest-dom/extend-expect';
 import { render, screen, act, waitFor } from '@testing-library/react';
 import AccessibilityTable from '../src/components/Map/components/AccessibilityTable';
 
+import { CategoriesProvider } from '../src/components/Categories/CategoriesContext';
+
 const examplePlaces = [
     {
         data: [
@@ -31,32 +33,32 @@ const examplePlaces = [
 ];
 
 describe('should accessibility table work correctly', () => {
-    beforeEach(async () => {
+    beforeEach(() => {
         jest.spyOn(global, 'fetch').mockResolvedValue({
             json: jest.fn().mockResolvedValue(examplePlaces),
         });
         const lat = 51.10655;
         const lng = 17.0555;
-        await act(async () => {
+        return act(() => {
             render(
-                <AccessibilityTable
-                    allCheckboxes={['', '']}
-                    userPosition={{ latlng: { lat, lng } }}
-                    setIsAccessibilityTableOpen={() => {}}
-                />,
+                <CategoriesProvider>
+                    <AccessibilityTable
+                        userPosition={{ latlng: { lat, lng } }}
+                        setIsAccessibilityTableOpen={() => {}}
+                    />
+                </CategoriesProvider>,
             );
         });
     });
 
-    it('should properly render the table', async () => {
-        await waitFor(() => {
+    it('should properly render the table', () =>
+        waitFor(() => {
             expect(screen.getByText('Grunwaldzki')).toBeInTheDocument();
             expect(screen.getByText('Zwierzyniecka')).toBeInTheDocument();
-        });
-    });
+        }));
 
-    it('should render "Zwierzyniecka" before "Grunwaldzki"', async () => {
-        await waitFor(() => {
+    it('should render "Zwierzyniecka" before "Grunwaldzki"', () =>
+        waitFor(() => {
             const zwierzynieckaRow = screen.getByText('Zwierzyniecka');
             const grunwaldzkiRow = screen.getByText('Grunwaldzki');
             expect(zwierzynieckaRow).toBeInTheDocument();
@@ -65,8 +67,7 @@ describe('should accessibility table work correctly', () => {
             expect(zwierzynieckaRow.compareDocumentPosition(grunwaldzkiRow)).toBe(
                 Node.DOCUMENT_POSITION_PRECEDING,
             );
-        });
-    });
+        }));
 
     afterEach(() => {
         jest.restoreAllMocks();

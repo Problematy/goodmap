@@ -26,7 +26,7 @@ const correctMarkerData = {
 };
 
 describe('CTA', () => {
-    it('should redirect to a page specified by CTA when CTA button clicked', async () => {
+    it('should redirect to a page specified by CTA when CTA button clicked', () => {
         const mockOpen = jest.spyOn(window, 'open').mockImplementation(() => {});
 
         const { getByText } = render(<LocationDetailsBox place={correctMarkerData} />);
