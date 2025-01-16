@@ -9,6 +9,7 @@ import { CustomZoomControl } from './components/ZoomControl';
 import MapAutocomplete from './components/MapAutocomplete';
 import ListViewButton from './components/ListView';
 import AccessibilityTable from './components/AccessibilityTable';
+import SaveMapConfiguration from './components/SaveMapConfiguration';
 import { toast } from '../../utils/toast';
 import { useTranslation } from 'react-i18next';
 import { AppToaster } from '../common/AppToaster';
@@ -47,6 +48,7 @@ export const MapComponent = () => {
                 style={{ height: '100%' }}
                 zoomControl={false}
             >
+                <SaveMapConfiguration />
                 <TileLayer
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     attribution='&amp;copy <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
@@ -57,7 +59,8 @@ export const MapComponent = () => {
                         <SuggestNewPointButton />
                     </Control>
                 )}
-                <Markers />
+                {!window.USE_SERVER_SIDE_CLUSTERING && <Markers />}
+                {window.USE_SERVER_SIDE_CLUSTERING && markers}
                 <LocationControl setUserPosition={setUserPosition} />
                 <CustomZoomControl position="topright" />
                 {window.SHOW_ACCESSIBILITY_TABLE && (

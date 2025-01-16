@@ -1,5 +1,9 @@
 - Feature: Suggesting new points button
 
+# 0.3.9
+- Feature: Faster map loading
+- Feature: Server side clustering
+
 # 0.3.8
 - Feature: Added accessibility table
 

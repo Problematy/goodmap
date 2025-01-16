@@ -1,10 +1,12 @@
 import ReactDOM from 'react-dom/client';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { httpService } from '../../services/http/httpService';
 import { FiltersForm } from '../FiltersForm/FiltersForm';
 import { MapComponent } from './MapComponent';
+import { useMapStore } from './store/map.store';
 import { CategoriesProvider } from '../Categories/CategoriesContext';
 import { createPortal } from 'react-dom';
+import useDebounce from '../../utils/hooks/useDebounce';
 
 const MapWrap = () => {
     const mapPlaceholder = document.getElementById('map');

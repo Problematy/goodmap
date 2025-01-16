@@ -4,6 +4,19 @@ import MarkerClusterGroup from 'react-leaflet-cluster';
 import { httpService } from '../../../services/http/httpService';
 import { MarkerPopup } from '../../MarkerPopup/MarkerPopup';
 import { useCategories } from '../../Categories/CategoriesContext';
+import { ClusterMarker } from '../../MarkerPopup/ClusterMarker';
+
+const getMarkers = locations => {
+    if (window.USE_SERVER_SIDE_CLUSTERING) {
+        return locations.map(location => {
+            if (location.type === 'cluster') {
+                return <ClusterMarker cluster={location} key={location.cluster_uuid} />;
+            }
+            return <MarkerPopup place={location} key={location.uuid} />;
+        });
+    }
+    return locations.map(location => <MarkerPopup place={location} key={location.UUID} />);
+};
 
 export const Markers = () => {
     const { categories } = useCategories();
@@ -14,10 +27,9 @@ export const Markers = () => {
         setAreMarkersLoaded(false);
 
         const fetchMarkers = async () => {
-            const marks = await httpService.getLocations(categories);
-            const markersToAdd = marks.map(location => (
-                <MarkerPopup place={location} key={location.UUID} />
-            ));
+            const locations = await httpService.getLocations(categories);
+
+            const markersToAdd = getMarkers(locations);
 
             const markerCluster = (
                 <MarkerClusterGroup
