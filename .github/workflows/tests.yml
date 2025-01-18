@@ -43,7 +43,7 @@ jobs:
     - name: Install cypress
       working-directory: "./tests/e2e_tests"
       run: |
-        npm install cypress
+        npm install cypress && npm install cypress-browser-permissions
     - name: Run e2e tests
       run: |
         PYTHONUNBUFFERED=1;FLASK_ENV=development;FLASK_APP="goodmap.goodmap:create_app(config_path='./tests/e2e_tests/e2e_test_config.yml')" poetry run flask run &
