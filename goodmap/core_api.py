@@ -141,10 +141,9 @@ def core_pages(
 
             clusters = index.getClusters(
                 top_left=(-180.0, 90.0),
-                bottom_right=(-90.0, 180.0),
+                bottom_right=(180.0, -90.0),
                 zoom=zoom,
             )
-
             clusters = match_clusters_uuids(points, clusters)
 
             return jsonify(map_clustering_data_to_proper_lazy_loading_object(clusters))
