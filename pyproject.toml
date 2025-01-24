@@ -24,6 +24,7 @@ platzky = "^0.2.5"
 deprecation = "^2.1.0"
 numpy = "^2.2.0"
 pysupercluster = { git = "https://github.com/x-Milosz/pysupercluster.git", rev = "master" }
+scipy = "^1.15.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.2"
