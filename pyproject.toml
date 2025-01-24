@@ -22,8 +22,8 @@ aiohttp = "^3.8.4"
 pydantic = "^2.7.1"
 platzky = "^0.2.5"
 deprecation = "^2.1.0"
-pysupercluster = "^0.7.7"
 numpy = "^2.2.0"
+pysupercluster = { git = "https://github.com/x-Milosz/pysupercluster.git", rev = "master" }
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.2"
@@ -36,7 +36,7 @@ ruff = "^0.0.257"
 platzky = {path = "vendor/platzky", develop = true}
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core>=1.0.0", "numpy"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pyright]
