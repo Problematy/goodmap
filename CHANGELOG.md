@@ -1,5 +1,8 @@
 # Changelog
 
+#### 0.4.4
+  * feature: added acessibility table
+
 #### 0.4.3
   * fixed Polish translation
   * added Ukrainian translation
