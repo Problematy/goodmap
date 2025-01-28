@@ -1,7 +1,7 @@
 # Changelog
 
 #### 0.4.4
-  * feature: added acessibility table
+  * feature: added accessibility table for improved screen reader support and WCAG compliance
 
 #### 0.4.3
   * fixed Polish translation
