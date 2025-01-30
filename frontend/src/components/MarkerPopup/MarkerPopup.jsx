@@ -1,33 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Marker, Popup } from 'react-leaflet';
+import { Marker } from 'react-leaflet';
 import { isMobile } from 'react-device-detect';
 import { httpService } from '../../services/http/httpService';
-import styled from 'styled-components';
 
 import { LocationDetailsBox } from './LocationDetails';
 import { MobilePopup } from './MobilePopup';
-
-const StyledPopup = styled(Popup)`
-    min-width: 300px;
-`;
-
-// DesktopPopup is a workaround for not existing lazy loading Popup as
-// react-leaflet Popup doesn't support .open() function
-const DesktopPopup = ({ children }) => {
-    const popupRef = useRef(null);
-
-    useEffect(() => {
-        if (popupRef.current) {
-            const marker = popupRef.current._source;
-            if (marker) {
-                marker.openPopup();
-            }
-        }
-    }, []);
-
-    return <StyledPopup ref={popupRef}>{children}</StyledPopup>;
-};
+import { DesktopPopup } from './DesktopPopup';
 
 const LocationDetailsBoxWrapper = ({ theplace }) => {
     const [place, setPlace] = useState(null);
