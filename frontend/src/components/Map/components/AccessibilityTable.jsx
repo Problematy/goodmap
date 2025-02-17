@@ -55,6 +55,9 @@ const AccessibilityTable = ({ userPosition, setIsAccessibilityTableOpen }) => {
 
             const getArr = (placeItem, key) => {
                 const item = placeItem.find(it => it[0] === key);
+                if (!item) {
+                    return ['', '—'];
+                }
                 return item;
             };
 
