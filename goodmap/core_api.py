@@ -1,13 +1,11 @@
 import importlib.metadata
 import uuid
 
-import deprecation
 from flask import Blueprint, jsonify, make_response, request
 from flask_babel import gettext
 from flask_restx import Api, Resource, fields
 from platzky.config import LanguagesMapping
 
-from goodmap.core import get_queried_data
 from goodmap.formatter import prepare_pin
 
 

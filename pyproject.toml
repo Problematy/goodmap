@@ -30,7 +30,7 @@ coveralls = "^3.3.1"
 pyright = "^1.1.291"
 freezegun = "^1.2.2"
 black = "^24.8.0"
-ruff = "^0.0.257"
+ruff = "^0.4.4"
 platzky = {path = "vendor/platzky", develop = true}
 platzky-redirections = "^0.1.0"
 
@@ -64,14 +64,14 @@ target-version = ["py310"]
 line-length = 100
 target-version = "py310"
 show-fixes = true
-select = [
+lint.select = [
     "I", # isort
     "F", # Pyflakes
     "E", # pycodestyle Error
     "W", # pycodestyle Warning
     "RUF", # Ruff-specific rules
 ]
-ignore = []
+lint.ignore = []
 
 [tool.pytest.ini_options]
 addopts = "--ignore=vendor"
