@@ -76,29 +76,6 @@ def core_pages(
                 return make_response(jsonify({"message": f"{error_message} : {e}"}), 400)
             return make_response(jsonify({"message": gettext("Location reported")}), 200)
 
-    @core_api.route("/data")
-    class Data(Resource):
-        @deprecation.deprecated(
-            deprecated_in="0.4.1",
-            removed_in="0.5.0",
-            current_version=importlib.metadata.version("goodmap"),
-            details="Use /locations or /location/<point_id> instead",
-        )
-        def get(self):
-            """
-            Shows all data filtered by query parameters
-            e.g. /api/data?category=category1&category=category2
-            """
-            all_data = database.get_data()
-            query_params = request.args.to_dict(flat=False)
-            data = all_data["data"]
-            categories = all_data["categories"]
-            visible_data = all_data["visible_data"]
-            meta_data = all_data["meta_data"]
-            queried_data = get_queried_data(data, categories, query_params)
-            formatted_data = [prepare_pin(x, visible_data, meta_data) for x in queried_data]
-            return jsonify(formatted_data)
-
     @core_api.route("/locations")
     class GetLocations(Resource):
         def get(self):
