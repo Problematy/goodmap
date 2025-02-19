@@ -50,7 +50,7 @@ def get_invalid_value_in_category_violations(p, categories):
     for category in categories & p.keys():
         category_value_in_point = p[category]
         valid_values_set = categories[category]
-        if type(category_value_in_point) is list:
+        if isinstance(category_value_in_point, list):
             for attribute_value in category_value_in_point:
                 if attribute_value not in valid_values_set:
                     violations.append(

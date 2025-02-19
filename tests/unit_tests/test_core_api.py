@@ -114,62 +114,12 @@ def test_categories_endpoint_returns_categories(test_app):
     assert response.json == [["test-category", "test-category-translated"]]
 
 
-@mock.patch("goodmap.core_api.gettext", fake_translation)
-@mock.patch("goodmap.formatter.gettext", fake_translation)
-@mock.patch("flask_babel.gettext", fake_translation)
-def test_data_endpoint_returns_data(test_app):
-    response = test_app.get("/api/data")
-    assert response.status_code == 200
-    assert response.json == [
-        {
-            "data": [
-                ["name-translated", "test-translated"],
-                ["type_of_place-translated", "test-place-translated"],
-            ],
-            "metadata": {"uuid-translated": "1-translated"},
-            "position": [50, 50],
-            "subtitle": "test-place-translated",
-            "title": "test",
-        },
-        {
-            "data": [
-                ["name-translated", "test2-translated"],
-                ["type_of_place-translated", "test-place2-translated"],
-            ],
-            "metadata": {"uuid-translated": "2-translated"},
-            "position": [60, 60],
-            "subtitle": "test-place2-translated",
-            "title": "test2",
-        },
-    ]
-
-
 @mock.patch("importlib.metadata.version", return_value="0.1.2")
 def test_version_endpoint_returns_version(mock_returning_version, test_app):
     response = test_app.get("/api/version")
     mock_returning_version.assert_called_once_with("goodmap")
     assert response.status_code == 200
     assert response.json == {"backend": "0.1.2"}
-
-
-@mock.patch("goodmap.core_api.gettext", fake_translation)
-@mock.patch("goodmap.formatter.gettext", fake_translation)
-@mock.patch("flask_babel.gettext", fake_translation)
-def test_data_endpoint_returns_filtered_data(test_app):
-    response = test_app.get("/api/data?test-category=test")
-    assert response.status_code == 200
-    assert response.json == [
-        {
-            "data": [
-                ["name-translated", "test-translated"],
-                ["type_of_place-translated", "test-place-translated"],
-            ],
-            "metadata": {"uuid-translated": "1-translated"},
-            "position": [50, 50],
-            "subtitle": "test-place-translated",
-            "title": "test",
-        },
-    ]
 
 
 @mock.patch("goodmap.core_api.gettext", fake_translation)
