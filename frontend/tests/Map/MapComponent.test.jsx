@@ -1,11 +1,11 @@
 import React from 'react';
 import { render, act, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
-import { MapComponent } from '../src/components/Map/MapComponent';
-import { CategoriesProvider } from '../src/components/Categories/CategoriesContext';
-import { httpService } from '../src/services/http/httpService';
+import { MapComponent } from '../../src/components/Map/MapComponent';
+import { CategoriesProvider } from '../../src/components/Categories/CategoriesContext';
+import { httpService } from '../../src/services/http/httpService';
 
-jest.mock('../src/services/http/httpService');
+jest.mock('../../src/services/http/httpService');
 
 const categories = [
     [

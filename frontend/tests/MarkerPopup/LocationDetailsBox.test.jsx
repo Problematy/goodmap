@@ -1,7 +1,7 @@
 import React from 'react';
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
-import { LocationDetailsBox } from '../src/components/MarkerPopup/LocationDetails';
+import { LocationDetailsBox } from '../../src/components/MarkerPopup/LocationDetails';
 
 const correctMarkerData = {
     title: 'Most Grunwaldzki',

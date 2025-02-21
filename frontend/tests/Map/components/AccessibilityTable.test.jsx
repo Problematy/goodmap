@@ -1,9 +1,9 @@
 import React from 'react';
 import '@testing-library/jest-dom/extend-expect';
 import { render, screen, act, waitFor } from '@testing-library/react';
-import AccessibilityTable from '../src/components/Map/components/AccessibilityTable';
+import AccessibilityTable from '../../../src/components/Map/components/AccessibilityTable';
 
-import { CategoriesProvider } from '../src/components/Categories/CategoriesContext';
+import { CategoriesProvider } from '../../../src/components/Categories/CategoriesContext';
 
 const examplePlaces = [
     {

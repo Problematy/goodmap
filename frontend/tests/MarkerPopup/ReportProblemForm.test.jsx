@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react';
-import { ReportProblemForm } from '../src/components/MarkerPopup/ReportProblemForm';
+import { ReportProblemForm } from '../../src/components/MarkerPopup/ReportProblemForm';
 
 jest.mock('axios');
 const axios = require('axios');

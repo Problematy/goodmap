@@ -2,7 +2,7 @@ import { render, fireEvent, waitFor, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import React from 'react';
 import axios from 'axios';
-import { SuggestNewPointButton } from '../src/components/Map/components/SuggestNewPointButton';
+import { SuggestNewPointButton } from '../../../src/components/Map/components/SuggestNewPointButton';
 
 jest.mock('axios');
 
