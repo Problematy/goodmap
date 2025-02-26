@@ -2,8 +2,11 @@ import React from 'react';
 import '@testing-library/jest-dom/extend-expect';
 import { render, screen, act, waitFor } from '@testing-library/react';
 import AccessibilityTable from '../../../src/components/Map/components/AccessibilityTable';
+import { httpService } from '../../../src/services/http/httpService';
 
 import { CategoriesProvider } from '../../../src/components/Categories/CategoriesContext';
+
+jest.mock('../../../src/services/http/httpService');
 
 const examplePlaces = [
     {
@@ -32,18 +35,17 @@ const examplePlaces = [
     },
 ];
 
-describe('should accessibility table work correctly', () => {
+httpService.getLocationsData.mockResolvedValue(examplePlaces);
+
+describe('Accessibility Table', () => {
     beforeEach(() => {
-        jest.spyOn(global, 'fetch').mockResolvedValue({
-            json: jest.fn().mockResolvedValue(examplePlaces),
-        });
         const lat = 51.10655;
         const lng = 17.0555;
         return act(() => {
             render(
                 <CategoriesProvider>
                     <AccessibilityTable
-                        userPosition={{ latlng: { lat, lng } }}
+                        userPosition={{ lat, lng }}
                         setIsAccessibilityTableOpen={() => {}}
                     />
                 </CategoriesProvider>,

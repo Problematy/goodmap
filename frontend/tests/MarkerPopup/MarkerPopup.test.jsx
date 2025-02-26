@@ -37,7 +37,6 @@ httpService.getLocation.mockResolvedValue(locationData);
 
 describe('MarkerPopup', () => {
     beforeEach(() => {
-        window.USE_LAZY_LOADING = true;
         jest.spyOn(global, 'fetch').mockResolvedValue({
             json: jest.fn().mockResolvedValue(locationData),
         });

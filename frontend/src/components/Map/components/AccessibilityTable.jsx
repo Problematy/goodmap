@@ -24,7 +24,7 @@ const AccessibilityTable = ({ userPosition, setIsAccessibilityTableOpen }) => {
 
     useEffect(() => {
         httpService
-            .getLocationsWithLatLon(userPosition.lat, userPosition.lng, categories)
+            .getLocationsData(userPosition.lat, userPosition.lng, categories)
             .then(places => {
                 setData(places);
             });

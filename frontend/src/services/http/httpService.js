@@ -1,4 +1,4 @@
-import { CATEGORIES, CATEGORY, DATA, LANGUAGES, LOCATION, LOCATIONS, SEARCH_ADDRESS, LOCATIONS_CLUSTERED } from './endpoints';
+import { CATEGORIES, CATEGORY, LANGUAGES, LOCATION, LOCATIONS, SEARCH_ADDRESS, LOCATIONS_CLUSTERED } from './endpoints';
 import { useMapStore } from '../../components/Map/store/map.store';
 
 function filtersToQuery(filters) {
@@ -37,14 +37,12 @@ function filtersToQuery(filters) {
     },
 
     getLocations: async filters => {
-      let ENDPOINT = DATA;  // TODO remove DATA endpont after removing it from main API
       const filtersUrlParams = filtersToQuery(filters);
+
+      let ENDPOINT = LOCATIONS;
       if (window.USE_SERVER_SIDE_CLUSTERING) {
           ENDPOINT = LOCATIONS_CLUSTERED;
-      } else if (window.USE_LAZY_LOADING) {
-          ENDPOINT = LOCATIONS;
       }
-
 
       const response = await fetch(`${ENDPOINT}?${filtersUrlParams}`, {
           method: 'GET',
@@ -53,6 +51,17 @@ function filtersToQuery(filters) {
           },
       });
       return response.json();
+    },
+
+    getLocationsWithLatLon: async (lat, lon, filters) => {
+        const filtersUrlParams = filtersToQuery(filters);
+        const response = await fetch(`${LOCATIONS}?${filtersUrlParams}&lat=${lat}&lon=${lon}&limit=10`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+        return response.json();
     },
 
     getLocation: async locationId => {
@@ -65,15 +74,17 @@ function filtersToQuery(filters) {
         return response.json();
     },
 
-    getLocationsWithLatLon: async (lat, lon, filters) => {
-        const query = filtersToQuery(filters);
-        const response = await fetch(`${DATA}?${query}&lat=${lat}&lon=${lon}&limit=10`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
-        return response.json();
+    getLocationsData : async (lat, lon, filters) => {
+        const locations = await httpService.getLocationsWithLatLon(lat, lon, filters);
+        try {
+            const dataPromises = locations.map((location) => 
+                httpService.getLocation(location.uuid)
+            );
+            return await Promise.all(dataPromises);
+        } catch (error) {
+            console.error('Failed to fetch location data:', error);
+            throw error;
+        }
     },
 
     getLanguages: () => fetch(LANGUAGES).then(response => response.json()),
