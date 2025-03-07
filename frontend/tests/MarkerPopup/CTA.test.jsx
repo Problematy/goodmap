@@ -21,7 +21,7 @@ const correctMarkerData = {
         ],
     ],
     metadata: {
-        UUID: '21231',
+        uuid: '21231',
     },
 };
 

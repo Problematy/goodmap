@@ -14,12 +14,14 @@ import { toast } from '../../utils/toast';
 import { useTranslation } from 'react-i18next';
 import { AppToaster } from '../common/AppToaster';
 import { Markers } from './components/Markers';
+import { LoadingScreen } from '../LoadingScreen/LoadingScreen';
 
 export const MapComponent = () => {
     const { t } = useTranslation();
 
     const [userPosition, setUserPosition] = useState(null);
     const [isListViewOpen, setIsListViewOpen] = useState(false);
+    const [areMarkersLoaded, setAreMarkersLoaded] = useState(false);
 
     const handleListViewButtonClick = () => {
         if (!userPosition) {
@@ -40,6 +42,7 @@ export const MapComponent = () => {
 
     return (
         <>
+            {!areMarkersLoaded && <LoadingScreen />}
             <AppToaster />
             <MapContainer
                 center={mapConfig.initialMapCoordinates}
@@ -59,7 +62,9 @@ export const MapComponent = () => {
                         <SuggestNewPointButton />
                     </Control>
                 )}
-                {!window.USE_SERVER_SIDE_CLUSTERING && <Markers />}
+                {!window.USE_SERVER_SIDE_CLUSTERING && (
+                    <Markers setAreMarkersLoaded={setAreMarkersLoaded} />
+                )}
                 {window.USE_SERVER_SIDE_CLUSTERING && markers}
                 <LocationControl setUserPosition={setUserPosition} />
                 <CustomZoomControl position="topright" />

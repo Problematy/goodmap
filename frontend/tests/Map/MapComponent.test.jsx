@@ -19,7 +19,7 @@ const categories = [
 
 const locations = [
     {
-        UUID: '1',
+        uuid: '1',
         name: 'name',
         position: [50, 50],
     },

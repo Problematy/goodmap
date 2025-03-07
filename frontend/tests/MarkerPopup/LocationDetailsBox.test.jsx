@@ -22,7 +22,7 @@ const correctMarkerData = {
         ['unknownDataType', { type: 'unknown', value: 'example value for unknown data type' }],
     ],
     metadata: {
-        UUID: '21231',
+        uuid: '21231',
     },
 };
 
