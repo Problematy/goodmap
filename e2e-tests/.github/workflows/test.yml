@@ -9,7 +9,5 @@ jobs:
   e2e-tests:
     uses: ./.github/workflows/test-base.yml
     with:
-      goodmap-repository: 'problematy/goodmap'
       goodmap-version: 'main'
-      goodmap-frontend-repository: 'problematy/goodmap-frontend'
       goodmap-frontend-version: 'main'
