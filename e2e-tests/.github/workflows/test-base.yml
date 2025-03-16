@@ -40,7 +40,6 @@ jobs:
     - name: Init poetry
       run : poetry init -n --python=^3.10
 
-
     - name: Install python dependencies
       run : poetry add goodmap
 
@@ -50,12 +49,16 @@ jobs:
     - name: Run environment
       run : make run-e2e-goodmap&
 
-    - name: Install dependencies
-      run: npm install
+    - name: Serve frontend
+      working-directory: goodmap-frontend
+      run: make serve&
 
     - name: Serve frontend
       working-directory: goodmap-frontend
       run: make serve&
+
+    - name: Install dependencies
+      run: npm install
 
     - name: Run tests
       run: make e2e-tests
