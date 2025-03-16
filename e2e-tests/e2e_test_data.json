@@ -126,8 +126,7 @@
     {
       "name": "redirections",
       "config": {
-        "/test": "/blog/page/about",
-        "/static/map.js": "http:localhost:8080/static/map.js"
+        "/static/map.js": "http://localhost:8080/static/map.js"
       }
     }
   ]
