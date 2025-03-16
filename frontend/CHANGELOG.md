@@ -1,5 +1,9 @@
 - Feature: Suggesting new points button
 
+# 0.4.0
+- Feature: Loading screen added
+- Cleanup: removed /data endpoint usage
+
 # 0.3.9
 - Feature: Faster map loading
 - Feature: Server side clustering
