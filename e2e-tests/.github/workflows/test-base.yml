@@ -36,5 +36,6 @@ jobs:
       with:
         version: 'latest'
 
-    - name: Prepare dependencies
+    - name: Run environment
+      working-directory: goodmap
       run : make run-e2e-env
