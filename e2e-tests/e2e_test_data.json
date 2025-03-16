@@ -126,7 +126,7 @@
     {
       "name": "redirections",
       "config": {
-        "/static/map.js": "http://localhost:8080/static/map.js"
+        "/static/map.js": "http://localhost:8080/index.js"
       }
     }
   ]
