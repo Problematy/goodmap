@@ -38,7 +38,7 @@ jobs:
         version: 'latest'
 
     - name: Init poetry
-      run : poetry init -n
+      run : poetry init -n --python=^3.10
 
 
     - name: Install python dependencies
