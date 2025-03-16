@@ -1,7 +1,13 @@
 on:
   workflow_call:
     inputs:
+      goodmap-repostiory:
+        required: true
+        type: string
       goodmap-version:
+        required: true
+        type: string
+      goodmap-frontend-repository:
         required: true
         type: string
       goodmap-frontend-version:
@@ -14,30 +20,17 @@ jobs:
     steps:
     - name: Checkout tests repository
       uses: actions/checkout@v4
-    - name: Checkout goodmap repository
-      uses: actions/checkout@v4
-      with:
-        repository: problematy/goodmap
-        submodules: 'true'
-        ref: ${{ inputs.goodmap-version }}
-        path: goodmap
-    - name: Checkout goodmap frontend repository
-      uses: actions/checkout@v4
-      with:
-        repository: problematy/goodmap-frontend
-        ref: ${{ inputs.goodmap-frontend-version }}
-        path: goodmap-frontend
+    # install goodmap from repository
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: "3.10"
-    - name: Install Poetry
-      uses: snok/install-poetry@v1
-      with:
-        version: 'latest'
-    - name: Install python dependencies
-      working-directory: goodmap
-      run : poetry install
+    - name: Install goodmap from repository
+      run: |
+        pip install git+${{ inputs.goodmap-repository }}@${{ inputs.goodmap-version }}
+    - name: Install goodmap-frontend from repository
+      run: |
+        npm install git+${{ inputs.goodmap-frontend-repository }}@${{ inputs.goodmap-frontend-version }}
     - name: Run environment
       run : make run-e2e-env&
     - name: Install node dependencies

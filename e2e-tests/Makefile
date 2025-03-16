@@ -11,7 +11,7 @@ lint-check:
 	npm run lint
 	npm run prettier
 
-run-goodmap:
+run-e2e-goodmap:
 	poetry run flask --app "goodmap.goodmap:create_app(config_path='e2e_test_config.yml')" --debug run
 
 install-test-dependencies:
