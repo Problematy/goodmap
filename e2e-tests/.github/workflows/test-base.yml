@@ -21,7 +21,7 @@ jobs:
         ref: ${{ inputs.goodmap-version }}
         path: goodmap
     - name: Checkout goodmap frontend repository
-      uses: actions/checkout@v5
+      uses: actions/checkout@v4
       with:
         repository: problematy/goodmap-frontend
         ref: ${{ inputs.goodmap-frontend-version }}
