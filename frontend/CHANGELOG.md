@@ -1,5 +1,8 @@
 - Feature: Suggesting new points button
 
+# 0.4.1
+- Fix: disabled not working loading screen added
+
 # 0.4.0
 - Feature: Loading screen added
 - Cleanup: removed /data endpoint usage
