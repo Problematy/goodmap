@@ -29,8 +29,10 @@ jobs:
       uses: snok/install-poetry@v1
       with:
         version: 'latest'
+    - name: Init poetry
+      run: poetry init -n
     - name: Install goodmap from repository
-      run: poetry init -n && poetry add git+https://github.com/${{ inputs.goodmap-repository }}@${{ inputs.goodmap-version }}
+      run: poetry add git+https://github.com/${{ inputs.goodmap-repository }}@${{ inputs.goodmap-version }}
     - name: Install goodmap-frontend from repository
       run: npm install git+https://github.com/${{ inputs.goodmap-frontend-repository }}@${{ inputs.goodmap-frontend-version }}
     - name: Run environment
