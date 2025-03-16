@@ -12,7 +12,7 @@ lint-check:
 	npm run prettier
 
 run-e2e-goodmap:
-	poetry run flask --app "goodmap.goodmap:create_app(config_path='e2e_test_config.yml')" --debug run
+	CONFIG_PATH="e2e_test_config.yml" && poetry run flask --app "goodmap.goodmap:create_app(config_path='${CONFIG_PATH}')" run
 
 install-test-dependencies:
 	npm install
@@ -28,8 +28,6 @@ e2e-stress-tests:
 
 run-e2e-stress-env:
 	poetry run flask --app "goodmap.goodmap:create_app(config_path='e2e_stress_test_config.yml')" --debug run
-
-
 
 cleanup:
 	pip remove goodmap
