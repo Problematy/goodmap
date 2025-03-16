@@ -1,5 +1,8 @@
 # Changelog
 
+#### 0.5.0
+  * removed deprecated `data` attribute from `/api/data` endpoint
+
 #### 0.4.4
   * feature: added accessibility table for improved screen reader support
 
