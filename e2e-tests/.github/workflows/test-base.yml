@@ -49,9 +49,9 @@ jobs:
     - name: Run environment
       run : make run-e2e-goodmap&
 
-    - name: Serve frontend
+    - name: Install frontend dependencies
       working-directory: goodmap-frontend
-      run: make serve&
+      run: npm install
 
     - name: Serve frontend
       working-directory: goodmap-frontend
