@@ -12,7 +12,7 @@ lint-check:
 	npm run prettier
 
 run-goodmap:
-	poetry run flask --app "goodmap.goodmap:create_app(config_path='tests/e2e_tests/e2e_test_config.yml')" --debug run
+	poetry run flask --app "goodmap.goodmap:create_app(config_path='e2e_test_config.yml')" --debug run
 
 install-test-dependencies:
 	npm install
@@ -27,7 +27,7 @@ e2e-stress-tests:
 	node_modules/cypress/bin/cypress run --browser chromium --spec cypress/e2e/stress-test/*
 
 run-e2e-stress-env:
-	poetry run flask --app "goodmap.goodmap:create_app(config_path='tests/e2e_tests/e2e_stress_test_config.yml')" --debug run
+	poetry run flask --app "goodmap.goodmap:create_app(config_path='e2e_stress_test_config.yml')" --debug run
 
 
 
