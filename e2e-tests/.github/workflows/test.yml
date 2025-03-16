@@ -8,4 +8,6 @@ on:
 jobs:
   e2e-tests:
     uses: ./.github/workflows/test-base.yml
-
+    with:
+      goodmap-version: 'main'
+      goodmap-frontend-version: 'main'

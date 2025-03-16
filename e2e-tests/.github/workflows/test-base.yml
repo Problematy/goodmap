@@ -2,11 +2,9 @@ on:
   workflow_call:
     inputs:
       goodmap-version:
-        default: 'main'
         required: true
         type: string
       goodmap-frontend-version:
-        default: 'main'
         required: true
         type: string
 jobs:
