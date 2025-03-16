@@ -543,7 +543,7 @@ version = "2.1.0"
 description = "A library to handle automated deprecations"
 optional = false
 python-versions = "*"
-groups = ["main"]
+groups = ["main", "dev"]
 files = [
     {file = "deprecation-2.1.0-py2.py3-none-any.whl", hash = "sha256:a10811591210e1fb0e768a8c25517cabeabcba6f0bf96564f8ff45189f90b14a"},
     {file = "deprecation-2.1.0.tar.gz", hash = "sha256:72b3bde64e5d778694b0cf68178aed03d15e15477116add3fb773e581f9518ff"},
@@ -1447,7 +1447,7 @@ type = ["mypy (>=1.11.2)"]
 
 [[package]]
 name = "platzky"
-version = "0.3.0"
+version = "0.3.1"
 description = "Not only blog engine"
 optional = false
 python-versions = "^3.10"
@@ -1457,6 +1457,7 @@ develop = true
 
 [package.dependencies]
 aiohttp = "^3.9.5"
+deprecation = "^2.1.0"
 Flask = "3.0.3"
 Flask-Babel = "^4.0.0"
 Flask-Minify = "^0.42"
@@ -2591,4 +2592,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "b371d3c21a7dfb7ca2db3743ff884f1706bc6d220e943325d79ef678147618bc"
+content-hash = "eaee7edccf6a13aa175299e31fa6220d666fbdd38e1a662a081a93462d4a8347"
