@@ -1,13 +1,7 @@
 on:
   workflow_call:
     inputs:
-      goodmap-repository:
-        required: true
-        type: string
       goodmap-version:
-        required: true
-        type: string
-      goodmap-frontend-repository:
         required: true
         type: string
       goodmap-frontend-version:
@@ -20,26 +14,39 @@ jobs:
     steps:
     - name: Checkout tests repository
       uses: actions/checkout@v4
-    # install goodmap from repository
+    - name: Checkout goodmap repository
+      uses: actions/checkout@v4
+      with:
+        repository: problematy/goodmap
+        submodules: 'true'
+        ref: ${{ inputs.goodmap-version }}
+        path: goodmap
+    - name: Checkout goodmap frontend repository
+      uses: actions/checkout@v4
+      with:
+        repository: problematy/goodmap-frontend
+        ref: ${{ inputs.goodmap-frontend-version }}
+        path: goodmap-frontend
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: "3.10"
+
     - name: Install Poetry
       uses: snok/install-poetry@v1
       with:
         version: 'latest'
-    - name: Init poetry
-      run: poetry init -n --python=^3.10
-    - name: Install goodmap from repository
-      run: poetry add git+https://github.com/${{ inputs.goodmap-repository }}@${{ inputs.goodmap-version }} -vvv
-    - name: Install goodmap-frontend from repository
-      run: npm install git+https://github.com/${{ inputs.goodmap-frontend-repository }}@${{ inputs.goodmap-frontend-version }}
+
+    - name: Install python dependencies
+      working-directory: goodmap
+      run : poetry install
+
     - name: Run environment
+      working-directory: goodmap
       run : make run-e2e-env&
-    - name: Install node dependencies
+
+    - name: Installdependencies
       run: npm install
-    - name: Install node dependencies
-      run: make serve&
+
     - name: Run tests
       run: make e2e-tests
