@@ -1,4 +1,4 @@
 [run]
 omit =
-    goodmap/platzky/*
+    goodmap/vendor/*
     tests/*
