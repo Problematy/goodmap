@@ -35,6 +35,7 @@ jobs:
     - name: Install Poetry
       uses: snok/install-poetry@v1
       with:
+        working-directory: goodmap
         version: 'latest'
 
     - name: Install python dependencies
@@ -42,7 +43,7 @@ jobs:
       run : poetry install
 
     - name: Run environment
-      run : make run-e2e-env&
+      run : make run-e2e-goodmap&
 
     - name: Install dependencies
       run: npm install
