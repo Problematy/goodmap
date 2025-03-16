@@ -16,7 +16,8 @@ describe('Map Tests', () => {
 
             // Assert if the page width or height is less than or equal to the viewport dimensions,
             // indicating no scrollbars
-            expect(scrollWidth <= innerWidth && scrollHeight <= innerHeight).to.be.true;
+            expect(scrollWidth <= innerWidth).to.be.true;
+            expect(scrollHeight <= innerHeight).to.be.true;
         });
     });
 });

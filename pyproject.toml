@@ -20,7 +20,7 @@ Flask-WTF = "^1.2.1"
 gql = "^3.4.0"
 aiohttp = "^3.8.4"
 pydantic = "^2.7.1"
-platzky = "^0.2.5"
+platzky = "^0.3.1"
 deprecation = "^2.1.0"
 
 [tool.poetry.group.dev.dependencies]
@@ -30,8 +30,9 @@ coveralls = "^3.3.1"
 pyright = "^1.1.291"
 freezegun = "^1.2.2"
 black = "^24.8.0"
-ruff = "^0.0.257"
+ruff = "^0.4.4"
 platzky = {path = "vendor/platzky", develop = true}
+platzky-redirections = "^0.1.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -55,6 +56,10 @@ reportUntypedClassDecorator = false
 reportUnusedClass = false
 reportUntypedBaseClass = false
 
+exclude = [
+    "**/vendor/**",
+]
+
 [tool.black]
 line-length = 100
 target-version = ["py310"]
@@ -63,14 +68,13 @@ target-version = ["py310"]
 line-length = 100
 target-version = "py310"
 show-fixes = true
-select = [
+lint.select = [
     "I", # isort
     "F", # Pyflakes
     "E", # pycodestyle Error
     "W", # pycodestyle Warning
     "RUF", # Ruff-specific rules
 ]
-ignore = []
 
 [tool.pytest.ini_options]
 addopts = "--ignore=vendor"

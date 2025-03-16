@@ -127,7 +127,7 @@
       "name": "redirections",
       "config": {
         "/test": "/blog/page/about",
-        "/static/map.js": "https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.3.8"
+        "/static/map.js": "https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.4.1"
       }
     }
   ]
