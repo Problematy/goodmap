@@ -32,7 +32,7 @@ jobs:
     - name: Init poetry
       run: poetry init -n --python=^3.10
     - name: Install goodmap from repository
-      run: poetry add git+https://github.com/${{ inputs.goodmap-repository }}@${{ inputs.goodmap-version }}
+      run: poetry add git+https://github.com/${{ inputs.goodmap-repository }}@${{ inputs.goodmap-version }} -vvv
     - name: Install goodmap-frontend from repository
       run: npm install git+https://github.com/${{ inputs.goodmap-frontend-repository }}@${{ inputs.goodmap-frontend-version }}
     - name: Run environment
