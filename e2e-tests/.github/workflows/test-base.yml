@@ -27,6 +27,15 @@ jobs:
         repository: problematy/goodmap-frontend
         ref: ${{ inputs.goodmap-frontend-version }}
         path: goodmap-frontend
+
+    - name: Install frontend dependencies
+      working-directory: goodmap-frontend
+      run: npm install
+
+    - name: Serve frontend
+      working-directory: goodmap-frontend
+      run: make serve&
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
@@ -49,13 +58,6 @@ jobs:
     - name: Run environment
       run : make run-e2e-goodmap&
 
-    - name: Install frontend dependencies
-      working-directory: goodmap-frontend
-      run: npm install
-
-    - name: Serve frontend
-      working-directory: goodmap-frontend
-      run: make serve&
 
     - name: Install dependencies
       run: npm install
