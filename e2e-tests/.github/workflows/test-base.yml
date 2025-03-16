@@ -37,8 +37,12 @@ jobs:
       with:
         version: 'latest'
 
+    - name: Init poetry
+      run : poetry init -n
+
+
     - name: Install python dependencies
-      run : poetry install
+      run : poetry add goodmap
 
     - name: Install
       run : poetry add platzky-redirections
