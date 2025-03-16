@@ -1,0 +1,8 @@
+on:
+  pull_request: main
+  push: main
+
+jobs:
+  e2e-tests:
+    uses: ./.github/workflows/test-base.yml
+

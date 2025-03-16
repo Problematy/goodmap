@@ -1,0 +1,42 @@
+on:
+  workflow_call:
+    inputs:
+      goodmap-version:
+        default: 'main'
+        required: true
+        type: string
+      goodmap-frontend-version:
+        default: 'main'
+        required: true
+        type: string
+jobs:
+  e2e-tests:
+    name: E2E tests
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout tests repository
+      uses: actions/checkout@v5
+    - name: Checkout goodmap repository
+      uses: actions/checkout@v5
+      with:
+        repository: problematy/goodmap
+        ref: ${{ inputs.goodmap-version }}
+        path: goodmap
+    - name: Checkout goodmap frontend repository
+      uses: actions/checkout@v5
+      with:
+        repository: problematy/goodmap-frontend
+        ref: ${{ inputs.goodmap-frontend-version }}
+        path: goodmap-frontend
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v2
+      with:
+        version: 'latest'
+
+    - name: Prepare dependencies
+      run : make run-e2e-env
