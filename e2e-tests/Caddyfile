@@ -8,3 +8,9 @@
         reverse_proxy localhost:5000
     }
 }
+
+
+# Disable admin endpoint
+{
+    admin off
+}
