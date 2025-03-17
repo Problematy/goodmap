@@ -1,6 +1,7 @@
 APP_NAME: Bridges in Wroclaw
 SECRET_KEY: SECRET
 BLOG_PREFIX: "/blog"
+USE_WWW: False
 DB:
   TYPE: json_file
   PATH: e2e_test_data.json

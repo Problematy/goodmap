@@ -56,8 +56,13 @@ jobs:
     - name: Install dependencies
       run: npm install
 
+      # Caddy is needed to serve the frontend and the backend during the tests because cypress does not support CORS
+    - name: Install Caddy
+      run: curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/setup.deb.sh' | sudo -E bash && sudo apt install -y caddy
+
     - name: Run tests
       run: |
         (cd goodmap-frontend && make serve)&
+        caddy run&
         make run-e2e-goodmap&
         make e2e-tests

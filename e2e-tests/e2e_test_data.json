@@ -123,11 +123,6 @@
     "left_bar_width": "300px"
   },
   "plugins": [
-    {
-      "name": "redirections",
-      "config": {
-        "/static/map.js": "http://localhost:8080/index.js"
-      }
-    }
+
   ]
 }
