@@ -49,10 +49,6 @@ jobs:
     - name: Install python dependencies
       run : poetry add goodmap
 
-    - name: Install
-      run : poetry add platzky-redirections
-
-
     - name: Install dependencies
       run: npm install
 
