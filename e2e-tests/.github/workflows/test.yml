@@ -1,0 +1,13 @@
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+jobs:
+  e2e-tests:
+    uses: ./.github/workflows/test-base.yml
+    with:
+      goodmap-version: 'main'
+      goodmap-frontend-version: 'main'

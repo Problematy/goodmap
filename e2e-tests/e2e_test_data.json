@@ -123,12 +123,6 @@
     "left_bar_width": "300px"
   },
   "plugins": [
-    {
-      "name": "redirections",
-      "config": {
-        "/test": "/blog/page/about",
-        "/static/map.js": "https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.4.1"
-      }
-    }
+
   ]
 }
