@@ -15,6 +15,7 @@ on:
         required: false
         type: string
         default: problematy/goodmap-frontend
+
 jobs:
   e2e-tests:
     name: E2E tests
