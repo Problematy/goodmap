@@ -73,6 +73,7 @@ jobs:
         pwd
         ls -al
         cat Makefile
+        
         (cd ../goodmap-frontend && make serve && ls -al)&
         caddy run&
         make run-e2e-goodmap&
