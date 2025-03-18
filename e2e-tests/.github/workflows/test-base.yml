@@ -24,6 +24,8 @@ jobs:
       uses: actions/checkout@v4
       with:
         path: goodmap-e2e-tests
+        repository: problematy/goodmap-e2e-tests
+        ref: main
     - name: Checkout goodmap repository
       uses: actions/checkout@v4
       with:
@@ -73,7 +75,7 @@ jobs:
         pwd
         ls -al
         cat Makefile
-        
+        (cd ../goodmap-frontend && make serve && ls -al)&
         (cd ../goodmap-frontend && make serve && ls -al)&
         caddy run&
         make run-e2e-goodmap&
