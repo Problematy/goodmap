@@ -1,42 +1,52 @@
 name: Testing pipeline
 
 on:
-    pull_request:
-    push:
-        branches:
-            - main
+  pull_request:
+  push:
+    branches:
+      - main
 
 permissions:
-    contents: 'read'
+  contents: 'read'
 
 jobs:
-    lint:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v3
-            - name: Set up Node.js
-              uses: actions/setup-node@v3
-              with:
-                  node-version: '16.14'
-            - name: Install dev dependencies
-              run: npm install
-            - name: Run lint test
-              run: make lint
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16.14'
+      - name: Install dev dependencies
+        run: npm install
+      - name: Run lint test
+        run: make lint
 
-    frontend-test:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v3
-            - name: Set up Node.js
-              uses: actions/setup-node@v3
-              with:
-                  node-version: '16.14'
-            - name: Install dependencies
-              run: npm install
-            - name: Test with coverage
-              run: make coverage
-            - name: Coveralls
-              uses: coverallsapp/github-action@v2
-              with:
-                  path-to-lcov: './coverage/lcov.info'
-                  github-token: ${{ secrets.GITHUB_TOKEN }}
+  frontend-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16.14'
+      - name: Install dependencies
+        run: npm install
+      - name: Test with coverage
+        run: make coverage
+      - name: Coveralls
+        uses: coverallsapp/github-action@v2
+        with:
+          path-to-lcov: './coverage/lcov.info'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  e2e-tests:
+    needs: frontend-test
+
+    uses: problematy/goodmap-e2e-tests/.github/workflows/test-base.yml@main
+    with:
+      goodmap-version: 'main'
+      goodmap-repository: problematy/goodmap
+      goodmap-frontend-version: ${{ github.sha }}
+      goodmap-frontend-repository: ${{ github.repository }}
