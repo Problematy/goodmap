@@ -22,13 +22,15 @@ jobs:
     steps:
     - name: Checkout tests repository
       uses: actions/checkout@v4
+      with:
+        path: goodmap-e2e-tests
     - name: Checkout goodmap repository
       uses: actions/checkout@v4
       with:
+        path: goodmap
         repository: problematy/goodmap
         submodules: 'true'
         ref: ${{ inputs.goodmap-version }}
-        path: goodmap
     - name: Checkout goodmap frontend repository
       uses: actions/checkout@v4
       with:
@@ -39,7 +41,6 @@ jobs:
     - name: Install frontend dependencies
       working-directory: goodmap-frontend
       run: npm install
-
 
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -58,13 +59,16 @@ jobs:
       run : poetry add goodmap
 
     - name: Install dependencies
+      working-directory: goodmap-e2e-tests
       run: npm install
 
       # Caddy is needed to serve the frontend and the backend during the tests because cypress does not support CORS
     - name: Install Caddy
+      working-directory: goodmap-e2e-tests
       run: curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/setup.deb.sh' | sudo -E bash && sudo apt install -y caddy
 
     - name: Run tests
+      working-directory: goodmap-e2e-tests
       run: |
         (cd goodmap-frontend && make serve)&
         caddy run&
