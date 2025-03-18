@@ -24,8 +24,8 @@ jobs:
       uses: actions/checkout@v4
       with:
         path: goodmap-e2e-tests
-        repository: problematy/goodmap-e2e-tests
-        ref: main
+        repository: raven-wing/goodmap-e2e-tests
+        ref: tests
     - name: Checkout goodmap repository
       uses: actions/checkout@v4
       with:
