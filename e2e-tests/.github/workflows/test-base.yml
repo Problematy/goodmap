@@ -7,6 +7,14 @@ on:
       goodmap-frontend-version:
         required: true
         type: string
+      goodmap-repository:
+        required: false
+        type: string
+        default: problematy/goodmap
+      goodmap-frontend-repository:
+        required: false
+        type: string
+        default: problematy/goodmap-frontend
 jobs:
   e2e-tests:
     name: E2E tests
