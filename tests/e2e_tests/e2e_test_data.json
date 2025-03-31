@@ -30,7 +30,8 @@
           "pedestrians"
         ],
         "type_of_place": "small bridge",
-        "uuid": "dattarro"
+        "uuid": "dattarro",
+        "remark": true
       }
     ],
     "location_obligatory_fields": [
