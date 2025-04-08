@@ -63,6 +63,10 @@ def test_app(notifier_function, db_mock):
         ],
         "meta_data": ["uuid"],
         "visible_data": ["name", "test_category", "type_of_place"],
+        "categories_help": ["test-category"],
+        "categories_options_help": {
+            "test-category": ["test"],
+        },
     }
     db_mock.get_locations.return_value = [
         LocationBase(position=(50, 50), uuid="1"),
@@ -146,7 +150,10 @@ def test_categories_endpoint_returns_categories(test_app):
     # make gettext used in flask_babel return the same string as the input
     response = test_app.get("/api/categories")
     assert response.status_code == 200
-    assert response.json == [["test-category", "test-category-translated"]]
+    assert response.json == {
+        "categories": [["test-category", "test-category-translated"]],
+        "categories_help": [{"test-category": "categories_help_test-category-translated"}],
+    }
 
 
 @mock.patch("importlib.metadata.version", return_value="0.1.2")
@@ -161,7 +168,10 @@ def test_version_endpoint_returns_version(mock_returning_version, test_app):
 def test_getting_all_category_data(test_app):
     response = test_app.get("/api/category/test-category")
     assert response.status_code == 200
-    assert response.json == [["test", "test-translated"], ["test2", "test2-translated"]]
+    assert response.json == {
+        "categories_options": [["test", "test-translated"], ["test2", "test2-translated"]],
+        "categories_options_help": [{"test": "categories_options_help_test-translated"}],
+    }
 
 
 def test_getting_token(test_app):
