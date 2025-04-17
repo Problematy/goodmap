@@ -104,6 +104,102 @@ def get_locations(db, location_model):
     return partial(globals()[f"{db.module_name}_get_locations"], location_model=location_model)
 
 
+# ------------------------------------------------
+# add_location
+
+def json_file_db_add_location(self, location_data, location_model):
+    location = location_model.model_validate(location_data)
+    with open(self.data_file_path, "r") as file:
+        json_file = json.load(file)
+
+    map_data = json_file["map"].get("data", [])
+    idx = next((i for i, point in enumerate(map_data) if point.get("uuid") == location_data["uuid"]), None)
+    if idx is not None:
+        raise ValueError(f"Location with uuid {location_data['uuid']} already exists")
+
+    map_data.append(location.model_dump())
+    json_file["map"]["data"] = map_data
+
+    with open(self.data_file_path, "w") as file:
+        json.dump(json_file, file)
+
+
+def json_db_add_location(self, location_data, location_model):
+    location = location_model.model_validate(location_data)
+    idx = next((i for i, point in enumerate(self.data.get("data", [])) if point.get("uuid") == location_data["uuid"]), None)
+    if idx is not None:
+        raise ValueError(f"Location with uuid {location_data['uuid']} already exists")
+    self.data["data"].append(location.model_dump())
+
+
+def add_location(db, location_data, location_model):
+    return globals()[f"{db.module_name}_add_location"](db, location_data, location_model)
+
+
+# ------------------------------------------------
+# update_location
+
+
+def json_file_db_update_location(self, uuid, location_data, location_model):
+    location = location_model.model_validate(location_data)
+    with open(self.data_file_path, "r") as file:
+        json_file = json.load(file)
+
+    map_data = json_file["map"].get("data", [])
+    idx = next((i for i, point in enumerate(map_data) if point.get("uuid") == uuid), None)
+    if idx is None:
+        raise ValueError(f"Location with uuid {uuid} not found")
+
+    map_data[idx] = location.model_dump()
+    json_file["map"]["data"] = map_data
+
+    with open(self.data_file_path, "w") as file:
+        json.dump(json_file, file)
+
+
+def json_db_update_location(self, uuid, location_data, location_model):
+    location = location_model.model_validate(location_data)
+    idx = next((i for i, point in enumerate(self.data.get("data", [])) if point.get("uuid") == uuid), None)
+    if idx is None:
+        raise ValueError(f"Location with uuid {uuid} not found")
+    self.data["data"][idx] = location.model_dump()
+
+
+def update_location(db, uuid, location_data, location_model):
+    return globals()[f"{db.module_name}_update_location"](db, uuid, location_data, location_model)
+
+
+# ------------------------------------------------
+# delete_location
+
+
+def json_file_db_delete_location(self, uuid):
+    with open(self.data_file_path, "r") as file:
+        json_file = json.load(file)
+
+    map_data = json_file["map"].get("data", [])
+    idx = next((i for i, point in enumerate(map_data) if point.get("uuid") == uuid), None)
+    if idx is None:
+        raise ValueError(f"Location with uuid {uuid} not found")
+
+    del map_data[idx]
+    json_file["map"]["data"] = map_data
+
+    with open(self.data_file_path, "w") as file:
+        json.dump(json_file, file)
+
+
+def json_db_delete_location(self, uuid):
+    idx = next((i for i, point in enumerate(self.data.get("data", [])) if point.get("uuid") == uuid), None)
+    if idx is None:
+        raise ValueError(f"Location with uuid {uuid} not found")
+    del self.data["data"][idx]
+
+
+def delete_location(db, uuid):
+    return globals()[f"{db.module_name}_delete_location"](db, uuid)
+
+
 # TODO extension function should be replaced with simple extend which would take a db plugin
 # it could look like that:
 #   `db.extend(goodmap_db_plugin)` in plugin all those functions would be organized
@@ -113,4 +209,7 @@ def extend_db_with_goodmap_queries(db, location_model):
     db.extend("get_data", get_data(db))
     db.extend("get_locations", get_locations(db, location_model))
     db.extend("get_location", get_location(db, location_model))
+    db.extend("add_location", partial(add_location, location_model=location_model))
+    db.extend("update_location", partial(update_location, location_model=location_model))
+    db.extend("delete_location", delete_location)
     return db

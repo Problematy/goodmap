@@ -137,4 +137,58 @@ def core_pages(
             csrf_token = csrf_generator()
             return {"csrf_token": csrf_token}
 
+    @core_api.route("/admin/locations")
+    class AdminManageLocations(Resource):
+        def get(self):
+            """
+            Shows full list of locations
+            """
+            query_params = request.args.to_dict(flat=False)
+            all_locations = database.get_locations(query_params)
+            return jsonify([x.model_dump() for x in all_locations])
+
+        def post(self):
+            """
+            Creates a new location
+            """
+            location_data = request.get_json()
+            try:
+                location_data.update({"uuid": str(uuid.uuid4())})
+                location = location_model.model_validate(location_data)
+                database.add_location(location.model_dump())
+            except ValueError as e:
+                return make_response(jsonify({"message": f"Invalid location data: {e}"}), 400)
+            except Exception as e:
+                return make_response(jsonify({"message": f"Error creating location: {e}"}), 400)
+            return jsonify(location.model_dump())
+
+    @core_api.route("/admin/locations/<location_id>")
+    class AdminManageLocation(Resource):
+        def put(self, location_id):
+            """
+            Updates a single location
+            """
+            location_data = request.get_json()
+            try:
+                location_data.update({"uuid": location_id})
+                location = location_model.model_validate(location_data)
+                database.update_location(location_id, location.model_dump())
+            except ValueError as e:
+                return make_response(jsonify({"message": f"Invalid location data: {e}"}), 400)
+            except Exception as e:
+                return make_response(jsonify({"message": f"Error updating location: {e}"}), 400)
+            return jsonify(location.model_dump())
+
+        def delete(self, location_id):
+            """
+            Deletes a single location
+            """
+            try:
+                database.delete_location(location_id)
+            except ValueError as e:
+                return make_response(jsonify({"message": f"Location not found: {e}"}), 404)
+            except Exception as e:
+                return make_response(jsonify({"message": f"Error deleting location: {e}"}), 400)
+            return '', 204
+
     return core_api_blueprint
