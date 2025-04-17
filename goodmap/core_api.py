@@ -46,6 +46,7 @@ def core_pages(
                 suggested_location = request.get_json()
                 suggested_location.update({"uuid": str(uuid.uuid4())})
                 location = location_model.model_validate(suggested_location)
+                database.add_suggestion(location.model_dump())
                 message = (
                     f"A new location has been suggested under uuid: '{location.uuid}' "
                     f"at position: {location.position}"
@@ -64,11 +65,22 @@ def core_pages(
             """Report location"""
             try:
                 location_report = request.get_json()
+                report = {
+                    "uuid": str(uuid.uuid4()),
+                    "location_id": location_report["id"],
+                    "description": location_report["description"],
+                    "status": "pending",
+                    "priority": "medium",
+                }
+                database.add_report(report)
                 message = (
                     f"A location has been reported: '{location_report['id']}' "
                     f"with problem: {location_report['description']}"
                 )
                 notifier_function(message)
+            except KeyError as e:
+                error_message = gettext("Error reporting location")
+                return make_response(jsonify({"message": f"{error_message} : {e}"}), 400)
             except Exception as e:
                 error_message = gettext("Error sending notification")
                 return make_response(jsonify({"message": f"{error_message} : {e}"}), 400)
@@ -190,5 +202,73 @@ def core_pages(
             except Exception as e:
                 return make_response(jsonify({"message": f"Error deleting location: {e}"}), 400)
             return '', 204
+    
+    @core_api.route("/admin/suggestions")
+    class AdminManageSuggestions(Resource):
+        def get(self):
+            """
+            List location suggestions
+            """
+            query_params = request.args.to_dict(flat=False)
+            suggestions = database.get_suggestions(query_params)
+            return jsonify(suggestions)
+
+    @core_api.route("/admin/suggestions/<suggestion_id>")
+    class AdminManageSuggestion(Resource):
+        def put(self, suggestion_id):
+            """
+            Accept or reject a location suggestion
+            """
+            try:
+                data = request.get_json()
+                status = data.get("status")
+                if status not in ("accepted", "rejected"):
+                    return make_response(jsonify({"message": f"Invalid status: {status}"}), 400)
+                suggestion = database.get_suggestion(suggestion_id)
+                if not suggestion:
+                    return make_response(jsonify({"message": "Suggestion not found"}), 404)
+                if suggestion.get("status") != "pending":
+                    return make_response(jsonify({"message": "Suggestion already processed"}), 400)
+                if status == "accepted":
+                    suggestion_data = {k: v for k, v in suggestion.items() if k != "status"}
+                    database.add_location(suggestion_data)
+                database.update_suggestion(suggestion_id, status)
+            except ValueError as e:
+                return make_response(jsonify({"message": f"{e}"}), 400)
+            return jsonify(database.get_suggestion(suggestion_id))
+
+    @core_api.route("/admin/reports")
+    class AdminManageReports(Resource):
+        def get(self):
+            """
+            List location reports
+            """
+            query_params = request.args.to_dict(flat=False)
+            reports = database.get_reports(query_params)
+            return jsonify(reports)
+
+    @core_api.route("/admin/reports/<report_id>")
+    class AdminManageReport(Resource):
+        def put(self, report_id):
+            """
+            Update a report's status and/or priority
+            """
+            try:
+                data = request.get_json()
+                status = data.get("status")
+                priority = data.get("priority")
+                valid_status = ("resolved", "rejected")
+                valid_priority = ("critical", "high", "medium", "low")
+                if status and status not in valid_status:
+                    return make_response(jsonify({"message": f"Invalid status: {status}"}), 400)
+                if priority and priority not in valid_priority:
+                    return make_response(jsonify({"message": f"Invalid priority: {priority}"}), 400)
+                report = database.get_report(report_id)
+                if not report:
+                    return make_response(jsonify({"message": "Report not found"}), 404)
+                database.update_report(report_id, status=status, priority=priority)
+            except ValueError as e:
+                return make_response(jsonify({"message": f"{e}"}), 400)
+            return jsonify(database.get_report(report_id))
 
     return core_api_blueprint
