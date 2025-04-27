@@ -1,0 +1,428 @@
+{% extends "base.html" %}
+
+{% block head_meta %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+      integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+      crossorigin=""/>
+<style>
+  .map { height: 400px; }
+</style>
+{% endblock %}
+{% block title %}{{ gettext("Admin Panel") }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <h1 class="mb-4">{{ gettext("Admin Panel") }}</h1>
+  <!-- Tabs navigation -->
+  <ul class="nav nav-tabs mb-3" id="adminTab" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="locations-tab" data-bs-toggle="tab" data-bs-target="#locations" type="button" role="tab" aria-controls="locations" aria-selected="true">{{ gettext("Locations") }}</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="suggestions-tab" data-bs-toggle="tab" data-bs-target="#suggestions" type="button" role="tab" aria-controls="suggestions" aria-selected="false">{{ gettext("Suggestions") }}</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="reports-tab" data-bs-toggle="tab" data-bs-target="#reports" type="button" role="tab" aria-controls="reports" aria-selected="false">{{ gettext("Reports") }}</button>
+    </li>
+  </ul>
+  <div class="tab-content" id="adminTabContent">
+    <!-- Locations Tab -->
+    <div class="tab-pane fade show active" id="locations" role="tabpanel" aria-labelledby="locations-tab">
+      <div class="d-flex flex-wrap align-items-center mb-3">
+        <h2 class="me-auto">{{ gettext("Locations") }}</h2>
+        <div class="btn-group ms-2">
+          <button id="add-location-btn" class="btn btn-primary">{{ gettext("Add Location") }}</button>
+        </div>
+        <div class="btn-group ms-2">
+          <button class="btn btn-secondary dropdown-toggle" type="button" id="filter-type-btn" data-bs-toggle="dropdown" aria-expanded="false">{{ gettext("Filter by Type") }}</button>
+          <div class="dropdown-menu p-3" id="filter-type-menu"></div>
+        </div>
+        <div class="btn-group ms-2">
+          <button class="btn btn-secondary dropdown-toggle" type="button" id="filter-access-btn" data-bs-toggle="dropdown" aria-expanded="false">{{ gettext("Filter by Accessibility") }}</button>
+          <div class="dropdown-menu p-3" id="filter-access-menu"></div>
+        </div>
+      </div>
+      <table class="table table-striped table-bordered">
+        <thead>
+          <tr>
+            <th>{{ gettext("UUID") }}</th>
+            <th>{{ gettext("Name") }}</th>
+            <th>{{ gettext("Position") }}</th>
+            <th>{{ gettext("Accessible By") }}</th>
+            <th>{{ gettext("Type") }}</th>
+            <th>{{ gettext("Actions") }}</th>
+          </tr>
+        </thead>
+        <tbody id="locations-body"></tbody>
+      </table>
+      <!-- Location Form -->
+      <div class="card mt-4" id="location-form-card" style="display:none">
+        <div class="card-body">
+          <h3 id="location-form-title"></h3>
+          <form id="location-form">
+            <input type="hidden" id="location-uuid">
+            <div class="mb-3">
+              <label for="location-name" class="form-label">{{ gettext("Name") }}</label>
+              <input type="text" class="form-control" id="location-name" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">{{ gettext("Position") }}</label>
+              <div id="location-map" class="map"></div>
+              <input type="hidden" id="location-position">
+            </div>
+            <div class="mb-3">
+              <label for="location-type" class="form-label">{{ gettext("Type") }}</label>
+              <select class="form-select" id="location-type" required></select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">{{ gettext("Accessible By") }}</label>
+              <div id="location-accessible" class="d-flex flex-wrap"></div>
+            </div>
+            <button type="submit" class="btn btn-success">{{ gettext("Save") }}</button>
+            <button type="button" class="btn btn-secondary" id="location-cancel-btn">{{ gettext("Cancel") }}</button>
+            <button type="button" class="btn btn-danger" id="location-delete-btn" style="display:none">{{ gettext("Delete") }}</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    <!-- Suggestions Tab -->
+    <div class="tab-pane fade" id="suggestions" role="tabpanel" aria-labelledby="suggestions-tab">
+      <div class="d-flex align-items-center mb-3">
+        <h2 class="me-auto">{{ gettext("Suggestions") }}</h2>
+        <div class="btn-group">
+          <button class="btn btn-secondary dropdown-toggle" type="button" id="suggestions-filter-btn" data-bs-toggle="dropdown" aria-expanded="false">{{ gettext("Filter by Status") }}</button>
+          <div class="dropdown-menu p-3" id="suggestions-filter-menu"></div>
+        </div>
+      </div>
+      <div id="suggestions-map" class="map mb-3"></div>
+      <table class="table table-striped table-bordered">
+        <thead>
+          <tr>
+            <th>{{ gettext("UUID") }}</th>
+            <th>{{ gettext("Name") }}</th>
+            <th>{{ gettext("Position") }}</th>
+            <th>{{ gettext("Status") }}</th>
+            <th>{{ gettext("Actions") }}</th>
+          </tr>
+        </thead>
+        <tbody id="suggestions-body"></tbody>
+      </table>
+    </div>
+    <!-- Reports Tab -->
+    <div class="tab-pane fade" id="reports" role="tabpanel" aria-labelledby="reports-tab">
+      <div class="d-flex align-items-center mb-3">
+        <h2 class="me-auto">{{ gettext("Reports") }}</h2>
+        <div class="btn-group me-2">
+          <button class="btn btn-secondary dropdown-toggle" type="button" id="reports-filter-status-btn" data-bs-toggle="dropdown" aria-expanded="false">{{ gettext("Filter by Status") }}</button>
+          <div class="dropdown-menu p-3" id="reports-filter-status-menu"></div>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-secondary dropdown-toggle" type="button" id="reports-filter-priority-btn" data-bs-toggle="dropdown" aria-expanded="false">{{ gettext("Filter by Priority") }}</button>
+          <div class="dropdown-menu p-3" id="reports-filter-priority-menu"></div>
+        </div>
+      </div>
+      <table class="table table-striped table-bordered">
+        <thead>
+          <tr>
+            <th>{{ gettext("UUID") }}</th>
+            <th>{{ gettext("Location ID") }}</th>
+            <th>{{ gettext("Description") }}</th>
+            <th>{{ gettext("Status") }}</th>
+            <th>{{ gettext("Priority") }}</th>
+          </tr>
+        </thead>
+        <tbody id="reports-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Load Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  let csrfToken = '';
+  fetch('/api/generate-csrf-token').then(r => r.json()).then(data => { csrfToken = data.csrf_token; });
+
+  // Data containers
+  let locationsData = [];
+  let suggestionsData = [];
+  let reportsData = [];
+
+  // Category options
+  const categories = { accessible_by: [], type_of_place: [] };
+
+  // Maps
+  let locationMap, locationMarker;
+  let suggestionsMap, suggestionsTile;
+
+  // Priority order for sorting reports
+  const priorityOrder = { critical: 1, high: 2, medium: 3, low: 4 };
+
+  // Filters state
+  const locFilters = { type: [], access: [] };
+  const suggFilters = { status: ['pending'] };
+  const repFilters = { status: ['pending'], priority: [] };
+
+  // Initialize UI
+  initCategories().then(() => {
+    buildLocationFilters();
+    buildLocationFormOptions();
+    buildSuggestionFilters();
+    buildReportFilters();
+    loadLocations();
+    loadSuggestions();
+    loadReports();
+  });
+
+  // Category fetch
+  function initCategories() {
+    return Promise.all([
+      fetch('/api/category/accessible_by').then(r => r.json()),
+      fetch('/api/category/type_of_place').then(r => r.json())
+    ]).then(([accessOpts, typeOpts]) => {
+      categories.accessible_by = accessOpts.map(o => o[0]);
+      categories.type_of_place = typeOpts.map(o => o[0]);
+    });
+  }
+
+  // Location Filters
+  function buildLocationFilters() {
+    const typeMenu = document.getElementById('filter-type-menu');
+    categories.type_of_place.forEach(type => {
+      const div = document.createElement('div'); div.className = 'form-check';
+      const cb = document.createElement('input'); cb.className = 'form-check-input loc-filter-type'; cb.type = 'checkbox'; cb.value = type;
+      cb.id = 'filter-type-' + type; cb.addEventListener('change', applyLocationFilters);
+      const lbl = document.createElement('label'); lbl.className = 'form-check-label'; lbl.htmlFor = cb.id; lbl.innerText = type;
+      div.append(cb, lbl); typeMenu.append(div);
+    });
+    const accessMenu = document.getElementById('filter-access-menu');
+    categories.accessible_by.forEach(acc => {
+      const div = document.createElement('div'); div.className = 'form-check';
+      const cb = document.createElement('input'); cb.className = 'form-check-input loc-filter-access'; cb.type = 'checkbox'; cb.value = acc;
+      cb.id = 'filter-access-' + acc; cb.addEventListener('change', applyLocationFilters);
+      const lbl = document.createElement('label'); lbl.className = 'form-check-label'; lbl.htmlFor = cb.id; lbl.innerText = acc;
+      div.append(cb, lbl); accessMenu.append(div);
+    });
+    document.getElementById('add-location-btn').addEventListener('click', () => showLocationForm());
+    document.getElementById('location-cancel-btn').addEventListener('click', hideLocationForm);
+  }
+
+  function applyLocationFilters() {
+    locFilters.type = Array.from(document.querySelectorAll('.loc-filter-type:checked')).map(cb => cb.value);
+    locFilters.access = Array.from(document.querySelectorAll('.loc-filter-access:checked')).map(cb => cb.value);
+    renderLocations();
+  }
+
+  // Location Form
+  function buildLocationFormOptions() {
+    const typeSel = document.getElementById('location-type');
+    categories.type_of_place.forEach(type => {
+      const opt = document.createElement('option'); opt.value = type; opt.innerText = type; typeSel.append(opt);
+    });
+    const acDiv = document.getElementById('location-accessible');
+    categories.accessible_by.forEach(acc => {
+      const div = document.createElement('div'); div.className = 'form-check me-3';
+      const cb = document.createElement('input'); cb.className = 'form-check-input'; cb.type = 'checkbox'; cb.id = 'loc-form-access-' + acc; cb.value = acc;
+      const lbl = document.createElement('label'); lbl.className = 'form-check-label'; lbl.htmlFor = cb.id; lbl.innerText = acc;
+      div.append(cb, lbl); acDiv.append(div);
+    });
+    document.getElementById('location-form').addEventListener('submit', submitLocationForm);
+    document.getElementById('location-delete-btn').addEventListener('click', deleteLocation);
+  }
+
+  function showLocationForm(loc) {
+    document.getElementById('location-form-title').innerText = loc ? '{{ gettext("Edit Location") }}' : '{{ gettext("Add Location") }}';
+    document.getElementById('location-uuid').value = loc ? loc.uuid : '';
+    document.getElementById('location-name').value = loc ? loc.name : '';
+    document.getElementById('location-type').value = loc ? loc.type_of_place : '';
+    categories.accessible_by.forEach(acc => {
+      document.getElementById('loc-form-access-' + acc).checked = loc && loc.accessible_by.includes(acc);
+    });
+    document.getElementById('location-delete-btn').style.display = loc ? 'inline-block' : 'none';
+    const posInput = document.getElementById('location-position');
+    if (!locationMap) initLocationMap();
+    if (loc) {
+      const latlng = L.latLng(loc.position[0], loc.position[1]);
+      placeLocationMarker(latlng);
+      locationMap.setView(latlng, 15);
+      posInput.value = JSON.stringify(loc.position);
+    } else {
+      if (locationMarker) locationMap.removeLayer(locationMarker);
+      locationMap.setView([0,0], 2);
+      posInput.value = '';
+    }
+    document.getElementById('location-form-card').style.display = 'block';
+    window.scrollTo(0, document.getElementById('location-form-card').offsetTop);
+  }
+
+  function hideLocationForm() {
+    document.getElementById('location-form-card').style.display = 'none';
+  }
+
+  function initLocationMap() {
+    locationMap = L.map('location-map').setView([0,0], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ attribution: '© OpenStreetMap contributors' }).addTo(locationMap);
+    locationMap.on('click', e => placeLocationMarker(e.latlng));
+  }
+
+  function placeLocationMarker(latlng) {
+    if (!locationMarker) {
+      locationMarker = L.marker(latlng,{ draggable:true }).addTo(locationMap);
+      locationMarker.on('dragend', e => updateLocationPosition(e.target.getLatLng()));
+    } else {
+      locationMarker.setLatLng(latlng);
+    }
+    updateLocationPosition(latlng);
+  }
+
+  function updateLocationPosition(latlng) {
+    document.getElementById('location-position').value = JSON.stringify([latlng.lat, latlng.lng]);
+  }
+
+  function submitLocationForm(e) {
+    e.preventDefault();
+    const uuid = document.getElementById('location-uuid').value;
+    const name = document.getElementById('location-name').value;
+    const position = JSON.parse(document.getElementById('location-position').value || '[]');
+    const type = document.getElementById('location-type').value;
+    const accessible_by = categories.accessible_by.filter(acc => document.getElementById('loc-form-access-' + acc).checked);
+    const payload = { name, position, type_of_place: type, accessible_by };
+    const method = uuid ? 'PUT' : 'POST';
+    const url = '/api/admin/locations' + (uuid ? '/' + uuid : '');
+    fetch(url, { method, headers: { 'Content-Type':'application/json','X-CSRFToken':csrfToken }, body: JSON.stringify(payload) })
+      .then(r => { if (r.ok) { hideLocationForm(); loadLocations(); } else r.json().then(err => alert(err.message)); });
+  }
+
+  function deleteLocation() {
+    const uuid = document.getElementById('location-uuid').value;
+    if (!uuid) return;
+    fetch('/api/admin/locations/' + uuid, { method: 'DELETE', headers:{ 'X-CSRFToken':csrfToken } })
+      .then(r => { if (r.ok) { hideLocationForm(); loadLocations(); } else alert('{{ gettext("Error deleting location") }}'); });
+  }
+
+  function loadLocations() {
+    fetch('/api/admin/locations').then(r=>r.json()).then(data=>{ locationsData=data; renderLocations(); });
+  }
+
+  function renderLocations() {
+    const tbody = document.getElementById('locations-body'); tbody.innerHTML='';
+    locationsData.filter(loc => (locFilters.type.length===0 || locFilters.type.includes(loc.type_of_place)) && (locFilters.access.length===0 || loc.accessible_by.some(a=>locFilters.access.includes(a)))).forEach(loc => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${loc.uuid}</td><td>${loc.name}</td><td>[${loc.position}]</td><td>${loc.accessible_by.join(', ')}</td><td>${loc.type_of_place}</td><td><button class="btn btn-sm btn-primary edit-loc-btn" data-id="${loc.uuid}">{{gettext("Edit") }}</button></td>`;
+      tbody.appendChild(tr);
+      tr.querySelector('.edit-loc-btn').addEventListener('click', ()=> { const l=locationsData.find(x=>x.uuid==loc.uuid); showLocationForm(l); });
+    });
+  }
+
+  // Suggestions
+  function buildSuggestionFilters() {
+    const menu = document.getElementById('suggestions-filter-menu');
+    ['pending','accepted','rejected'].forEach(status => {
+      const div = document.createElement('div'); div.className='form-check';
+      const cb = document.createElement('input'); cb.className='form-check-input sugg-filter-status'; cb.type='checkbox'; cb.value=status; cb.id='sugg-filter-'+status;
+      if (status==='pending') cb.checked=true; cb.addEventListener('change', applySuggestionFilters);
+      const lbl = document.createElement('label'); lbl.className='form-check-label'; lbl.htmlFor=cb.id; lbl.innerText=status;
+      div.append(cb,lbl); menu.append(div);
+    });
+  }
+
+  function applySuggestionFilters() {
+    suggFilters.status = Array.from(document.querySelectorAll('.sugg-filter-status:checked')).map(cb=>cb.value);
+    renderSuggestions();
+  }
+
+  function loadSuggestions() {
+    fetch('/api/admin/suggestions').then(r=>r.json()).then(data=>{ suggestionsData=data; renderSuggestions(); });
+  }
+
+  function initSuggestionsMap() {
+    suggestionsMap = L.map('suggestions-map').setView([0,0],2);
+    suggestionsTile = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ attribution:'© OpenStreetMap contributors' }).addTo(suggestionsMap);
+  }
+
+  function renderSuggestions() {
+    if (!suggestionsMap) initSuggestionsMap();
+    const filtered = suggestionsData.filter(s=>suggFilters.status.length===0 || suggFilters.status.includes(s.status));
+    suggestionsMap.eachLayer(layer=>{ if (layer!==suggestionsTile) suggestionsMap.removeLayer(layer); });
+    filtered.forEach(s=> {
+      const m = L.marker([s.position[0],s.position[1]]).addTo(suggestionsMap); m.bindPopup(`<strong>${s.name||''}</strong><br>${s.status}`);
+    });
+    const tbody = document.getElementById('suggestions-body'); tbody.innerHTML='';
+    filtered.forEach(s=> {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${s.uuid}</td><td>${s.name||''}</td><td>[${s.position}]</td><td>${s.status}</td><td><button class="btn btn-sm btn-success sugg-accept-btn" data-id="${s.uuid}">{{ gettext("Accept") }}</button> <button class="btn btn-sm btn-danger sugg-reject-btn" data-id="${s.uuid}">{{ gettext("Reject") }}</button></td>`;
+      tbody.appendChild(tr);
+      tr.querySelector('.sugg-accept-btn').addEventListener('click', ()=> updateSuggestion(s.uuid,'accepted'));
+      tr.querySelector('.sugg-reject-btn').addEventListener('click', ()=> updateSuggestion(s.uuid,'rejected'));
+    });
+  }
+
+  function updateSuggestion(id,status) {
+    fetch('/api/admin/suggestions/'+id, { method:'PUT', headers:{'Content-Type':'application/json','X-CSRFToken':csrfToken}, body: JSON.stringify({status}) })
+      .then(r=>{ if (r.ok) loadSuggestions(); else r.json().then(err=>alert(err.message)); });
+  }
+
+  // Reports
+  function buildReportFilters() {
+    const statMenu = document.getElementById('reports-filter-status-menu');
+    ['pending','resolved','rejected'].forEach(status => {
+      const div = document.createElement('div'); div.className='form-check';
+      const cb = document.createElement('input'); cb.className='form-check-input rep-filter-status'; cb.type='checkbox'; cb.value=status; cb.id='rep-filter-status-'+status;
+      if (status==='pending') cb.checked=true; cb.addEventListener('change', applyReportFilters);
+      const lbl = document.createElement('label'); lbl.className='form-check-label'; lbl.htmlFor=cb.id; lbl.innerText=status;
+      div.append(cb,lbl); statMenu.append(div);
+    });
+    const priMenu = document.getElementById('reports-filter-priority-menu');
+    ['critical','high','medium','low'].forEach(pr => {
+      const div = document.createElement('div'); div.className='form-check';
+      const cb = document.createElement('input'); cb.className='form-check-input rep-filter-priority'; cb.type='checkbox'; cb.value=pr; cb.id='rep-filter-priority-'+pr;
+      cb.addEventListener('change', applyReportFilters);
+      const lbl = document.createElement('label'); lbl.className='form-check-label'; lbl.htmlFor=cb.id; lbl.innerText=pr;
+      div.append(cb,lbl); priMenu.append(div);
+    });
+  }
+
+  function applyReportFilters() {
+    repFilters.status = Array.from(document.querySelectorAll('.rep-filter-status:checked')).map(cb=>cb.value);
+    repFilters.priority = Array.from(document.querySelectorAll('.rep-filter-priority:checked')).map(cb=>cb.value);
+    renderReports();
+  }
+
+  function loadReports() {
+    fetch('/api/admin/reports').then(r=>r.json()).then(data=>{ reportsData=data; renderReports(); });
+  }
+
+  function renderReports() {
+    const tbody = document.getElementById('reports-body'); tbody.innerHTML='';
+    reportsData
+      .filter(r => (repFilters.status.length===0 || repFilters.status.includes(r.status)) && (repFilters.priority.length===0 || repFilters.priority.includes(r.priority)))
+      .sort((a,b)=> priorityOrder[a.priority] - priorityOrder[b.priority])
+      .forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${r.uuid}</td><td>${r.location_id}</td><td>${r.description}</td><td><select class="form-select form-select-sm rep-status-select" data-id="${r.uuid}"><option value="pending"${r.status==='pending'?' selected':''}>{{ gettext("pending") }}</option><option value="resolved"${r.status==='resolved'?'selected':''}>{{ gettext("resolved") }}</option><option value="rejected"${r.status==='rejected'?' selected':''}>{{ gettext("rejected") }}</option></select></td><td><select class="form-select form-select-sm rep-priority-select" data-id="${r.uuid}"><option value="critical"${r.priority==='critical'?' selected':''}>{{ gettext("critical") }}</option><option value="high"${r.priority==='high'?'selected':''}>{{ gettext("high") }}</option><option value="medium"${r.priority==='medium'?' selected':''}>{{ gettext("medium") }}</option><option value="low"${r.priority==='low'?' selected':''}>{{ gettext("low") }}</option></select></td>`;
+        tbody.appendChild(tr);
+        tr.querySelector('.rep-status-select').addEventListener('change', e=> updateReport(r.uuid,{ status: e.target.value }));
+        tr.querySelector('.rep-priority-select').addEventListener('change', e=> updateReport(r.uuid,{ priority: e.target.value }));
+      });
+  }
+
+  function updateReport(id, data) {
+    fetch('/api/admin/reports/'+id, { method:'PUT', headers:{'Content-Type':'application/json','X-CSRFToken':csrfToken}, body: JSON.stringify(data) })
+      .then(r=>{ if (r.ok) loadReports(); else r.json().then(err=>alert(err.message)); });
+  }
+
+});
+</script>
+<script>
+    window.APP_LANG = "{{ current_language }}";
+    window.SECONDARY_COLOR = "{{ secondary_color }}";
+    window.PRIMARY_COLOR = "{{ primary_color }}";
+    
+    window.SHOW_SUGGEST_NEW_POINT_BUTTON = {{ feature_flags.SHOW_SUGGEST_NEW_POINT_BUTTON | default(false) | tojson }};
+    window.SHOW_SEARCH_BAR = {{ feature_flags.SHOW_SEARCH_BAR | default(false) | tojson }};
+    window.USE_LAZY_LOADING = {{ feature_flags.USE_LAZY_LOADING | default(false) | tojson }};
+    window.SHOW_ACCESSIBILITY_TABLE = {{ feature_flags.SHOW_ACCESSIBILITY_TABLE | default(false) | tojson }};
+</script>
+<script src="/static/map.js"></script>
+{% endblock %}
