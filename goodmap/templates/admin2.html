@@ -6,6 +6,13 @@
       crossorigin=""/>
 <style>
   .map { height: 400px; }
+  /* Ensure dropdowns appear above maps */
+  .dropdown-menu { z-index: 2000 !important; }
+  /* Modernize button spacing and padding */
+  .container-fluid .btn {
+    padding: 0.6rem 1.2rem;
+    margin: 0.3rem;
+  }
 </style>
 {% endblock %}
 {% block title %}{{ gettext("Admin Panel") }}{% endblock %}
@@ -158,6 +165,9 @@ document.addEventListener('DOMContentLoaded', function() {
   // Maps
   let locationMap, locationMarker;
   let suggestionsMap, suggestionsTile;
+  // Default map center (Poland)
+  const POLAND_CENTER = [52.237, 21.017];
+  const POLAND_ZOOM = 6;
 
   // Priority order for sorting reports
   const priorityOrder = { critical: 1, high: 2, medium: 3, low: 4 };
@@ -249,19 +259,42 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     document.getElementById('location-delete-btn').style.display = loc ? 'inline-block' : 'none';
     const posInput = document.getElementById('location-position');
+    const card = document.getElementById('location-form-card');
     if (!locationMap) initLocationMap();
+    // Set form values (marker placement handled after resize)
     if (loc) {
-      const latlng = L.latLng(loc.position[0], loc.position[1]);
-      placeLocationMarker(latlng);
-      locationMap.setView(latlng, 15);
+      document.getElementById('location-uuid').value = loc.uuid;
+      document.getElementById('location-name').value = loc.name;
+      document.getElementById('location-type').value = loc.type_of_place;
+      categories.accessible_by.forEach(acc => {
+        document.getElementById('loc-form-access-' + acc).checked = loc.accessible_by.includes(acc);
+      });
       posInput.value = JSON.stringify(loc.position);
     } else {
+      // Reset form for new
+      document.getElementById('location-uuid').value = '';
+      document.getElementById('location-name').value = '';
+      document.getElementById('location-type').value = '';
+      categories.accessible_by.forEach(acc => {
+        document.getElementById('loc-form-access-' + acc).checked = false;
+      });
       if (locationMarker) locationMap.removeLayer(locationMarker);
-      locationMap.setView([0,0], 2);
       posInput.value = '';
     }
-    document.getElementById('location-form-card').style.display = 'block';
-    window.scrollTo(0, document.getElementById('location-form-card').offsetTop);
+    // Show form
+    card.style.display = 'block';
+    // Allow layout then resize map to fit
+    setTimeout(() => {
+      locationMap.invalidateSize();
+      if (loc) {
+        const latlng = L.latLng(loc.position[0], loc.position[1]);
+        placeLocationMarker(latlng);
+        locationMap.setView(latlng, 15);
+      } else {
+        locationMap.setView(POLAND_CENTER, POLAND_ZOOM);
+      }
+    }, 0);
+    window.scrollTo(0, card.offsetTop);
   }
 
   function hideLocationForm() {
@@ -269,7 +302,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function initLocationMap() {
-    locationMap = L.map('location-map').setView([0,0], 2);
+    locationMap = L.map('location-map').setView(POLAND_CENTER, POLAND_ZOOM);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ attribution: '© OpenStreetMap contributors' }).addTo(locationMap);
     locationMap.on('click', e => placeLocationMarker(e.latlng));
   }
@@ -442,7 +475,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function initSuggestionsMap() {
-    suggestionsMap = L.map('suggestions-map').setView([0,0],2);
+    suggestionsMap = L.map('suggestions-map').setView(POLAND_CENTER, POLAND_ZOOM);
     suggestionsTile = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ attribution:'© OpenStreetMap contributors' }).addTo(suggestionsMap);
   }
 
@@ -639,7 +672,27 @@ document.addEventListener('DOMContentLoaded', function() {
     selDiv.append(lbl, sel);
     pag.appendChild(selDiv);
   }
-
+  // Handle tab hash in URL and map resizing on tab change
+  const tabButtons = document.querySelectorAll('button[data-bs-toggle="tab"]');
+  tabButtons.forEach(btn => {
+    btn.addEventListener('shown.bs.tab', e => {
+      const target = e.target.getAttribute('data-bs-target');
+      history.replaceState(null, '', target);
+      if (target === '#suggestions' && suggestionsMap) {
+        suggestionsMap.invalidateSize();
+        suggestionsMap.setView(POLAND_CENTER, POLAND_ZOOM);
+      }
+    });
+  });
+  // Activate tab from URL hash on load
+  const hash = window.location.hash;
+  if (hash) {
+    const triggerEl = document.querySelector('button[data-bs-target="' + hash + '"]');
+    if (triggerEl) {
+      const tab = new bootstrap.Tab(triggerEl);
+      tab.show();
+    }
+  }
 });
 </script>
 <script>
