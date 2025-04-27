@@ -55,6 +55,7 @@
         </thead>
         <tbody id="locations-body"></tbody>
       </table>
+      <div id="locations-pagination" class="d-flex justify-content-between align-items-center mb-3"></div>
       <!-- Location Form -->
       <div class="card mt-4" id="location-form-card" style="display:none">
         <div class="card-body">
@@ -107,6 +108,7 @@
         </thead>
         <tbody id="suggestions-body"></tbody>
       </table>
+      <div id="suggestions-pagination" class="d-flex justify-content-between align-items-center mb-3"></div>
     </div>
     <!-- Reports Tab -->
     <div class="tab-pane fade" id="reports" role="tabpanel" aria-labelledby="reports-tab">
@@ -133,6 +135,7 @@
         </thead>
         <tbody id="reports-body"></tbody>
       </table>
+      <div id="reports-pagination" class="d-flex justify-content-between align-items-center mb-3"></div>
     </div>
   </div>
 </div>
@@ -163,6 +166,10 @@ document.addEventListener('DOMContentLoaded', function() {
   const locFilters = { type: [], access: [] };
   const suggFilters = { status: ['pending'] };
   const repFilters = { status: ['pending'], priority: [] };
+  // Pagination and sorting state
+  const locState = { page: 1, per_page: 20, sort_by: null, sort_order: 'asc' };
+  const suggState = { page: 1, per_page: 20, sort_by: null, sort_order: 'asc' };
+  const repState = { page: 1, per_page: 20, sort_by: null, sort_order: 'asc' };
 
   // Initialize UI
   initCategories().then(() => {
@@ -211,7 +218,8 @@ document.addEventListener('DOMContentLoaded', function() {
   function applyLocationFilters() {
     locFilters.type = Array.from(document.querySelectorAll('.loc-filter-type:checked')).map(cb => cb.value);
     locFilters.access = Array.from(document.querySelectorAll('.loc-filter-access:checked')).map(cb => cb.value);
-    renderLocations();
+    locState.page = 1;
+    loadLocations();
   }
 
   // Location Form
@@ -302,17 +310,90 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function loadLocations() {
-    fetch('/api/admin/locations').then(r=>r.json()).then(data=>{ locationsData=data; renderLocations(); });
+    const params = new URLSearchParams();
+    params.append('page', locState.page);
+    // Handle per_page parameter ('all' for no limit)
+    params.append('per_page', locState.per_page === null ? 'all' : locState.per_page);
+    if (locState.sort_by) {
+      params.append('sort_by', locState.sort_by);
+      params.append('sort_order', locState.sort_order);
+    }
+    locFilters.type.forEach(t => params.append('type_of_place', t));
+    locFilters.access.forEach(a => params.append('accessible_by', a));
+    fetch('/api/admin/locations?' + params.toString())
+      .then(r => r.json())
+      .then(data => {
+        if (data.items !== undefined) {
+          locationsData = data.items;
+          locState.total = data.total;
+          locState.total_pages = data.total_pages;
+        } else {
+          locationsData = data;
+          locState.total = locationsData.length;
+          locState.total_pages = 1;
+        }
+        renderLocations();
+        renderLocationPagination();
+      });
   }
 
   function renderLocations() {
     const tbody = document.getElementById('locations-body'); tbody.innerHTML='';
-    locationsData.filter(loc => (locFilters.type.length===0 || locFilters.type.includes(loc.type_of_place)) && (locFilters.access.length===0 || loc.accessible_by.some(a=>locFilters.access.includes(a)))).forEach(loc => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${loc.uuid}</td><td>${loc.name}</td><td>[${loc.position}]</td><td>${loc.accessible_by.join(', ')}</td><td>${loc.type_of_place}</td><td><button class="btn btn-sm btn-primary edit-loc-btn" data-id="${loc.uuid}">{{gettext("Edit") }}</button></td>`;
-      tbody.appendChild(tr);
-      tr.querySelector('.edit-loc-btn').addEventListener('click', ()=> { const l=locationsData.find(x=>x.uuid==loc.uuid); showLocationForm(l); });
+    locationsData.forEach(loc => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${loc.uuid}</td><td>${loc.name}</td><td>[${loc.position}]</td><td>${loc.accessible_by.join(', ')}</td><td>${loc.type_of_place}</td><td><button class="btn btn-sm btn-primary edit-loc-btn" data-id="${loc.uuid}">{{gettext("Edit")}}</button></td>`;
+        tbody.appendChild(tr);
+        tr.querySelector('.edit-loc-btn').addEventListener('click', () => { const l = locationsData.find(x => x.uuid == loc.uuid); showLocationForm(l); });
     });
+  }
+  // Pagination for Locations
+  function renderLocationPagination() {
+    const pag = document.getElementById('locations-pagination');
+    pag.innerHTML = '';
+    const info = document.createElement('div');
+    if (locState.per_page === null) {
+      info.innerText = `Showing all ${locState.total} items`;
+    } else {
+      const start = (locState.page - 1) * locState.per_page + 1;
+      const end = Math.min(locState.page * locState.per_page, locState.total);
+      info.innerText = `Showing ${start}-${end} of ${locState.total}`;
+    }
+    pag.appendChild(info);
+    const nav = document.createElement('div');
+    nav.className = 'btn-group';
+    const prev = document.createElement('button');
+    prev.className = 'btn btn-sm btn-secondary';
+    prev.innerText = '{{ gettext("Previous") }}';
+    prev.disabled = locState.page <= 1;
+    prev.addEventListener('click', () => { if (locState.page > 1) { locState.page--; loadLocations(); } });
+    const next = document.createElement('button');
+    next.className = 'btn btn-sm btn-secondary';
+    next.innerText = '{{ gettext("Next") }}';
+    next.disabled = locState.page >= locState.total_pages;
+    next.addEventListener('click', () => { if (locState.page < locState.total_pages) { locState.page++; loadLocations(); } });
+    nav.append(prev, next);
+    pag.appendChild(nav);
+    const selDiv = document.createElement('div');
+    const lbl = document.createElement('label');
+    lbl.className = 'me-2';
+    lbl.innerText = '{{ gettext("Items per page:") }}';
+    const sel = document.createElement('select');
+    sel.className = 'form-select form-select-sm d-inline-block w-auto';
+    [['20','20'],['50','50'],['100','100'],['all','{{ gettext("All") }}']].forEach(([val,text]) => {
+      const opt = document.createElement('option');
+      opt.value = val;
+      opt.innerText = text;
+      if ((locState.per_page === null && val === 'all') || (locState.per_page == parseInt(val))) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    sel.addEventListener('change', () => {
+      const v = sel.value;
+      locState.per_page = v === 'all' ? null : parseInt(v);
+      locState.page = 1;
+      loadLocations();
+    });
+    selDiv.append(lbl, sel);
+    pag.appendChild(selDiv);
   }
 
   // Suggestions
@@ -329,11 +410,35 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function applySuggestionFilters() {
     suggFilters.status = Array.from(document.querySelectorAll('.sugg-filter-status:checked')).map(cb=>cb.value);
-    renderSuggestions();
+    suggState.page = 1;
+    loadSuggestions();
   }
 
   function loadSuggestions() {
-    fetch('/api/admin/suggestions').then(r=>r.json()).then(data=>{ suggestionsData=data; renderSuggestions(); });
+    const params = new URLSearchParams();
+    params.append('page', suggState.page);
+    // Handle per_page parameter ('all' for no limit)
+    params.append('per_page', suggState.per_page === null ? 'all' : suggState.per_page);
+    if (suggState.sort_by) {
+      params.append('sort_by', suggState.sort_by);
+      params.append('sort_order', suggState.sort_order);
+    }
+    suggFilters.status.forEach(s => params.append('status', s));
+    fetch('/api/admin/suggestions?' + params.toString())
+      .then(r => r.json())
+      .then(data => {
+        if (data.items !== undefined) {
+          suggestionsData = data.items;
+          suggState.total = data.total;
+          suggState.total_pages = data.total_pages;
+        } else {
+          suggestionsData = data;
+          suggState.total = suggestionsData.length;
+          suggState.total_pages = 1;
+        }
+        renderSuggestions();
+        renderSuggestionPagination();
+      });
   }
 
   function initSuggestionsMap() {
@@ -362,6 +467,55 @@ document.addEventListener('DOMContentLoaded', function() {
     fetch('/api/admin/suggestions/'+id, { method:'PUT', headers:{'Content-Type':'application/json','X-CSRFToken':csrfToken}, body: JSON.stringify({status}) })
       .then(r=>{ if (r.ok) loadSuggestions(); else r.json().then(err=>alert(err.message)); });
   }
+  // Pagination for Suggestions
+  function renderSuggestionPagination() {
+    const pag = document.getElementById('suggestions-pagination');
+    pag.innerHTML = '';
+    const info = document.createElement('div');
+    if (suggState.per_page === null) {
+      info.innerText = `Showing all ${suggState.total} items`;
+    } else {
+      const start = (suggState.page - 1) * suggState.per_page + 1;
+      const end = Math.min(suggState.page * suggState.per_page, suggState.total);
+      info.innerText = `Showing ${start}-${end} of ${suggState.total}`;
+    }
+    pag.appendChild(info);
+    const nav = document.createElement('div');
+    nav.className = 'btn-group';
+    const prev = document.createElement('button');
+    prev.className = 'btn btn-sm btn-secondary';
+    prev.innerText = '{{ gettext("Previous") }}';
+    prev.disabled = suggState.page <= 1;
+    prev.addEventListener('click', () => { if (suggState.page > 1) { suggState.page--; loadSuggestions(); } });
+    const next = document.createElement('button');
+    next.className = 'btn btn-sm btn-secondary';
+    next.innerText = '{{ gettext("Next") }}';
+    next.disabled = suggState.page >= suggState.total_pages;
+    next.addEventListener('click', () => { if (suggState.page < suggState.total_pages) { suggState.page++; loadSuggestions(); } });
+    nav.append(prev, next);
+    pag.appendChild(nav);
+    const selDiv = document.createElement('div');
+    const lbl = document.createElement('label');
+    lbl.className = 'me-2';
+    lbl.innerText = '{{ gettext("Items per page:") }}';
+    const sel = document.createElement('select');
+    sel.className = 'form-select form-select-sm d-inline-block w-auto';
+    [['20','20'],['50','50'],['100','100'],['all','{{ gettext("All") }}']].forEach(([val,text]) => {
+      const opt = document.createElement('option');
+      opt.value = val;
+      opt.innerText = text;
+      if ((suggState.per_page === null && val === 'all') || (suggState.per_page == parseInt(val))) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    sel.addEventListener('change', () => {
+      const v = sel.value;
+      suggState.per_page = v === 'all' ? null : parseInt(v);
+      suggState.page = 1;
+      loadSuggestions();
+    });
+    selDiv.append(lbl, sel);
+    pag.appendChild(selDiv);
+  }
 
   // Reports
   function buildReportFilters() {
@@ -386,11 +540,36 @@ document.addEventListener('DOMContentLoaded', function() {
   function applyReportFilters() {
     repFilters.status = Array.from(document.querySelectorAll('.rep-filter-status:checked')).map(cb=>cb.value);
     repFilters.priority = Array.from(document.querySelectorAll('.rep-filter-priority:checked')).map(cb=>cb.value);
-    renderReports();
+    repState.page = 1;
+    loadReports();
   }
 
   function loadReports() {
-    fetch('/api/admin/reports').then(r=>r.json()).then(data=>{ reportsData=data; renderReports(); });
+    const params = new URLSearchParams();
+    params.append('page', repState.page);
+    // Handle per_page parameter ('all' for no limit)
+    params.append('per_page', repState.per_page === null ? 'all' : repState.per_page);
+    if (repState.sort_by) {
+      params.append('sort_by', repState.sort_by);
+      params.append('sort_order', repState.sort_order);
+    }
+    repFilters.status.forEach(s => params.append('status', s));
+    repFilters.priority.forEach(p => params.append('priority', p));
+    fetch('/api/admin/reports?' + params.toString())
+      .then(r => r.json())
+      .then(data => {
+        if (data.items !== undefined) {
+          reportsData = data.items;
+          repState.total = data.total;
+          repState.total_pages = data.total_pages;
+        } else {
+          reportsData = data;
+          repState.total = reportsData.length;
+          repState.total_pages = 1;
+        }
+        renderReports();
+        renderReportPagination();
+      });
   }
 
   function renderReports() {
@@ -410,6 +589,55 @@ document.addEventListener('DOMContentLoaded', function() {
   function updateReport(id, data) {
     fetch('/api/admin/reports/'+id, { method:'PUT', headers:{'Content-Type':'application/json','X-CSRFToken':csrfToken}, body: JSON.stringify(data) })
       .then(r=>{ if (r.ok) loadReports(); else r.json().then(err=>alert(err.message)); });
+  }
+  // Pagination for Reports
+  function renderReportPagination() {
+    const pag = document.getElementById('reports-pagination');
+    pag.innerHTML = '';
+    const info = document.createElement('div');
+    if (repState.per_page === null) {
+      info.innerText = `Showing all ${repState.total} items`;
+    } else {
+      const start = (repState.page - 1) * repState.per_page + 1;
+      const end = Math.min(repState.page * repState.per_page, repState.total);
+      info.innerText = `Showing ${start}-${end} of ${repState.total}`;
+    }
+    pag.appendChild(info);
+    const nav = document.createElement('div');
+    nav.className = 'btn-group';
+    const prev = document.createElement('button');
+    prev.className = 'btn btn-sm btn-secondary';
+    prev.innerText = '{{ gettext("Previous") }}';
+    prev.disabled = repState.page <= 1;
+    prev.addEventListener('click', () => { if (repState.page > 1) { repState.page--; loadReports(); } });
+    const next = document.createElement('button');
+    next.className = 'btn btn-sm btn-secondary';
+    next.innerText = '{{ gettext("Next") }}';
+    next.disabled = repState.page >= repState.total_pages;
+    next.addEventListener('click', () => { if (repState.page < repState.total_pages) { repState.page++; loadReports(); } });
+    nav.append(prev, next);
+    pag.appendChild(nav);
+    const selDiv = document.createElement('div');
+    const lbl = document.createElement('label');
+    lbl.className = 'me-2';
+    lbl.innerText = '{{ gettext("Items per page:") }}';
+    const sel = document.createElement('select');
+    sel.className = 'form-select form-select-sm d-inline-block w-auto';
+    [['20','20'],['50','50'],['100','100'],['all','{{ gettext("All") }}']].forEach(([val,text]) => {
+      const opt = document.createElement('option');
+      opt.value = val;
+      opt.innerText = text;
+      if ((repState.per_page === null && val === 'all') || (repState.per_page == parseInt(val))) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    sel.addEventListener('change', () => {
+      const v = sel.value;
+      repState.per_page = v === 'all' ? null : parseInt(v);
+      repState.page = 1;
+      loadReports();
+    });
+    selDiv.append(lbl, sel);
+    pag.appendChild(selDiv);
   }
 
 });
