@@ -10,6 +10,7 @@ from goodmap.core import get_queried_data
 # ------------------------------------------------
 # get_location_obligatory_fields
 
+
 def json_db_get_location_obligatory_fields(db):
     return db.data["location_obligatory_fields"]
 
@@ -30,6 +31,7 @@ def get_location_obligatory_fields(db):
 # ------------------------------------------------
 # get_data
 
+
 def google_json_db_get_data(self):
     return json.loads(self.blob.download_as_text(client=None))["map"]
 
@@ -49,6 +51,7 @@ def get_data(db):
 
 # ------------------------------------------------
 # get_location
+
 
 def get_location_from_raw_data(raw_data, uuid, location_model):
     point = next((point for point in raw_data["data"] if point["uuid"] == uuid), None)
@@ -78,6 +81,7 @@ def get_location(db, location_model):
 # ------------------------------------------------
 # get_locations
 
+
 def get_locations_list_from_raw_data(map_data, query, location_model):
     filtered_locations = get_queried_data(map_data["data"], map_data["categories"], query)
     return [location_model.model_validate(point) for point in filtered_locations]
@@ -105,13 +109,16 @@ def get_locations(db, location_model):
 # ------------------------------------------------
 # add_location
 
+
 def json_file_db_add_location(self, location_data, location_model):
     location = location_model.model_validate(location_data)
     with open(self.data_file_path, "r") as file:
         json_file = json.load(file)
 
     map_data = json_file["map"].get("data", [])
-    idx = next((i for i, point in enumerate(map_data) if point.get("uuid") == location_data["uuid"]), None)
+    idx = next(
+        (i for i, point in enumerate(map_data) if point.get("uuid") == location_data["uuid"]), None
+    )
     if idx is not None:
         raise ValueError(f"Location with uuid {location_data['uuid']} already exists")
 
@@ -124,7 +131,14 @@ def json_file_db_add_location(self, location_data, location_model):
 
 def json_db_add_location(self, location_data, location_model):
     location = location_model.model_validate(location_data)
-    idx = next((i for i, point in enumerate(self.data.get("data", [])) if point.get("uuid") == location_data["uuid"]), None)
+    idx = next(
+        (
+            i
+            for i, point in enumerate(self.data.get("data", []))
+            if point.get("uuid") == location_data["uuid"]
+        ),
+        None,
+    )
     if idx is not None:
         raise ValueError(f"Location with uuid {location_data['uuid']} already exists")
     self.data["data"].append(location.model_dump())
@@ -136,6 +150,7 @@ def add_location(db, location_data, location_model):
 
 # ------------------------------------------------
 # update_location
+
 
 def json_file_db_update_location(self, uuid, location_data, location_model):
     location = location_model.model_validate(location_data)
@@ -156,7 +171,9 @@ def json_file_db_update_location(self, uuid, location_data, location_model):
 
 def json_db_update_location(self, uuid, location_data, location_model):
     location = location_model.model_validate(location_data)
-    idx = next((i for i, point in enumerate(self.data.get("data", [])) if point.get("uuid") == uuid), None)
+    idx = next(
+        (i for i, point in enumerate(self.data.get("data", [])) if point.get("uuid") == uuid), None
+    )
     if idx is None:
         raise ValueError(f"Location with uuid {uuid} not found")
     self.data["data"][idx] = location.model_dump()
@@ -168,6 +185,7 @@ def update_location(db, uuid, location_data, location_model):
 
 # ------------------------------------------------
 # delete_location
+
 
 def json_file_db_delete_location(self, uuid):
     with open(self.data_file_path, "r") as file:
@@ -186,7 +204,9 @@ def json_file_db_delete_location(self, uuid):
 
 
 def json_db_delete_location(self, uuid):
-    idx = next((i for i, point in enumerate(self.data.get("data", [])) if point.get("uuid") == uuid), None)
+    idx = next(
+        (i for i, point in enumerate(self.data.get("data", [])) if point.get("uuid") == uuid), None
+    )
     if idx is None:
         raise ValueError(f"Location with uuid {uuid} not found")
     del self.data["data"][idx]
@@ -198,6 +218,7 @@ def delete_location(db, uuid):
 
 # ------------------------------------------------
 # add_suggestion
+
 
 def json_db_add_suggestion(self, suggestion_data):
     suggestions = self.data.setdefault("suggestions", [])
@@ -233,6 +254,7 @@ def add_suggestion(db, suggestion_data):
 # ------------------------------------------------
 # get_suggestions
 
+
 def json_db_get_suggestions(self, query_params):
     suggestions = self.data.get("suggestions", [])
 
@@ -263,14 +285,19 @@ def get_suggestions(db):
 # ------------------------------------------------
 # get_suggestion
 
+
 def json_db_get_suggestion(self, suggestion_id):
-    return next((s for s in self.data.get("suggestions", []) if s.get("uuid") == suggestion_id), None)
+    return next(
+        (s for s in self.data.get("suggestions", []) if s.get("uuid") == suggestion_id), None
+    )
 
 
 def json_file_db_get_suggestion(self, suggestion_id):
     with open(self.data_file_path, "r") as file:
         json_file = json.load(file)
-    return next((s for s in json_file["map"].get("suggestions", []) if s.get("uuid") == suggestion_id), None)
+    return next(
+        (s for s in json_file["map"].get("suggestions", []) if s.get("uuid") == suggestion_id), None
+    )
 
 
 def get_suggestion(db):
@@ -279,6 +306,7 @@ def get_suggestion(db):
 
 # ------------------------------------------------
 # update_suggestion
+
 
 def json_db_update_suggestion(self, suggestion_id, status):
     suggestions = self.data.get("suggestions", [])
@@ -314,6 +342,7 @@ def update_suggestion(db, suggestion_id, status):
 # ------------------------------------------------
 # delete_suggestion
 
+
 def json_db_delete_suggestion(self, suggestion_id):
     suggestions = self.data.get("suggestions", [])
     idx = next((i for i, s in enumerate(suggestions) if s.get("uuid") == suggestion_id), None)
@@ -346,6 +375,7 @@ def delete_suggestion(db, suggestion_id):
 # ------------------------------------------------
 # add_report
 
+
 def json_db_add_report(self, report_data):
     reports = self.data.setdefault("reports", [])
     if any(r.get("uuid") == report_data.get("uuid") for r in reports):
@@ -375,6 +405,7 @@ def add_report(db, report_data):
 
 # ------------------------------------------------
 # get_reports
+
 
 def json_db_get_reports(self, query_params):
     reports = self.data.get("reports", [])
@@ -414,6 +445,7 @@ def get_reports(db):
 # ------------------------------------------------
 # get_report
 
+
 def json_db_get_report(self, report_id):
     return next((r for r in self.data.get("reports", []) if r.get("uuid") == report_id), None)
 
@@ -422,7 +454,9 @@ def json_file_db_get_report(self, report_id):
     with open(self.data_file_path, "r") as file:
         json_file = json.load(file)
 
-    return next((r for r in json_file["map"].get("reports", []) if r.get("uuid") == report_id), None)
+    return next(
+        (r for r in json_file["map"].get("reports", []) if r.get("uuid") == report_id), None
+    )
 
 
 def get_report(db):
@@ -431,6 +465,7 @@ def get_report(db):
 
 # ------------------------------------------------
 # update_report
+
 
 def json_db_update_report(self, report_id, status=None, priority=None):
     reports = self.data.get("reports", [])
@@ -471,6 +506,7 @@ def update_report(db, report_id, status=None, priority=None):
 
 # ------------------------------------------------
 # delete_report
+
 
 def json_db_delete_report(self, report_id):
     reports = self.data.get("reports", [])

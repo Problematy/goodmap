@@ -158,30 +158,30 @@ def core_pages(
             # Raw query params from request
             raw_params = request.args.to_dict(flat=False)
             # If pagination requested (page param), apply pagination and sorting
-            if 'page' in raw_params:
+            if "page" in raw_params:
                 # Extract pagination and sorting parameters
                 try:
-                    page = int(raw_params.pop('page', ['1'])[0])
+                    page = int(raw_params.pop("page", ["1"])[0])
                 except ValueError:
                     page = 1
-                per_page_raw = raw_params.pop('per_page', [None])[0]
+                per_page_raw = raw_params.pop("per_page", [None])[0]
                 # Default page size 20, 'all' means no limit
                 if per_page_raw is None:
                     per_page = 20
-                elif per_page_raw == 'all':
+                elif per_page_raw == "all":
                     per_page = None
                 else:
                     try:
                         per_page = int(per_page_raw)
                     except ValueError:
                         per_page = 20
-                sort_by = raw_params.pop('sort_by', [None])[0]
-                sort_order = raw_params.pop('sort_order', ['asc'])[0].lower()
+                sort_by = raw_params.pop("sort_by", [None])[0]
+                sort_order = raw_params.pop("sort_order", ["asc"])[0].lower()
                 # Fetch filtered list from database (remaining params used as filters)
                 all_locations = database.get_locations(raw_params)
                 # Sort models
                 if sort_by:
-                    reverse = (sort_order == 'desc')
+                    reverse = sort_order == "desc"
                     try:
                         all_locations.sort(key=lambda x: getattr(x, sort_by, None), reverse=reverse)
                     except Exception:
@@ -207,13 +207,15 @@ def core_pages(
                     per_page = total
                 # Serialize
                 items = [x.model_dump() for x in page_items]
-                return jsonify({
-                    'items': items,
-                    'total': total,
-                    'page': page,
-                    'per_page': per_page,
-                    'total_pages': total_pages,
-                })
+                return jsonify(
+                    {
+                        "items": items,
+                        "total": total,
+                        "page": page,
+                        "per_page": per_page,
+                        "total_pages": total_pages,
+                    }
+                )
             # No pagination: return full list
             all_locations = database.get_locations(raw_params)
             return jsonify([x.model_dump() for x in all_locations])
@@ -260,8 +262,8 @@ def core_pages(
                 return make_response(jsonify({"message": f"Location not found: {e}"}), 404)
             except Exception as e:
                 return make_response(jsonify({"message": f"Error deleting location: {e}"}), 400)
-            return '', 204
-    
+            return "", 204
+
     @core_api.route("/admin/suggestions")
     class AdminManageSuggestions(Resource):
         def get(self):
@@ -270,28 +272,28 @@ def core_pages(
             """
             raw_params = request.args.to_dict(flat=False)
             # If pagination requested, apply pagination and sorting
-            if 'page' in raw_params:
+            if "page" in raw_params:
                 try:
-                    page = int(raw_params.pop('page', ['1'])[0])
+                    page = int(raw_params.pop("page", ["1"])[0])
                 except ValueError:
                     page = 1
-                per_page_raw = raw_params.pop('per_page', [None])[0]
+                per_page_raw = raw_params.pop("per_page", [None])[0]
                 if per_page_raw is None:
                     per_page = 20
-                elif per_page_raw == 'all':
+                elif per_page_raw == "all":
                     per_page = None
                 else:
                     try:
                         per_page = int(per_page_raw)
                     except ValueError:
                         per_page = 20
-                sort_by = raw_params.pop('sort_by', [None])[0]
-                sort_order = raw_params.pop('sort_order', ['asc'])[0].lower()
+                sort_by = raw_params.pop("sort_by", [None])[0]
+                sort_order = raw_params.pop("sort_order", ["asc"])[0].lower()
                 # Fetch filtered list (status filters)
                 all_suggestions = database.get_suggestions(raw_params)
                 # Sort suggestions
                 if sort_by:
-                    reverse = (sort_order == 'desc')
+                    reverse = sort_order == "desc"
                     try:
                         all_suggestions.sort(key=lambda s: s.get(sort_by), reverse=reverse)
                     except Exception:
@@ -309,13 +311,15 @@ def core_pages(
                     total_pages = 1
                     page = 1
                     per_page = total
-                return jsonify({
-                    'items': page_items,
-                    'total': total,
-                    'page': page,
-                    'per_page': per_page,
-                    'total_pages': total_pages,
-                })
+                return jsonify(
+                    {
+                        "items": page_items,
+                        "total": total,
+                        "page": page,
+                        "per_page": per_page,
+                        "total_pages": total_pages,
+                    }
+                )
             # No pagination: return full list
             suggestions = database.get_suggestions(raw_params)
             return jsonify(suggestions)
@@ -352,28 +356,28 @@ def core_pages(
             """
             raw_params = request.args.to_dict(flat=False)
             # If pagination requested, apply pagination and sorting
-            if 'page' in raw_params:
+            if "page" in raw_params:
                 try:
-                    page = int(raw_params.pop('page', ['1'])[0])
+                    page = int(raw_params.pop("page", ["1"])[0])
                 except ValueError:
                     page = 1
-                per_page_raw = raw_params.pop('per_page', [None])[0]
+                per_page_raw = raw_params.pop("per_page", [None])[0]
                 if per_page_raw is None:
                     per_page = 20
-                elif per_page_raw == 'all':
+                elif per_page_raw == "all":
                     per_page = None
                 else:
                     try:
                         per_page = int(per_page_raw)
                     except ValueError:
                         per_page = 20
-                sort_by = raw_params.pop('sort_by', [None])[0]
-                sort_order = raw_params.pop('sort_order', ['asc'])[0].lower()
+                sort_by = raw_params.pop("sort_by", [None])[0]
+                sort_order = raw_params.pop("sort_order", ["asc"])[0].lower()
                 # Fetch filtered list (status, priority filters)
                 all_reports = database.get_reports(raw_params)
                 # Sort reports
                 if sort_by:
-                    reverse = (sort_order == 'desc')
+                    reverse = sort_order == "desc"
                     try:
                         all_reports.sort(key=lambda r: r.get(sort_by), reverse=reverse)
                     except Exception:
@@ -391,13 +395,15 @@ def core_pages(
                     total_pages = 1
                     page = 1
                     per_page = total
-                return jsonify({
-                    'items': page_items,
-                    'total': total,
-                    'page': page,
-                    'per_page': per_page,
-                    'total_pages': total_pages,
-                })
+                return jsonify(
+                    {
+                        "items": page_items,
+                        "total": total,
+                        "page": page,
+                        "per_page": per_page,
+                        "total_pages": total_pages,
+                    }
+                )
             # No pagination: return full list
             reports = database.get_reports(raw_params)
             return jsonify(reports)
