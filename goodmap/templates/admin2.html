@@ -151,8 +151,7 @@
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  let csrfToken = '';
-  fetch('/api/generate-csrf-token').then(r => r.json()).then(data => { csrfToken = data.csrf_token; });
+  let csrfToken = '{{ csrf_token() }}';
 
   // Data containers
   let locationsData = [];
