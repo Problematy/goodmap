@@ -73,7 +73,9 @@ def test_app(notifier_function, db_mock):
 
 @mock.patch("goodmap.core_api.gettext", fake_translation)
 @mock.patch("flask_babel.gettext", fake_translation)
-def test_reporting_location_is_sending_message_with_name_and_position(test_app, notifier_function, db_mock):
+def test_reporting_location_is_sending_message_with_name_and_position(
+    test_app, notifier_function, db_mock
+):
     data = {"id": "location-id", "description": "some error"}
     headers = {"Content-Type": "application/json"}
     response = test_app.post("/api/report-location", data=json.dumps(data), headers=headers)
@@ -248,21 +250,35 @@ def test_get_location(test_app):
         "subtitle": "test-place-translated",
         "title": "test",
     }
-    
+
+
 # Tests for admin endpoints
+
 
 def test_admin_get_locations(test_app, db_mock):
     response = test_app.get("/api/admin/locations")
     assert response.status_code == 200
-    expected = [{"uuid": loc.uuid, "position": list(loc.position)} for loc in db_mock.get_locations.return_value]
+    expected = [
+        {"uuid": loc.uuid, "position": list(loc.position)}
+        for loc in db_mock.get_locations.return_value
+    ]
     assert response.json == expected
+
 
 @mock.patch("goodmap.core_api.uuid.uuid4")
 def test_admin_post_location_success(mock_uuid4, test_app, db_mock):
     from uuid import UUID
+
     mock_uuid4.return_value = UUID("00000000-0000-0000-0000-000000000001")
-    data = {"name": "LocName", "type_of_place": "Type", "test_category": ["cat"], "position": [10.0, 20.0]}
-    response = test_app.post("/api/admin/locations", data=json.dumps(data), content_type="application/json")
+    data = {
+        "name": "LocName",
+        "type_of_place": "Type",
+        "test_category": ["cat"],
+        "position": [10.0, 20.0],
+    }
+    response = test_app.post(
+        "/api/admin/locations", data=json.dumps(data), content_type="application/json"
+    )
     assert response.status_code == 200
     resp_json = response.json
     expected = data.copy()
@@ -278,25 +294,47 @@ def test_admin_post_location_success(mock_uuid4, test_app, db_mock):
     for key in ("uuid", "name", "type_of_place", "test_category"):
         assert payload.get(key) == expected.get(key)
 
+
 def test_admin_post_location_invalid_data(test_app, db_mock):
-    response = test_app.post("/api/admin/locations", data=json.dumps({}), content_type="application/json")
+    response = test_app.post(
+        "/api/admin/locations", data=json.dumps({}), content_type="application/json"
+    )
     assert response.status_code == 400
     assert "Invalid location data" in response.json["message"]
+
 
 @mock.patch("goodmap.core_api.uuid.uuid4")
 def test_admin_post_location_error(mock_uuid4, test_app, db_mock):
     from uuid import UUID
+
     mock_uuid4.return_value = UUID("00000000-0000-0000-0000-000000000002")
     db_mock.add_location.side_effect = Exception("DB error")
-    data = {"name": "LocName", "type_of_place": "Type", "test_category": ["cat"], "position": [10.0, 20.0]}
-    response = test_app.post("/api/admin/locations", data=json.dumps(data), content_type="application/json")
+    data = {
+        "name": "LocName",
+        "type_of_place": "Type",
+        "test_category": ["cat"],
+        "position": [10.0, 20.0],
+    }
+    response = test_app.post(
+        "/api/admin/locations", data=json.dumps(data), content_type="application/json"
+    )
     assert response.status_code == 400
     assert response.json["message"] == "Error creating location: DB error"
 
+
 def test_admin_put_location_success(test_app, db_mock):
-    data = {"name": "NewName", "type_of_place": "NewType", "test_category": ["new"], "position": [1.0, 2.0]}
+    data = {
+        "name": "NewName",
+        "type_of_place": "NewType",
+        "test_category": ["new"],
+        "position": [1.0, 2.0],
+    }
     location_id = "loc123"
-    response = test_app.put(f"/api/admin/locations/{location_id}", data=json.dumps(data), content_type="application/json")
+    response = test_app.put(
+        f"/api/admin/locations/{location_id}",
+        data=json.dumps(data),
+        content_type="application/json",
+    )
     assert response.status_code == 200
     expected = data.copy()
     expected["uuid"] = location_id
@@ -310,17 +348,31 @@ def test_admin_put_location_success(test_app, db_mock):
     for key in ("uuid", "name", "type_of_place", "test_category"):
         assert payload.get(key) == expected.get(key)
 
+
 def test_admin_put_location_invalid_data(test_app, db_mock):
-    response = test_app.put("/api/admin/locations/loc123", data=json.dumps({"position": "bad"}), content_type="application/json")
+    response = test_app.put(
+        "/api/admin/locations/loc123",
+        data=json.dumps({"position": "bad"}),
+        content_type="application/json",
+    )
     assert response.status_code == 400
     assert "Invalid location data" in response.json["message"]
 
+
 def test_admin_put_location_error(test_app, db_mock):
     db_mock.update_location.side_effect = Exception("Update error")
-    data = {"name": "NewName", "type_of_place": "NewType", "test_category": ["new"], "position": [1.0, 2.0]}
-    response = test_app.put("/api/admin/locations/loc123", data=json.dumps(data), content_type="application/json")
+    data = {
+        "name": "NewName",
+        "type_of_place": "NewType",
+        "test_category": ["new"],
+        "position": [1.0, 2.0],
+    }
+    response = test_app.put(
+        "/api/admin/locations/loc123", data=json.dumps(data), content_type="application/json"
+    )
     assert response.status_code == 400
     assert response.json["message"] == "Error updating location: Update error"
+
 
 def test_admin_delete_location_success(test_app, db_mock):
     location_id = "loc123"
@@ -329,17 +381,20 @@ def test_admin_delete_location_success(test_app, db_mock):
     assert response.data == b""
     db_mock.delete_location.assert_called_once_with(location_id)
 
+
 def test_admin_delete_location_not_found(test_app, db_mock):
     db_mock.delete_location.side_effect = ValueError("No such id")
     response = test_app.delete("/api/admin/locations/notexist")
     assert response.status_code == 404
     assert "Location not found" in response.json["message"]
 
+
 def test_admin_delete_location_error(test_app, db_mock):
     db_mock.delete_location.side_effect = Exception("Delete error")
     response = test_app.delete("/api/admin/locations/loc123")
     assert response.status_code == 400
     assert response.json["message"] == "Error deleting location: Delete error"
+
 
 def test_admin_get_suggestions(test_app, db_mock):
     suggestions = [{"id": "s1", "status": "pending"}]
@@ -348,42 +403,94 @@ def test_admin_get_suggestions(test_app, db_mock):
     assert response.status_code == 200
     assert response.json == suggestions
 
+
 def test_admin_put_suggestion_invalid_status(test_app, db_mock):
-    response = test_app.put("/api/admin/suggestions/s1", data=json.dumps({"status": "bad"}), content_type="application/json")
+    response = test_app.put(
+        "/api/admin/suggestions/s1",
+        data=json.dumps({"status": "bad"}),
+        content_type="application/json",
+    )
     assert response.status_code == 400
     assert "Invalid status: bad" in response.json["message"]
 
+
 def test_admin_put_suggestion_not_found(test_app, db_mock):
     db_mock.get_suggestion.return_value = None
-    response = test_app.put("/api/admin/suggestions/s1", data=json.dumps({"status": "accepted"}), content_type="application/json")
+    response = test_app.put(
+        "/api/admin/suggestions/s1",
+        data=json.dumps({"status": "accepted"}),
+        content_type="application/json",
+    )
     assert response.status_code == 404
     assert "Suggestion not found" in response.json["message"]
 
+
 def test_admin_put_suggestion_already_processed(test_app, db_mock):
     db_mock.get_suggestion.return_value = {"status": "accepted"}
-    response = test_app.put("/api/admin/suggestions/s1", data=json.dumps({"status": "rejected"}), content_type="application/json")
+    response = test_app.put(
+        "/api/admin/suggestions/s1",
+        data=json.dumps({"status": "rejected"}),
+        content_type="application/json",
+    )
     assert response.status_code == 400
     assert "Suggestion already processed" in response.json["message"]
 
+
 def test_admin_put_suggestion_accept(test_app, db_mock):
-    suggestion_initial = {"id": "s1", "status": "pending", "name": "loc", "position": [1, 2], "photo": "p"}
-    suggestion_updated = {"id": "s1", "status": "accepted", "name": "loc", "position": [1, 2], "photo": "p"}
+    suggestion_initial = {
+        "id": "s1",
+        "status": "pending",
+        "name": "loc",
+        "position": [1, 2],
+        "photo": "p",
+    }
+    suggestion_updated = {
+        "id": "s1",
+        "status": "accepted",
+        "name": "loc",
+        "position": [1, 2],
+        "photo": "p",
+    }
     db_mock.get_suggestion.side_effect = [suggestion_initial, suggestion_updated]
-    response = test_app.put("/api/admin/suggestions/s1", data=json.dumps({"status": "accepted"}), content_type="application/json")
+    response = test_app.put(
+        "/api/admin/suggestions/s1",
+        data=json.dumps({"status": "accepted"}),
+        content_type="application/json",
+    )
     assert response.status_code == 200
     assert response.json == suggestion_updated
-    db_mock.add_location.assert_called_once_with({k: v for k, v in suggestion_initial.items() if k != "status"})
+    db_mock.add_location.assert_called_once_with(
+        {k: v for k, v in suggestion_initial.items() if k != "status"}
+    )
     db_mock.update_suggestion.assert_called_once_with("s1", "accepted")
 
+
 def test_admin_put_suggestion_reject(test_app, db_mock):
-    suggestion_initial = {"id": "s1", "status": "pending", "name": "loc", "position": [1, 2], "photo": "p"}
-    suggestion_updated = {"id": "s1", "status": "rejected", "name": "loc", "position": [1, 2], "photo": "p"}
+    suggestion_initial = {
+        "id": "s1",
+        "status": "pending",
+        "name": "loc",
+        "position": [1, 2],
+        "photo": "p",
+    }
+    suggestion_updated = {
+        "id": "s1",
+        "status": "rejected",
+        "name": "loc",
+        "position": [1, 2],
+        "photo": "p",
+    }
     db_mock.get_suggestion.side_effect = [suggestion_initial, suggestion_updated]
-    response = test_app.put("/api/admin/suggestions/s1", data=json.dumps({"status": "rejected"}), content_type="application/json")
+    response = test_app.put(
+        "/api/admin/suggestions/s1",
+        data=json.dumps({"status": "rejected"}),
+        content_type="application/json",
+    )
     assert response.status_code == 200
     assert response.json == suggestion_updated
     assert not db_mock.add_location.called
     db_mock.update_suggestion.assert_called_once_with("s1", "rejected")
+
 
 def test_admin_get_reports(test_app, db_mock):
     reports = [{"id": "r1", "status": "pending", "priority": "medium"}]
@@ -392,34 +499,54 @@ def test_admin_get_reports(test_app, db_mock):
     assert response.status_code == 200
     assert response.json == reports
 
+
 def test_admin_put_report_invalid_status(test_app, db_mock):
-    response = test_app.put("/api/admin/reports/r1", data=json.dumps({"status": "bad"}), content_type="application/json")
+    response = test_app.put(
+        "/api/admin/reports/r1", data=json.dumps({"status": "bad"}), content_type="application/json"
+    )
     assert response.status_code == 400
     assert "Invalid status: bad" in response.json["message"]
 
+
 def test_admin_put_report_invalid_priority(test_app, db_mock):
-    response = test_app.put("/api/admin/reports/r1", data=json.dumps({"priority": "bad"}), content_type="application/json")
+    response = test_app.put(
+        "/api/admin/reports/r1",
+        data=json.dumps({"priority": "bad"}),
+        content_type="application/json",
+    )
     assert response.status_code == 400
     assert "Invalid priority: bad" in response.json["message"]
 
+
 def test_admin_put_report_not_found(test_app, db_mock):
     db_mock.get_report.return_value = None
-    response = test_app.put("/api/admin/reports/r1", data=json.dumps({"status": "resolved"}), content_type="application/json")
+    response = test_app.put(
+        "/api/admin/reports/r1",
+        data=json.dumps({"status": "resolved"}),
+        content_type="application/json",
+    )
     assert response.status_code == 404
     assert "Report not found" in response.json["message"]
+
 
 def test_admin_put_report_success(test_app, db_mock):
     report_initial = {"id": "r1", "status": "pending", "priority": "medium"}
     report_updated = {"id": "r1", "status": "resolved", "priority": "critical"}
     db_mock.get_report.side_effect = [report_initial, report_updated]
-    response = test_app.put("/api/admin/reports/r1", data=json.dumps({"status": "resolved", "priority": "critical"}), content_type="application/json")
+    response = test_app.put(
+        "/api/admin/reports/r1",
+        data=json.dumps({"status": "resolved", "priority": "critical"}),
+        content_type="application/json",
+    )
     assert response.status_code == 200
     assert response.json == report_updated
     db_mock.update_report.assert_called_once_with("r1", status="resolved", priority="critical")
-    
+
+
 def test_admin_get_locations_pagination(test_app, db_mock):
     # Simulate 3 locations for pagination
     from goodmap.data_models.location import LocationBase
+
     items = [
         LocationBase(position=(0, 0), uuid="a"),
         LocationBase(position=(1, 1), uuid="b"),
@@ -436,6 +563,7 @@ def test_admin_get_locations_pagination(test_app, db_mock):
     assert isinstance(data["items"], list) and len(data["items"]) == 1
     assert data["items"][0]["uuid"] == "b"
 
+
 def test_admin_get_suggestions_pagination(test_app, db_mock):
     # Simulate 2 suggestions
     suggestions = [
@@ -451,6 +579,7 @@ def test_admin_get_suggestions_pagination(test_app, db_mock):
     assert data["per_page"] == 1
     assert data["total_pages"] == 2
     assert data["items"] == [suggestions[0]]
+
 
 def test_admin_get_reports_pagination(test_app, db_mock):
     # Simulate 2 reports
