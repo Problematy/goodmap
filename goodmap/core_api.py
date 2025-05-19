@@ -71,7 +71,7 @@ def paginate_results(items, raw_params, sort_by_default=None):
         "total": total,
         "page": page,
         "per_page": per_page,
-        "total_pages": total_pages
+        "total_pages": total_pages,
     }
 
 
@@ -221,7 +221,9 @@ def core_pages(
             # Raw query params from request
             raw_params = request.args.to_dict(flat=False)
             all_locations = database.get_locations(raw_params)
-            page_items, pagination = paginate_results(all_locations, raw_params, sort_by_default="name")
+            page_items, pagination = paginate_results(
+                all_locations, raw_params, sort_by_default="name"
+            )
             items = [x.model_dump() for x in page_items]
             return jsonify({"items": items, **pagination})
 
