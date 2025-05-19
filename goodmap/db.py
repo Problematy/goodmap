@@ -1,10 +1,21 @@
 import json
+import os
+import tempfile
 from functools import partial
 
 from goodmap.core import get_queried_data
 
 # TODO file is temporary solution to be compatible with old, static code,
 #  it should be replaced with dynamic solution
+
+
+def json_file_atomic_dump(data, file_path):
+    dir_name = os.path.dirname(file_path)
+    with tempfile.NamedTemporaryFile("w", dir=dir_name, delete=False) as temp_file:
+        json.dump(data, temp_file)
+        temp_file.flush()
+        os.fsync(temp_file.fileno())
+    os.replace(temp_file.name, file_path)
 
 
 # ------------------------------------------------
@@ -125,8 +136,7 @@ def json_file_db_add_location(self, location_data, location_model):
     map_data.append(location.model_dump())
     json_file["map"]["data"] = map_data
 
-    with open(self.data_file_path, "w") as file:
-        json.dump(json_file, file)
+    json_file_atomic_dump(json_file, self.data_file_path)
 
 
 def json_db_add_location(self, location_data, location_model):
@@ -165,8 +175,7 @@ def json_file_db_update_location(self, uuid, location_data, location_model):
     map_data[idx] = location.model_dump()
     json_file["map"]["data"] = map_data
 
-    with open(self.data_file_path, "w") as file:
-        json.dump(json_file, file)
+    json_file_atomic_dump(json_file, self.data_file_path)
 
 
 def json_db_update_location(self, uuid, location_data, location_model):
@@ -199,8 +208,7 @@ def json_file_db_delete_location(self, uuid):
     del map_data[idx]
     json_file["map"]["data"] = map_data
 
-    with open(self.data_file_path, "w") as file:
-        json.dump(json_file, file)
+    json_file_atomic_dump(json_file, self.data_file_path)
 
 
 def json_db_delete_location(self, uuid):
@@ -243,8 +251,7 @@ def json_file_db_add_suggestion(self, suggestion_data):
     suggestions.append(record)
     json_file["map"]["suggestions"] = suggestions
 
-    with open(self.data_file_path, "w") as file:
-        json.dump(json_file, file)
+    json_file_atomic_dump(json_file, self.data_file_path)
 
 
 def add_suggestion(db, suggestion_data):
@@ -331,8 +338,7 @@ def json_file_db_update_suggestion(self, suggestion_id, status):
 
     json_file["map"]["suggestions"] = suggestions
 
-    with open(self.data_file_path, "w") as file:
-        json.dump(json_file, file)
+    json_file_atomic_dump(json_file, self.data_file_path)
 
 
 def update_suggestion(db, suggestion_id, status):
@@ -364,8 +370,7 @@ def json_file_db_delete_suggestion(self, suggestion_id):
     del suggestions[idx]
     json_file["map"]["suggestions"] = suggestions
 
-    with open(self.data_file_path, "w") as file:
-        json.dump(json_file, file)
+    json_file_atomic_dump(json_file, self.data_file_path)
 
 
 def delete_suggestion(db, suggestion_id):
@@ -395,8 +400,7 @@ def json_file_db_add_report(self, report_data):
     reports.append(report_data)
     json_file["map"]["reports"] = reports
 
-    with open(self.data_file_path, "w") as file:
-        json.dump(json_file, file)
+    json_file_atomic_dump(json_file, self.data_file_path)
 
 
 def add_report(db, report_data):
@@ -496,8 +500,7 @@ def json_file_db_update_report(self, report_id, status=None, priority=None):
 
     json_file["map"]["reports"] = reports
 
-    with open(self.data_file_path, "w") as file:
-        json.dump(json_file, file)
+    json_file_atomic_dump(json_file, self.data_file_path)
 
 
 def update_report(db, report_id, status=None, priority=None):
@@ -528,8 +531,7 @@ def json_file_db_delete_report(self, report_id):
     del reports[idx]
     json_file["map"]["reports"] = reports
 
-    with open(self.data_file_path, "w") as file:
-        json.dump(json_file, file)
+    json_file_atomic_dump(json_file, self.data_file_path)
 
 
 def delete_report(db, report_id):
