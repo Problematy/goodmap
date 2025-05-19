@@ -174,7 +174,7 @@ def core_pages(
                     per_page = None
                 else:
                     try:
-                        per_page = int(per_page_raw)
+                        per_page = max(1, int(per_page_raw))
                     except ValueError:
                         per_page = 20
                 sort_by = raw_params.pop("sort_by", [None])[0]
@@ -291,7 +291,7 @@ def core_pages(
                     per_page = None
                 else:
                     try:
-                        per_page = int(per_page_raw)
+                        per_page = max(1, int(per_page_raw))
                     except ValueError:
                         per_page = 20
                 sort_by = raw_params.pop("sort_by", [None])[0]
@@ -380,7 +380,7 @@ def core_pages(
                     per_page = None
                 else:
                     try:
-                        per_page = int(per_page_raw)
+                        per_page = max(1, int(per_page_raw))
                     except ValueError:
                         per_page = 20
                 sort_by = raw_params.pop("sort_by", [None])[0]
