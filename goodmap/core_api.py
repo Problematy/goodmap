@@ -45,7 +45,10 @@ def paginate_results(items, raw_params, sort_by_default=None):
     sort_order = raw_params.pop("sort_order", ["asc"])[0].lower()
 
     def get_sort_key(item):
-        return getattr(item, sort_by, None) if sort_by else None
+        if isinstance(item, dict):
+            return item.get(sort_by) if sort_by else None
+        else:
+            return getattr(item, sort_by, None) if sort_by else None
 
     if sort_by:
         reverse = sort_order == "desc"
