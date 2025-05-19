@@ -1,5 +1,6 @@
 import importlib.metadata
 import uuid
+from typing import Any, Dict
 
 from flask import Blueprint, jsonify, make_response, request
 from flask_babel import gettext
@@ -153,7 +154,8 @@ def core_pages(
     class AdminManageLocations(Resource):
         def get(self):
             """
-            Shows full list of locations, with optional server-side pagination, sorting, and filtering.
+            Shows full list of locations, with optional server-side pagination, sorting,
+            and filtering.
             """
             # Raw query params from request
             raw_params = request.args.to_dict(flat=False)
@@ -180,16 +182,20 @@ def core_pages(
                 # Fetch filtered list from database (remaining params used as filters)
                 all_locations = database.get_locations(raw_params)
                 # Sort models
+
+                def sort_location_key(location: Dict[str, Any]) -> Any:
+                    return getattr(location, sort_by, None) if sort_by else location.get("name")
+
                 if sort_by:
                     reverse = sort_order == "desc"
                     try:
-                        all_locations.sort(key=lambda x: getattr(x, sort_by, None), reverse=reverse)
+                        all_locations.sort(key=sort_location_key, reverse=reverse)
                     except Exception:
                         pass
                 else:
                     # Default sort by name if available
                     try:
-                        all_locations.sort(key=lambda x: x.name)
+                        all_locations.sort(key=sort_location_key)
                     except Exception:
                         pass
                 # Compute pagination
@@ -268,7 +274,8 @@ def core_pages(
     class AdminManageSuggestions(Resource):
         def get(self):
             """
-            List location suggestions, with optional server-side pagination, sorting, and filtering by status.
+            List location suggestions, with optional server-side pagination, sorting,
+            and filtering by status.
             """
             raw_params = request.args.to_dict(flat=False)
             # If pagination requested, apply pagination and sorting
@@ -291,11 +298,15 @@ def core_pages(
                 sort_order = raw_params.pop("sort_order", ["asc"])[0].lower()
                 # Fetch filtered list (status filters)
                 all_suggestions = database.get_suggestions(raw_params)
+
+                def sort_suggestion_key(suggestion: Dict[str, Any]) -> Any:
+                    return getattr(suggestion, sort_by, None) if sort_by else None
+
                 # Sort suggestions
                 if sort_by:
                     reverse = sort_order == "desc"
                     try:
-                        all_suggestions.sort(key=lambda s: s.get(sort_by), reverse=reverse)
+                        all_suggestions.sort(key=sort_suggestion_key, reverse=reverse)
                     except Exception:
                         pass
                 # Default sort could be by status
@@ -352,7 +363,8 @@ def core_pages(
     class AdminManageReports(Resource):
         def get(self):
             """
-            List location reports, with optional server-side pagination, sorting, and filtering by status/priority.
+            List location reports, with optional server-side pagination, sorting,
+            and filtering by status/priority.
             """
             raw_params = request.args.to_dict(flat=False)
             # If pagination requested, apply pagination and sorting
@@ -375,11 +387,15 @@ def core_pages(
                 sort_order = raw_params.pop("sort_order", ["asc"])[0].lower()
                 # Fetch filtered list (status, priority filters)
                 all_reports = database.get_reports(raw_params)
+
+                def sort_report_key(report: Dict[str, Any]) -> Any:
+                    return getattr(report, sort_by, None) if sort_by else None
+
                 # Sort reports
                 if sort_by:
                     reverse = sort_order == "desc"
                     try:
-                        all_reports.sort(key=lambda r: r.get(sort_by), reverse=reverse)
+                        all_reports.sort(key=sort_report_key, reverse=reverse)
                     except Exception:
                         pass
                 # Default sort could be by priority
