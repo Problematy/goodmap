@@ -191,6 +191,12 @@ document.addEventListener('DOMContentLoaded', function() {
     loadReports();
   });
 
+  function escapeHTML(str) {
+    const div = document.createElement('div');
+    div.innerText = str;
+    return div.innerHTML;
+  }
+
   // Category fetch
   function initCategories() {
     return Promise.all([
@@ -483,12 +489,23 @@ document.addEventListener('DOMContentLoaded', function() {
     const filtered = suggestionsData.filter(s=>suggFilters.status.length===0 || suggFilters.status.includes(s.status));
     suggestionsMap.eachLayer(layer=>{ if (layer!==suggestionsTile) suggestionsMap.removeLayer(layer); });
     filtered.forEach(s=> {
-      const m = L.marker([s.position[0],s.position[1]]).addTo(suggestionsMap); m.bindPopup(`<strong>${s.name||''}</strong><br>${s.status}`);
+      const safeName = escapeHTML(s.name || '');
+      const m = L.marker([s.position[0], s.position[1]]).addTo(suggestionsMap);
+      m.bindPopup(`<strong>${safeName}</strong><br>${s.status}`);
     });
+
     const tbody = document.getElementById('suggestions-body'); tbody.innerHTML='';
     filtered.forEach(s=> {
+      const safeName = escapeHTML(s.name || '');
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${s.uuid}</td><td>${s.name||''}</td><td>[${s.position}]</td><td>${s.status}</td><td><button class="btn btn-sm btn-success sugg-accept-btn" data-id="${s.uuid}">{{ gettext("Accept") }}</button> <button class="btn btn-sm btn-danger sugg-reject-btn" data-id="${s.uuid}">{{ gettext("Reject") }}</button></td>`;
+      tr.innerHTML = `<td>${s.uuid}</td>
+                      <td>${safeName}</td>
+                      <td>[${s.position}]</td>
+                      <td>${s.status}</td>
+                      <td>
+                        <button class="btn btn-sm btn-success sugg-accept-btn" data-id="${safeUUID}">{{ gettext("Accept") }}</button>
+                        <button class="btn btn-sm btn-danger sugg-reject-btn" data-id="${safeUUID}">{{ gettext("Reject") }}</button>
+                      </td>`;
       tbody.appendChild(tr);
       tr.querySelector('.sugg-accept-btn').addEventListener('click', ()=> updateSuggestion(s.uuid,'accepted'));
       tr.querySelector('.sugg-reject-btn').addEventListener('click', ()=> updateSuggestion(s.uuid,'rejected'));
@@ -610,8 +627,26 @@ document.addEventListener('DOMContentLoaded', function() {
       .filter(r => (repFilters.status.length===0 || repFilters.status.includes(r.status)) && (repFilters.priority.length===0 || repFilters.priority.includes(r.priority)))
       .sort((a,b)=> priorityOrder[a.priority] - priorityOrder[b.priority])
       .forEach(r => {
+        const safeDescription = escapeHTML(r.description);
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${r.uuid}</td><td>${r.location_id}</td><td>${r.description}</td><td><select class="form-select form-select-sm rep-status-select" data-id="${r.uuid}"><option value="pending"${r.status==='pending'?' selected':''}>{{ gettext("pending") }}</option><option value="resolved"${r.status==='resolved'?'selected':''}>{{ gettext("resolved") }}</option><option value="rejected"${r.status==='rejected'?' selected':''}>{{ gettext("rejected") }}</option></select></td><td><select class="form-select form-select-sm rep-priority-select" data-id="${r.uuid}"><option value="critical"${r.priority==='critical'?' selected':''}>{{ gettext("critical") }}</option><option value="high"${r.priority==='high'?'selected':''}>{{ gettext("high") }}</option><option value="medium"${r.priority==='medium'?' selected':''}>{{ gettext("medium") }}</option><option value="low"${r.priority==='low'?' selected':''}>{{ gettext("low") }}</option></select></td>`;
+        tr.innerHTML = `<td>${r.uuid}</td>
+                        <td>${r.location_id}</td>
+                        <td>${safeDescription}</td>
+                        <td>
+                          <select class="form-select form-select-sm rep-status-select" data-id="${safeUUID}">
+                            <option value="pending"${r.status==='pending'?' selected':''}>{{ gettext("pending") }}</option>
+                            <option value="resolved"${r.status==='resolved'?' selected':''}>{{ gettext("resolved") }}</option>
+                            <option value="rejected"${r.status==='rejected'?' selected':''}>{{ gettext("rejected") }}</option>
+                          </select>
+                        </td>
+                        <td>
+                          <select class="form-select form-select-sm rep-priority-select" data-id="${safeUUID}">
+                            <option value="critical"${r.priority==='critical'?' selected':''}>{{ gettext("critical") }}</option>
+                            <option value="high"${r.priority==='high'?' selected':''}>{{ gettext("high") }}</option>
+                            <option value="medium"${r.priority==='medium'?' selected':''}>{{ gettext("medium") }}</option>
+                            <option value="low"${r.priority==='low'?' selected':''}>{{ gettext("low") }}</option>
+                          </select>
+                        </td>`;
         tbody.appendChild(tr);
         tr.querySelector('.rep-status-select').addEventListener('change', e=> updateReport(r.uuid,{ status: e.target.value }));
         tr.querySelector('.rep-priority-select').addEventListener('change', e=> updateReport(r.uuid,{ priority: e.target.value }));
