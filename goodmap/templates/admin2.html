@@ -503,8 +503,8 @@ document.addEventListener('DOMContentLoaded', function() {
                       <td>[${s.position}]</td>
                       <td>${s.status}</td>
                       <td>
-                        <button class="btn btn-sm btn-success sugg-accept-btn" data-id="${safeUUID}">{{ gettext("Accept") }}</button>
-                        <button class="btn btn-sm btn-danger sugg-reject-btn" data-id="${safeUUID}">{{ gettext("Reject") }}</button>
+                        <button class="btn btn-sm btn-success sugg-accept-btn" data-id="${s.uuid}">{{ gettext("Accept") }}</button>
+                        <button class="btn btn-sm btn-danger sugg-reject-btn" data-id="${s.uuid}">{{ gettext("Reject") }}</button>
                       </td>`;
       tbody.appendChild(tr);
       tr.querySelector('.sugg-accept-btn').addEventListener('click', ()=> updateSuggestion(s.uuid,'accepted'));
@@ -633,14 +633,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         <td>${r.location_id}</td>
                         <td>${safeDescription}</td>
                         <td>
-                          <select class="form-select form-select-sm rep-status-select" data-id="${safeUUID}">
+                          <select class="form-select form-select-sm rep-status-select" data-id="${r.uuid}">
                             <option value="pending"${r.status==='pending'?' selected':''}>{{ gettext("pending") }}</option>
                             <option value="resolved"${r.status==='resolved'?' selected':''}>{{ gettext("resolved") }}</option>
                             <option value="rejected"${r.status==='rejected'?' selected':''}>{{ gettext("rejected") }}</option>
                           </select>
                         </td>
                         <td>
-                          <select class="form-select form-select-sm rep-priority-select" data-id="${safeUUID}">
+                          <select class="form-select form-select-sm rep-priority-select" data-id="${r.uuid}">
                             <option value="critical"${r.priority==='critical'?' selected':''}>{{ gettext("critical") }}</option>
                             <option value="high"${r.priority==='high'?' selected':''}>{{ gettext("high") }}</option>
                             <option value="medium"${r.priority==='medium'?' selected':''}>{{ gettext("medium") }}</option>
