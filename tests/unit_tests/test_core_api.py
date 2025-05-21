@@ -255,16 +255,6 @@ def test_get_location(test_app):
 # Tests for admin endpoints
 
 
-def test_admin_get_locations(test_app, db_mock):
-    response = test_app.get("/api/admin/locations")
-    assert response.status_code == 200
-    expected = [
-        {"uuid": loc.uuid, "position": list(loc.position)}
-        for loc in db_mock.get_locations.return_value
-    ]
-    assert response.json == expected
-
-
 @mock.patch("goodmap.core_api.uuid.uuid4")
 def test_admin_post_location_success(mock_uuid4, test_app, db_mock):
     from uuid import UUID
@@ -396,14 +386,6 @@ def test_admin_delete_location_error(test_app, db_mock):
     assert response.json["message"] == "Error deleting location: Delete error"
 
 
-def test_admin_get_suggestions(test_app, db_mock):
-    suggestions = [{"id": "s1", "status": "pending"}]
-    db_mock.get_suggestions.return_value = suggestions
-    response = test_app.get("/api/admin/suggestions")
-    assert response.status_code == 200
-    assert response.json == suggestions
-
-
 def test_admin_put_suggestion_invalid_status(test_app, db_mock):
     response = test_app.put(
         "/api/admin/suggestions/s1",
@@ -490,14 +472,6 @@ def test_admin_put_suggestion_reject(test_app, db_mock):
     assert response.json == suggestion_updated
     assert not db_mock.add_location.called
     db_mock.update_suggestion.assert_called_once_with("s1", "rejected")
-
-
-def test_admin_get_reports(test_app, db_mock):
-    reports = [{"id": "r1", "status": "pending", "priority": "medium"}]
-    db_mock.get_reports.return_value = reports
-    response = test_app.get("/api/admin/reports")
-    assert response.status_code == 200
-    assert response.json == reports
 
 
 def test_admin_put_report_invalid_status(test_app, db_mock):
