@@ -1,4 +1,5 @@
 import json
+from typing import TypedDict
 from unittest import mock
 from unittest.mock import MagicMock
 
@@ -8,6 +9,15 @@ from platzky.config import LanguageConfig, Languages, languages_dict
 
 from goodmap.core_api import core_pages, make_tuple_translation, paginate_results
 from goodmap.data_models.location import LocationBase, create_location_model
+
+
+class LocationData(TypedDict):
+    uuid: str | None
+    name: str
+    type_of_place: str
+    test_category: list[str]
+    position: list[float]
+    remark: bool
 
 
 def fake_translation(key: str):
@@ -273,11 +283,13 @@ def test_admin_post_location_success(mock_uuid4, test_app, db_mock):
     from uuid import UUID
 
     mock_uuid4.return_value = UUID("00000000-0000-0000-0000-000000000001")
-    data = {
+    data: LocationData = {
+        "uuid": None,  # uuid will be set by the endpoint
         "name": "LocName",
         "type_of_place": "Type",
         "test_category": ["cat"],
         "position": [10.0, 20.0],
+        "remark": False,
     }
     response = test_app.post(
         "/api/admin/locations", data=json.dumps(data), content_type="application/json"
@@ -326,11 +338,13 @@ def test_admin_post_location_error(mock_uuid4, test_app, db_mock):
 
 
 def test_admin_put_location_success(test_app, db_mock):
-    data = {
+    data: LocationData = {
+        "uuid": None,  # uuid will be set by the endpoint
         "name": "NewName",
         "type_of_place": "NewType",
         "test_category": ["new"],
         "position": [1.0, 2.0],
+        "remark": False,
     }
     location_id = "loc123"
     response = test_app.put(
