@@ -611,7 +611,10 @@ def test_admin_get_reports_pagination(test_app, db_mock):
 @mock.patch("goodmap.core_api.gettext", fake_translation)
 def test_make_tuple_translation():
     keys = ["alpha", "beta"]
-    assert make_tuple_translation(keys) == [("alpha", "alpha-translated"), ("beta", "beta-translated")]
+    assert make_tuple_translation(keys) == [
+        ("alpha", "alpha-translated"),
+        ("beta", "beta-translated"),
+    ]
 
 
 def test_paginate_results_default():
