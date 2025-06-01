@@ -241,8 +241,8 @@ def test_get_locations(test_app):
     response = test_app.get("/api/locations")
     assert response.status_code == 200
     assert response.json == [
-        {"uuid": "1", "position": [50, 50]},
-        {"uuid": "2", "position": [60, 60]},
+        {"uuid": "1", "position": [50, 50], "remark": False},
+        {"uuid": "2", "position": [60, 60], "remark": False},
     ]
 
 
