@@ -48,5 +48,9 @@ def create_app_from_config(config: Config) -> platzky.Engine:
     def index():
         return render_template("map.html", feature_flags=config.feature_flags)
 
+    @goodmap.route("/admin2")
+    def admin():
+        return render_template("admin2.html", feature_flags=config.feature_flags)
+
     app.register_blueprint(goodmap)
     return app
