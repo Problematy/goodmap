@@ -9,6 +9,12 @@ from platzky.db.json_file_db import JsonFile
 
 from goodmap.data_models.location import create_location_model
 from goodmap.db import (
+    add_location,
+    add_report,
+    add_suggestion,
+    delete_location,
+    delete_report,
+    delete_suggestion,
     extend_db_with_goodmap_queries,
     get_data,
     get_location_from_raw_data,
@@ -46,6 +52,9 @@ from goodmap.db import (
     json_file_db_update_location,
     json_file_db_update_report,
     json_file_db_update_suggestion,
+    update_location,
+    update_report,
+    update_suggestion,
 )
 
 data = {
@@ -94,13 +103,19 @@ def test_goodmap_google_json_db_extended(mock_cli):
     initialize_and_assert_db(db, data)
 
 
-def test_json_file_atomic_dump(tmp_path):
-    file_path = tmp_path / "atomic.json"
+@mock.patch("goodmap.db.json.dump")
+@mock.patch("goodmap.db.tempfile.NamedTemporaryFile")
+@mock.patch("goodmap.db.os.fsync")
+@mock.patch("goodmap.db.os.replace")
+def test_json_file_atomic_dump(mock_replace, mock_fsync, mock_tempfile, mock_json_dump):
+    file_path = "atomic.json"
     payload = {"key": "value", "list": [1, 2, 3]}
     json_file_atomic_dump(payload, file_path)
-    with open(file_path, "r") as f:
-        loaded = json.load(f)
-    assert loaded == payload
+    mock_tempfile.assert_called_once_with("w", dir="", delete=False)
+    mock_json_dump.assert_called_once_with(payload, mock_tempfile().__enter__())
+    mock_tempfile().__enter__().flush.assert_called_once()
+    mock_fsync.assert_called_once_with(mock_tempfile().__enter__().fileno())
+    mock_replace.assert_called_once_with(mock_tempfile().__enter__().name, file_path)
 
 
 def test_json_db_get_location_obligatory_fields():
@@ -207,6 +222,14 @@ def test_json_db_update_location():
     assert tuple(db.data["data"][0]["position"]) == (3, 4)
 
 
+def test_json_db_update_location_not_found():
+    Location = create_location_model([])
+    db = Json({"data": []})
+    location_update = {"uuid": "1", "position": [3, 4]}
+    with pytest.raises(ValueError):
+        json_db_update_location(db, "1", location_update, Location)
+
+
 def test_json_db_delete_location():
     db = Json({"data": [{"uuid": "1", "position": [1, 2]}]})
     json_db_delete_location(db, "1")
@@ -219,58 +242,72 @@ def test_json_db_delete_location_not_found():
         json_db_delete_location(db, "1")
 
 
-def test_json_file_db_add_location(tmp_path):
+@mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {"data": []}})))
+@mock.patch("goodmap.db.json_file_atomic_dump")
+def test_json_file_db_add_location(mock_atomic_dump):
     Location = create_location_model([])
-    file_path = tmp_path / "locs.json"
-    initial = {"map": {"data": []}}
-    file_path.write_text(json.dumps(initial))
-    db = JsonFile(str(file_path))
-    location = {"uuid": "a", "position": [5, 6]}
-    json_file_db_add_location(db, location, Location)
-    content = json.loads(file_path.read_text())
-    assert len(content["map"]["data"]) == 1
-    assert tuple(content["map"]["data"][0]["position"]) == (5, 6)
+    file_path = "locs.json"
+    db = JsonFile(file_path)
+    location_raw = {"uuid": "a", "position": [5, 6]}
+    json_file_db_add_location(db, location_raw, Location)
+    location = Location.model_validate(location_raw).model_dump()
+    mock_atomic_dump.assert_called_once_with({"map": {"data": [location]}}, file_path)
 
 
-def test_json_file_db_add_duplicate_location(tmp_path):
+@mock.patch(
+    "builtins.open",
+    mock.mock_open(read_data=json.dumps({"map": {"data": [{"uuid": "a", "position": [5, 6]}]}})),
+)
+def test_json_file_db_add_duplicate_location():
     Location = create_location_model([])
-    file_path = tmp_path / "locs.json"
-    initial = {"map": {"data": []}}
-    file_path.write_text(json.dumps(initial))
-    db = JsonFile(str(file_path))
+    file_path = "locs.json"
+    db = JsonFile(file_path)
     location = {"uuid": "a", "position": [5, 6]}
-    json_file_db_add_location(db, location, Location)
     with pytest.raises(ValueError):
         json_file_db_add_location(db, location, Location)
 
 
-def test_json_file_db_update_location(tmp_path):
+@mock.patch(
+    "builtins.open",
+    mock.mock_open(read_data=json.dumps({"map": {"data": [{"uuid": "a", "position": [5, 6]}]}})),
+)
+@mock.patch("goodmap.db.json_file_atomic_dump")
+def test_json_file_db_update_location(mock_atomic_dump):
     Location = create_location_model([])
-    file_path = tmp_path / "locs.json"
-    data = {"map": {"data": [{"uuid": "a", "position": [5, 6]}]}}
-    file_path.write_text(json.dumps(data))
-    db = JsonFile(str(file_path))
-    location_update = {"uuid": "a", "position": [7, 8]}
-    json_file_db_update_location(db, "a", location_update, Location)
-    content = json.loads(file_path.read_text())
-    assert tuple(content["map"]["data"][0]["position"]) == (7, 8)
+    file_path = "locs.json"
+    db = JsonFile(file_path)
+    location_update_raw = {"uuid": "a", "position": [7, 8]}
+    json_file_db_update_location(db, "a", location_update_raw, Location)
+    location_update = Location.model_validate(location_update_raw).model_dump()
+    mock_atomic_dump.assert_called_once_with({"map": {"data": [location_update]}}, file_path)
 
 
-def test_json_file_db_delete_location(tmp_path):
-    file_path = tmp_path / "locs.json"
-    data = {"map": {"data": [{"uuid": "a", "position": [5, 6]}]}}
-    file_path.write_text(json.dumps(data))
-    db = JsonFile(str(file_path))
+@mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {"data": []}})))
+def test_json_file_db_update_location_not_found():
+    Location = create_location_model([])
+    file_path = "locs.json"
+    db = JsonFile(file_path)
+    location_update_raw = {"uuid": "a", "position": [7, 8]}
+    with pytest.raises(ValueError):
+        json_file_db_update_location(db, "a", location_update_raw, Location)
+
+
+@mock.patch(
+    "builtins.open",
+    mock.mock_open(read_data=json.dumps({"map": {"data": [{"uuid": "a", "position": [5, 6]}]}})),
+)
+@mock.patch("goodmap.db.json_file_atomic_dump")
+def test_json_file_db_delete_location(mock_atomic_dump):
+    file_path = "locs.json"
+    db = JsonFile(file_path)
     json_file_db_delete_location(db, "a")
-    content = json.loads(file_path.read_text())
-    assert content["map"]["data"] == []
+    mock_atomic_dump.assert_called_once_with({"map": {"data": []}}, file_path)
 
 
-def test_json_file_db_delete_location_not_found(tmp_path):
-    file_path = tmp_path / "locs.json"
-    data = {"map": {"data": []}}
-    file_path.write_text(json.dumps(data))
-    db = JsonFile(str(file_path))
+@mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {"data": []}})))
+def test_json_file_db_delete_location_not_found():
+    file_path = "locs.json"
+    db = JsonFile(file_path)
     with pytest.raises(ValueError):
         json_file_db_delete_location(db, "a")
 
@@ -322,6 +359,18 @@ def test_json_db_update_suggestion_not_found():
         json_db_update_suggestion(db, "x", "new")
 
 
+def test_json_db_update_suggestion_multiple():
+    # First element should remain unchanged, second updated
+    suggestions = [
+        {"uuid": "a", "status": "pending"},
+        {"uuid": "b", "status": "pending"},
+    ]
+    db = Json({"suggestions": [s.copy() for s in suggestions]})
+    json_db_update_suggestion(db, "b", "done")
+    assert db.data["suggestions"][0]["status"] == "pending"
+    assert db.data["suggestions"][1]["status"] == "done"
+
+
 def test_json_db_delete_suggestion():
     db = Json({"suggestions": [{"uuid": "s1"}]})
     json_db_delete_suggestion(db, "s1")
@@ -334,88 +383,133 @@ def test_json_db_delete_suggestion_not_found():
         json_db_delete_suggestion(db, "s1")
 
 
-def test_json_file_db_add_suggestion(tmp_path):
-    file_path = tmp_path / "sug.json"
-    initial = {"map": {"suggestions": []}}
-    file_path.write_text(json.dumps(initial))
-    db = JsonFile(str(file_path))
-    suggestion = {"uuid": "s1", "foo": "bar"}
-    json_file_db_add_suggestion(db, suggestion)
-    content = json.loads(file_path.read_text())
-    assert len(content["map"]["suggestions"]) == 1
-    assert content["map"]["suggestions"][0]["status"] == "pending"
+@mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {"suggestions": []}})))
+@mock.patch("goodmap.db.json_file_atomic_dump")
+def test_json_file_db_add_suggestion(mock_atomic_dump):
+    file_path = "sug.json"
+    db = JsonFile(file_path)
+    suggestion_raw = {"uuid": "s1", "foo": "bar"}
+    json_file_db_add_suggestion(db, suggestion_raw)
+    suggestion = suggestion_raw.copy()
+    suggestion["status"] = "pending"
+    mock_atomic_dump.assert_called_once_with({"map": {"suggestions": [suggestion]}}, file_path)
 
 
-def test_json_file_db_add_duplicate_suggestion(tmp_path):
-    file_path = tmp_path / "sug.json"
-    initial = {"map": {"suggestions": []}}
-    file_path.write_text(json.dumps(initial))
-    db = JsonFile(str(file_path))
+@mock.patch(
+    "builtins.open",
+    mock.mock_open(read_data=json.dumps({"map": {"suggestions": [{"uuid": "s1"}]}})),
+)
+def test_json_file_db_add_duplicate_suggestion():
+    file_path = "sug.json"
+    db = JsonFile(file_path)
     suggestion = {"uuid": "s1"}
-    json_file_db_add_suggestion(db, suggestion)
     with pytest.raises(ValueError):
         json_file_db_add_suggestion(db, suggestion)
 
 
-def test_json_file_db_get_suggestions_filters(tmp_path):
-    file_path = tmp_path / "sug.json"
-    suggestions = [
-        {"uuid": "s1", "status": "pending"},
-        {"uuid": "s2", "status": "done"},
-    ]
-    data = {"map": {"suggestions": suggestions}}
-    file_path.write_text(json.dumps(data))
-    db = JsonFile(str(file_path))
+@mock.patch(
+    "builtins.open",
+    mock.mock_open(
+        read_data=json.dumps(
+            {
+                "map": {
+                    "suggestions": [
+                        {"uuid": "s1", "status": "pending"},
+                        {"uuid": "s2", "status": "done"},
+                    ]
+                }
+            }
+        )
+    ),
+)
+def test_json_file_db_get_suggestions_filters():
+    file_path = "sug.json"
+    db = JsonFile(file_path)
     all_suggestions = json_file_db_get_suggestions(db, {})
     assert len(all_suggestions) == 2
     pending = json_file_db_get_suggestions(db, {"status": ["pending"]})
     assert len(pending) == 1 and pending[0]["uuid"] == "s1"
 
 
-def test_json_file_db_get_suggestion_by_uuid(tmp_path):
-    file_path = tmp_path / "sug.json"
-    data = {"map": {"suggestions": [{"uuid": "s1", "status": "pending"}]}}
-    file_path.write_text(json.dumps(data))
-    db = JsonFile(str(file_path))
+@mock.patch(
+    "builtins.open",
+    mock.mock_open(
+        read_data=json.dumps({"map": {"suggestions": [{"uuid": "s1", "status": "pending"}]}})
+    ),
+)
+def test_json_file_db_get_suggestion_by_uuid():
+    file_path = "sug.json"
+    db = JsonFile(file_path)
     suggestion = json_file_db_get_suggestion(db, "s1")
     assert suggestion is not None and suggestion["uuid"] == "s1"
     assert json_file_db_get_suggestion(db, "x") is None
 
 
-def test_json_file_db_update_suggestion(tmp_path):
-    file_path = tmp_path / "sug.json"
-    data = {"map": {"suggestions": [{"uuid": "s1", "status": "pending"}]}}
-    file_path.write_text(json.dumps(data))
-    db = JsonFile(str(file_path))
+@mock.patch(
+    "builtins.open",
+    mock.mock_open(
+        read_data=json.dumps({"map": {"suggestions": [{"uuid": "s1", "status": "pending"}]}})
+    ),
+)
+@mock.patch("goodmap.db.json_file_atomic_dump")
+def test_json_file_db_update_suggestion(mock_atomic_dump):
+    file_path = "sug.json"
+    db = JsonFile(file_path)
     json_file_db_update_suggestion(db, "s1", "done")
-    content = json.loads(file_path.read_text())
-    assert content["map"]["suggestions"][0]["status"] == "done"
+    suggestion = {"uuid": "s1", "status": "done"}
+    mock_atomic_dump.assert_called_once_with({"map": {"suggestions": [suggestion]}}, file_path)
 
 
-def test_json_file_db_update_suggestion_not_found(tmp_path):
-    file_path = tmp_path / "sug.json"
-    data = {"map": {"suggestions": []}}
-    file_path.write_text(json.dumps(data))
-    db = JsonFile(str(file_path))
+@mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {"suggestions": []}})))
+def test_json_file_db_update_suggestion_not_found():
+    file_path = "sug.json"
+    db = JsonFile(file_path)
     with pytest.raises(ValueError):
         json_file_db_update_suggestion(db, "x", "new")
 
 
-def test_json_file_db_delete_suggestion(tmp_path):
-    file_path = tmp_path / "sug.json"
-    data = {"map": {"suggestions": [{"uuid": "s1"}]}}
-    file_path.write_text(json.dumps(data))
-    db = JsonFile(str(file_path))
+@mock.patch(
+    "builtins.open",
+    mock.mock_open(
+        read_data=json.dumps(
+            {
+                "map": {
+                    "suggestions": [
+                        {"uuid": "a", "status": "pending"},
+                        {"uuid": "b", "status": "pending"},
+                    ]
+                }
+            }
+        )
+    ),
+)
+@mock.patch("goodmap.db.json_file_atomic_dump")
+def test_json_file_db_update_suggestion_multiple(mock_atomic_dump):
+    file_path = "sug.json"
+    db = JsonFile(file_path)
+    json_file_db_update_suggestion(db, "b", "done")
+    rec1 = {"uuid": "a", "status": "pending"}
+    rec2 = {"uuid": "b", "status": "done"}
+    expected = {"map": {"suggestions": [rec1, rec2]}}
+    mock_atomic_dump.assert_called_once_with(expected, file_path)
+
+
+@mock.patch(
+    "builtins.open",
+    mock.mock_open(read_data=json.dumps({"map": {"suggestions": [{"uuid": "s1"}]}})),
+)
+@mock.patch("goodmap.db.json_file_atomic_dump")
+def test_json_file_db_delete_suggestion(mock_atomic_dump):
+    file_path = "sug.json"
+    db = JsonFile(file_path)
     json_file_db_delete_suggestion(db, "s1")
-    content = json.loads(file_path.read_text())
-    assert content["map"]["suggestions"] == []
+    mock_atomic_dump.assert_called_once_with({"map": {"suggestions": []}}, file_path)
 
 
-def test_json_file_db_delete_suggestion_not_found(tmp_path):
-    file_path = tmp_path / "sug.json"
-    data = {"map": {"suggestions": []}}
-    file_path.write_text(json.dumps(data))
-    db = JsonFile(str(file_path))
+@mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {"suggestions": []}})))
+def test_json_file_db_delete_suggestion_not_found():
+    file_path = "sug.json"
+    db = JsonFile(file_path)
     with pytest.raises(ValueError):
         json_file_db_delete_suggestion(db, "s1")
 
@@ -476,6 +570,18 @@ def test_json_db_update_report_not_found():
         json_db_update_report(db, "x", status="a")
 
 
+def test_json_db_update_report_multiple():
+    # First report unchanged, second updated
+    reports = [
+        {"uuid": "r1", "status": "pending", "priority": "low"},
+        {"uuid": "r2", "status": "pending", "priority": "low"},
+    ]
+    db = Json({"reports": [r.copy() for r in reports]})
+    json_db_update_report(db, "r2", status="resolved", priority=None)
+    assert db.data["reports"][0]["status"] == "pending"
+    assert db.data["reports"][1]["status"] == "resolved"
+
+
 def test_json_db_delete_report():
     db = Json({"reports": [{"uuid": "r1"}]})
     json_db_delete_report(db, "r1")
@@ -488,40 +594,45 @@ def test_json_db_delete_report_not_found():
         json_db_delete_report(db, "r1")
 
 
-def test_json_file_db_add_report(tmp_path):
-    file_path = tmp_path / "rep.json"
-    initial = {"map": {"reports": []}}
-    file_path.write_text(json.dumps(initial))
-    db = JsonFile(str(file_path))
+@mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {"reports": []}})))
+@mock.patch("goodmap.db.json_file_atomic_dump")
+def test_json_file_db_add_report(mock_atomic_dump):
+    file_path = "rep.json"
+    db = JsonFile(file_path)
     report = {"uuid": "r1", "status": "new", "priority": "high"}
     json_file_db_add_report(db, report)
-    content = json.loads(file_path.read_text())
-    assert len(content["map"]["reports"]) == 1
+    mock_atomic_dump.assert_called_once_with({"map": {"reports": [report]}}, file_path)
 
 
-def test_json_file_db_add_duplicate_report(tmp_path):
-    file_path = tmp_path / "rep.json"
-    initial = {"map": {"reports": []}}
-    file_path.write_text(json.dumps(initial))
-    db = JsonFile(str(file_path))
+@mock.patch(
+    "builtins.open", mock.mock_open(read_data=json.dumps({"map": {"reports": [{"uuid": "r1"}]}}))
+)
+def test_json_file_db_add_duplicate_report():
+    file_path = "rep.json"
+    db = JsonFile(file_path)
     report = {"uuid": "r1"}
-    json_file_db_add_report(db, report)
     with pytest.raises(ValueError):
         json_file_db_add_report(db, report)
 
 
-def test_json_file_db_get_reports_filters(tmp_path):
-    file_path = tmp_path / "rep.json"
-    data = {
-        "map": {
-            "reports": [
-                {"uuid": "r1", "status": "new", "priority": "high"},
-                {"uuid": "r2", "status": "done", "priority": "low"},
-            ]
-        }
-    }
-    file_path.write_text(json.dumps(data))
-    db = JsonFile(str(file_path))
+@mock.patch(
+    "builtins.open",
+    mock.mock_open(
+        read_data=json.dumps(
+            {
+                "map": {
+                    "reports": [
+                        {"uuid": "r1", "status": "new", "priority": "high"},
+                        {"uuid": "r2", "status": "done", "priority": "low"},
+                    ]
+                }
+            }
+        )
+    ),
+)
+def test_json_file_db_get_reports_filters():
+    file_path = "rep.json"
+    db = JsonFile(file_path)
     all_reports = json_file_db_get_reports(db, {})
     assert len(all_reports) == 2
     status_reports = json_file_db_get_reports(db, {"status": ["new"]})
@@ -530,56 +641,141 @@ def test_json_file_db_get_reports_filters(tmp_path):
     assert len(priority_reports) == 1 and priority_reports[0]["uuid"] == "r2"
 
 
-def test_json_file_db_get_report_by_uuid(tmp_path):
-    file_path = tmp_path / "rep.json"
-    data = {"map": {"reports": [{"uuid": "r1"}]}}
-    file_path.write_text(json.dumps(data))
-    db = JsonFile(str(file_path))
+@mock.patch(
+    "builtins.open", mock.mock_open(read_data=json.dumps({"map": {"reports": [{"uuid": "r1"}]}}))
+)
+def test_json_file_db_get_report_by_uuid():
+    file_path = "rep.json"
+    db = JsonFile(file_path)
     report = json_file_db_get_report(db, "r1")
     assert report is not None and report["uuid"] == "r1"
     assert json_file_db_get_report(db, "x") is None
 
 
-def test_json_file_db_update_report_fields(tmp_path):
-    file_path = tmp_path / "rep.json"
-    data = {"map": {"reports": [{"uuid": "r1", "status": "new", "priority": "high"}]}}
-    file_path.write_text(json.dumps(data))
-    db = JsonFile(str(file_path))
+@mock.patch(
+    "builtins.open",
+    mock.mock_open(
+        read_data=json.dumps(
+            {"map": {"reports": [{"uuid": "r1", "status": "new", "priority": "high"}]}}
+        )
+    ),
+)
+@mock.patch("goodmap.db.json_file_atomic_dump")
+def test_json_file_db_update_report_fields(mock_atomic_dump):
+    file_path = "rep.json"
+    db = JsonFile(file_path)
+    original_report = {"uuid": "r1", "status": "new", "priority": "high"}
+
     json_file_db_update_report(db, "r1", status="done")
-    content = json.loads(file_path.read_text())
-    assert content["map"]["reports"][0]["status"] == "done"
+    report = original_report.copy()
+    report["status"] = "done"
+    mock_atomic_dump.assert_called_with({"map": {"reports": [report]}}, file_path)
+
     json_file_db_update_report(db, "r1", priority="low")
-    content = json.loads(file_path.read_text())
-    assert content["map"]["reports"][0]["priority"] == "low"
-    json_file_db_update_report(db, "r1", status="new", priority="high")
-    content = json.loads(file_path.read_text())
-    assert content["map"]["reports"][0]["status"] == "new"
-    assert content["map"]["reports"][0]["priority"] == "high"
+    report = original_report.copy()
+    report["priority"] = "low"
+    mock_atomic_dump.assert_called_with({"map": {"reports": [report]}}, file_path)
+
+    json_file_db_update_report(db, "r1", status="done", priority="low")
+    report = original_report.copy()
+    report["status"] = "done"
+    report["priority"] = "low"
+    mock_atomic_dump.assert_called_with({"map": {"reports": [report]}}, file_path)
 
 
-def test_json_file_db_update_report_not_found(tmp_path):
-    file_path = tmp_path / "rep.json"
-    data = {"map": {"reports": []}}
-    file_path.write_text(json.dumps(data))
-    db = JsonFile(str(file_path))
+@mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {"reports": []}})))
+def test_json_file_db_update_report_not_found():
+    file_path = "rep.json"
+    db = JsonFile(file_path)
     with pytest.raises(ValueError):
         json_file_db_update_report(db, "x", status="a")
 
 
-def test_json_file_db_delete_report(tmp_path):
-    file_path = tmp_path / "rep.json"
-    data = {"map": {"reports": [{"uuid": "r1"}]}}
-    file_path.write_text(json.dumps(data))
-    db = JsonFile(str(file_path))
+@mock.patch(
+    "builtins.open",
+    mock.mock_open(
+        read_data=json.dumps(
+            {
+                "map": {
+                    "reports": [
+                        {"uuid": "r1", "status": "pending", "priority": "low"},
+                        {"uuid": "r2", "status": "pending", "priority": "low"},
+                    ]
+                }
+            }
+        )
+    ),
+)
+@mock.patch("goodmap.db.json_file_atomic_dump")
+def test_json_file_db_update_report_multiple(mock_atomic_dump):
+    file_path = "rep.json"
+    db = JsonFile(file_path)
+    json_file_db_update_report(db, "r2", priority="critical")
+    rec1 = {"uuid": "r1", "status": "pending", "priority": "low"}
+    rec2 = {"uuid": "r2", "status": "pending", "priority": "critical"}
+    expected = {"map": {"reports": [rec1, rec2]}}
+    mock_atomic_dump.assert_called_once_with(expected, file_path)
+
+
+@mock.patch(
+    "builtins.open", mock.mock_open(read_data=json.dumps({"map": {"reports": [{"uuid": "r1"}]}}))
+)
+@mock.patch("goodmap.db.json_file_atomic_dump")
+def test_json_file_db_delete_report(mock_atomic_dump):
+    file_path = "rep.json"
+    db = JsonFile(file_path)
     json_file_db_delete_report(db, "r1")
-    content = json.loads(file_path.read_text())
-    assert content["map"]["reports"] == []
+    mock_atomic_dump.assert_called_once_with({"map": {"reports": []}}, file_path)
 
 
-def test_json_file_db_delete_report_not_found(tmp_path):
-    file_path = tmp_path / "rep.json"
-    data = {"map": {"reports": []}}
-    file_path.write_text(json.dumps(data))
-    db = JsonFile(str(file_path))
+@mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {"reports": []}})))
+def test_json_file_db_delete_report_not_found():
+    file_path = "rep.json"
+    db = JsonFile(file_path)
     with pytest.raises(ValueError):
         json_file_db_delete_report(db, "r1")
+
+
+def test_dispatch_add_update_delete_location():
+    db = Json({"data": []})
+    Location = create_location_model([])
+
+    loc = {"uuid": "u1", "position": [10, 20]}
+    add_location(db, loc, Location)
+    assert db.data["data"][0]["uuid"] == "u1"
+
+    updated = {"uuid": "u1", "position": [30, 40]}
+    update_location(db, "u1", updated, Location)
+    assert tuple(db.data["data"][0]["position"]) == (30, 40)
+
+    delete_location(db, "u1")
+    assert db.data["data"] == []
+
+
+def test_dispatch_add_update_delete_suggestion():
+    db = Json({"suggestions": []})
+
+    sugg = {"uuid": "s1", "foo": "bar"}
+    add_suggestion(db, sugg)
+    assert db.data["suggestions"][0]["status"] == "pending"
+
+    update_suggestion(db, "s1", "done")
+    assert db.data["suggestions"][0]["status"] == "done"
+
+    delete_suggestion(db, "s1")
+    assert db.data["suggestions"] == []
+
+
+def test_dispatch_add_update_delete_report():
+    db = Json({"reports": []})
+
+    rep = {"uuid": "r1", "status": "new", "priority": "high"}
+    add_report(db, rep)
+    assert db.data["reports"][0]["uuid"] == "r1"
+
+    update_report(db, "r1", status="resolved", priority="low")
+    assert db.data["reports"][0]["status"] == "resolved"
+    assert db.data["reports"][0]["priority"] == "low"
+
+    delete_report(db, "r1")
+    assert db.data["reports"] == []
