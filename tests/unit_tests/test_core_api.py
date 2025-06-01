@@ -6,7 +6,7 @@ import pytest
 from flask import Flask
 from platzky.config import LanguageConfig, Languages, languages_dict
 
-from goodmap.core_api import core_pages
+from goodmap.core_api import core_pages, make_tuple_translation, paginate_results
 from goodmap.data_models.location import LocationBase, create_location_model
 
 
@@ -104,6 +104,19 @@ def test_reporting_returns_error_when_wrong_json(test_app, notifier_function, db
     # No report stored
     assert not db_mock.add_report.called
     assert "Error" in response.json["message"]
+
+
+@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("flask_babel.gettext", fake_translation)
+def test_report_location_notification_error(test_app, notifier_function, db_mock):
+    notifier_function.side_effect = Exception("NotifyErr")
+    data = {"id": "locid", "description": "desc"}
+    headers = {"Content-Type": "application/json"}
+    response = test_app.post("/api/report-location", data=json.dumps(data), headers=headers)
+    assert response.status_code == 400
+    msg = response.json.get("message", "")
+    assert "Error sending notification" in msg
+    assert "NotifyErr" in msg
 
 
 def test_language_endpoint_returns_languages(test_app):
@@ -474,6 +487,17 @@ def test_admin_put_suggestion_reject(test_app, db_mock):
     db_mock.update_suggestion.assert_called_once_with("s1", "rejected")
 
 
+def test_admin_put_suggestion_value_error(test_app, db_mock):
+    db_mock.get_suggestion.side_effect = ValueError("SugErr")
+    response = test_app.put(
+        "/api/admin/suggestions/s1",
+        data=json.dumps({"status": "accepted"}),
+        content_type="application/json",
+    )
+    assert response.status_code == 400
+    assert "SugErr" in response.json.get("message", "")
+
+
 def test_admin_put_report_invalid_status(test_app, db_mock):
     response = test_app.put(
         "/api/admin/reports/r1", data=json.dumps({"status": "bad"}), content_type="application/json"
@@ -515,6 +539,18 @@ def test_admin_put_report_success(test_app, db_mock):
     assert response.status_code == 200
     assert response.json == report_updated
     db_mock.update_report.assert_called_once_with("r1", status="resolved", priority="critical")
+
+
+def test_admin_put_report_value_error(test_app, db_mock):
+    db_mock.get_report.return_value = {"uuid": "r1", "status": "pending", "priority": "medium"}
+    db_mock.update_report.side_effect = ValueError("RepErr")
+    response = test_app.put(
+        "/api/admin/reports/r1",
+        data=json.dumps({"status": "resolved"}),
+        content_type="application/json",
+    )
+    assert response.status_code == 400
+    assert "RepErr" in response.json.get("message", "")
 
 
 def test_admin_get_locations_pagination(test_app, db_mock):
@@ -570,3 +606,47 @@ def test_admin_get_reports_pagination(test_app, db_mock):
     assert data["per_page"] == 1
     assert data["total_pages"] == 2
     assert data["items"] == [reports[1]]
+
+
+@mock.patch("goodmap.core_api.gettext", fake_translation)
+def test_make_tuple_translation():
+    keys = ["alpha", "beta"]
+    assert make_tuple_translation(keys) == [("alpha", "alpha-translated"), ("beta", "beta-translated")]
+
+
+def test_paginate_results_default():
+    items = [1, 2, 3]
+    page_items, meta = paginate_results(items.copy(), {})
+    assert page_items == items
+    assert meta == {"total": 3, "page": 1, "per_page": 20, "total_pages": 1}
+
+
+def test_paginate_results_invalid_page():
+    items = [1, 2, 3]
+    _, meta = paginate_results(items.copy(), {"page": ["bad"]})
+    assert meta["page"] == 1
+
+
+def test_paginate_results_invalid_per_page():
+    items = [1, 2, 3]
+    _, meta = paginate_results(items.copy(), {"per_page": ["bad"]})
+    assert meta["per_page"] == 20
+
+
+def test_paginate_results_per_page_all():
+    items = [1, 2, 3]
+    page_items, meta = paginate_results(items.copy(), {"per_page": ["all"]})
+    assert meta["per_page"] == len(items)
+    assert page_items == items
+
+
+def test_paginate_results_sorting_dict_asc():
+    items = [{"x": 2}, {"x": 1}, {"x": 3}]
+    page_items, _ = paginate_results(items.copy(), {"sort_by": ["x"], "sort_order": ["asc"]})
+    assert page_items == [{"x": 1}, {"x": 2}, {"x": 3}]
+
+
+def test_paginate_results_sorting_exception():
+    items = [{"x": "a"}, {"x": 1}]
+    page_items, _ = paginate_results(items.copy(), {"sort_by": ["x"]})
+    assert page_items == items

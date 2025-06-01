@@ -9,6 +9,12 @@ from platzky.db.json_file_db import JsonFile
 
 from goodmap.data_models.location import create_location_model
 from goodmap.db import (
+    add_location,
+    add_report,
+    add_suggestion,
+    delete_location,
+    delete_report,
+    delete_suggestion,
     extend_db_with_goodmap_queries,
     get_data,
     get_location_from_raw_data,
@@ -46,6 +52,9 @@ from goodmap.db import (
     json_file_db_update_location,
     json_file_db_update_report,
     json_file_db_update_suggestion,
+    update_location,
+    update_report,
+    update_suggestion,
 )
 
 data = {
@@ -350,6 +359,18 @@ def test_json_db_update_suggestion_not_found():
         json_db_update_suggestion(db, "x", "new")
 
 
+def test_json_db_update_suggestion_multiple():
+    # First element should remain unchanged, second updated
+    suggestions = [
+        {"uuid": "a", "status": "pending"},
+        {"uuid": "b", "status": "pending"},
+    ]
+    db = Json({"suggestions": [s.copy() for s in suggestions]})
+    json_db_update_suggestion(db, "b", "done")
+    assert db.data["suggestions"][0]["status"] == "pending"
+    assert db.data["suggestions"][1]["status"] == "done"
+
+
 def test_json_db_delete_suggestion():
     db = Json({"suggestions": [{"uuid": "s1"}]})
     json_db_delete_suggestion(db, "s1")
@@ -449,6 +470,32 @@ def test_json_file_db_update_suggestion_not_found():
 
 @mock.patch(
     "builtins.open",
+    mock.mock_open(
+        read_data=json.dumps(
+            {
+                "map": {
+                    "suggestions": [
+                        {"uuid": "a", "status": "pending"},
+                        {"uuid": "b", "status": "pending"},
+                    ]
+                }
+            }
+        )
+    ),
+)
+@mock.patch("goodmap.db.json_file_atomic_dump")
+def test_json_file_db_update_suggestion_multiple(mock_atomic_dump):
+    file_path = "sug.json"
+    db = JsonFile(file_path)
+    json_file_db_update_suggestion(db, "b", "done")
+    rec1 = {"uuid": "a", "status": "pending"}
+    rec2 = {"uuid": "b", "status": "done"}
+    expected = {"map": {"suggestions": [rec1, rec2]}}
+    mock_atomic_dump.assert_called_once_with(expected, file_path)
+
+
+@mock.patch(
+    "builtins.open",
     mock.mock_open(read_data=json.dumps({"map": {"suggestions": [{"uuid": "s1"}]}})),
 )
 @mock.patch("goodmap.db.json_file_atomic_dump")
@@ -521,6 +568,18 @@ def test_json_db_update_report_not_found():
     db = Json({"reports": []})
     with pytest.raises(ValueError):
         json_db_update_report(db, "x", status="a")
+
+
+def test_json_db_update_report_multiple():
+    # First report unchanged, second updated
+    reports = [
+        {"uuid": "r1", "status": "pending", "priority": "low"},
+        {"uuid": "r2", "status": "pending", "priority": "low"},
+    ]
+    db = Json({"reports": [r.copy() for r in reports]})
+    json_db_update_report(db, "r2", status="resolved", priority=None)
+    assert db.data["reports"][0]["status"] == "pending"
+    assert db.data["reports"][1]["status"] == "resolved"
 
 
 def test_json_db_delete_report():
@@ -633,6 +692,32 @@ def test_json_file_db_update_report_not_found():
 
 
 @mock.patch(
+    "builtins.open",
+    mock.mock_open(
+        read_data=json.dumps(
+            {
+                "map": {
+                    "reports": [
+                        {"uuid": "r1", "status": "pending", "priority": "low"},
+                        {"uuid": "r2", "status": "pending", "priority": "low"},
+                    ]
+                }
+            }
+        )
+    ),
+)
+@mock.patch("goodmap.db.json_file_atomic_dump")
+def test_json_file_db_update_report_multiple(mock_atomic_dump):
+    file_path = "rep.json"
+    db = JsonFile(file_path)
+    json_file_db_update_report(db, "r2", priority="critical")
+    rec1 = {"uuid": "r1", "status": "pending", "priority": "low"}
+    rec2 = {"uuid": "r2", "status": "pending", "priority": "critical"}
+    expected = {"map": {"reports": [rec1, rec2]}}
+    mock_atomic_dump.assert_called_once_with(expected, file_path)
+
+
+@mock.patch(
     "builtins.open", mock.mock_open(read_data=json.dumps({"map": {"reports": [{"uuid": "r1"}]}}))
 )
 @mock.patch("goodmap.db.json_file_atomic_dump")
@@ -649,3 +734,48 @@ def test_json_file_db_delete_report_not_found():
     db = JsonFile(file_path)
     with pytest.raises(ValueError):
         json_file_db_delete_report(db, "r1")
+
+
+def test_dispatch_add_update_delete_location():
+    db = Json({"data": []})
+    Location = create_location_model([])
+
+    loc = {"uuid": "u1", "position": [10, 20]}
+    add_location(db, loc, Location)
+    assert db.data["data"][0]["uuid"] == "u1"
+
+    updated = {"uuid": "u1", "position": [30, 40]}
+    update_location(db, "u1", updated, Location)
+    assert tuple(db.data["data"][0]["position"]) == (30, 40)
+
+    delete_location(db, "u1")
+    assert db.data["data"] == []
+
+
+def test_dispatch_add_update_delete_suggestion():
+    db = Json({"suggestions": []})
+
+    sugg = {"uuid": "s1", "foo": "bar"}
+    add_suggestion(db, sugg)
+    assert db.data["suggestions"][0]["status"] == "pending"
+
+    update_suggestion(db, "s1", "done")
+    assert db.data["suggestions"][0]["status"] == "done"
+
+    delete_suggestion(db, "s1")
+    assert db.data["suggestions"] == []
+
+
+def test_dispatch_add_update_delete_report():
+    db = Json({"reports": []})
+
+    rep = {"uuid": "r1", "status": "new", "priority": "high"}
+    add_report(db, rep)
+    assert db.data["reports"][0]["uuid"] == "r1"
+
+    update_report(db, "r1", status="resolved", priority="low")
+    assert db.data["reports"][0]["status"] == "resolved"
+    assert db.data["reports"][0]["priority"] == "low"
+
+    delete_report(db, "r1")
+    assert db.data["reports"] == []
