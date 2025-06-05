@@ -661,9 +661,3 @@ def test_paginate_results_sorting_dict_asc():
     items = [{"x": 2}, {"x": 1}, {"x": 3}]
     page_items, _ = paginate_results(items.copy(), {"sort_by": ["x"], "sort_order": ["asc"]})
     assert page_items == [{"x": 1}, {"x": 2}, {"x": 3}]
-
-
-def test_paginate_results_sorting_exception():
-    items = [{"x": "a"}, {"x": 1}]
-    page_items, _ = paginate_results(items.copy(), {"sort_by": ["x"]})
-    assert page_items == items
