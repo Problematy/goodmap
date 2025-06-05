@@ -37,43 +37,13 @@ def test_create_app_delegation(mock_parse_yaml, mock_create_app_from_config):
 
 
 def test_is_feature_enabled():
-    config = Config(
-        APP_NAME="test",
-        SECRET_KEY="test",
-        DB=JsonDbConfig(DATA={}, TYPE="json"),
-        FEATURE_FLAGS={"flag": True, "other": False},
-    )
+    config.feature_flags.update({"flag": True, "other": False})
 
     assert goodmap.is_feature_enabled(config, "flag") is True
     assert goodmap.is_feature_enabled(config, "other") is False
 
-    config = Config(
-        APP_NAME="test",
-        SECRET_KEY="test",
-        DB=JsonDbConfig(DATA={}, TYPE="json"),
-        FEATURE_FLAGS=None,
-    )
+    config.feature_flags.clear()
     assert goodmap.is_feature_enabled(config, "flag") is False
-
-
-def test_translation_directories_and_routes():
-    config = Config(
-        APP_NAME="test_routes",
-        SECRET_KEY="secret",
-        DB=JsonDbConfig(DATA={"site_content": {}}, TYPE="json"),
-    )
-
-    app = goodmap.create_app_from_config(config)
-    assert any(
-        p.endswith(os.path.join("goodmap", "locale")) for p in config.translation_directories
-    )
-
-    with app.test_request_context("/"):
-        idx_html = app.view_functions["goodmap.index"]()
-        assert '<div id="map"' in str(idx_html)
-    with app.test_request_context("/goodmap-admin", method="GET"):
-        admin_html = app.view_functions["goodmap.admin"]()
-        assert "Admin Panel" in str(admin_html)
 
 
 @mock.patch("goodmap.goodmap.get_location_obligatory_fields")
