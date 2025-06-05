@@ -52,10 +52,7 @@ def paginate_results(items, raw_params, sort_by_default=None):
 
     if sort_by:
         reverse = sort_order == "desc"
-        try:
-            items.sort(key=get_sort_key, reverse=reverse)
-        except Exception:
-            pass
+        items.sort(key=get_sort_key, reverse=reverse)
 
     # Apply pagination
     total = len(items)
