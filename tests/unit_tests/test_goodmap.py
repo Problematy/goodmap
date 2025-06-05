@@ -36,6 +36,7 @@ def test_create_app_delegation(mock_parse_yaml, mock_create_app_from_config):
 
 
 def test_is_feature_enabled():
+    assert config.feature_flags is not None
     config.feature_flags.update({"flag": True, "other": False})
 
     assert goodmap.is_feature_enabled(config, "flag") is True
