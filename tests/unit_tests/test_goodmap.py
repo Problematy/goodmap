@@ -71,7 +71,7 @@ def test_translation_directories_and_routes():
     with app.test_request_context("/"):
         idx_html = app.view_functions["goodmap.index"]()
         assert '<div id="map"' in str(idx_html)
-    with app.test_request_context("/admin2"):
+    with app.test_request_context("/goodmap-admin", method="GET"):
         admin_html = app.view_functions["goodmap.admin"]()
         assert "Admin Panel" in str(admin_html)
 

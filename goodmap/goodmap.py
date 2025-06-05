@@ -1,9 +1,10 @@
 import os
 
-from flask import Blueprint, render_template
+from flask import Blueprint, redirect, render_template, session
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from platzky import platzky
 from platzky.config import Config, languages_dict
+from platzky.models import CmsModule
 
 from goodmap.core_api import core_pages
 from goodmap.data_models.location import create_location_model
@@ -48,9 +49,30 @@ def create_app_from_config(config: Config) -> platzky.Engine:
     def index():
         return render_template("map.html", feature_flags=config.feature_flags)
 
-    @goodmap.route("/admin2")
+    @goodmap.route("/goodmap-admin")
     def admin():
-        return render_template("admin2.html", feature_flags=config.feature_flags)
+        user = session.get("user", None)
+        if not user:
+            return redirect("/admin")
+
+        # TODO: This should be replaced with a proper user authentication check,
+        #       cms_modules should be passed from the app
+        return render_template(
+            "goodmap-admin.html",
+            feature_flags=config.feature_flags,
+            user=user,
+            cms_modules=app.cms_modules,
+        )
 
     app.register_blueprint(goodmap)
+    goodmap_cms_modules = CmsModule.model_validate(
+        {
+            "name": "Map admin panel",
+            "description": "Admin panel for managing map data",
+            "slug": "goodmap-admin",
+            "template": "goodmap-admin.html",
+        }
+    )
+    app.add_cms_module(goodmap_cms_modules)
+
     return app
