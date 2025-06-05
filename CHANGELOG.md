@@ -1,5 +1,8 @@
 # Changelog
 
+#### 0.5.1
+  * admin panel added
+
 #### 0.5.0
   * removed deprecated `data` attribute from `/api/data` endpoint
 
