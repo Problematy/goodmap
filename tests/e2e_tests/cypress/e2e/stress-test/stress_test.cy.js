@@ -7,11 +7,6 @@ describe("Stress test", () => {
 
     Cypress._.times(numRuns, () => {
       cy.visit('/');
-
-      const startRunText = `Run ${runTimes.length + 1} of ${numRuns}`;
-      cy.log(startRunText);
-      cy.task('appendToGithubStepSummary', startRunText);
-
       cy.window().then((win) => {
         let startTime = win.performance.now();
 
@@ -20,7 +15,7 @@ describe("Stress test", () => {
             cy.window().then((win) => {
               let endTime = win.performance.now();
               const runTime = endTime - startTime;
-              const runText = `Run ${runTimes.length + 1} took ${runTime}ms`;
+              const runText = `Rune e2e tests: Run ${runTimes.length + 1} took ${runTime}ms`;
               cy.log(runText);
               cy.task('appendToGithubStepSummary', runText);
               runTimes.push(runTime);
