@@ -8,7 +8,12 @@ describe("Stress test", () => {
     Cypress._.times(numRuns, () => {
       cy.visit('/');
 
-      cy.log(`Run ${runTimes.length + 1} of ${numRuns}`);
+      const startRunText = `Run ${runTimes.length + 1} of ${numRuns}`;
+      cy.log(startRunText);
+      if (process.env.GITHUB_ACTIONS) {
+        const fs = require('fs');
+        fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, startRunText);
+      }
 
       cy.window().then((win) => {
         let startTime = win.performance.now();
@@ -18,7 +23,12 @@ describe("Stress test", () => {
             cy.window().then((win) => {
               let endTime = win.performance.now();
               const runTime = endTime - startTime;
-              cy.log(`Run ${runTimes.length + 1} took ${runTime}ms`);
+              const runText = `Run ${runTimes.length + 1} took ${runTime}ms`;
+              cy.log(runText);
+              if (process.env.GITHUB_ACTIONS) {
+                const fs = require('fs');
+                fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, runText);
+              }
               runTimes.push(runTime);
 
               if (runTime > slowestTime) {
