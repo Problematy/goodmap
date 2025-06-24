@@ -10,10 +10,7 @@ describe("Stress test", () => {
 
       const startRunText = `Run ${runTimes.length + 1} of ${numRuns}`;
       cy.log(startRunText);
-      if (process.env.GITHUB_ACTIONS) {
-        const fs = require('fs');
-        fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, startRunText);
-      }
+      cy.task('appendToGithubStepSummary', startRunText);
 
       cy.window().then((win) => {
         let startTime = win.performance.now();
@@ -25,10 +22,7 @@ describe("Stress test", () => {
               const runTime = endTime - startTime;
               const runText = `Run ${runTimes.length + 1} took ${runTime}ms`;
               cy.log(runText);
-              if (process.env.GITHUB_ACTIONS) {
-                const fs = require('fs');
-                fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, runText);
-              }
+              cy.task('appendToGithubStepSummary', runText);
               runTimes.push(runTime);
 
               if (runTime > slowestTime) {
