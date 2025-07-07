@@ -31,10 +31,6 @@ DB:
 #   BUCKET_NAME: good-map
 #   SOURCE_BLOB_NAME: data.json
 
-## -- List of overwrites for routes. Useful in frontend development.
-ROUTE_OVERWRITES:
-  /static/map.js: https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.1.7
-
 
 PLUGINS:
   sendmail:
