@@ -66,36 +66,6 @@
     ],
     "meta_data": [
       "uuid"
-    ],
-    "reports": [
-      {
-        "uuid": "30f96cb0-8cda-4a5a-b5a1-d9039333cc71",
-        "location_id": "dattarro",
-        "description": "Custom issue description",
-        "status": "pending",
-        "priority": "medium"
-      },
-      {
-        "uuid": "011268a1-e041-4eb9-964f-782f44e0753e",
-        "location_id": "dattarro",
-        "description": "Custom issue description",
-        "status": "pending",
-        "priority": "medium"
-      },
-      {
-        "uuid": "cf980019-c53f-4167-b5df-131c17094c3b",
-        "location_id": "dattarro",
-        "description": "Custom issue description",
-        "status": "pending",
-        "priority": "medium"
-      },
-      {
-        "uuid": "c68f3a58-c4bb-45ef-82a9-d12c9071d614",
-        "location_id": "dattarro",
-        "description": "Custom issue description",
-        "status": "pending",
-        "priority": "medium"
-      }
     ]
   },
   "site_content": {
