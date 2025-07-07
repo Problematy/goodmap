@@ -54,10 +54,15 @@ you can simply run app with test dataset provided in `tests/e2e_tests` directory
 ### Configuration
 
 If you want to serve app with your configuration rename config-template.yml to config.yml and change its contents according to your needs.
-Values descriptions you can find inside config-template.yml.
 
 Afterwards run it with:
 > poetry run flask --app 'goodmap.goodmap:create_app(config_path="/PATH/TO/YOUR/CONFIG")' --debug run
+
+
+| Option           | Description                                                                                                            |
+|------------------|------------------------------------------------------------------------------------------------------------------------|
+| USE_LAZY_LOADING | Loads points data only after clicking it. If set to false it loads points data along with loading initial map.         |
+| FAKE_LOGIN       | If set as true, allows access to admin panel with simple clicking the role instead of login. DO NOT USE ON PRODUCTION! |
 
 ## Database
 
@@ -92,3 +97,5 @@ You can define the fields in all these subsections. Besides these types of field
 You can find examples of working configuration and database in `tests/e2e_tests` named:
 - `e2e_test_config.yml`
 - `e2e_test_data.json`
+
+
