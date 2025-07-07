@@ -351,3 +351,15 @@ def test_invalid_format():
         assert isinstance(only_violation, FormatViolation)
         assert isinstance(only_violation.decoding_error, ValueError)
         mock_file.assert_called_once_with(mock_file_path)
+
+
+def test_violation_type_get_error_message():
+    messages = {
+        ViolationType.INVALID_JSON_FORMAT: "invalid json format",
+        ViolationType.MISSING_OBLIGATORY_FIELD: "missing obligatory field",
+        ViolationType.INVALID_VALUE_IN_CATEGORY: "invalid value in category",
+        ViolationType.NULL_VALUE: "attribute has null value",
+    }
+
+    for vtype, expected in messages.items():
+        assert vtype.get_error_message() == expected
