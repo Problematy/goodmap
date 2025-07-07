@@ -17,7 +17,7 @@ class LocationData(TypedDict):
     type_of_place: str
     test_category: list[str]
     position: list[float]
-    remark: bool
+    remark: str
 
 
 def fake_translation(key: str):
