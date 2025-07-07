@@ -1,5 +1,8 @@
 # Changelog
 
+#### 0.5.2
+  * fix for wrong remark types
+
 #### 0.5.1
   * admin panel added
 
