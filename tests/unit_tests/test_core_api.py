@@ -17,7 +17,7 @@ class LocationData(TypedDict):
     type_of_place: str
     test_category: list[str]
     position: list[float]
-    remark: bool
+    remark: str
 
 
 def fake_translation(key: str):
@@ -289,7 +289,7 @@ def test_admin_post_location_success(mock_uuid4, test_app, db_mock):
         "type_of_place": "Type",
         "test_category": ["cat"],
         "position": [10.0, 20.0],
-        "remark": False,
+        "remark": "some comment",
     }
     response = test_app.post(
         "/api/admin/locations", data=json.dumps(data), content_type="application/json"
@@ -344,7 +344,7 @@ def test_admin_put_location_success(test_app, db_mock):
         "type_of_place": "NewType",
         "test_category": ["new"],
         "position": [1.0, 2.0],
-        "remark": False,
+        "remark": "some comments",
     }
     location_id = "loc123"
     response = test_app.put(

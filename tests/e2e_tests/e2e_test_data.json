@@ -31,13 +31,22 @@
         ],
         "type_of_place": "small bridge",
         "uuid": "dattarro",
-        "remark": true
+        "remark": "very old bridge"
       }
     ],
     "location_obligatory_fields": [
-      ["name", "str"],
-      ["accessible_by", "list"],
-      ["type_of_place", "str"]
+      [
+        "name",
+        "str"
+      ],
+      [
+        "accessible_by",
+        "list"
+      ],
+      [
+        "type_of_place",
+        "str"
+      ]
     ],
     "categories": {
       "accessible_by": [

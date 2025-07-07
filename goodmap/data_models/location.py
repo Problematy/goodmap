@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field, create_model, field_validator
 class LocationBase(BaseModel, extra="allow"):
     position: tuple[float, float]
     uuid: str
-    remark: bool = False
+    remark: str = ""
 
     @field_validator("position")
     @classmethod
