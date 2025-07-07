@@ -59,11 +59,11 @@ Afterwards run it with:
 > poetry run flask --app 'goodmap.goodmap:create_app(config_path="/PATH/TO/YOUR/CONFIG")' --debug run
 
 
-| Option                    | Description                                                                                                            |
-|---------------------------|------------------------------------------------------------------------------------------------------------------------|
-| USE_LAZY_LOADING          | Loads points data only after clicking it. If set to false it loads points data along with loading initial map.         |
-| FAKE_LOGIN                | If set as true, allows access to admin panel with simple clicking the role instead of login. DO NOT USE ON PRODUCTION! |
-| SHOW_ACCESSIBILITY_TABLE  | If set as true it shows special view to help with accessing application.                                               |
+| Option                   | Description                                                                                                                        |
+|--------------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| USE_LAZY_LOADING         | Loads point data only after the user clicks a point. If set to false, point data is loaded together with the initial map.          |
+| FAKE_LOGIN               | If set to true, allows access to the admin panel by simply selecting the role instead of logging in. **DO NOT USE IN PRODUCTION!** |
+| SHOW_ACCESSIBILITY_TABLE | If set as true it shows special view to help with accessing application.                                                           |
 
 ## Database
 
