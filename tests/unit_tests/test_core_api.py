@@ -3,6 +3,7 @@ from typing import TypedDict
 from unittest import mock
 from unittest.mock import MagicMock
 
+import deprecation
 import pytest
 from flask import Flask
 from platzky.config import LanguageConfig, Languages, languages_dict
@@ -90,6 +91,67 @@ def test_app(notifier_function, db_mock):
     return app.test_client()
 
 
+@deprecation.deprecated(
+    deprecated_in="0.5.3",
+    removed_in="0.6.0",
+    details="actually categories_help should be integrated as true in future major release",
+)
+@pytest.fixture
+def test_app_without_helpers(notifier_function, db_mock):
+    CustomLocation = create_location_model(
+        [("test_category", list[str]), ("type_of_place", str), ("name", str)]
+    )
+    language_config = LanguageConfig(name="English", flag="uk", country="GB")
+    languages = languages_dict(Languages({"en": language_config}))
+    app = Flask(__name__)
+    db_mock.get_data.return_value = {
+        "categories": {"test-category": ["test", "test2"]},
+        "locations": [],
+        "data": [
+            {
+                "name": "test",
+                "position": [50, 50],
+                "test-category": ["test"],
+                "type_of_place": "test-place",
+                "uuid": "1",
+            },
+            {
+                "name": "test2",
+                "position": [60, 60],
+                "test-category": ["second-category"],
+                "type_of_place": "test-place2",
+                "uuid": "2",
+            },
+        ],
+        "meta_data": ["uuid"],
+        "visible_data": ["name", "test_category", "type_of_place"],
+        "categories_help": ["test-category"],
+        "categories_options_help": {
+            "test-category": ["test"],
+        },
+    }
+    db_mock.get_locations.return_value = [
+        LocationBase(position=(50, 50), uuid="1"),
+        LocationBase(position=(60, 60), uuid="2"),
+    ]
+
+    db_mock.get_location.return_value = CustomLocation(
+        position=(50, 50), uuid="1", test_category=["test"], type_of_place="test-place", name="test"
+    )
+
+    app.register_blueprint(
+        core_pages(
+            db_mock,
+            languages,
+            notifier_function,
+            lambda: "csrf",
+            location_model=CustomLocation,
+            feature_flags={"CATEGORIES_HELP": False},
+        )
+    )
+    return app.test_client()
+
+
 @mock.patch("goodmap.core_api.gettext", fake_translation)
 @mock.patch("flask_babel.gettext", fake_translation)
 def test_reporting_location_is_sending_message_with_name_and_position(
@@ -159,6 +221,14 @@ def test_categories_endpoint_returns_categories(test_app):
         "categories": [["test-category", "test-category-translated"]],
         "categories_help": [{"test-category": "categories_help_test-category-translated"}],
     }
+
+
+@mock.patch("goodmap.core_api.gettext", fake_translation)
+def test_categories_endpoint_returns_categories_old_way(test_app_without_helpers):
+    # make gettext used in flask_babel return the same string as the input
+    response = test_app_without_helpers.get("/api/categories")
+    assert response.status_code == 200
+    assert response.json == [["test-category", "test-category-translated"]]
 
 
 @mock.patch("importlib.metadata.version", return_value="0.1.2")
