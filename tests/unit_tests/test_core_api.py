@@ -249,6 +249,13 @@ def test_getting_all_category_data(test_app):
     }
 
 
+@mock.patch("goodmap.core_api.gettext", fake_translation)
+def test_getting_all_category_data_old_way(test_app_without_helpers):
+    response = test_app_without_helpers.get("/api/category/test-category")
+    assert response.status_code == 200
+    assert response.json == [["test", "test-translated"], ["test2", "test2-translated"]]
+
+
 def test_getting_token(test_app):
     response = test_app.get("/api/generate-csrf-token")
     assert response.status_code == 200
