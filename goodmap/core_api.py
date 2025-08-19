@@ -20,6 +20,8 @@ def get_or_none(data, *keys):
         else:
             return None
     return data
+
+
 def paginate_results(items, raw_params, sort_by_default=None):
     """
     Apply pagination and sorting to a list of items.
@@ -89,7 +91,12 @@ def paginate_results(items, raw_params, sort_by_default=None):
 
 
 def core_pages(
-    database, languages: LanguagesMapping, notifier_function, csrf_generator, location_model, feature_flags={}
+    database,
+    languages: LanguagesMapping,
+    notifier_function,
+    csrf_generator,
+    location_model,
+    feature_flags={},
 ) -> Blueprint:
     core_api_blueprint = Blueprint("api", __name__, url_prefix="/api")
     core_api = Api(core_api_blueprint, doc="/doc", version="0.1")
@@ -210,8 +217,9 @@ def core_pages(
                 proper_categories_help = []
                 if categories_help is not None:
                     for option in categories_help:
-                        proper_categories_help.append({option: gettext(f"categories_help_{option}")})
-
+                        proper_categories_help.append(
+                            {option: gettext(f"categories_help_{option}")}
+                        )
 
             return jsonify({"categories": categories, "categories_help": proper_categories_help})
 

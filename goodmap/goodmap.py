@@ -40,7 +40,12 @@ def create_app_from_config(config: Config) -> platzky.Engine:
     CSRFProtect(app)
 
     cp = core_pages(
-        app.db, languages_dict(config.languages), app.notify, generate_csrf, location_model, feature_flags=config.feature_flags
+        app.db,
+        languages_dict(config.languages),
+        app.notify,
+        generate_csrf,
+        location_model,
+        feature_flags=config.feature_flags,
     )
     app.register_blueprint(cp)
     goodmap = Blueprint("goodmap", __name__, url_prefix="/", template_folder="templates")
