@@ -1,5 +1,8 @@
 # Changelog
 
+#### 0.5.3
+  * helpers for categories introduced
+
 #### 0.5.2
   * fix for wrong remark types
 

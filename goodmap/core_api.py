@@ -13,6 +13,15 @@ def make_tuple_translation(keys_to_translate):
     return [(x, gettext(x)) for x in keys_to_translate]
 
 
+def get_or_none(data, *keys):
+    for key in keys:
+        if isinstance(data, dict):
+            data = data.get(key)
+        else:
+            return None
+    return data
+
+
 def paginate_results(items, raw_params, sort_by_default=None):
     """
     Apply pagination and sorting to a list of items.
@@ -82,7 +91,12 @@ def paginate_results(items, raw_params, sort_by_default=None):
 
 
 def core_pages(
-    database, languages: LanguagesMapping, notifier_function, csrf_generator, location_model
+    database,
+    languages: LanguagesMapping,
+    notifier_function,
+    csrf_generator,
+    location_model,
+    feature_flags={},
 ) -> Blueprint:
     core_api_blueprint = Blueprint("api", __name__, url_prefix="/api")
     core_api = Api(core_api_blueprint, doc="/doc", version="0.1")
@@ -195,7 +209,19 @@ def core_pages(
             """Shows all available categories"""
             all_data = database.get_data()
             categories = make_tuple_translation(all_data["categories"].keys())
-            return jsonify(categories)
+
+            if not feature_flags.get("CATEGORIES_HELP", False):
+                return jsonify(categories)
+            else:
+                categories_help = all_data["categories_help"]
+                proper_categories_help = []
+                if categories_help is not None:
+                    for option in categories_help:
+                        proper_categories_help.append(
+                            {option: gettext(f"categories_help_{option}")}
+                        )
+
+            return jsonify({"categories": categories, "categories_help": proper_categories_help})
 
     @core_api.route("/languages")
     class Languages(Resource):
@@ -209,7 +235,25 @@ def core_pages(
             """Shows all available types in category"""
             all_data = database.get_data()
             local_data = make_tuple_translation(all_data["categories"][category_type])
-            return jsonify(local_data)
+
+            categories_options_help = get_or_none(
+                all_data, "categories_options_help", category_type
+            )
+            proper_categories_options_help = []
+            if categories_options_help is not None:
+                for option in categories_options_help:
+                    proper_categories_options_help.append(
+                        {option: gettext(f"categories_options_help_{option}")}
+                    )
+            if not feature_flags.get("CATEGORIES_HELP", False):
+                return jsonify(local_data)
+            else:
+                return jsonify(
+                    {
+                        "categories_options": local_data,
+                        "categories_options_help": proper_categories_options_help,
+                    }
+                )
 
     @core_api.route("/generate-csrf-token")
     class CsrfToken(Resource):

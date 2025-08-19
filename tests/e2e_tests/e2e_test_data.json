@@ -59,6 +59,18 @@
         "small bridge"
       ]
     },
+    "categories_help": [
+      "accessible_by"
+    ],
+    "categories_options_help": {
+      "type_of_place": [
+        "small bridge"
+      ],
+      "accessible_by": [
+        "cars",
+        "pedestrians"
+      ]
+    },
     "visible_data": [
       "accessible_by",
       "type_of_place",
