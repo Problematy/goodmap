@@ -203,11 +203,15 @@ def core_pages(
             all_data = database.get_data()
             categories = make_tuple_translation(all_data["categories"].keys())
 
-            categories_help = all_data["categories_help"]
-            proper_categories_help = []
-            if categories_help is not None:
-                for option in categories_help:
-                    proper_categories_help.append({option: gettext(f"categories_help_{option}")})
+            if not feature_flags.get("CATEGORIES_HELP", False):
+                return jsonify(categories)
+            else:
+                categories_help = all_data["categories_help"]
+                proper_categories_help = []
+                if categories_help is not None:
+                    for option in categories_help:
+                        proper_categories_help.append({option: gettext(f"categories_help_{option}")})
+
 
             return jsonify({"categories": categories, "categories_help": proper_categories_help})
 
@@ -233,7 +237,7 @@ def core_pages(
                     proper_categories_options_help.append(
                         {option: gettext(f"categories_options_help_{option}")}
                     )
-            if feature_flags.get("CATEGORIES_HELP", False):
+            if not feature_flags.get("CATEGORIES_HELP", False):
                 return jsonify(local_data)
             else:
                 return jsonify(
