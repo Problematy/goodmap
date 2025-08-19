@@ -89,7 +89,7 @@ def paginate_results(items, raw_params, sort_by_default=None):
 
 
 def core_pages(
-    database, languages: LanguagesMapping, notifier_function, csrf_generator, location_model
+    database, languages: LanguagesMapping, notifier_function, csrf_generator, location_model, feature_flags={}
 ) -> Blueprint:
     core_api_blueprint = Blueprint("api", __name__, url_prefix="/api")
     core_api = Api(core_api_blueprint, doc="/doc", version="0.1")
@@ -233,13 +233,15 @@ def core_pages(
                     proper_categories_options_help.append(
                         {option: gettext(f"categories_options_help_{option}")}
                     )
-
-            return jsonify(
-                {
-                    "categories_options": local_data,
-                    "categories_options_help": proper_categories_options_help,
-                }
-            )
+            if feature_flags.get("CATEGORIES_HELP", False):
+                return jsonify(local_data)
+            else:
+                return jsonify(
+                    {
+                        "categories_options": local_data,
+                        "categories_options_help": proper_categories_options_help,
+                    }
+                )
 
     @core_api.route("/generate-csrf-token")
     class CsrfToken(Resource):
