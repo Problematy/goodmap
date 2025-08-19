@@ -79,7 +79,12 @@ def test_app(notifier_function, db_mock):
 
     app.register_blueprint(
         core_pages(
-            db_mock, languages, notifier_function, lambda: "csrf", location_model=CustomLocation
+            db_mock,
+            languages,
+            notifier_function,
+            lambda: "csrf",
+            location_model=CustomLocation,
+            feature_flags={"CATEGORIES_HELP": True},
         )
     )
     return app.test_client()
