@@ -4,6 +4,7 @@ const CategoriesContext = createContext();
 
 export const CategoriesProvider = ({ children }) => {
     const [categories, setCategories] = useState([]);
+    console.log('CategoriesProvider rendered with categories:', categories);
     return (
         <CategoriesContext.Provider value={{ categories, setCategories }}>
             {children}

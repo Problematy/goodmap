@@ -4,10 +4,10 @@ import { useCategories } from '../Categories/CategoriesContext';
 import useDebounce from '../../utils/hooks/useDebounce';
 import { httpService } from '../../services/http/httpService';
 import { useMapStore } from '../Map/store/map.store';
+import FiltersTooltip from './FiltersTooltip';
 
 export const FiltersForm = () => {
     const { setCategories } = useCategories();
-    const [selectedFilters, setSelectedFilters] = useState({});
     const [categoriesData, setCategoriesData] = useState([]);
     const mapConfiguration = useMapStore(state => state.mapConfiguration);
     const mapConfigDebounced = useDebounce(mapConfiguration, 5000);
@@ -49,6 +49,29 @@ export const FiltersForm = () => {
         fetchCategories();
     }, []);
 
+    const renderFilterOptions = (filters, category) =>
+        filters[1].map(([name, translation]) => {
+            const tooltipData = window.FEATURE_FLAGS?.CATEGORIES_HELP
+                ? filters[3].find(it => it[name])
+                : '';
+            return (
+                <div className="form-check" key={`${category}-${name}`}>
+                    <label htmlFor={name}>
+                        {translation}
+                        <input
+                            onChange={handleCheckboxChange}
+                            className="form-check-input filter"
+                            data-category={category}
+                            type="checkbox"
+                            id={name}
+                            value={name}
+                        />
+                        {tooltipData && <FiltersTooltip text={tooltipData[name]} />}
+                    </label>
+                </div>
+            );
+        });
+
     const sections = categoriesData.map(filtersData => (
         <div
             key={`${filtersData[0][0]}-${filtersData[0][1]}`}
@@ -57,21 +80,13 @@ export const FiltersForm = () => {
             <span id={`filter-label-${filtersData[0][0]}-${filtersData[0][1]}`}>
                 {filtersData[0][1]}
             </span>
-            {filtersData[1].map(([name, translation]) => (
-                <div className="form-check" key={`${filtersData[0][0]}-${name}`}>
-                    <label htmlFor={name}>
-                        {translation}
-                        <input
-                            onChange={handleCheckboxChange}
-                            className={`form-check-input filter`}
-                            data-category={filtersData[0][0]}
-                            type="checkbox"
-                            id={name}
-                            value={name}
-                        />
-                    </label>
-                </div>
-            ))}
+            {window.FEATURE_FLAGS?.CATEGORIES_HELP &&
+                filtersData[2].find(it => it[filtersData[0][0]]) && (
+                    <FiltersTooltip
+                        text={filtersData[2].find(it => it[filtersData[0][0]])[filtersData[0][0]]}
+                    />
+                )}
+            {renderFilterOptions(filtersData, filtersData[0][0])}
         </div>
     ));
 

@@ -7,7 +7,7 @@ import { useCategories } from '../../Categories/CategoriesContext';
 import { ClusterMarker } from '../../MarkerPopup/ClusterMarker';
 
 const getMarkers = locations => {
-    if (window.USE_SERVER_SIDE_CLUSTERING) {
+    if (window.FEATURE_FLAGS?.USE_SERVER_SIDE_CLUSTERING) {
         return locations.map(location => {
             if (location.type === 'cluster') {
                 return <ClusterMarker cluster={location} key={location.cluster_uuid} />;

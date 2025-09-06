@@ -29,6 +29,12 @@ httpService.getLocations.mockResolvedValue(locations);
 httpService.getCategoriesData.mockResolvedValue(categories);
 
 describe('MapComponent', () => {
+    beforeAll(() => {
+        global.window.FEATURE_FLAGS = {
+            CATEGORIES_HELP: true,
+        };
+    });
+
     beforeEach(() => {
         jest.spyOn(global, 'fetch').mockResolvedValue({
             json: jest.fn().mockResolvedValue(categories),
