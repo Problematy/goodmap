@@ -4,6 +4,7 @@ import tempfile
 from functools import partial
 
 from goodmap.core import get_queried_data
+from goodmap.data_models.location import LocationBase
 
 # TODO file is temporary solution to be compatible with old, static code,
 #  it should be replaced with dynamic solution
@@ -137,9 +138,13 @@ def json_db_get_locations(self, query, location_model):
 
 
 def mongodb_db_get_locations(self, query, location_model):
-    map_data = self.get_data()
-    return get_locations_list_from_raw_data(map_data, query, location_model)
+    mongo_query = {}
+    for key, values in query.items():
+        if values:
+            mongo_query[key] = {"$in": values}
 
+    data = self.db.locations.find(mongo_query, {"_id": 0, "uuid": 1, "position": 1})
+    return (LocationBase.model_validate(loc) for loc in data)
 
 def get_locations(db, location_model):
     return partial(globals()[f"{db.module_name}_get_locations"], location_model=location_model)
