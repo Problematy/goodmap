@@ -213,7 +213,8 @@ def core_pages(
             if not feature_flags.get("CATEGORIES_HELP", False):
                 return jsonify(categories)
             else:
-                categories_help = all_data["categories_help"]
+                category_data = database.get_category_data()
+                categories_help = category_data["categories_help"]
                 proper_categories_help = []
                 if categories_help is not None:
                     for option in categories_help:
@@ -233,11 +234,11 @@ def core_pages(
     class CategoryTypes(Resource):
         def get(self, category_type):
             """Shows all available types in category"""
-            all_data = database.get_data()
-            local_data = make_tuple_translation(all_data["categories"][category_type])
+            category_data = database.get_category_data(category_type)
+            local_data = make_tuple_translation(category_data["categories"][category_type])
 
             categories_options_help = get_or_none(
-                all_data, "categories_options_help", category_type
+                category_data, "categories_options_help", category_type
             )
             proper_categories_options_help = []
             if categories_options_help is not None:

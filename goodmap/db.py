@@ -101,6 +101,70 @@ def get_categories(db):
     return globals()[f"{db.module_name}_get_categories"]
 
 # ------------------------------------------------
+# get_category_data
+
+def json_db_get_category_data(self, category_type=None):
+    if category_type:
+        return {
+            "categories": {category_type: self.data["categories"].get(category_type, [])},
+            "categories_help": self.data.get("categories_help", []),
+            "categories_options_help": {category_type: self.data.get("categories_options_help", {}).get(category_type, [])}
+        }
+    return {
+        "categories": self.data["categories"],
+        "categories_help": self.data.get("categories_help", []),
+        "categories_options_help": self.data.get("categories_options_help", {})
+    }
+
+def json_file_db_get_category_data(self, category_type=None):
+    with open(self.data_file_path, "r") as file:
+        data = json.load(file)["map"]
+        if category_type:
+            return {
+                "categories": {category_type: data["categories"].get(category_type, [])},
+                "categories_help": data.get("categories_help", []),
+                "categories_options_help": {category_type: data.get("categories_options_help", {}).get(category_type, [])}
+            }
+        return {
+            "categories": data["categories"],
+            "categories_help": data.get("categories_help", []),
+            "categories_options_help": data.get("categories_options_help", {})
+        }
+
+def google_json_db_get_category_data(self, category_type=None):
+    data = json.loads(self.blob.download_as_text(client=None))["map"]
+    if category_type:
+        return {
+            "categories": {category_type: data["categories"].get(category_type, [])},
+            "categories_help": data.get("categories_help", []),
+            "categories_options_help": {category_type: data.get("categories_options_help", {}).get(category_type, [])}
+        }
+    return {
+        "categories": data["categories"],
+        "categories_help": data.get("categories_help", []),
+        "categories_options_help": data.get("categories_options_help", {})
+    }
+
+def mongodb_db_get_category_data(self, category_type=None):
+    config_doc = self.db.config.find_one({"_id": "map_config"})
+    if config_doc:
+        if category_type:
+            return {
+                "categories": {category_type: config_doc.get("categories", {}).get(category_type, [])},
+                "categories_help": config_doc.get("categories_help", []),
+                "categories_options_help": {category_type: config_doc.get("categories_options_help", {}).get(category_type, [])}
+            }
+        return {
+            "categories": config_doc.get("categories", {}),
+            "categories_help": config_doc.get("categories_help", []),
+            "categories_options_help": config_doc.get("categories_options_help", {})
+        }
+    return {"categories": {}, "categories_help": [], "categories_options_help": {}}
+
+def get_category_data(db):
+    return globals()[f"{db.module_name}_get_category_data"]
+
+# ------------------------------------------------
 # get_location
 
 
@@ -706,6 +770,7 @@ def extend_db_with_goodmap_queries(db, location_model):
     db.extend("update_location", partial(update_location, location_model=location_model))
     db.extend("delete_location", delete_location)
     db.extend("get_categories", get_categories(db))
+    db.extend("get_category_data", get_category_data(db))
     if db.module_name in ("json_db", "json_file_db", "mongodb_db"):
         db.extend("add_suggestion", add_suggestion)
         db.extend("get_suggestions", get_suggestions(db))
