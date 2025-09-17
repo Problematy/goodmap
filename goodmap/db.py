@@ -84,7 +84,7 @@ def get_data(db):
 
 
 def json_db_get_categories(self):
-    return self.data.all_data["categories"].keys()
+    return self.data["categories"].keys()
 
 
 def json_file_db_get_categories(self):
