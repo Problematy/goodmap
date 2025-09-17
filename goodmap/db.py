@@ -35,6 +35,13 @@ def google_json_db_get_location_obligatory_fields(db):
     return json.loads(db.blob.download_as_text(client=None))["map"]["location_obligatory_fields"]
 
 
+def mongodb_db_get_location_obligatory_fields(db):
+    config_doc = db.db.config.find_one({"_id": "map_config"})
+    if config_doc and "location_obligatory_fields" in config_doc:
+        return config_doc["location_obligatory_fields"]
+    return []
+
+
 def get_location_obligatory_fields(db):
     return globals()[f"{db.module_name}_get_location_obligatory_fields"](db)
 
@@ -54,6 +61,17 @@ def json_file_db_get_data(self):
 
 def json_db_get_data(self):
     return self.data
+
+
+def mongodb_db_get_data(self):
+    config_doc = self.db.config.find_one({"_id": "map_config"})
+    if config_doc:
+        return {
+            "data": list(self.db.locations.find({}, {"_id": 0})),
+            "categories": config_doc.get("categories", []),
+            "location_obligatory_fields": config_doc.get("location_obligatory_fields", []),
+        }
+    return {"data": [], "categories": [], "location_obligatory_fields": []}
 
 
 def get_data(db):
@@ -85,6 +103,11 @@ def json_db_get_location(self, uuid, location_model):
     return get_location_from_raw_data(self.data, uuid, location_model)
 
 
+def mongodb_db_get_location(self, uuid, location_model):
+    location_doc = self.db.locations.find_one({"uuid": uuid}, {"_id": 0})
+    return location_model.model_validate(location_doc) if location_doc else None
+
+
 def get_location(db, location_model):
     return partial(globals()[f"{db.module_name}_get_location"], location_model=location_model)
 
@@ -111,6 +134,11 @@ def json_file_db_get_locations(self, query, location_model):
 
 def json_db_get_locations(self, query, location_model):
     return get_locations_list_from_raw_data(self.data, query, location_model)
+
+
+def mongodb_db_get_locations(self, query, location_model):
+    map_data = self.get_data()
+    return get_locations_list_from_raw_data(map_data, query, location_model)
 
 
 def get_locations(db, location_model):
@@ -154,6 +182,14 @@ def json_db_add_location(self, location_data, location_model):
     self.data["data"].append(location.model_dump())
 
 
+def mongodb_db_add_location(self, location_data, location_model):
+    location = location_model.model_validate(location_data)
+    existing = self.db.locations.find_one({"uuid": location_data["uuid"]})
+    if existing:
+        raise ValueError(f"Location with uuid {location_data['uuid']} already exists")
+    self.db.locations.insert_one(location.model_dump())
+
+
 def add_location(db, location_data, location_model):
     return globals()[f"{db.module_name}_add_location"](db, location_data, location_model)
 
@@ -188,6 +224,13 @@ def json_db_update_location(self, uuid, location_data, location_model):
     self.data["data"][idx] = location.model_dump()
 
 
+def mongodb_db_update_location(self, uuid, location_data, location_model):
+    location = location_model.model_validate(location_data)
+    result = self.db.locations.update_one({"uuid": uuid}, {"$set": location.model_dump()})
+    if result.matched_count == 0:
+        raise ValueError(f"Location with uuid {uuid} not found")
+
+
 def update_location(db, uuid, location_data, location_model):
     return globals()[f"{db.module_name}_update_location"](db, uuid, location_data, location_model)
 
@@ -218,6 +261,12 @@ def json_db_delete_location(self, uuid):
     if idx is None:
         raise ValueError(f"Location with uuid {uuid} not found")
     del self.data["data"][idx]
+
+
+def mongodb_db_delete_location(self, uuid):
+    result = self.db.locations.delete_one({"uuid": uuid})
+    if result.deleted_count == 0:
+        raise ValueError(f"Location with uuid {uuid} not found")
 
 
 def delete_location(db, uuid):
@@ -254,6 +303,16 @@ def json_file_db_add_suggestion(self, suggestion_data):
     json_file_atomic_dump(json_file, self.data_file_path)
 
 
+def mongodb_db_add_suggestion(self, suggestion_data):
+    existing = self.db.suggestions.find_one({"uuid": suggestion_data.get("uuid")})
+    if existing:
+        raise ValueError(f"Suggestion with uuid {suggestion_data['uuid']} already exists")
+
+    record = dict(suggestion_data)
+    record["status"] = "pending"
+    self.db.suggestions.insert_one(record)
+
+
 def add_suggestion(db, suggestion_data):
     return globals()[f"{db.module_name}_add_suggestion"](db, suggestion_data)
 
@@ -285,6 +344,15 @@ def json_file_db_get_suggestions(self, query_params):
     return suggestions
 
 
+def mongodb_db_get_suggestions(self, query_params):
+    query = {}
+    statuses = query_params.get("status")
+    if statuses:
+        query["status"] = {"$in": statuses}
+
+    return list(self.db.suggestions.find(query, {"_id": 0}))
+
+
 def get_suggestions(db):
     return globals()[f"{db.module_name}_get_suggestions"]
 
@@ -305,6 +373,10 @@ def json_file_db_get_suggestion(self, suggestion_id):
     return next(
         (s for s in json_file["map"].get("suggestions", []) if s.get("uuid") == suggestion_id), None
     )
+
+
+def mongodb_db_get_suggestion(self, suggestion_id):
+    return self.db.suggestions.find_one({"uuid": suggestion_id}, {"_id": 0})
 
 
 def get_suggestion(db):
@@ -341,6 +413,12 @@ def json_file_db_update_suggestion(self, suggestion_id, status):
     json_file_atomic_dump(json_file, self.data_file_path)
 
 
+def mongodb_db_update_suggestion(self, suggestion_id, status):
+    result = self.db.suggestions.update_one({"uuid": suggestion_id}, {"$set": {"status": status}})
+    if result.matched_count == 0:
+        raise ValueError(f"Suggestion with uuid {suggestion_id} not found")
+
+
 def update_suggestion(db, suggestion_id, status):
     return globals()[f"{db.module_name}_update_suggestion"](db, suggestion_id, status)
 
@@ -373,6 +451,12 @@ def json_file_db_delete_suggestion(self, suggestion_id):
     json_file_atomic_dump(json_file, self.data_file_path)
 
 
+def mongodb_db_delete_suggestion(self, suggestion_id):
+    result = self.db.suggestions.delete_one({"uuid": suggestion_id})
+    if result.deleted_count == 0:
+        raise ValueError(f"Suggestion with uuid {suggestion_id} not found")
+
+
 def delete_suggestion(db, suggestion_id):
     return globals()[f"{db.module_name}_delete_suggestion"](db, suggestion_id)
 
@@ -401,6 +485,14 @@ def json_file_db_add_report(self, report_data):
     json_file["map"]["reports"] = reports
 
     json_file_atomic_dump(json_file, self.data_file_path)
+
+
+def mongodb_db_add_report(self, report_data):
+    existing = self.db.reports.find_one({"uuid": report_data.get("uuid")})
+    if existing:
+        raise ValueError(f"Report with uuid {report_data['uuid']} already exists")
+
+    self.db.reports.insert_one(report_data)
 
 
 def add_report(db, report_data):
@@ -442,6 +534,20 @@ def json_file_db_get_reports(self, query_params):
     return reports
 
 
+def mongodb_db_get_reports(self, query_params):
+    query = {}
+
+    statuses = query_params.get("status")
+    if statuses:
+        query["status"] = {"$in": statuses}
+
+    priorities = query_params.get("priority")
+    if priorities:
+        query["priority"] = {"$in": priorities}
+
+    return list(self.db.reports.find(query, {"_id": 0}))
+
+
 def get_reports(db):
     return globals()[f"{db.module_name}_get_reports"]
 
@@ -461,6 +567,10 @@ def json_file_db_get_report(self, report_id):
     return next(
         (r for r in json_file["map"].get("reports", []) if r.get("uuid") == report_id), None
     )
+
+
+def mongodb_db_get_report(self, report_id):
+    return self.db.reports.find_one({"uuid": report_id}, {"_id": 0})
 
 
 def get_report(db):
@@ -503,6 +613,19 @@ def json_file_db_update_report(self, report_id, status=None, priority=None):
     json_file_atomic_dump(json_file, self.data_file_path)
 
 
+def mongodb_db_update_report(self, report_id, status=None, priority=None):
+    update_doc = {}
+    if status:
+        update_doc["status"] = status
+    if priority:
+        update_doc["priority"] = priority
+
+    if update_doc:
+        result = self.db.reports.update_one({"uuid": report_id}, {"$set": update_doc})
+        if result.matched_count == 0:
+            raise ValueError(f"Report with uuid {report_id} not found")
+
+
 def update_report(db, report_id, status=None, priority=None):
     return globals()[f"{db.module_name}_update_report"](db, report_id, status, priority)
 
@@ -534,6 +657,12 @@ def json_file_db_delete_report(self, report_id):
     json_file_atomic_dump(json_file, self.data_file_path)
 
 
+def mongodb_db_delete_report(self, report_id):
+    result = self.db.reports.delete_one({"uuid": report_id})
+    if result.deleted_count == 0:
+        raise ValueError(f"Report with uuid {report_id} not found")
+
+
 def delete_report(db, report_id):
     return globals()[f"{db.module_name}_delete_report"](db, report_id)
 
@@ -550,7 +679,7 @@ def extend_db_with_goodmap_queries(db, location_model):
     db.extend("add_location", partial(add_location, location_model=location_model))
     db.extend("update_location", partial(update_location, location_model=location_model))
     db.extend("delete_location", delete_location)
-    if db.module_name in ("json_db", "json_file_db"):
+    if db.module_name in ("json_db", "json_file_db", "mongodb_db"):
         db.extend("add_suggestion", add_suggestion)
         db.extend("get_suggestions", get_suggestions(db))
         db.extend("get_suggestion", get_suggestion(db))
