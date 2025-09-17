@@ -78,6 +78,16 @@ def test_app(notifier_function, db_mock):
         position=(50, 50), uuid="1", test_category=["test"], type_of_place="test-place", name="test"
     )
 
+    # Mock the new database methods for categories
+    db_mock.get_categories.return_value = ["test-category"]
+    db_mock.get_category_data.return_value = {
+        "categories": {"test-category": ["test", "test2"]},
+        "categories_help": ["test-category"],
+        "categories_options_help": {
+            "test-category": ["test"]
+        }
+    }
+
     app.register_blueprint(
         core_pages(
             db_mock,
@@ -138,6 +148,15 @@ def test_app_without_helpers(notifier_function, db_mock):
     db_mock.get_location.return_value = CustomLocation(
         position=(50, 50), uuid="1", test_category=["test"], type_of_place="test-place", name="test"
     )
+
+    # Mock the new database methods for categories (old way - no CATEGORIES_HELP)
+    db_mock.get_categories.return_value = ["test-category"]
+    db_mock.get_category_data.return_value = {
+        "categories": {"test-category": ["test", "test2"]},
+        "categories_options_help": {
+            "test-category": ["test"]
+        }
+    }
 
     app.register_blueprint(
         core_pages(
