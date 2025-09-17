@@ -78,18 +78,23 @@ def mongodb_db_get_data(self):
 def get_data(db):
     return globals()[f"{db.module_name}_get_data"]
 
+
 # ------------------------------------------------
 # get_categories
 
+
 def json_db_get_categories(self):
     return self.data.all_data["categories"].keys()
+
 
 def json_file_db_get_categories(self):
     with open(self.data_file_path, "r") as file:
         return json.load(file)["map"]["categories"].keys()
 
+
 def google_json_db_get_categories(self):
     return json.loads(self.blob.download_as_text(client=None))["map"]["categories"].keys()
+
 
 def mongodb_db_get_categories(self):
     config_doc = self.db.config.find_one({"_id": "map_config"})
@@ -97,24 +102,30 @@ def mongodb_db_get_categories(self):
         return list(config_doc["categories"].keys())
     return []
 
+
 def get_categories(db):
     return globals()[f"{db.module_name}_get_categories"]
 
+
 # ------------------------------------------------
 # get_category_data
+
 
 def json_db_get_category_data(self, category_type=None):
     if category_type:
         return {
             "categories": {category_type: self.data["categories"].get(category_type, [])},
             "categories_help": self.data.get("categories_help", []),
-            "categories_options_help": {category_type: self.data.get("categories_options_help", {}).get(category_type, [])}
+            "categories_options_help": {
+                category_type: self.data.get("categories_options_help", {}).get(category_type, [])
+            },
         }
     return {
         "categories": self.data["categories"],
         "categories_help": self.data.get("categories_help", []),
-        "categories_options_help": self.data.get("categories_options_help", {})
+        "categories_options_help": self.data.get("categories_options_help", {}),
     }
+
 
 def json_file_db_get_category_data(self, category_type=None):
     with open(self.data_file_path, "r") as file:
@@ -123,13 +134,16 @@ def json_file_db_get_category_data(self, category_type=None):
             return {
                 "categories": {category_type: data["categories"].get(category_type, [])},
                 "categories_help": data.get("categories_help", []),
-                "categories_options_help": {category_type: data.get("categories_options_help", {}).get(category_type, [])}
+                "categories_options_help": {
+                    category_type: data.get("categories_options_help", {}).get(category_type, [])
+                },
             }
         return {
             "categories": data["categories"],
             "categories_help": data.get("categories_help", []),
-            "categories_options_help": data.get("categories_options_help", {})
+            "categories_options_help": data.get("categories_options_help", {}),
         }
+
 
 def google_json_db_get_category_data(self, category_type=None):
     data = json.loads(self.blob.download_as_text(client=None))["map"]
@@ -137,32 +151,43 @@ def google_json_db_get_category_data(self, category_type=None):
         return {
             "categories": {category_type: data["categories"].get(category_type, [])},
             "categories_help": data.get("categories_help", []),
-            "categories_options_help": {category_type: data.get("categories_options_help", {}).get(category_type, [])}
+            "categories_options_help": {
+                category_type: data.get("categories_options_help", {}).get(category_type, [])
+            },
         }
     return {
         "categories": data["categories"],
         "categories_help": data.get("categories_help", []),
-        "categories_options_help": data.get("categories_options_help", {})
+        "categories_options_help": data.get("categories_options_help", {}),
     }
+
 
 def mongodb_db_get_category_data(self, category_type=None):
     config_doc = self.db.config.find_one({"_id": "map_config"})
     if config_doc:
         if category_type:
             return {
-                "categories": {category_type: config_doc.get("categories", {}).get(category_type, [])},
+                "categories": {
+                    category_type: config_doc.get("categories", {}).get(category_type, [])
+                },
                 "categories_help": config_doc.get("categories_help", []),
-                "categories_options_help": {category_type: config_doc.get("categories_options_help", {}).get(category_type, [])}
+                "categories_options_help": {
+                    category_type: config_doc.get("categories_options_help", {}).get(
+                        category_type, []
+                    )
+                },
             }
         return {
             "categories": config_doc.get("categories", {}),
             "categories_help": config_doc.get("categories_help", []),
-            "categories_options_help": config_doc.get("categories_options_help", {})
+            "categories_options_help": config_doc.get("categories_options_help", {}),
         }
     return {"categories": {}, "categories_help": [], "categories_options_help": {}}
 
+
 def get_category_data(db):
     return globals()[f"{db.module_name}_get_category_data"]
+
 
 # ------------------------------------------------
 # get_location
@@ -230,6 +255,7 @@ def mongodb_db_get_locations(self, query, location_model):
 
     data = self.db.locations.find(mongo_query, {"_id": 0, "uuid": 1, "position": 1})
     return (LocationBase.model_validate(loc) for loc in data)
+
 
 def get_locations(db, location_model):
     return partial(globals()[f"{db.module_name}_get_locations"], location_model=location_model)
