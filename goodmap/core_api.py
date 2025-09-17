@@ -207,8 +207,8 @@ def core_pages(
     class Categories(Resource):
         def get(self):
             """Shows all available categories"""
-            all_data = database.get_data()
-            categories = make_tuple_translation(all_data["categories"].keys())
+            raw_categories = database.get_categories()
+            categories = make_tuple_translation(raw_categories)
 
             if not feature_flags.get("CATEGORIES_HELP", False):
                 return jsonify(categories)

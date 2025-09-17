@@ -78,6 +78,27 @@ def mongodb_db_get_data(self):
 def get_data(db):
     return globals()[f"{db.module_name}_get_data"]
 
+# ------------------------------------------------
+# get_categories
+
+def json_db_get_categories(self):
+    return self.data.all_data["categories"].keys()
+
+def json_file_db_get_categories(self):
+    with open(self.data_file_path, "r") as file:
+        return json.load(file)["map"]["categories"].keys()
+
+def google_json_db_get_categories(self):
+    return json.loads(self.blob.download_as_text(client=None))["map"]["categories"].keys()
+
+def mongodb_db_get_categories(self):
+    config_doc = self.db.config.find_one({"_id": "map_config"})
+    if config_doc and "categories" in config_doc:
+        return list(config_doc["categories"].keys())
+    return []
+
+def get_categories(db):
+    return globals()[f"{db.module_name}_get_categories"]
 
 # ------------------------------------------------
 # get_location
@@ -684,6 +705,7 @@ def extend_db_with_goodmap_queries(db, location_model):
     db.extend("add_location", partial(add_location, location_model=location_model))
     db.extend("update_location", partial(update_location, location_model=location_model))
     db.extend("delete_location", delete_location)
+    db.extend("get_categories", get_categories(db))
     if db.module_name in ("json_db", "json_file_db", "mongodb_db"):
         db.extend("add_suggestion", add_suggestion)
         db.extend("get_suggestions", get_suggestions(db))
