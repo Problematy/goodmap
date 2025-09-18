@@ -703,8 +703,6 @@ def test_admin_put_report_not_found(test_app):
 
 
 def test_admin_put_report_success(test_app):
-    report_initial = {"id": "r1", "status": "pending", "priority": "medium"}
-    report_updated = {"id": "r1", "status": "resolved", "priority": "critical"}
     # Get CSRF token first
     csrf_response = test_app.get("/api/generate-csrf-token")
     csrf_token = csrf_response.json["csrf_token"]
