@@ -23,9 +23,9 @@ def fake_translation(key: str):
     return f"{key}-translated"
 
 
-@pytest.fixture
-def test_app():
-    config_data = {
+def get_test_config_data():
+    """Return the common configuration data used by test fixtures."""
+    return {
         "APP_NAME": "testing App Name",
         "SECRET_KEY": "secret",
         "USE_WWW": False,
@@ -70,8 +70,19 @@ def test_app():
                 "reports": [],
             },
         },
-        "FEATURE_FLAGS": {"CATEGORIES_HELP": True},
     }
+
+
+def get_csrf_token(test_client):
+    """Helper function to get CSRF token from the test client."""
+    csrf_response = test_client.get("/api/generate-csrf-token")
+    return csrf_response.json["csrf_token"]
+
+
+@pytest.fixture
+def test_app():
+    config_data = get_test_config_data()
+    config_data["FEATURE_FLAGS"] = {"CATEGORIES_HELP": True}
     config = Config.model_validate(config_data)
     app = create_app_from_config(config)
     return app.test_client()
@@ -84,53 +95,8 @@ def test_app():
 )
 @pytest.fixture
 def test_app_without_helpers():
-    config_data = {
-        "APP_NAME": "testing App Name",
-        "SECRET_KEY": "secret",
-        "USE_WWW": False,
-        "TRANSLATION_DIRECTORIES": ["/some/fake/dir"],
-        "LANGUAGES": {
-            "en": {"name": "English", "flag": "uk", "country": "GB"},
-        },
-        "DB": {
-            "TYPE": "json",
-            "DATA": {
-                "site_content": {"pages": []},
-                "categories": {"test-category": ["test", "test2"]},
-                "locations": [],
-                "data": [
-                    {
-                        "name": "test",
-                        "position": [50, 50],
-                        "test_category": ["test"],
-                        "type_of_place": "test-place",
-                        "uuid": "1",
-                    },
-                    {
-                        "name": "test2",
-                        "position": [60, 60],
-                        "test_category": ["second-category"],
-                        "type_of_place": "test-place2",
-                        "uuid": "2",
-                    },
-                ],
-                "meta_data": ["uuid"],
-                "visible_data": ["name", "test_category", "type_of_place"],
-                "categories_help": ["test-category"],
-                "categories_options_help": {
-                    "test-category": ["test"],
-                },
-                "location_obligatory_fields": [
-                    ("test_category", "list[str]"),
-                    ("type_of_place", "str"),
-                    ("name", "str"),
-                ],
-                "suggestions": [],
-                "reports": [],
-            },
-        },
-        "FEATURE_FLAGS": {"CATEGORIES_HELP": False},
-    }
+    config_data = get_test_config_data()
+    config_data["FEATURE_FLAGS"] = {"CATEGORIES_HELP": False}
     config = Config.model_validate(config_data)
     app = create_app_from_config(config)
     return app.test_client()
@@ -140,8 +106,7 @@ def test_app_without_helpers():
 @mock.patch("flask_babel.gettext", fake_translation)
 def test_reporting_location_is_sending_message_with_name_and_position(test_app):
     # Get CSRF token first
-    csrf_response = test_app.get("/api/generate-csrf-token")
-    csrf_token = csrf_response.json["csrf_token"]
+    csrf_token = get_csrf_token(test_app)
 
     data = {"id": "location-id", "description": "some error"}
     headers = {"Content-Type": "application/json", "X-CSRFToken": csrf_token}
@@ -154,8 +119,7 @@ def test_reporting_location_is_sending_message_with_name_and_position(test_app):
 @mock.patch("flask_babel.gettext", fake_translation)
 def test_reporting_returns_error_when_wrong_json(test_app):
     # Get CSRF token first
-    csrf_response = test_app.get("/api/generate-csrf-token")
-    csrf_token = csrf_response.json["csrf_token"]
+    csrf_token = get_csrf_token(test_app)
 
     data = {"name": "location-id", "position": 50}
     headers = {"Content-Type": "application/json", "X-CSRFToken": csrf_token}
@@ -243,8 +207,7 @@ def test_getting_token(test_app):
 
 def test_suggest_new_location_with_valid_data(test_app):
     # Get CSRF token first
-    csrf_response = test_app.get("/api/generate-csrf-token")
-    csrf_token = csrf_response.json["csrf_token"]
+    csrf_token = get_csrf_token(test_app)
 
     response = test_app.post(
         "/api/suggest-new-point",
@@ -296,8 +259,7 @@ def test_suggest_new_location_with_invalid_data(test_app):
 
 def test_suggest_new_location_with_error_during_sending_notification(test_app):
     # Get CSRF token first
-    csrf_response = test_app.get("/api/generate-csrf-token")
-    csrf_token = csrf_response.json["csrf_token"]
+    csrf_token = get_csrf_token(test_app)
 
     # This test cannot be easily adapted since we can't mock the notifier in real app
     # Testing a different scenario - with CSRF token, this should succeed
@@ -355,8 +317,7 @@ def test_admin_post_location_success(mock_uuid4, test_app):
     from uuid import UUID
 
     # Get CSRF token first
-    csrf_response = test_app.get("/api/generate-csrf-token")
-    csrf_token = csrf_response.json["csrf_token"]
+    csrf_token = get_csrf_token(test_app)
 
     mock_uuid4.return_value = UUID("00000000-0000-0000-0000-000000000001")
     data: LocationData = {
@@ -386,8 +347,7 @@ def test_admin_post_location_success(mock_uuid4, test_app):
 
 def test_admin_post_location_invalid_data(test_app):
     # Get CSRF token first
-    csrf_response = test_app.get("/api/generate-csrf-token")
-    csrf_token = csrf_response.json["csrf_token"]
+    csrf_token = get_csrf_token(test_app)
 
     response = test_app.post(
         "/api/admin/locations",
@@ -404,8 +364,7 @@ def test_admin_post_location_error(mock_uuid4, test_app):
     from uuid import UUID
 
     # Get CSRF token first
-    csrf_response = test_app.get("/api/generate-csrf-token")
-    csrf_token = csrf_response.json["csrf_token"]
+    csrf_token = get_csrf_token(test_app)
 
     mock_uuid4.return_value = UUID("00000000-0000-0000-0000-000000000002")
     # Test adapted for real app - testing with truly invalid data
@@ -426,8 +385,7 @@ def test_admin_post_location_error(mock_uuid4, test_app):
 
 def test_admin_put_location_success(test_app):
     # Get CSRF token first
-    csrf_response = test_app.get("/api/generate-csrf-token")
-    csrf_token = csrf_response.json["csrf_token"]
+    csrf_token = get_csrf_token(test_app)
 
     # First create a location to update
     create_data = {
@@ -473,8 +431,7 @@ def test_admin_put_location_success(test_app):
 
 def test_admin_put_location_invalid_data(test_app):
     # Get CSRF token first
-    csrf_response = test_app.get("/api/generate-csrf-token")
-    csrf_token = csrf_response.json["csrf_token"]
+    csrf_token = get_csrf_token(test_app)
 
     response = test_app.put(
         "/api/admin/locations/loc123",
@@ -488,8 +445,7 @@ def test_admin_put_location_invalid_data(test_app):
 
 def test_admin_put_location_error(test_app):
     # Get CSRF token first
-    csrf_response = test_app.get("/api/generate-csrf-token")
-    csrf_token = csrf_response.json["csrf_token"]
+    csrf_token = get_csrf_token(test_app)
 
     # Test adapted for real app - testing with invalid data
     data = {
@@ -509,8 +465,7 @@ def test_admin_put_location_error(test_app):
 
 def test_admin_delete_location_success(test_app):
     # Get CSRF token first
-    csrf_response = test_app.get("/api/generate-csrf-token")
-    csrf_token = csrf_response.json["csrf_token"]
+    csrf_token = get_csrf_token(test_app)
 
     # First create a location to delete
     create_data = {
@@ -540,8 +495,7 @@ def test_admin_delete_location_success(test_app):
 
 def test_admin_delete_location_not_found(test_app):
     # Get CSRF token first
-    csrf_response = test_app.get("/api/generate-csrf-token")
-    csrf_token = csrf_response.json["csrf_token"]
+    csrf_token = get_csrf_token(test_app)
 
     # Test adapted for real app - using non-existent ID
     response = test_app.delete("/api/admin/locations/notexist", headers={"X-CSRFToken": csrf_token})
@@ -551,8 +505,7 @@ def test_admin_delete_location_not_found(test_app):
 
 def test_admin_delete_location_error(test_app):
     # Get CSRF token first
-    csrf_response = test_app.get("/api/generate-csrf-token")
-    csrf_token = csrf_response.json["csrf_token"]
+    csrf_token = get_csrf_token(test_app)
 
     # Test adapted for real app - testing with non-existent location
     response = test_app.delete(
@@ -564,8 +517,7 @@ def test_admin_delete_location_error(test_app):
 
 def test_admin_put_suggestion_invalid_status(test_app):
     # Get CSRF token first
-    csrf_response = test_app.get("/api/generate-csrf-token")
-    csrf_token = csrf_response.json["csrf_token"]
+    csrf_token = get_csrf_token(test_app)
 
     response = test_app.put(
         "/api/admin/suggestions/s1",
@@ -579,8 +531,7 @@ def test_admin_put_suggestion_invalid_status(test_app):
 
 def test_admin_put_suggestion_not_found(test_app):
     # Get CSRF token first
-    csrf_response = test_app.get("/api/generate-csrf-token")
-    csrf_token = csrf_response.json["csrf_token"]
+    csrf_token = get_csrf_token(test_app)
 
     # Test adapted for real app - suggestion won't exist
     response = test_app.put(
@@ -595,8 +546,7 @@ def test_admin_put_suggestion_not_found(test_app):
 
 def test_admin_put_suggestion_already_processed(test_app):
     # Get CSRF token first
-    csrf_response = test_app.get("/api/generate-csrf-token")
-    csrf_token = csrf_response.json["csrf_token"]
+    csrf_token = get_csrf_token(test_app)
 
     # Test adapted for real app - testing with non-existent suggestion
     response = test_app.put(
@@ -611,8 +561,7 @@ def test_admin_put_suggestion_already_processed(test_app):
 
 def test_admin_put_suggestion_accept(test_app):
     # Get CSRF token first
-    csrf_response = test_app.get("/api/generate-csrf-token")
-    csrf_token = csrf_response.json["csrf_token"]
+    csrf_token = get_csrf_token(test_app)
 
     # Test adapted for real app - would need to create suggestion first
     response = test_app.put(
@@ -627,8 +576,7 @@ def test_admin_put_suggestion_accept(test_app):
 
 def test_admin_put_suggestion_reject(test_app):
     # Get CSRF token first
-    csrf_response = test_app.get("/api/generate-csrf-token")
-    csrf_token = csrf_response.json["csrf_token"]
+    csrf_token = get_csrf_token(test_app)
 
     # Test adapted for real app - would need to create suggestion first
     response = test_app.put(
@@ -643,8 +591,7 @@ def test_admin_put_suggestion_reject(test_app):
 
 def test_admin_put_suggestion_value_error(test_app):
     # Get CSRF token first
-    csrf_response = test_app.get("/api/generate-csrf-token")
-    csrf_token = csrf_response.json["csrf_token"]
+    csrf_token = get_csrf_token(test_app)
 
     # Test adapted for real app - testing with invalid data
     response = test_app.put(
@@ -658,8 +605,7 @@ def test_admin_put_suggestion_value_error(test_app):
 
 def test_admin_put_report_invalid_status(test_app):
     # Get CSRF token first
-    csrf_response = test_app.get("/api/generate-csrf-token")
-    csrf_token = csrf_response.json["csrf_token"]
+    csrf_token = get_csrf_token(test_app)
 
     response = test_app.put(
         "/api/admin/reports/r1",
@@ -673,8 +619,7 @@ def test_admin_put_report_invalid_status(test_app):
 
 def test_admin_put_report_invalid_priority(test_app):
     # Get CSRF token first
-    csrf_response = test_app.get("/api/generate-csrf-token")
-    csrf_token = csrf_response.json["csrf_token"]
+    csrf_token = get_csrf_token(test_app)
 
     response = test_app.put(
         "/api/admin/reports/r1",
@@ -688,8 +633,7 @@ def test_admin_put_report_invalid_priority(test_app):
 
 def test_admin_put_report_not_found(test_app):
     # Get CSRF token first
-    csrf_response = test_app.get("/api/generate-csrf-token")
-    csrf_token = csrf_response.json["csrf_token"]
+    csrf_token = get_csrf_token(test_app)
 
     # Test adapted for real app - report won't exist
     response = test_app.put(
@@ -704,8 +648,7 @@ def test_admin_put_report_not_found(test_app):
 
 def test_admin_put_report_success(test_app):
     # Get CSRF token first
-    csrf_response = test_app.get("/api/generate-csrf-token")
-    csrf_token = csrf_response.json["csrf_token"]
+    csrf_token = get_csrf_token(test_app)
 
     # Test adapted for real app - would need to create report first
     response = test_app.put(
@@ -720,8 +663,7 @@ def test_admin_put_report_success(test_app):
 
 def test_admin_put_report_value_error(test_app):
     # Get CSRF token first
-    csrf_response = test_app.get("/api/generate-csrf-token")
-    csrf_token = csrf_response.json["csrf_token"]
+    csrf_token = get_csrf_token(test_app)
 
     # Test adapted for real app - testing with invalid data
     response = test_app.put(
