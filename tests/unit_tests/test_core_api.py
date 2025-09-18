@@ -5,10 +5,8 @@ from unittest import mock
 import deprecation
 import pytest
 from platzky.config import Config
-from platzky.db.json_db import JsonDbConfig
 
 from goodmap.core_api import make_tuple_translation, paginate_results
-from goodmap.data_models.location import LocationBase
 from goodmap.goodmap import create_app_from_config
 
 
@@ -38,9 +36,7 @@ def test_app():
         "DB": {
             "TYPE": "json",
             "DATA": {
-                "site_content": {
-                    "pages": []
-                },
+                "site_content": {"pages": []},
                 "categories": {"test-category": ["test", "test2"]},
                 "locations": [],
                 "data": [
@@ -68,10 +64,10 @@ def test_app():
                 "location_obligatory_fields": [
                     ("test_category", "list[str]"),
                     ("type_of_place", "str"),
-                    ("name", "str")
+                    ("name", "str"),
                 ],
                 "suggestions": [],
-                "reports": []
+                "reports": [],
             },
         },
         "FEATURE_FLAGS": {"CATEGORIES_HELP": True},
@@ -99,9 +95,7 @@ def test_app_without_helpers():
         "DB": {
             "TYPE": "json",
             "DATA": {
-                "site_content": {
-                    "pages": []
-                },
+                "site_content": {"pages": []},
                 "categories": {"test-category": ["test", "test2"]},
                 "locations": [],
                 "data": [
@@ -129,10 +123,10 @@ def test_app_without_helpers():
                 "location_obligatory_fields": [
                     ("test_category", "list[str]"),
                     ("type_of_place", "str"),
-                    ("name", "str")
+                    ("name", "str"),
                 ],
                 "suggestions": [],
-                "reports": []
+                "reports": [],
             },
         },
         "FEATURE_FLAGS": {"CATEGORIES_HELP": False},
@@ -264,7 +258,7 @@ def test_suggest_new_location_with_valid_data(test_app):
             }
         ),
         content_type="application/json",
-        headers={"X-CSRFToken": csrf_token}
+        headers={"X-CSRFToken": csrf_token},
     )
     assert response.status_code == 200
     assert response.get_json() == {"message": "Location suggested"}
@@ -319,7 +313,7 @@ def test_suggest_new_location_with_error_during_sending_notification(test_app):
             }
         ),
         content_type="application/json",
-        headers={"X-CSRFToken": csrf_token}
+        headers={"X-CSRFToken": csrf_token},
     )
     # With real app, this should normally succeed
     assert response.status_code == 200
@@ -377,7 +371,7 @@ def test_admin_post_location_success(mock_uuid4, test_app):
         "/api/admin/locations",
         data=json.dumps(data),
         content_type="application/json",
-        headers={"X-CSRFToken": csrf_token}
+        headers={"X-CSRFToken": csrf_token},
     )
     assert response.status_code == 200
     resp_json = response.json
@@ -399,7 +393,7 @@ def test_admin_post_location_invalid_data(test_app):
         "/api/admin/locations",
         data=json.dumps({}),
         content_type="application/json",
-        headers={"X-CSRFToken": csrf_token}
+        headers={"X-CSRFToken": csrf_token},
     )
     assert response.status_code == 400
     assert "Invalid location data" in response.json["message"]
@@ -425,7 +419,7 @@ def test_admin_post_location_error(mock_uuid4, test_app):
         "/api/admin/locations",
         data=json.dumps(data),
         content_type="application/json",
-        headers={"X-CSRFToken": csrf_token}
+        headers={"X-CSRFToken": csrf_token},
     )
     assert response.status_code == 400
 
@@ -447,7 +441,7 @@ def test_admin_put_location_success(test_app):
         "/api/admin/locations",
         data=json.dumps(create_data),
         content_type="application/json",
-        headers={"X-CSRFToken": csrf_token}
+        headers={"X-CSRFToken": csrf_token},
     )
     assert create_response.status_code == 200
     location_id = create_response.json["uuid"]
@@ -465,7 +459,7 @@ def test_admin_put_location_success(test_app):
         f"/api/admin/locations/{location_id}",
         data=json.dumps(update_data),
         content_type="application/json",
-        headers={"X-CSRFToken": csrf_token}
+        headers={"X-CSRFToken": csrf_token},
     )
     assert response.status_code == 200
     resp_json = response.json
@@ -486,7 +480,7 @@ def test_admin_put_location_invalid_data(test_app):
         "/api/admin/locations/loc123",
         data=json.dumps({"position": "bad"}),
         content_type="application/json",
-        headers={"X-CSRFToken": csrf_token}
+        headers={"X-CSRFToken": csrf_token},
     )
     assert response.status_code == 400
     assert "Invalid location data" in response.json["message"]
@@ -508,7 +502,7 @@ def test_admin_put_location_error(test_app):
         "/api/admin/locations/loc123",
         data=json.dumps(data),
         content_type="application/json",
-        headers={"X-CSRFToken": csrf_token}
+        headers={"X-CSRFToken": csrf_token},
     )
     assert response.status_code == 400
 
@@ -530,13 +524,15 @@ def test_admin_delete_location_success(test_app):
         "/api/admin/locations",
         data=json.dumps(create_data),
         content_type="application/json",
-        headers={"X-CSRFToken": csrf_token}
+        headers={"X-CSRFToken": csrf_token},
     )
     assert create_response.status_code == 200
     location_id = create_response.json["uuid"]
 
     # Now delete the created location
-    response = test_app.delete(f"/api/admin/locations/{location_id}", headers={"X-CSRFToken": csrf_token})
+    response = test_app.delete(
+        f"/api/admin/locations/{location_id}", headers={"X-CSRFToken": csrf_token}
+    )
     assert response.status_code == 204
     assert response.data == b""
     # Location should be deleted successfully
@@ -559,7 +555,9 @@ def test_admin_delete_location_error(test_app):
     csrf_token = csrf_response.json["csrf_token"]
 
     # Test adapted for real app - testing with non-existent location
-    response = test_app.delete("/api/admin/locations/nonexistent123", headers={"X-CSRFToken": csrf_token})
+    response = test_app.delete(
+        "/api/admin/locations/nonexistent123", headers={"X-CSRFToken": csrf_token}
+    )
     assert response.status_code == 404
     assert "not found" in response.json["message"].lower()
 
@@ -573,7 +571,7 @@ def test_admin_put_suggestion_invalid_status(test_app):
         "/api/admin/suggestions/s1",
         data=json.dumps({"status": "bad"}),
         content_type="application/json",
-        headers={"X-CSRFToken": csrf_token}
+        headers={"X-CSRFToken": csrf_token},
     )
     assert response.status_code == 400
     assert "Invalid status: bad" in response.json["message"]
@@ -589,7 +587,7 @@ def test_admin_put_suggestion_not_found(test_app):
         "/api/admin/suggestions/s1",
         data=json.dumps({"status": "accepted"}),
         content_type="application/json",
-        headers={"X-CSRFToken": csrf_token}
+        headers={"X-CSRFToken": csrf_token},
     )
     assert response.status_code == 404
     assert "Suggestion not found" in response.json["message"]
@@ -605,27 +603,13 @@ def test_admin_put_suggestion_already_processed(test_app):
         "/api/admin/suggestions/nonexistent_s1",
         data=json.dumps({"status": "rejected"}),
         content_type="application/json",
-        headers={"X-CSRFToken": csrf_token}
+        headers={"X-CSRFToken": csrf_token},
     )
     assert response.status_code == 404
     assert "not found" in response.json["message"].lower()
 
 
 def test_admin_put_suggestion_accept(test_app):
-    suggestion_initial = {
-        "id": "s1",
-        "status": "pending",
-        "name": "loc",
-        "position": [1, 2],
-        "photo": "p",
-    }
-    suggestion_updated = {
-        "id": "s1",
-        "status": "accepted",
-        "name": "loc",
-        "position": [1, 2],
-        "photo": "p",
-    }
     # Get CSRF token first
     csrf_response = test_app.get("/api/generate-csrf-token")
     csrf_token = csrf_response.json["csrf_token"]
@@ -635,27 +619,13 @@ def test_admin_put_suggestion_accept(test_app):
         "/api/admin/suggestions/s1",
         data=json.dumps({"status": "accepted"}),
         content_type="application/json",
-        headers={"X-CSRFToken": csrf_token}
+        headers={"X-CSRFToken": csrf_token},
     )
     # With real app, this will likely return 404 for non-existent suggestion
     assert response.status_code in [404, 200]
 
 
 def test_admin_put_suggestion_reject(test_app):
-    suggestion_initial = {
-        "id": "s1",
-        "status": "pending",
-        "name": "loc",
-        "position": [1, 2],
-        "photo": "p",
-    }
-    suggestion_updated = {
-        "id": "s1",
-        "status": "rejected",
-        "name": "loc",
-        "position": [1, 2],
-        "photo": "p",
-    }
     # Get CSRF token first
     csrf_response = test_app.get("/api/generate-csrf-token")
     csrf_token = csrf_response.json["csrf_token"]
@@ -665,7 +635,7 @@ def test_admin_put_suggestion_reject(test_app):
         "/api/admin/suggestions/s1",
         data=json.dumps({"status": "rejected"}),
         content_type="application/json",
-        headers={"X-CSRFToken": csrf_token}
+        headers={"X-CSRFToken": csrf_token},
     )
     # With real app, this will likely return 404 for non-existent suggestion
     assert response.status_code in [404, 200]
@@ -681,7 +651,7 @@ def test_admin_put_suggestion_value_error(test_app):
         "/api/admin/suggestions/s1",
         data=json.dumps({"status": "invalid_status"}),
         content_type="application/json",
-        headers={"X-CSRFToken": csrf_token}
+        headers={"X-CSRFToken": csrf_token},
     )
     assert response.status_code == 400
 
@@ -695,7 +665,7 @@ def test_admin_put_report_invalid_status(test_app):
         "/api/admin/reports/r1",
         data=json.dumps({"status": "bad"}),
         content_type="application/json",
-        headers={"X-CSRFToken": csrf_token}
+        headers={"X-CSRFToken": csrf_token},
     )
     assert response.status_code == 400
     assert "Invalid status: bad" in response.json["message"]
@@ -710,7 +680,7 @@ def test_admin_put_report_invalid_priority(test_app):
         "/api/admin/reports/r1",
         data=json.dumps({"priority": "bad"}),
         content_type="application/json",
-        headers={"X-CSRFToken": csrf_token}
+        headers={"X-CSRFToken": csrf_token},
     )
     assert response.status_code == 400
     assert "Invalid priority: bad" in response.json["message"]
@@ -726,7 +696,7 @@ def test_admin_put_report_not_found(test_app):
         "/api/admin/reports/r1",
         data=json.dumps({"status": "resolved"}),
         content_type="application/json",
-        headers={"X-CSRFToken": csrf_token}
+        headers={"X-CSRFToken": csrf_token},
     )
     assert response.status_code == 404
     assert "Report not found" in response.json["message"]
@@ -744,7 +714,7 @@ def test_admin_put_report_success(test_app):
         "/api/admin/reports/r1",
         data=json.dumps({"status": "resolved", "priority": "critical"}),
         content_type="application/json",
-        headers={"X-CSRFToken": csrf_token}
+        headers={"X-CSRFToken": csrf_token},
     )
     # With real app, this will likely return 404 for non-existent report
     assert response.status_code in [404, 200]
@@ -760,7 +730,7 @@ def test_admin_put_report_value_error(test_app):
         "/api/admin/reports/r1",
         data=json.dumps({"status": "invalid_status"}),
         content_type="application/json",
-        headers={"X-CSRFToken": csrf_token}
+        headers={"X-CSRFToken": csrf_token},
     )
     assert response.status_code == 400
 
