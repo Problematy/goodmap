@@ -1,5 +1,5 @@
 import json
-from typing import TypedDict
+from typing import Any, TypedDict
 from unittest import mock
 
 import deprecation
@@ -23,7 +23,7 @@ def fake_translation(key: str):
     return f"{key}-translated"
 
 
-def get_test_config_data():
+def get_test_config_data() -> dict[str, Any]:
     """Return the common configuration data used by test fixtures."""
     return {
         "APP_NAME": "testing App Name",
@@ -82,7 +82,8 @@ def get_csrf_token(test_client):
 @pytest.fixture
 def test_app():
     config_data = get_test_config_data()
-    config_data["FEATURE_FLAGS"] = {"CATEGORIES_HELP": True}
+    feature_flags: dict[str, bool] = {"CATEGORIES_HELP": True}
+    config_data["FEATURE_FLAGS"] = feature_flags
     config = Config.model_validate(config_data)
     app = create_app_from_config(config)
     return app.test_client()
@@ -96,7 +97,8 @@ def test_app():
 @pytest.fixture
 def test_app_without_helpers():
     config_data = get_test_config_data()
-    config_data["FEATURE_FLAGS"] = {"CATEGORIES_HELP": False}
+    feature_flags: dict[str, bool] = {"CATEGORIES_HELP": False}
+    config_data["FEATURE_FLAGS"] = feature_flags
     config = Config.model_validate(config_data)
     app = create_app_from_config(config)
     return app.test_client()
