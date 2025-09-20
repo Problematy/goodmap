@@ -69,11 +69,19 @@ def mongodb_db_get_data(self):
     if config_doc:
         return {
             "data": list(self.db.locations.find({}, {"_id": 0})),
-            "categories": config_doc.get("categories", []),
+            "categories": config_doc.get("categories", {}),
             "location_obligatory_fields": config_doc.get("location_obligatory_fields", []),
+            # Backward-compat keys expected by core_api today
+            "visible_data": config_doc.get("visible_data", {}),
+            "meta_data": config_doc.get("meta_data", {}),
         }
-    return {"data": [], "categories": [], "location_obligatory_fields": []}
-
+    return {
+        "data": [],
+        "categories": {},
+        "location_obligatory_fields": [],
+        "visible_data": {},
+        "meta_data": {},
+    }
 
 def get_data(db):
     return globals()[f"{db.module_name}_get_data"]
