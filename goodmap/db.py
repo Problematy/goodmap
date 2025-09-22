@@ -83,6 +83,7 @@ def mongodb_db_get_data(self):
         "meta_data": {},
     }
 
+
 def get_data(db):
     return globals()[f"{db.module_name}_get_data"]
 
