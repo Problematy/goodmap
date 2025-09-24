@@ -6,6 +6,7 @@ import pytest
 from platzky.db.google_json_db import GoogleJsonDb
 from platzky.db.json_db import Json
 from platzky.db.json_file_db import JsonFile
+from platzky.db.mongodb_db import MongoDB
 
 from goodmap.data_models.location import create_location_model
 from goodmap.db import (
@@ -52,6 +53,24 @@ from goodmap.db import (
     json_file_db_update_location,
     json_file_db_update_report,
     json_file_db_update_suggestion,
+    mongodb_db_add_location,
+    mongodb_db_add_report,
+    mongodb_db_add_suggestion,
+    mongodb_db_delete_location,
+    mongodb_db_delete_report,
+    mongodb_db_delete_suggestion,
+    mongodb_db_get_category_data,
+    mongodb_db_get_data,
+    mongodb_db_get_location,
+    mongodb_db_get_location_obligatory_fields,
+    mongodb_db_get_locations,
+    mongodb_db_get_report,
+    mongodb_db_get_reports,
+    mongodb_db_get_suggestion,
+    mongodb_db_get_suggestions,
+    mongodb_db_update_location,
+    mongodb_db_update_report,
+    mongodb_db_update_suggestion,
     update_location,
     update_report,
     update_suggestion,
@@ -779,3 +798,314 @@ def test_dispatch_add_update_delete_report():
 
     delete_report(db, "r1")
     assert db.data["reports"] == []
+
+
+# MongoDB tests
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_location_obligatory_fields(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.config.find_one.return_value = {
+        "_id": "map_config",
+        "location_obligatory_fields": ["name", "position"]
+    }
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    result = mongodb_db_get_location_obligatory_fields(db)
+    assert result == ["name", "position"]
+    mock_db.config.find_one.assert_called_once_with({"_id": "map_config"})
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_location_obligatory_fields_empty(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.config.find_one.return_value = None
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    result = mongodb_db_get_location_obligatory_fields(db)
+    assert result == []
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_data(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.config.find_one.return_value = {
+        "_id": "map_config",
+        "categories": {"test-category": ["searchable", "unsearchable"]},
+        "location_obligatory_fields": ["name"],
+        "visible_data": {"key": "value"},
+        "meta_data": {"meta": "info"}
+    }
+    mock_db.locations.find.return_value = [
+        {"uuid": "1", "position": [50, 50], "name": "one"}
+    ]
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    result = mongodb_db_get_data(db)
+
+    expected = {
+        "data": [{"uuid": "1", "position": [50, 50], "name": "one"}],
+        "categories": {"test-category": ["searchable", "unsearchable"]},
+        "location_obligatory_fields": ["name"],
+        "visible_data": {"key": "value"},
+        "meta_data": {"meta": "info"}
+    }
+    assert result == expected
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_data_no_config(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.config.find_one.return_value = None
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    result = mongodb_db_get_data(db)
+
+    expected = {
+        "data": [],
+        "categories": {},
+        "location_obligatory_fields": [],
+        "visible_data": {},
+        "meta_data": {}
+    }
+    assert result == expected
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_location(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.locations.find_one.return_value = {
+        "uuid": "1", "position": [50, 50], "name": "one"
+    }
+
+    Location = create_location_model([])
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    result = mongodb_db_get_location(db, "1", Location)
+
+    assert result.uuid == "1"
+    assert result.position == (50, 50)
+    mock_db.locations.find_one.assert_called_once_with({"uuid": "1"}, {"_id": 0})
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_location_not_found(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.locations.find_one.return_value = None
+
+    Location = create_location_model([])
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    result = mongodb_db_get_location(db, "nonexistent", Location)
+
+    assert result is None
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_add_location(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.locations.find_one.return_value = None  # No existing location
+
+    Location = create_location_model([])
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    location_data = {"uuid": "new1", "position": [10, 20]}
+
+    mongodb_db_add_location(db, location_data, Location)
+
+    mock_db.locations.find_one.assert_called_once_with({"uuid": "new1"})
+    mock_db.locations.insert_one.assert_called_once()
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_add_duplicate_location(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.locations.find_one.return_value = {"uuid": "existing"}
+
+    Location = create_location_model([])
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    location_data = {"uuid": "existing", "position": [10, 20]}
+
+    with pytest.raises(ValueError, match="Location with uuid existing already exists"):
+        mongodb_db_add_location(db, location_data, Location)
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_update_location(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_result = mock.Mock()
+    mock_result.matched_count = 1
+    mock_db.locations.update_one.return_value = mock_result
+
+    Location = create_location_model([])
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    location_data = {"uuid": "1", "position": [30, 40]}
+
+    mongodb_db_update_location(db, "1", location_data, Location)
+
+    mock_db.locations.update_one.assert_called_once()
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_update_location_not_found(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_result = mock.Mock()
+    mock_result.matched_count = 0
+    mock_db.locations.update_one.return_value = mock_result
+
+    Location = create_location_model([])
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    location_data = {"uuid": "nonexistent", "position": [30, 40]}
+
+    with pytest.raises(ValueError, match="Location with uuid nonexistent not found"):
+        mongodb_db_update_location(db, "nonexistent", location_data, Location)
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_delete_location(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_result = mock.Mock()
+    mock_result.deleted_count = 1
+    mock_db.locations.delete_one.return_value = mock_result
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    mongodb_db_delete_location(db, "1")
+
+    mock_db.locations.delete_one.assert_called_once_with({"uuid": "1"})
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_delete_location_not_found(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_result = mock.Mock()
+    mock_result.deleted_count = 0
+    mock_db.locations.delete_one.return_value = mock_result
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+
+    with pytest.raises(ValueError, match="Location with uuid nonexistent not found"):
+        mongodb_db_delete_location(db, "nonexistent")
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_add_suggestion(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.suggestions.find_one.return_value = None
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    suggestion_data = {"uuid": "s1", "content": "test suggestion"}
+
+    mongodb_db_add_suggestion(db, suggestion_data)
+
+    mock_db.suggestions.find_one.assert_called_once_with({"uuid": "s1"})
+    mock_db.suggestions.insert_one.assert_called_once()
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_add_duplicate_suggestion(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.suggestions.find_one.return_value = {"uuid": "s1"}
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    suggestion_data = {"uuid": "s1", "content": "test"}
+
+    with pytest.raises(ValueError, match="Suggestion with uuid s1 already exists"):
+        mongodb_db_add_suggestion(db, suggestion_data)
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_suggestions(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.suggestions.find.return_value = [
+        {"uuid": "s1", "status": "pending"},
+        {"uuid": "s2", "status": "done"}
+    ]
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    result = mongodb_db_get_suggestions(db, {"status": ["pending"]})
+
+    expected_query = {"status": {"$in": ["pending"]}}
+    mock_db.suggestions.find.assert_called_once_with(expected_query, {"_id": 0})
+    assert result == [{"uuid": "s1", "status": "pending"}, {"uuid": "s2", "status": "done"}]
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_suggestion(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.suggestions.find_one.return_value = {"uuid": "s1", "content": "test"}
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    result = mongodb_db_get_suggestion(db, "s1")
+
+    assert result == {"uuid": "s1", "content": "test"}
+    mock_db.suggestions.find_one.assert_called_once_with({"uuid": "s1"}, {"_id": 0})
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_update_suggestion(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_result = mock.Mock()
+    mock_result.matched_count = 1
+    mock_db.suggestions.update_one.return_value = mock_result
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    mongodb_db_update_suggestion(db, "s1", "approved")
+
+    mock_db.suggestions.update_one.assert_called_once_with(
+        {"uuid": "s1"}, {"$set": {"status": "approved"}}
+    )
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_update_suggestion_not_found(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_result = mock.Mock()
+    mock_result.matched_count = 0
+    mock_db.suggestions.update_one.return_value = mock_result
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+
+    with pytest.raises(ValueError, match="Suggestion with uuid nonexistent not found"):
+        mongodb_db_update_suggestion(db, "nonexistent", "approved")
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_delete_suggestion(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_result = mock.Mock()
+    mock_result.deleted_count = 1
+    mock_db.suggestions.delete_one.return_value = mock_result
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    mongodb_db_delete_suggestion(db, "s1")
+
+    mock_db.suggestions.delete_one.assert_called_once_with({"uuid": "s1"})
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_delete_suggestion_not_found(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_result = mock.Mock()
+    mock_result.deleted_count = 0
+    mock_db.suggestions.delete_one.return_value = mock_result
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+
+    with pytest.raises(ValueError, match="Suggestion with uuid nonexistent not found"):
+        mongodb_db_delete_suggestion(db, "nonexistent")
