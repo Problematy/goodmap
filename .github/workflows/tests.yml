@@ -46,7 +46,11 @@ jobs:
       run: |
         make run-e2e-env &
         SERVER_PID=$!
-        trap "kill -TERM -$SERVER_PID; wait $SERVER_PID 2>/dev/null || true" EXIT
+        echo "DEBUG: Started make process with PID: $SERVER_PID"
+        ps aux | grep -E "(flask|python|make)" | grep -v grep
+        echo "DEBUG: Process group for PID $SERVER_PID:"
+        ps -o pid,ppid,pgrp,cmd -p $SERVER_PID || echo "Process $SERVER_PID not found"
+        trap "echo 'DEBUG: Trap executing, trying to kill process group -$SERVER_PID'; ps aux | grep -E '(flask|python|make)' | grep -v grep; kill -TERM -$SERVER_PID 2>/dev/null || echo 'Process group -$SERVER_PID not found'; wait $SERVER_PID 2>/dev/null || true" EXIT
         sleep 5
         cd tests/e2e_tests && npx cypress run --browser chromium --spec "cypress/e2e/basic-test/*"
     - name: Generate e2e stress test data
