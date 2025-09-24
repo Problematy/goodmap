@@ -57,7 +57,7 @@ jobs:
       run: make e2e-stress-tests-generate-data
     - name: Run e2e stress tests
       run: |
-        make run-e2e-stress-env &
+        setsid make run-e2e-stress-env &
         SERVER_PID=$!
         trap "kill -TERM -$SERVER_PID; wait $SERVER_PID 2>/dev/null || true" EXIT
         sleep 5
