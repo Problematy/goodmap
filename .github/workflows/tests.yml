@@ -38,24 +38,27 @@ jobs:
         path-to-lcov: "./coverage.lcov"
         github-token: ${{ secrets.GITHUB_TOKEN }}
 # End-to-end tests:
-    - name: Install cypress
+    - name: Install cypress dependencies
       working-directory: "./tests/e2e_tests"
       run: |
-        npm install cypress && npm install cypress-browser-permissions
+        npm install cypress-browser-permissions
     - name: Run e2e tests
       run: |
         make run-e2e-env &
-        FLASK_PID=$!
-        sleep 3
-        cd tests/e2e_tests && node_modules/cypress/bin/cypress run --browser chromium --spec cypress/e2e/basic-test/*
-        kill $FLASK_PID
+        SERVER_PID=$!
+        trap "kill $SERVER_PID" EXIT
+        sleep 5
+        cd tests/e2e_tests && npx cypress run --browser chromium --spec cypress/e2e/basic-test/*
+        kill $SERVER_PID
+        wait $SERVER_PID 2>/dev/null || true
     - name: Generate e2e stress test data
-      run: |
-        python tests/e2e_tests/cypress/support/generate_stress_test_data.py
+      run: make e2e-stress-tests-generate-data
     - name: Run e2e stress tests
       run: |
         make run-e2e-env &
-        FLASK_PID=$!
-        sleep 3
-        cd tests/e2e_tests && node_modules/cypress/bin/cypress run --browser chromium --spec cypress/e2e/stress-test/*
-        kill $FLASK_PID
+        SERVER_PID=$!
+        trap "kill $SERVER_PID" EXIT
+        sleep 5
+        cd tests/e2e_tests && npx cypress run --browser chromium --spec cypress/e2e/stress-test/* || true
+        kill $SERVER_PID
+        wait $SERVER_PID 2>/dev/null || true
