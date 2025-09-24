@@ -44,7 +44,7 @@ jobs:
         npm install cypress-browser-permissions
     - name: Run e2e tests
       run: |
-        make run-e2e-env &
+        setsid make run-e2e-env &
         SERVER_PID=$!
         echo "DEBUG: Started make process with PID: $SERVER_PID"
         ps aux | grep -E "(flask|python|make)" | grep -v grep
