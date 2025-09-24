@@ -32,11 +32,11 @@ jobs:
       run: make unit-tests-no-coverage
     - name: Run tests with coverage
       run: make coverage
-    - name: Coveralls
-      uses: coverallsapp/github-action@v2
-      with:
-        path-to-lcov: "./coverage.lcov"
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+    # - name: Coveralls
+    #   uses: coverallsapp/github-action@v2
+    #   with:
+    #     path-to-lcov: "./coverage.lcov"
+    #     github-token: ${{ secrets.GITHUB_TOKEN }}
 # End-to-end tests:
     - name: Install cypress dependencies
       working-directory: "./tests/e2e_tests"
