@@ -49,8 +49,6 @@ jobs:
         trap "kill $SERVER_PID" EXIT
         sleep 5
         cd tests/e2e_tests && npx cypress run --browser chromium --spec "cypress/e2e/basic-test/*"
-        kill $SERVER_PID
-        wait $SERVER_PID 2>/dev/null || true
     - name: Generate e2e stress test data
       run: make e2e-stress-tests-generate-data
     - name: Run e2e stress tests
@@ -60,5 +58,3 @@ jobs:
         trap "kill $SERVER_PID" EXIT
         sleep 5
         cd tests/e2e_tests && npx cypress run --browser chromium --spec "cypress/e2e/stress-test/*"
-        kill $SERVER_PID
-        wait $SERVER_PID 2>/dev/null || true
