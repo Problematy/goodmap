@@ -1,5 +1,5 @@
 import json
-from typing import Any
+from typing import Any, cast
 from unittest import mock
 
 import pytest
@@ -8,7 +8,7 @@ from platzky.db.json_db import Json
 from platzky.db.json_file_db import JsonFile
 from platzky.db.mongodb_db import MongoDB
 
-from goodmap.data_models.location import create_location_model
+from goodmap.data_models.location import LocationBase, create_location_model
 from goodmap.db import (
     add_location,
     add_report,
@@ -54,22 +54,15 @@ from goodmap.db import (
     json_file_db_update_report,
     json_file_db_update_suggestion,
     mongodb_db_add_location,
-    mongodb_db_add_report,
     mongodb_db_add_suggestion,
     mongodb_db_delete_location,
-    mongodb_db_delete_report,
     mongodb_db_delete_suggestion,
-    mongodb_db_get_category_data,
     mongodb_db_get_data,
     mongodb_db_get_location,
     mongodb_db_get_location_obligatory_fields,
-    mongodb_db_get_locations,
-    mongodb_db_get_report,
-    mongodb_db_get_reports,
     mongodb_db_get_suggestion,
     mongodb_db_get_suggestions,
     mongodb_db_update_location,
-    mongodb_db_update_report,
     mongodb_db_update_suggestion,
     update_location,
     update_report,
@@ -807,7 +800,7 @@ def test_mongodb_db_get_location_obligatory_fields(mock_client):
     mock_client.return_value.__getitem__.return_value = mock_db
     mock_db.config.find_one.return_value = {
         "_id": "map_config",
-        "location_obligatory_fields": ["name", "position"]
+        "location_obligatory_fields": ["name", "position"],
     }
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
@@ -836,11 +829,9 @@ def test_mongodb_db_get_data(mock_client):
         "categories": {"test-category": ["searchable", "unsearchable"]},
         "location_obligatory_fields": ["name"],
         "visible_data": {"key": "value"},
-        "meta_data": {"meta": "info"}
+        "meta_data": {"meta": "info"},
     }
-    mock_db.locations.find.return_value = [
-        {"uuid": "1", "position": [50, 50], "name": "one"}
-    ]
+    mock_db.locations.find.return_value = [{"uuid": "1", "position": [50, 50], "name": "one"}]
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
     result = mongodb_db_get_data(db)
@@ -850,7 +841,7 @@ def test_mongodb_db_get_data(mock_client):
         "categories": {"test-category": ["searchable", "unsearchable"]},
         "location_obligatory_fields": ["name"],
         "visible_data": {"key": "value"},
-        "meta_data": {"meta": "info"}
+        "meta_data": {"meta": "info"},
     }
     assert result == expected
 
@@ -869,7 +860,7 @@ def test_mongodb_db_get_data_no_config(mock_client):
         "categories": {},
         "location_obligatory_fields": [],
         "visible_data": {},
-        "meta_data": {}
+        "meta_data": {},
     }
     assert result == expected
 
@@ -878,14 +869,14 @@ def test_mongodb_db_get_data_no_config(mock_client):
 def test_mongodb_db_get_location(mock_client):
     mock_db = mock.Mock()
     mock_client.return_value.__getitem__.return_value = mock_db
-    mock_db.locations.find_one.return_value = {
-        "uuid": "1", "position": [50, 50], "name": "one"
-    }
+    mock_db.locations.find_one.return_value = {"uuid": "1", "position": [50, 50], "name": "one"}
 
     Location = create_location_model([])
     db = MongoDB("mongodb://localhost:27017", "test_db")
     result = mongodb_db_get_location(db, "1", Location)
 
+    assert result is not None
+    result = cast(LocationBase, result)
     assert result.uuid == "1"
     assert result.position == (50, 50)
     mock_db.locations.find_one.assert_called_once_with({"uuid": "1"}, {"_id": 0})
@@ -1029,7 +1020,7 @@ def test_mongodb_db_get_suggestions(mock_client):
     mock_client.return_value.__getitem__.return_value = mock_db
     mock_db.suggestions.find.return_value = [
         {"uuid": "s1", "status": "pending"},
-        {"uuid": "s2", "status": "done"}
+        {"uuid": "s2", "status": "done"},
     ]
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
