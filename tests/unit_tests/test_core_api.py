@@ -6,7 +6,7 @@ import deprecation
 import pytest
 from platzky.config import Config
 
-from goodmap.core_api import make_tuple_translation, paginate_results
+from goodmap.core_api import get_or_none, make_tuple_translation, paginate_results
 from goodmap.goodmap import create_app_from_config
 
 
@@ -764,3 +764,177 @@ def test_paginate_results_sorting_dict_asc():
     items = [{"x": 2}, {"x": 1}, {"x": 3}]
     page_items, _ = paginate_results(items.copy(), {"sort_by": ["x"], "sort_order": ["asc"]})
     assert page_items == [{"x": 1}, {"x": 2}, {"x": 3}]
+
+
+# Tests for missing coverage areas
+
+def test_paginate_results_sorting_no_sort_by():
+    """Test get_sort_key returning None when no sort_by is provided"""
+    items = [{"x": 2}, {"x": 1}, {"x": 3}]
+    page_items, _ = paginate_results(items.copy(), {})
+    assert page_items == items  # Should remain in original order
+
+
+def test_paginate_results_sorting_non_dict_item():
+    """Test get_sort_key with non-dict items"""
+    class MockItem:
+        def __init__(self, x):
+            self.x = x
+
+    items = [MockItem(2), MockItem(1), MockItem(3)]
+    page_items, _ = paginate_results(items.copy(), {"sort_by": ["x"], "sort_order": ["asc"]})
+    assert [item.x for item in page_items] == [1, 2, 3]
+
+
+def test_get_or_none_with_valid_dict():
+    """Test get_or_none with valid dictionary keys"""
+    data = {"a": {"b": {"c": "value"}}}
+    result = get_or_none(data, "a", "b", "c")
+    assert result == "value"
+
+
+def test_get_or_none_with_non_dict():
+    """Test get_or_none returns None when encountering non-dict (line 21)"""
+    data = {"a": "not_a_dict"}
+    result = get_or_none(data, "a", "b")
+    assert result is None
+
+
+def test_get_or_none_with_missing_key():
+    """Test get_or_none with missing key"""
+    data = {"a": {"b": "value"}}
+    result = get_or_none(data, "a", "missing_key")
+    assert result is None
+
+
+@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("flask_babel.gettext", fake_translation)
+def test_suggest_new_location_with_invalid_location_data_value_error(test_app):
+    """Test ValueError handling in suggest location (lines 137-138)"""
+    csrf_token = get_csrf_token(test_app)
+    # Send invalid location data that will trigger ValueError
+    response = test_app.post(
+        "/api/suggest-new-point",
+        data=json.dumps({"invalid": "data"}),  # Missing required fields
+        content_type="application/json",
+        headers={"X-CSRFToken": csrf_token},
+    )
+    assert response.status_code == 400
+    data = json.loads(response.data)
+    assert "Invalid location data" in data["message"]
+
+
+# For testing general exceptions, I'll create a test that uses actual app features
+# that might cause exceptions, rather than mocking internal functions
+def test_suggest_new_location_with_invalid_data_causes_exception(test_app):
+    """Test exception handling in suggest location with malformed data"""
+    # Send malformed data that should cause some kind of exception
+    response = test_app.post(
+        "/api/suggest-new-point",
+        data="invalid json",  # Invalid JSON format
+        content_type="application/json",
+    )
+    assert response.status_code == 400
+
+
+# Test report location with invalid data format
+def test_report_location_with_invalid_data_format(test_app):
+    """Test report location with invalid data format"""
+    response = test_app.post(
+        "/api/report-location",
+        data="invalid json",  # Invalid JSON format
+        content_type="application/json",
+    )
+    assert response.status_code == 400
+
+
+@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("flask_babel.gettext", fake_translation)
+def test_categories_endpoint_with_categories_help():
+    """Test categories endpoint with categories_help feature (lines 219-225)"""
+    config_data = get_test_config_data()
+    config_data["FEATURE_FLAGS"] = {"CATEGORIES_HELP": True}
+    # Add categories_help to test data
+    config_data["DB"]["DATA"]["categories_help"] = ["option1", "option2"]
+    config = Config.model_validate(config_data)
+    test_app = create_app_from_config(config)
+
+    with test_app.test_client() as client:
+        response = client.get("/api/categories")
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        assert "categories_help" in data
+        assert len(data["categories_help"]) == 2
+        # Verify translation is applied
+        assert data["categories_help"][0] == {"option1": "categories_help_option1-translated"}
+
+
+@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("flask_babel.gettext", fake_translation)
+def test_category_data_endpoint_with_categories_options_help():
+    """Test category data endpoint with categories_options_help (lines 244-249)"""
+    config_data = get_test_config_data()
+    config_data["FEATURE_FLAGS"] = {"CATEGORIES_HELP": True}
+    # Add categories_options_help to test data
+    config_data["DB"]["DATA"]["categories_options_help"] = {
+        "test-category": ["help1", "help2"]
+    }
+    config = Config.model_validate(config_data)
+    test_app = create_app_from_config(config)
+
+    with test_app.test_client() as client:
+        response = client.get("/api/category/test-category")
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        assert "categories_options_help" in data
+        assert len(data["categories_options_help"]) == 2
+        # Verify translation is applied
+        assert data["categories_options_help"][0] == {"help1": "categories_options_help_help1-translated"}
+
+
+# Test admin endpoints with invalid data to trigger error paths
+def test_admin_post_location_with_invalid_json(test_app):
+    """Test admin post location with invalid JSON"""
+    csrf_token = get_csrf_token(test_app)
+    response = test_app.post(
+        "/api/admin/locations",
+        data="invalid json",
+        content_type="application/json",
+        headers={"X-CSRFToken": csrf_token},
+    )
+    assert response.status_code == 400
+
+
+def test_admin_put_location_with_invalid_json(test_app):
+    """Test admin put location with invalid JSON"""
+    csrf_token = get_csrf_token(test_app)
+    response = test_app.put(
+        "/api/admin/locations/test-id",
+        data="invalid json",
+        content_type="application/json",
+        headers={"X-CSRFToken": csrf_token},
+    )
+    assert response.status_code == 400
+
+
+def test_admin_delete_location_with_nonexistent_id(test_app):
+    """Test admin delete location with nonexistent ID"""
+    csrf_token = get_csrf_token(test_app)
+    response = test_app.delete(
+        "/api/admin/locations/nonexistent-id",
+        headers={"X-CSRFToken": csrf_token},
+    )
+    # Should return 404 or 400 depending on implementation
+    assert response.status_code in [400, 404]
+
+
+def test_admin_put_report_with_invalid_json(test_app):
+    """Test admin put report with invalid JSON"""
+    csrf_token = get_csrf_token(test_app)
+    response = test_app.put(
+        "/api/admin/reports/test-id",
+        data="invalid json",
+        content_type="application/json",
+        headers={"X-CSRFToken": csrf_token},
+    )
+    assert response.status_code == 400
