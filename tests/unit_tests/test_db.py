@@ -17,8 +17,6 @@ from goodmap.db import (
     delete_report,
     delete_suggestion,
     extend_db_with_goodmap_queries,
-    get_categories,
-    get_category_data,
     get_data,
     get_location_from_raw_data,
     get_location_obligatory_fields,
@@ -1170,7 +1168,7 @@ def test_mongodb_db_get_categories(mock_client):
     mock_client.return_value.__getitem__.return_value = mock_db
     mock_db.config.find_one.return_value = {
         "_id": "map_config",
-        "categories": {"test-category": ["searchable", "unsearchable"]}
+        "categories": {"test-category": ["searchable", "unsearchable"]},
     }
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
@@ -1206,7 +1204,7 @@ def test_mongodb_db_get_categories_no_categories_field(mock_client):
 def test_get_categories():
     db = Json(data)
     extend_db_with_goodmap_queries(db, LocationBase)
-    categories = db.get_categories()
+    categories = json_db_get_categories(db)
     assert list(categories) == ["test-category"]
 
 
@@ -1356,7 +1354,7 @@ def test_mongodb_db_get_category_data_no_config(mock_client):
 def test_get_category_data():
     db = Json(data)
     extend_db_with_goodmap_queries(db, LocationBase)
-    category_data = db.get_category_data()
+    category_data = json_db_get_category_data(db)
     expected = {
         "categories": {"test-category": ["searchable", "unsearchable"]},
         "categories_help": ["Help text for categories"],
@@ -1387,8 +1385,7 @@ def test_mongodb_db_get_locations(mock_client):
     assert locations[1].position == (10, 10)
 
     mock_db.locations.find.assert_called_once_with(
-        {"test-category": {"$in": ["searchable"]}},
-        {"_id": 0, "uuid": 1, "position": 1}
+        {"test-category": {"$in": ["searchable"]}}, {"_id": 0, "uuid": 1, "position": 1}
     )
 
 
@@ -1405,10 +1402,7 @@ def test_mongodb_db_get_locations_empty_query(mock_client):
     locations = list(mongodb_db_get_locations(db, query, LocationBase))
 
     assert len(locations) == 0
-    mock_db.locations.find.assert_called_once_with(
-        {},
-        {"_id": 0, "uuid": 1, "position": 1}
-    )
+    mock_db.locations.find.assert_called_once_with({}, {"_id": 0, "uuid": 1, "position": 1})
 
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
@@ -1453,8 +1447,7 @@ def test_mongodb_db_get_reports(mock_client):
 
     assert len(reports) == 2
     mock_db.reports.find.assert_called_once_with(
-        {"status": {"$in": ["open"]}, "priority": {"$in": ["high"]}},
-        {"_id": 0}
+        {"status": {"$in": ["open"]}, "priority": {"$in": ["high"]}}, {"_id": 0}
     )
 
 
