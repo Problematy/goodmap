@@ -17,9 +17,13 @@ from goodmap.db import (
     delete_report,
     delete_suggestion,
     extend_db_with_goodmap_queries,
+    get_categories,
+    get_category_data,
     get_data,
     get_location_from_raw_data,
     get_location_obligatory_fields,
+    google_json_db_get_categories,
+    google_json_db_get_category_data,
     google_json_db_get_data,
     google_json_db_get_location_obligatory_fields,
     json_db_add_location,
@@ -28,6 +32,8 @@ from goodmap.db import (
     json_db_delete_location,
     json_db_delete_report,
     json_db_delete_suggestion,
+    json_db_get_categories,
+    json_db_get_category_data,
     json_db_get_data,
     json_db_get_location_obligatory_fields,
     json_db_get_report,
@@ -44,6 +50,8 @@ from goodmap.db import (
     json_file_db_delete_location,
     json_file_db_delete_report,
     json_file_db_delete_suggestion,
+    json_file_db_get_categories,
+    json_file_db_get_category_data,
     json_file_db_get_data,
     json_file_db_get_location_obligatory_fields,
     json_file_db_get_report,
@@ -54,15 +62,23 @@ from goodmap.db import (
     json_file_db_update_report,
     json_file_db_update_suggestion,
     mongodb_db_add_location,
+    mongodb_db_add_report,
     mongodb_db_add_suggestion,
     mongodb_db_delete_location,
+    mongodb_db_delete_report,
     mongodb_db_delete_suggestion,
+    mongodb_db_get_categories,
+    mongodb_db_get_category_data,
     mongodb_db_get_data,
     mongodb_db_get_location,
     mongodb_db_get_location_obligatory_fields,
+    mongodb_db_get_locations,
+    mongodb_db_get_report,
+    mongodb_db_get_reports,
     mongodb_db_get_suggestion,
     mongodb_db_get_suggestions,
     mongodb_db_update_location,
+    mongodb_db_update_report,
     mongodb_db_update_suggestion,
     update_location,
     update_report,
@@ -76,6 +92,8 @@ data = {
     ],
     "categories": {"test-category": ["searchable", "unsearchable"]},
     "location_obligatory_fields": [["name", "str"]],
+    "categories_help": ["Help text for categories"],
+    "categories_options_help": {"test-category": ["Help for test category"]},
 }
 data_json = json.dumps({"map": data})
 
@@ -1032,6 +1050,22 @@ def test_mongodb_db_get_suggestions(mock_client):
 
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_suggestions_no_status(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.suggestions.find.return_value = [
+        {"uuid": "s1", "status": "pending"},
+        {"uuid": "s2", "status": "done"},
+    ]
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    result = mongodb_db_get_suggestions(db, {})
+
+    mock_db.suggestions.find.assert_called_once_with({}, {"_id": 0})
+    assert result == [{"uuid": "s1", "status": "pending"}, {"uuid": "s2", "status": "done"}]
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_suggestion(mock_client):
     mock_db = mock.Mock()
     mock_client.return_value.__getitem__.return_value = mock_db
@@ -1100,3 +1134,421 @@ def test_mongodb_db_delete_suggestion_not_found(mock_client):
 
     with pytest.raises(ValueError, match="Suggestion with uuid nonexistent not found"):
         mongodb_db_delete_suggestion(db, "nonexistent")
+
+
+def test_json_db_get_categories():
+    db = Json(data)
+    extend_db_with_goodmap_queries(db, LocationBase)
+    categories = json_db_get_categories(db)
+    assert list(categories) == ["test-category"]
+
+
+def test_json_file_db_get_categories(tmp_path):
+    test_file = tmp_path / "test.json"
+    test_file.write_text(data_json)
+
+    db = JsonFile(str(test_file))
+    extend_db_with_goodmap_queries(db, LocationBase)
+    categories = json_file_db_get_categories(db)
+    assert list(categories) == ["test-category"]
+
+
+@mock.patch("platzky.db.google_json_db.Client")
+def test_google_json_db_get_categories(mock_cli):
+    mock_cli.return_value.bucket.return_value.blob.return_value.download_as_text.return_value = (
+        data_json
+    )
+    db = GoogleJsonDb("bucket", "blob")
+    extend_db_with_goodmap_queries(db, LocationBase)
+    categories = google_json_db_get_categories(db)
+    assert list(categories) == ["test-category"]
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_categories(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.config.find_one.return_value = {
+        "_id": "map_config",
+        "categories": {"test-category": ["searchable", "unsearchable"]}
+    }
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    extend_db_with_goodmap_queries(db, LocationBase)
+    categories = mongodb_db_get_categories(db)
+    assert categories == ["test-category"]
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_categories_no_config(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.config.find_one.return_value = None
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    extend_db_with_goodmap_queries(db, LocationBase)
+    categories = mongodb_db_get_categories(db)
+    assert categories == []
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_categories_no_categories_field(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.config.find_one.return_value = {"_id": "map_config"}
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    extend_db_with_goodmap_queries(db, LocationBase)
+    categories = mongodb_db_get_categories(db)
+    assert categories == []
+
+
+def test_get_categories():
+    db = Json(data)
+    extend_db_with_goodmap_queries(db, LocationBase)
+    categories = db.get_categories()
+    assert list(categories) == ["test-category"]
+
+
+def test_json_db_get_category_data():
+    db = Json(data)
+    extend_db_with_goodmap_queries(db, LocationBase)
+    category_data = json_db_get_category_data(db)
+    expected = {
+        "categories": {"test-category": ["searchable", "unsearchable"]},
+        "categories_help": ["Help text for categories"],
+        "categories_options_help": {"test-category": ["Help for test category"]},
+    }
+    assert category_data == expected
+
+
+def test_json_db_get_category_data_specific_category():
+    db = Json(data)
+    extend_db_with_goodmap_queries(db, LocationBase)
+    category_data = json_db_get_category_data(db, "test-category")
+    expected = {
+        "categories": {"test-category": ["searchable", "unsearchable"]},
+        "categories_help": ["Help text for categories"],
+        "categories_options_help": {"test-category": ["Help for test category"]},
+    }
+    assert category_data == expected
+
+
+def test_json_file_db_get_category_data(tmp_path):
+    test_file = tmp_path / "test.json"
+    test_file.write_text(data_json)
+
+    db = JsonFile(str(test_file))
+    extend_db_with_goodmap_queries(db, LocationBase)
+    category_data = json_file_db_get_category_data(db)
+    expected = {
+        "categories": {"test-category": ["searchable", "unsearchable"]},
+        "categories_help": ["Help text for categories"],
+        "categories_options_help": {"test-category": ["Help for test category"]},
+    }
+    assert category_data == expected
+
+
+def test_json_file_db_get_category_data_specific_category(tmp_path):
+    test_file = tmp_path / "test.json"
+    test_file.write_text(data_json)
+
+    db = JsonFile(str(test_file))
+    extend_db_with_goodmap_queries(db, LocationBase)
+    category_data = json_file_db_get_category_data(db, "test-category")
+    expected = {
+        "categories": {"test-category": ["searchable", "unsearchable"]},
+        "categories_help": ["Help text for categories"],
+        "categories_options_help": {"test-category": ["Help for test category"]},
+    }
+    assert category_data == expected
+
+
+@mock.patch("platzky.db.google_json_db.Client")
+def test_google_json_db_get_category_data(mock_cli):
+    mock_cli.return_value.bucket.return_value.blob.return_value.download_as_text.return_value = (
+        data_json
+    )
+    db = GoogleJsonDb("bucket", "blob")
+    extend_db_with_goodmap_queries(db, LocationBase)
+    category_data = google_json_db_get_category_data(db)
+    expected = {
+        "categories": {"test-category": ["searchable", "unsearchable"]},
+        "categories_help": ["Help text for categories"],
+        "categories_options_help": {"test-category": ["Help for test category"]},
+    }
+    assert category_data == expected
+
+
+@mock.patch("platzky.db.google_json_db.Client")
+def test_google_json_db_get_category_data_specific_category(mock_cli):
+    mock_cli.return_value.bucket.return_value.blob.return_value.download_as_text.return_value = (
+        data_json
+    )
+    db = GoogleJsonDb("bucket", "blob")
+    extend_db_with_goodmap_queries(db, LocationBase)
+    category_data = google_json_db_get_category_data(db, "test-category")
+    expected = {
+        "categories": {"test-category": ["searchable", "unsearchable"]},
+        "categories_help": ["Help text for categories"],
+        "categories_options_help": {"test-category": ["Help for test category"]},
+    }
+    assert category_data == expected
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_category_data(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.config.find_one.return_value = {
+        "_id": "map_config",
+        "categories": {"test-category": ["searchable", "unsearchable"]},
+        "categories_help": ["Help text for categories"],
+        "categories_options_help": {"test-category": ["Help for test category"]},
+    }
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    extend_db_with_goodmap_queries(db, LocationBase)
+    category_data = mongodb_db_get_category_data(db)
+    expected = {
+        "categories": {"test-category": ["searchable", "unsearchable"]},
+        "categories_help": ["Help text for categories"],
+        "categories_options_help": {"test-category": ["Help for test category"]},
+    }
+    assert category_data == expected
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_category_data_specific_category(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.config.find_one.return_value = {
+        "_id": "map_config",
+        "categories": {"test-category": ["searchable", "unsearchable"]},
+        "categories_help": ["Help text for categories"],
+        "categories_options_help": {"test-category": ["Help for test category"]},
+    }
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    extend_db_with_goodmap_queries(db, LocationBase)
+    category_data = mongodb_db_get_category_data(db, "test-category")
+    expected = {
+        "categories": {"test-category": ["searchable", "unsearchable"]},
+        "categories_help": ["Help text for categories"],
+        "categories_options_help": {"test-category": ["Help for test category"]},
+    }
+    assert category_data == expected
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_category_data_no_config(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.config.find_one.return_value = None
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    extend_db_with_goodmap_queries(db, LocationBase)
+    category_data = mongodb_db_get_category_data(db)
+    expected = {"categories": {}, "categories_help": [], "categories_options_help": {}}
+    assert category_data == expected
+
+
+def test_get_category_data():
+    db = Json(data)
+    extend_db_with_goodmap_queries(db, LocationBase)
+    category_data = db.get_category_data()
+    expected = {
+        "categories": {"test-category": ["searchable", "unsearchable"]},
+        "categories_help": ["Help text for categories"],
+        "categories_options_help": {"test-category": ["Help for test category"]},
+    }
+    assert category_data == expected
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_locations(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.locations.find.return_value = [
+        {"uuid": "1", "position": [50, 50]},
+        {"uuid": "2", "position": [10, 10]},
+    ]
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    extend_db_with_goodmap_queries(db, LocationBase)
+
+    query = {"test-category": ["searchable"]}
+    locations = list(mongodb_db_get_locations(db, query, LocationBase))
+
+    assert len(locations) == 2
+    assert locations[0].uuid == "1"
+    assert locations[0].position == (50, 50)
+    assert locations[1].uuid == "2"
+    assert locations[1].position == (10, 10)
+
+    mock_db.locations.find.assert_called_once_with(
+        {"test-category": {"$in": ["searchable"]}},
+        {"_id": 0, "uuid": 1, "position": 1}
+    )
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_locations_empty_query(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.locations.find.return_value = []
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    extend_db_with_goodmap_queries(db, LocationBase)
+
+    query = {"test-category": []}
+    locations = list(mongodb_db_get_locations(db, query, LocationBase))
+
+    assert len(locations) == 0
+    mock_db.locations.find.assert_called_once_with(
+        {},
+        {"_id": 0, "uuid": 1, "position": 1}
+    )
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_add_report(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.reports.find_one.return_value = None
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    report_data = {"uuid": "r1", "content": "test report"}
+    mongodb_db_add_report(db, report_data)
+
+    mock_db.reports.find_one.assert_called_once_with({"uuid": "r1"})
+    mock_db.reports.insert_one.assert_called_once_with(report_data)
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_add_report_already_exists(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.reports.find_one.return_value = {"uuid": "r1", "content": "existing"}
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    report_data = {"uuid": "r1", "content": "test report"}
+
+    with pytest.raises(ValueError, match="Report with uuid r1 already exists"):
+        mongodb_db_add_report(db, report_data)
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_reports(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.reports.find.return_value = [
+        {"uuid": "r1", "status": "open", "priority": "high"},
+        {"uuid": "r2", "status": "closed", "priority": "low"},
+    ]
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    query_params = {"status": ["open"], "priority": ["high"]}
+    reports = mongodb_db_get_reports(db, query_params)
+
+    assert len(reports) == 2
+    mock_db.reports.find.assert_called_once_with(
+        {"status": {"$in": ["open"]}, "priority": {"$in": ["high"]}},
+        {"_id": 0}
+    )
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_reports_empty_query(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.reports.find.return_value = []
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    query_params = {}
+    reports = mongodb_db_get_reports(db, query_params)
+
+    assert len(reports) == 0
+    mock_db.reports.find.assert_called_once_with({}, {"_id": 0})
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_report(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.reports.find_one.return_value = {"uuid": "r1", "content": "test"}
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    result = mongodb_db_get_report(db, "r1")
+
+    assert result == {"uuid": "r1", "content": "test"}
+    mock_db.reports.find_one.assert_called_once_with({"uuid": "r1"}, {"_id": 0})
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_update_report(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_result = mock.Mock()
+    mock_result.matched_count = 1
+    mock_db.reports.update_one.return_value = mock_result
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    mongodb_db_update_report(db, "r1", status="closed", priority="high")
+
+    mock_db.reports.update_one.assert_called_once_with(
+        {"uuid": "r1"}, {"$set": {"status": "closed", "priority": "high"}}
+    )
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_update_report_not_found(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_result = mock.Mock()
+    mock_result.matched_count = 0
+    mock_db.reports.update_one.return_value = mock_result
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+
+    with pytest.raises(ValueError, match="Report with uuid nonexistent not found"):
+        mongodb_db_update_report(db, "nonexistent", status="closed")
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_update_report_no_updates(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    mongodb_db_update_report(db, "r1")
+
+    mock_db.reports.update_one.assert_not_called()
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_delete_report(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_result = mock.Mock()
+    mock_result.deleted_count = 1
+    mock_db.reports.delete_one.return_value = mock_result
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    mongodb_db_delete_report(db, "r1")
+
+    mock_db.reports.delete_one.assert_called_once_with({"uuid": "r1"})
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_delete_report_not_found(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_result = mock.Mock()
+    mock_result.deleted_count = 0
+    mock_db.reports.delete_one.return_value = mock_result
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+
+    with pytest.raises(ValueError, match="Report with uuid nonexistent not found"):
+        mongodb_db_delete_report(db, "nonexistent")
