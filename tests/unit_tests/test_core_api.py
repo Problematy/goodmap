@@ -964,13 +964,15 @@ def test_paginate_results_sorting_with_missing_attribute():
                 self.sort_field = value
 
     items = [TestItem(2), TestItem(), TestItem(1)]  # Middle item has no sort_field
-    page_items, _ = paginate_results(items.copy(), {"sort_by": ["sort_field"], "sort_order": ["asc"]})
+    page_items, _ = paginate_results(
+        items.copy(), {"sort_by": ["sort_field"], "sort_order": ["asc"]}
+    )
     # Items with None values have key (False, None) and come first when sorting ascending
     # Items with values have key (True, value) and come after
     # So order should be: items without values first, then items with values (sorted by value)
-    assert not hasattr(page_items[0], 'sort_field')  # None value comes first
-    assert hasattr(page_items[1], 'sort_field') and page_items[1].sort_field == 1
-    assert hasattr(page_items[2], 'sort_field') and page_items[2].sort_field == 2
+    assert not hasattr(page_items[0], "sort_field")  # None value comes first
+    assert hasattr(page_items[1], "sort_field") and page_items[1].sort_field == 1
+    assert hasattr(page_items[2], "sort_field") and page_items[2].sort_field == 2
 
 
 @mock.patch("goodmap.core_api.gettext", fake_translation)
@@ -1036,7 +1038,7 @@ def test_admin_post_location_with_database_exception(test_app):
         "type_of_place": "Test",
         "test_category": ["test"],
         "position": [0, 0],
-        "uuid": "duplicate-uuid"  # This might cause conflicts
+        "uuid": "duplicate-uuid",  # This might cause conflicts
     }
 
     response = test_app.post(
@@ -1058,7 +1060,7 @@ def test_admin_put_location_with_database_exception(test_app):
         "name": "Updated",
         "type_of_place": "Updated",
         "test_category": ["test"],
-        "position": [0, 0]
+        "position": [0, 0],
     }
 
     response = test_app.put(
@@ -1093,7 +1095,7 @@ def test_admin_suggestion_already_processed_check(test_app):
         "name": "Test Suggestion",
         "type_of_place": "test",
         "test_category": ["test"],
-        "position": [50, 50]
+        "position": [50, 50],
     }
 
     suggest_response = test_app.post(
@@ -1166,6 +1168,7 @@ def test_admin_report_value_error_handling(test_app):
 def test_suggest_new_location_notification_exception():
     """Test exception handling during notification in suggest location (lines 139-140)"""
     from unittest.mock import MagicMock
+
     from goodmap.core_api import core_pages
     from goodmap.data_models.location import create_location_model
 
@@ -1175,7 +1178,9 @@ def test_suggest_new_location_notification_exception():
     mock_csrf = MagicMock(return_value="test-token")
 
     languages = {"en": {"name": "English", "flag": "uk", "country": "GB"}}
-    location_model = create_location_model([("name", str), ("position", list), ("test_category", list), ("type_of_place", str)])
+    location_model = create_location_model(
+        [("name", str), ("position", list), ("test_category", list), ("type_of_place", str)]
+    )
 
     # Create the blueprint with mocked dependencies
     blueprint = core_pages(
@@ -1184,29 +1189,34 @@ def test_suggest_new_location_notification_exception():
         notifier_function=mock_notifier,
         csrf_generator=mock_csrf,
         location_model=location_model,
-        feature_flags={}
+        feature_flags={},
     )
 
     # Create test app
     from flask import Flask
+
     app = Flask(__name__)
     app.register_blueprint(blueprint)
-    app.config['WTF_CSRF_ENABLED'] = False  # Disable CSRF for testing
+    app.config["WTF_CSRF_ENABLED"] = False  # Disable CSRF for testing
 
     with app.test_client() as client:
         response = client.post(
             "/api/suggest-new-point",
-            data=json.dumps({
-                "name": "Test",
-                "type_of_place": "test",
-                "test_category": ["test"],
-                "position": [50, 50]
-            }),
-            content_type="application/json"
+            data=json.dumps(
+                {
+                    "name": "Test",
+                    "type_of_place": "test",
+                    "test_category": ["test"],
+                    "position": [50, 50],
+                }
+            ),
+            content_type="application/json",
         )
         # Should return 400 due to notification exception
         assert response.status_code == 400
-        assert "Error sending notification" in response.json["message"]
+        response_data = response.get_json()
+        assert response_data is not None
+        assert "Error sending notification" in response_data["message"]
 
 
 @mock.patch("goodmap.core_api.gettext", fake_translation)
@@ -1214,6 +1224,7 @@ def test_suggest_new_location_notification_exception():
 def test_report_location_notification_exception():
     """Test exception handling during notification in report location (lines 166-168)"""
     from unittest.mock import MagicMock
+
     from goodmap.core_api import core_pages
     from goodmap.data_models.location import create_location_model
 
@@ -1223,7 +1234,9 @@ def test_report_location_notification_exception():
     mock_csrf = MagicMock(return_value="test-token")
 
     languages = {"en": {"name": "English", "flag": "uk", "country": "GB"}}
-    location_model = create_location_model([("name", str), ("position", list), ("test_category", list), ("type_of_place", str)])
+    location_model = create_location_model(
+        [("name", str), ("position", list), ("test_category", list), ("type_of_place", str)]
+    )
 
     # Create the blueprint with mocked dependencies
     blueprint = core_pages(
@@ -1232,32 +1245,36 @@ def test_report_location_notification_exception():
         notifier_function=mock_notifier,
         csrf_generator=mock_csrf,
         location_model=location_model,
-        feature_flags={}
+        feature_flags={},
     )
 
     # Create test app
     from flask import Flask
+
     app = Flask(__name__)
     app.register_blueprint(blueprint)
-    app.config['WTF_CSRF_ENABLED'] = False  # Disable CSRF for testing
+    app.config["WTF_CSRF_ENABLED"] = False  # Disable CSRF for testing
 
     with app.test_client() as client:
         response = client.post(
             "/api/report-location",
-            data=json.dumps({
-                "id": "test-location",
-                "description": "Test description"
-            }),
-            content_type="application/json"
+            data=json.dumps({"id": "test-location", "description": "Test description"}),
+            content_type="application/json",
         )
         # Should return 400 due to notification exception
         assert response.status_code == 400
-        assert "Error sending notification" in response.json["message"]
+        response_data = response.get_json()
+        assert response_data is not None
+        assert "Error sending notification" in response_data["message"]
 
 
 def test_admin_location_database_exceptions():
-    """Test database exception handling in admin location endpoints (lines 292-293, 309-310, 321-322)"""
+    """Test database exception handling in admin location endpoints.
+
+    Tests lines 292-293, 309-310, 321-322
+    """
     from unittest.mock import MagicMock
+
     from goodmap.core_api import core_pages
     from goodmap.data_models.location import create_location_model
 
@@ -1271,7 +1288,9 @@ def test_admin_location_database_exceptions():
     mock_csrf = MagicMock(return_value="test-token")
 
     languages = {"en": {"name": "English", "flag": "uk", "country": "GB"}}
-    location_model = create_location_model([("name", str), ("position", list), ("test_category", list), ("type_of_place", str)])
+    location_model = create_location_model(
+        [("name", str), ("position", list), ("test_category", list), ("type_of_place", str)]
+    )
 
     # Create the blueprint with mocked dependencies
     blueprint = core_pages(
@@ -1280,53 +1299,65 @@ def test_admin_location_database_exceptions():
         notifier_function=mock_notifier,
         csrf_generator=mock_csrf,
         location_model=location_model,
-        feature_flags={}
+        feature_flags={},
     )
 
     # Create test app
     from flask import Flask
+
     app = Flask(__name__)
     app.register_blueprint(blueprint)
-    app.config['WTF_CSRF_ENABLED'] = False  # Disable CSRF for testing
+    app.config["WTF_CSRF_ENABLED"] = False  # Disable CSRF for testing
 
     with app.test_client() as client:
         # Test POST exception (lines 292-293)
         response = client.post(
             "/api/admin/locations",
-            data=json.dumps({
-                "name": "Test",
-                "type_of_place": "test",
-                "test_category": ["test"],
-                "position": [50, 50]
-            }),
-            content_type="application/json"
+            data=json.dumps(
+                {
+                    "name": "Test",
+                    "type_of_place": "test",
+                    "test_category": ["test"],
+                    "position": [50, 50],
+                }
+            ),
+            content_type="application/json",
         )
         assert response.status_code == 400
-        assert "Error creating location" in response.json["message"]
+        response_data = response.get_json()
+        assert response_data is not None
+        assert "Error creating location" in response_data["message"]
 
         # Test PUT exception (lines 309-310)
         response = client.put(
             "/api/admin/locations/test-id",
-            data=json.dumps({
-                "name": "Test",
-                "type_of_place": "test",
-                "test_category": ["test"],
-                "position": [50, 50]
-            }),
-            content_type="application/json"
+            data=json.dumps(
+                {
+                    "name": "Test",
+                    "type_of_place": "test",
+                    "test_category": ["test"],
+                    "position": [50, 50],
+                }
+            ),
+            content_type="application/json",
         )
         assert response.status_code == 400
-        assert "Error updating location" in response.json["message"]
+        response_data = response.get_json()
+        assert response_data is not None
+        assert "Error updating location" in response_data["message"]
 
         # Test DELETE exception (lines 321-322)
         response = client.delete("/api/admin/locations/test-id")
         assert response.status_code == 400
-        assert "Error deleting location" in response.json["message"]
+        response_data = response.get_json()
+        assert response_data is not None
+        assert "Error deleting location" in response_data["message"]
 
 
 def test_admin_suggestion_database_exceptions():
     """Test database exception handling in admin suggestion endpoints (lines 357-358)"""
     from unittest.mock import MagicMock
+
     from goodmap.core_api import core_pages
     from goodmap.data_models.location import create_location_model
 
@@ -1340,7 +1371,9 @@ def test_admin_suggestion_database_exceptions():
     mock_csrf = MagicMock(return_value="test-token")
 
     languages = {"en": {"name": "English", "flag": "uk", "country": "GB"}}
-    location_model = create_location_model([("name", str), ("position", list), ("test_category", list), ("type_of_place", str)])
+    location_model = create_location_model(
+        [("name", str), ("position", list), ("test_category", list), ("type_of_place", str)]
+    )
 
     # Create the blueprint with mocked dependencies
     blueprint = core_pages(
@@ -1349,20 +1382,21 @@ def test_admin_suggestion_database_exceptions():
         notifier_function=mock_notifier,
         csrf_generator=mock_csrf,
         location_model=location_model,
-        feature_flags={}
+        feature_flags={},
     )
 
     # Create test app
     from flask import Flask
+
     app = Flask(__name__)
     app.register_blueprint(blueprint)
-    app.config['WTF_CSRF_ENABLED'] = False  # Disable CSRF for testing
+    app.config["WTF_CSRF_ENABLED"] = False  # Disable CSRF for testing
 
     with app.test_client() as client:
         response = client.put(
             "/api/admin/suggestions/test-id",
             data=json.dumps({"status": "accepted"}),
-            content_type="application/json"
+            content_type="application/json",
         )
         assert response.status_code == 400
 
@@ -1370,6 +1404,7 @@ def test_admin_suggestion_database_exceptions():
 def test_admin_report_database_exceptions():
     """Test database exception handling in admin report endpoints (lines 394-395)"""
     from unittest.mock import MagicMock
+
     from goodmap.core_api import core_pages
     from goodmap.data_models.location import create_location_model
 
@@ -1383,7 +1418,9 @@ def test_admin_report_database_exceptions():
     mock_csrf = MagicMock(return_value="test-token")
 
     languages = {"en": {"name": "English", "flag": "uk", "country": "GB"}}
-    location_model = create_location_model([("name", str), ("position", list), ("test_category", list), ("type_of_place", str)])
+    location_model = create_location_model(
+        [("name", str), ("position", list), ("test_category", list), ("type_of_place", str)]
+    )
 
     # Create the blueprint with mocked dependencies
     blueprint = core_pages(
@@ -1392,19 +1429,20 @@ def test_admin_report_database_exceptions():
         notifier_function=mock_notifier,
         csrf_generator=mock_csrf,
         location_model=location_model,
-        feature_flags={}
+        feature_flags={},
     )
 
     # Create test app
     from flask import Flask
+
     app = Flask(__name__)
     app.register_blueprint(blueprint)
-    app.config['WTF_CSRF_ENABLED'] = False  # Disable CSRF for testing
+    app.config["WTF_CSRF_ENABLED"] = False  # Disable CSRF for testing
 
     with app.test_client() as client:
         response = client.put(
             "/api/admin/reports/test-id",
             data=json.dumps({"status": "resolved"}),
-            content_type="application/json"
+            content_type="application/json",
         )
         assert response.status_code == 400
