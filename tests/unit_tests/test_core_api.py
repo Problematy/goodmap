@@ -1436,58 +1436,35 @@ def test_paginate_results_none_sort_by():
 
 @mock.patch("goodmap.core_api.gettext", fake_translation)
 @mock.patch("flask_babel.gettext", fake_translation)
-def test_admin_suggestion_processing_coverage():
+def test_admin_suggestion_processing_coverage(test_app):
     """Test suggestion processing success and already processed scenarios (lines 352, 359)"""
-    from unittest.mock import MagicMock
-
-    from flask import Flask
-
-    from goodmap.core_api import core_pages
-    from goodmap.data_models.location import create_location_model
-
-    mock_database = MagicMock()
-    # First suggestion call - already processed
-    # Second suggestion call - successful processing
-    mock_database.get_suggestion.side_effect = [
-        {"status": "accepted", "name": "test"},  # Already processed
-        {"status": "pending", "name": "test2"},  # Ready to process
-        {"status": "accepted", "name": "test2"},  # Result after processing
+    # Add real suggestions to the database instead of mocking
+    test_app.application.db.data["suggestions"] = [
+        {"uuid": "test-id", "status": "accepted", "name": "test"},  # Already processed
+        {"uuid": "test-id2", "status": "pending", "name": "test2"},  # Ready to process
     ]
-    mock_database.update_suggestion.return_value = None
 
-    location_model = create_location_model(
-        [("name", str), ("position", list), ("test_category", list), ("type_of_place", str)]
+    csrf_token = get_csrf_token(test_app)
+
+    # Test suggestion already processed (line 352)
+    response = test_app.put(
+        "/api/admin/suggestions/test-id",
+        data=json.dumps({"status": "rejected"}),
+        content_type="application/json",
+        headers={"X-CSRFToken": csrf_token},
     )
+    assert response.status_code == 400
+    data = response.get_json()
+    assert "Suggestion already processed" in data["message"]
 
-    blueprint = core_pages(
-        database=mock_database,
-        languages={"en": {"name": "English", "flag": "uk", "country": "GB"}},
-        notifier_function=MagicMock(),
-        csrf_generator=MagicMock(return_value="test-token"),
-        location_model=location_model,
-        feature_flags={},
+    # Test successful suggestion processing (line 359)
+    response = test_app.put(
+        "/api/admin/suggestions/test-id2",
+        data=json.dumps({"status": "rejected"}),
+        content_type="application/json",
+        headers={"X-CSRFToken": csrf_token},
     )
-
-    app = Flask(__name__)
-    app.register_blueprint(blueprint)
-
-    with app.test_client() as client:
-        # Test suggestion already processed (line 352)
-        response = client.put(
-            "/api/admin/suggestions/test-id",
-            data=json.dumps({"status": "rejected"}),
-            content_type="application/json",
-            headers={"X-CSRFToken": "test-token"},
-        )
-        assert response.status_code == 400
-        data = response.get_json()
-        assert "Suggestion already processed" in data["message"]
-
-        # Test successful suggestion processing (line 359)
-        response = client.put(
-            "/api/admin/suggestions/test-id2",
-            data=json.dumps({"status": "rejected"}),
-            content_type="application/json",
-            headers={"X-CSRFToken": "test-token"},
-        )
-        assert response.status_code == 200
+    assert response.status_code == 200
+    # Verify the suggestion was actually updated
+    updated_suggestion = test_app.application.db.get_suggestion("test-id2")
+    assert updated_suggestion["status"] == "rejected"
