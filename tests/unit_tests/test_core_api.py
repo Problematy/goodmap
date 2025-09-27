@@ -1199,14 +1199,18 @@ def test_suggest_new_location_notification_exception(test_app):
 
 @mock.patch("goodmap.core_api.gettext", fake_translation)
 @mock.patch("flask_babel.gettext", fake_translation)
-def test_report_location_notification_exception(test_app):
-    """Test exception handling during notification in report location (lines 166-168)"""
+ @mock.patch("goodmap.core_api.gettext", fake_translation)
+ @mock.patch("flask_babel.gettext", fake_translation)
+ def test_report_location_notification_exception(test_app):
+     """Test exception handling during notification in report location (lines 166-168)"""
+    csrf_token = get_csrf_token(test_app)
     response = test_app.post(
-        "/api/report-location",
-        data=json.dumps({"id": "nonexistent-location", "description": "Test description"}),
-        content_type="application/json",
-    )
-    assert response.status_code == 400
+         "/api/report-location",
+         data=json.dumps({"id": "nonexistent-location", "description": "Test description"}),
+         content_type="application/json",
+        headers={"X-CSRFToken": csrf_token},
+     )
+     assert response.status_code == 400
 
 
 def test_admin_post_location_database_exception(test_app):
