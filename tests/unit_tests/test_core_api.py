@@ -768,6 +768,7 @@ def test_paginate_results_sorting_dict_asc():
 
 # Tests for missing coverage areas
 
+
 def test_paginate_results_sorting_no_sort_by():
     """Test get_sort_key returning None when no sort_by is provided"""
     items = [{"x": 2}, {"x": 1}, {"x": 3}]
@@ -777,6 +778,7 @@ def test_paginate_results_sorting_no_sort_by():
 
 def test_paginate_results_sorting_non_dict_item():
     """Test get_sort_key with non-dict items"""
+
     class MockItem:
         def __init__(self, x):
             self.x = x
@@ -876,9 +878,7 @@ def test_category_data_endpoint_with_categories_options_help():
     config_data = get_test_config_data()
     config_data["FEATURE_FLAGS"] = {"CATEGORIES_HELP": True}
     # Add categories_options_help to test data
-    config_data["DB"]["DATA"]["categories_options_help"] = {
-        "test-category": ["help1", "help2"]
-    }
+    config_data["DB"]["DATA"]["categories_options_help"] = {"test-category": ["help1", "help2"]}
     config = Config.model_validate(config_data)
     test_app = create_app_from_config(config)
 
@@ -889,7 +889,9 @@ def test_category_data_endpoint_with_categories_options_help():
         assert "categories_options_help" in data
         assert len(data["categories_options_help"]) == 2
         # Verify translation is applied
-        assert data["categories_options_help"][0] == {"help1": "categories_options_help_help1-translated"}
+        assert data["categories_options_help"][0] == {
+            "help1": "categories_options_help_help1-translated"
+        }
 
 
 # Test admin endpoints with invalid data to trigger error paths
