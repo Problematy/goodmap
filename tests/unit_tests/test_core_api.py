@@ -1386,7 +1386,9 @@ def test_admin_database_exceptions_coverage():
         assert response.status_code == 400
 
         # Test DELETE location exception (lines 321-322)
-        response = client.delete("/api/admin/locations/test-id", headers={"X-CSRFToken": "test-token"})
+        response = client.delete(
+            "/api/admin/locations/test-id", headers={"X-CSRFToken": "test-token"}
+        )
         assert response.status_code == 400
 
         # Test suggestion update exception (lines 351-359)
