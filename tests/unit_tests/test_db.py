@@ -1035,8 +1035,7 @@ def test_mongodb_db_get_suggestions(mock_client):
     mock_db = mock.Mock()
     mock_client.return_value.__getitem__.return_value = mock_db
     mock_db.suggestions.find.return_value = [
-        {"uuid": "s1", "status": "pending"},
-        {"uuid": "s2", "status": "done"},
+        {"uuid": "s1", "status": "pending"}
     ]
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
@@ -1044,8 +1043,7 @@ def test_mongodb_db_get_suggestions(mock_client):
 
     expected_query = {"status": {"$in": ["pending"]}}
     mock_db.suggestions.find.assert_called_once_with(expected_query, {"_id": 0})
-    assert result == [{"uuid": "s1", "status": "pending"}, {"uuid": "s2", "status": "done"}]
-
+    assert result == [{"uuid": "s1", "status": "pending"}]
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_suggestions_no_status(mock_client):
