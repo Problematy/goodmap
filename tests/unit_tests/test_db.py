@@ -81,6 +81,13 @@ from goodmap.db import (
     update_location,
     update_report,
     update_suggestion,
+    google_json_db_get_locations_paginated,
+    json_file_db_get_locations_paginated,
+    mongodb_db_get_locations_paginated,
+    json_file_db_get_suggestions_paginated,
+    mongodb_db_get_suggestions_paginated,
+    json_file_db_get_reports_paginated,
+    mongodb_db_get_reports_paginated,
 )
 
 data = {
@@ -1542,3 +1549,152 @@ def test_mongodb_db_delete_report_not_found(mock_client):
 
     with pytest.raises(ValueError, match="Report with uuid nonexistent not found"):
         mongodb_db_delete_report(db, "nonexistent")
+
+
+def test_json_file_db_get_locations_paginated(tmp_path):
+    test_file = tmp_path / "test.json"
+    test_file.write_text(data_json)
+
+    db = JsonFile(str(test_file))
+    Location = create_location_model([])
+
+    query = {"page": ["1"], "per_page": ["2"], "sort_by": ["name"], "sort_order": ["asc"]}
+    result = json_file_db_get_locations_paginated(db, query, Location)
+
+    assert "items" in result
+    assert "pagination" in result
+    assert len(result["items"]) <= 2
+    assert result["pagination"]["page"] == 1
+    assert result["pagination"]["per_page"] == 2
+
+
+@mock.patch("platzky.db.google_json_db.Client")
+def test_google_json_db_get_locations_paginated(mock_client):
+    mock_client.return_value.bucket.return_value.blob.return_value.download_as_text.return_value = (
+        data_json
+    )
+    db = GoogleJsonDb("bucket", "file.json")
+    Location = create_location_model([])
+
+    query = {"page": ["1"], "per_page": ["2"]}
+    result = google_json_db_get_locations_paginated(db, query, Location)
+
+    assert "items" in result
+    assert "pagination" in result
+    assert result["pagination"]["page"] == 1
+    assert result["pagination"]["per_page"] == 2
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_locations_paginated(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.locations.count_documents.return_value = 5
+    mock_db.locations.aggregate.return_value = [
+        {"uuid": "1", "name": "test1", "position": [50, 50]},
+        {"uuid": "2", "name": "test2", "position": [10, 10]}
+    ]
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    Location = create_location_model([])
+
+    query = {"page": ["1"], "per_page": ["2"], "sort_by": ["name"], "sort_order": ["desc"]}
+    result = mongodb_db_get_locations_paginated(db, query, Location)
+
+    assert "items" in result
+    assert "pagination" in result
+    assert len(result["items"]) == 2
+    assert result["pagination"]["total"] == 5
+    assert result["pagination"]["page"] == 1
+    assert result["pagination"]["per_page"] == 2
+
+
+def test_json_file_db_get_suggestions_paginated(tmp_path):
+    test_file = tmp_path / "test.json"
+    test_data = {
+        "map": {
+            "suggestions": [
+                {"uuid": "s1", "status": "pending", "created_at": "2024-01-01"},
+                {"uuid": "s2", "status": "done", "created_at": "2024-01-02"},
+                {"uuid": "s3", "status": "pending", "created_at": "2024-01-03"}
+            ]
+        }
+    }
+    test_file.write_text(json.dumps(test_data))
+
+    db = JsonFile(str(test_file))
+
+    query = {"page": ["1"], "per_page": ["2"], "status": ["pending"], "sort_by": ["created_at"], "sort_order": ["desc"]}
+    result = json_file_db_get_suggestions_paginated(db, query)
+
+    assert "items" in result
+    assert "pagination" in result
+    assert len(result["items"]) <= 2
+    assert all(item["status"] == "pending" for item in result["items"])
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_suggestions_paginated(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.suggestions.count_documents.return_value = 3
+    mock_db.suggestions.aggregate.return_value = [
+        {"uuid": "s1", "status": "pending"},
+        {"uuid": "s2", "status": "pending"}
+    ]
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+
+    query = {"page": ["1"], "per_page": ["2"], "status": ["pending"]}
+    result = mongodb_db_get_suggestions_paginated(db, query)
+
+    assert "items" in result
+    assert "pagination" in result
+    assert len(result["items"]) == 2
+    assert result["pagination"]["total"] == 3
+
+
+def test_json_file_db_get_reports_paginated(tmp_path):
+    test_file = tmp_path / "test.json"
+    test_data = {
+        "map": {
+            "reports": [
+                {"uuid": "r1", "status": "new", "priority": "high", "created_at": "2024-01-01"},
+                {"uuid": "r2", "status": "open", "priority": "low", "created_at": "2024-01-02"},
+                {"uuid": "r3", "status": "new", "priority": "critical", "created_at": "2024-01-03"}
+            ]
+        }
+    }
+    test_file.write_text(json.dumps(test_data))
+
+    db = JsonFile(str(test_file))
+
+    query = {"page": ["1"], "per_page": ["2"], "status": ["new"], "priority": ["high", "critical"], "sort_by": ["created_at"], "sort_order": ["asc"]}
+    result = json_file_db_get_reports_paginated(db, query)
+
+    assert "items" in result
+    assert "pagination" in result
+    assert len(result["items"]) <= 2
+    assert all(item["status"] == "new" for item in result["items"])
+    assert all(item["priority"] in ["high", "critical"] for item in result["items"])
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_reports_paginated(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.reports.count_documents.return_value = 4
+    mock_db.reports.aggregate.return_value = [
+        {"uuid": "r1", "status": "new", "priority": "high"},
+        {"uuid": "r2", "status": "new", "priority": "critical"}
+    ]
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+
+    query = {"page": ["1"], "per_page": ["2"], "status": ["new"], "priority": ["high", "critical"]}
+    result = mongodb_db_get_reports_paginated(db, query)
+
+    assert "items" in result
+    assert "pagination" in result
+    assert len(result["items"]) == 2
+    assert result["pagination"]["total"] == 4
