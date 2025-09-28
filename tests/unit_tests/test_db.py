@@ -2179,3 +2179,56 @@ def test_remaining_missing_coverage_lines():
         query = {"per_page": ["all"], "page": ["1"]}
         result = json_file_db_get_reports_paginated(db, query)
         assert len(result["items"]) == 1  # This hits line 1058: items = reports
+
+
+def test_pagination_helper_error_handling():
+    """Test error handling in PaginationHelper.create_paginated_response"""
+    from goodmap.db import PaginationHelper
+
+    # Test invalid page parameter (lines 150-151)
+    query = {"page": ["invalid"]}
+    result = PaginationHelper.create_paginated_response([], query)
+    assert result["pagination"]["page"] == 1  # Should default to 1
+
+    # Test invalid per_page parameter (lines 159-160)
+    query = {"per_page": ["invalid"]}
+    result = PaginationHelper.create_paginated_response([], query)
+    assert result["pagination"]["per_page"] == 20  # Should default to 20
+
+    # Test custom filter extraction (lines 176-177)
+    def custom_extract(query):
+        return {"custom_field": query.get("custom", ["default"])[0]}
+
+    query = {"custom": ["test_value"]}
+    items = [{"name": "test", "custom_field": "test_value"}]
+    result = PaginationHelper.create_paginated_response(items, query, custom_extract)
+    assert len(result["items"]) == 1  # Custom filter should pass the item
+
+
+def test_error_helper_methods():
+    """Test ErrorHelper methods for full coverage"""
+    from goodmap.db import ErrorHelper
+    import pytest
+
+    # Test raise_not_found_error (line 240)
+    with pytest.raises(ValueError, match="location with uuid test-uuid not found"):
+        ErrorHelper.raise_not_found_error("location", "test-uuid")
+
+    # Test find_item_by_uuid with dict items (lines 260-271)
+    items = [{"uuid": "uuid1", "name": "item1"}, {"uuid": "uuid2", "name": "item2"}]
+    found_item = ErrorHelper.find_item_by_uuid(items, "uuid1", "location")
+    assert found_item["name"] == "item1"
+
+    # Test find_item_by_uuid when item not found (lines 260-271)
+    with pytest.raises(ValueError, match="location with uuid nonexistent not found"):
+        ErrorHelper.find_item_by_uuid(items, "nonexistent", "location")
+
+    # Test find_item_by_uuid with object items (lines 260-271)
+    class TestItem:
+        def __init__(self, uuid, name):
+            self.uuid = uuid
+            self.name = name
+
+    obj_items = [TestItem("uuid1", "item1"), TestItem("uuid2", "item2")]
+    found_obj = ErrorHelper.find_item_by_uuid(obj_items, "uuid1", "location")
+    assert found_obj.name == "item1"
