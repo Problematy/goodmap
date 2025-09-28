@@ -22,74 +22,6 @@ def get_or_none(data, *keys):
     return data
 
 
-def paginate_results(items, raw_params, sort_by_default=None):
-    """
-    Apply pagination and sorting to a list of items.
-
-    Args:
-        items: The list of items to paginate
-        raw_params: The query parameters dictionary
-
-    Returns:
-        Tuple of (paginated_items, pagination_metadata)
-    """
-    # Extract pagination parameters
-    try:
-        page = int(raw_params.pop("page", ["1"])[0])
-    except ValueError:
-        page = 1
-
-    per_page_raw = raw_params.pop("per_page", [None])[0]
-    if per_page_raw is None:
-        per_page = 20
-    elif per_page_raw == "all":
-        per_page = None
-    else:
-        try:
-            per_page = max(1, int(per_page_raw))
-        except ValueError:
-            per_page = 20
-
-    sort_by = raw_params.pop("sort_by", [None])[0] or sort_by_default
-    sort_order = raw_params.pop("sort_order", ["asc"])[0].lower()
-
-    def get_sort_key(item):
-        if not sort_by:
-            return None
-
-        value = None
-        if isinstance(item, dict):
-            value = item.get(sort_by)
-        else:
-            value = getattr(item, sort_by, None)
-
-        return (value is not None, value)
-
-    if sort_by:
-        reverse = sort_order == "desc"
-        items.sort(key=get_sort_key, reverse=reverse)
-
-    # Apply pagination
-    total = len(items)
-    if per_page:
-        start = (page - 1) * per_page
-        end = start + per_page
-        page_items = items[start:end]
-        total_pages = (total + per_page - 1) // per_page
-    else:
-        page_items = items
-        total_pages = 1
-        page = 1
-        per_page = total
-
-    return page_items, {
-        "total": total,
-        "page": page,
-        "per_page": per_page,
-        "total_pages": total_pages,
-    }
-
-
 def core_pages(
     database,
     languages: LanguagesMapping,
@@ -207,13 +139,14 @@ def core_pages(
     class Categories(Resource):
         def get(self):
             """Shows all available categories"""
-            all_data = database.get_data()
-            categories = make_tuple_translation(all_data["categories"].keys())
+            raw_categories = database.get_categories()
+            categories = make_tuple_translation(raw_categories)
 
             if not feature_flags.get("CATEGORIES_HELP", False):
                 return jsonify(categories)
             else:
-                categories_help = all_data["categories_help"]
+                category_data = database.get_category_data()
+                categories_help = category_data["categories_help"]
                 proper_categories_help = []
                 if categories_help is not None:
                     for option in categories_help:
@@ -233,11 +166,11 @@ def core_pages(
     class CategoryTypes(Resource):
         def get(self, category_type):
             """Shows all available types in category"""
-            all_data = database.get_data()
-            local_data = make_tuple_translation(all_data["categories"][category_type])
+            category_data = database.get_category_data(category_type)
+            local_data = make_tuple_translation(category_data["categories"][category_type])
 
             categories_options_help = get_or_none(
-                all_data, "categories_options_help", category_type
+                category_data, "categories_options_help", category_type
             )
             proper_categories_options_help = []
             if categories_options_help is not None:
@@ -268,14 +201,11 @@ def core_pages(
             Shows full list of locations, with optional server-side pagination, sorting,
             and filtering.
             """
-            # Raw query params from request
-            raw_params = request.args.to_dict(flat=False)
-            all_locations = database.get_locations(raw_params)
-            page_items, pagination = paginate_results(
-                all_locations, raw_params, sort_by_default="name"
-            )
-            items = [x.model_dump() for x in page_items]
-            return jsonify({"items": items, **pagination})
+            query_params = request.args.to_dict(flat=False)
+            if "sort_by" not in query_params:
+                query_params["sort_by"] = ["name"]
+            result = database.get_locations_paginated(query_params)
+            return jsonify(result)
 
         def post(self):
             """
@@ -328,10 +258,9 @@ def core_pages(
             List location suggestions, with optional server-side pagination, sorting,
             and filtering by status.
             """
-            raw_params = request.args.to_dict(flat=False)
-            suggestions = database.get_suggestions(raw_params)
-            page_items, pagination = paginate_results(suggestions, raw_params)
-            return jsonify({"items": page_items, **pagination})
+            query_params = request.args.to_dict(flat=False)
+            result = database.get_suggestions_paginated(query_params)
+            return jsonify(result)
 
     @core_api.route("/admin/suggestions/<suggestion_id>")
     class AdminManageSuggestion(Resource):
@@ -364,10 +293,9 @@ def core_pages(
             List location reports, with optional server-side pagination, sorting,
             and filtering by status/priority.
             """
-            raw_params = request.args.to_dict(flat=False)
-            reports = database.get_reports(raw_params)
-            page_items, pagination = paginate_results(reports, raw_params)
-            return jsonify({"items": page_items, **pagination})
+            query_params = request.args.to_dict(flat=False)
+            result = database.get_reports_paginated(query_params)
+            return jsonify(result)
 
     @core_api.route("/admin/reports/<report_id>")
     class AdminManageReport(Resource):

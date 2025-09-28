@@ -1,31 +1,56 @@
-name: Release to pypi
+name: Semantic Release
 
 on:
-  release:
-    types: [published]
-
+  push:
+    branches:
+      - main
 
 permissions:
-  contents: read
-  id-token: write
+  contents: write
+  issues: write
+  pull-requests: write
 
 jobs:
-  release:
+  tests:
+    uses: ./.github/workflows/tests.yml
+
+  publish:
     runs-on: ubuntu-latest
+    needs: tests
+    environment:
+      name: pypi
+      url: https://pypi.org/p/platzky
     steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: 'true'  # TODO remove this line after the submodules are removed
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.10"
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install poetry
-        poetry build
-    - name: Publish package
-      uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        verbose: true
+      - name: Generate bot app token
+        id: generate_token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.MY_RELEASER_ID }}
+          private-key: ${{ secrets.MY_RELEASER_PRIVATE_KEY }}
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ steps.generate_token.outputs.token }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry install
+
+      - name: Run semantic release
+        env:
+          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+        run: |
+          git config --global user.name "semantic-release"
+          git config --global user.email "semantic-release@users.noreply.github.com"
+          poetry run semantic-release version
+          poetry run semantic-release publish
