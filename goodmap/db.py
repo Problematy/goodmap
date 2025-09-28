@@ -81,7 +81,7 @@ class PaginationHelper:
         if sort_by:
             reverse = sort_order == "desc"
             items.sort(
-                key=lambda item: PaginationHelper.get_sort_key(item, sort_by), reverse=reverse
+                key=lambda item: PaginationHelper.get_sort_key(item, sort_by), reverse=reverse  # type: ignore
             )
 
         total_count = len(items)
@@ -278,8 +278,9 @@ class CRUDHelper:
     def add_item_to_json_db(db_data, collection_name, item_data, default_status=None):
         """Add item to JSON in-memory database."""
         collection = db_data.setdefault(collection_name, [])
-        ErrorHelper.check_item_exists(collection, item_data.get("uuid"),
-                                     collection_name.rstrip('s').capitalize())
+        ErrorHelper.check_item_exists(
+            collection, item_data.get("uuid"), collection_name.rstrip("s").capitalize()
+        )
 
         record = dict(item_data)
         if default_status:
@@ -292,8 +293,9 @@ class CRUDHelper:
         json_file = FileIOHelper.read_json_file(file_path)
         collection = json_file["map"].get(collection_name, [])
 
-        ErrorHelper.check_item_exists(collection, item_data.get("uuid"),
-                                     collection_name.rstrip('s').capitalize())
+        ErrorHelper.check_item_exists(
+            collection, item_data.get("uuid"), collection_name.rstrip("s").capitalize()
+        )
 
         record = dict(item_data)
         if default_status:
@@ -774,7 +776,9 @@ def json_db_add_suggestion(self, suggestion_data):
 
 
 def json_file_db_add_suggestion(self, suggestion_data):
-    CRUDHelper.add_item_to_json_file_db(self.data_file_path, "suggestions", suggestion_data, "pending")
+    CRUDHelper.add_item_to_json_file_db(
+        self.data_file_path, "suggestions", suggestion_data, "pending"
+    )
 
 
 def mongodb_db_add_suggestion(self, suggestion_data):
