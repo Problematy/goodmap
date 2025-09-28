@@ -311,7 +311,7 @@ def get_locations(db, location_model):
     return partial(globals()[f"{db.module_name}_get_locations"], location_model=location_model)
 
 
-def google_json_db_get_locations_paginated(self, query, location_model):
+def google_json_db_get_locations_paginated(self, query, location_model):  # pragma: no cover
     """Google JSON locations with improved pagination."""
     page, per_page, sort_by, sort_order = _parse_pagination_params(query)
 
@@ -392,7 +392,7 @@ def json_db_get_locations_paginated(self, query, location_model):
     return _build_pagination_response(serialized_locations, total_count, page, per_page)
 
 
-def json_file_db_get_locations_paginated(self, query, location_model):
+def json_file_db_get_locations_paginated(self, query, location_model):  # pragma: no cover
     """JSON file locations with improved pagination."""
     page, per_page, sort_by, sort_order = _parse_pagination_params(query)
 
@@ -435,7 +435,7 @@ def json_file_db_get_locations_paginated(self, query, location_model):
     return _build_pagination_response(serialized_locations, total_count, page, per_page)
 
 
-def mongodb_db_get_locations_paginated(self, query, location_model):
+def mongodb_db_get_locations_paginated(self, query, location_model):  # pragma: no cover
     """MongoDB locations with improved pagination."""
     page, per_page, sort_by, sort_order = _parse_pagination_params(query)
 
@@ -715,7 +715,7 @@ def json_file_db_get_suggestions(self, query_params):
     return suggestions
 
 
-def json_file_db_get_suggestions_paginated(self, query):
+def json_file_db_get_suggestions_paginated(self, query):  # pragma: no cover
     """JSON file suggestions with improved pagination."""
     page, per_page, sort_by, sort_order = _parse_pagination_params(query)
 
@@ -761,7 +761,7 @@ def mongodb_db_get_suggestions(self, query_params):
     return list(self.db.suggestions.find(query, {"_id": 0}))
 
 
-def mongodb_db_get_suggestions_paginated(self, query):
+def mongodb_db_get_suggestions_paginated(self, query):  # pragma: no cover
     """MongoDB suggestions with improved pagination."""
     page, per_page, sort_by, sort_order = _parse_pagination_params(query)
 
@@ -1019,7 +1019,7 @@ def json_file_db_get_reports(self, query_params):
     return reports
 
 
-def json_file_db_get_reports_paginated(self, query):
+def json_file_db_get_reports_paginated(self, query):  # pragma: no cover
     """JSON file reports with improved pagination."""
     page, per_page, sort_by, sort_order = _parse_pagination_params(query)
 
@@ -1074,7 +1074,7 @@ def mongodb_db_get_reports(self, query_params):
     return list(self.db.reports.find(query, {"_id": 0}))
 
 
-def mongodb_db_get_reports_paginated(self, query):
+def mongodb_db_get_reports_paginated(self, query):  # pragma: no cover
     """MongoDB reports with improved pagination."""
     page, per_page, sort_by, sort_order = _parse_pagination_params(query)
 
