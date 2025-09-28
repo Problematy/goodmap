@@ -458,7 +458,7 @@ def mongodb_db_get_locations_paginated(self, query, location_model):
 
     # Add pagination
     if per_page:
-        pipeline.extend([{"$skip": (page - 1) * per_page}, {"$limit": per_page}])
+        pipeline.extend([{"$skip": (page - 1) * per_page}, {"$limit": per_page}])  # type: ignore
 
     # Remove MongoDB _id field
     pipeline.append({"$project": {"_id": 0}})
@@ -784,7 +784,7 @@ def mongodb_db_get_suggestions_paginated(self, query):
 
     # Add pagination
     if per_page:
-        pipeline.extend([{"$skip": (page - 1) * per_page}, {"$limit": per_page}])
+        pipeline.extend([{"$skip": (page - 1) * per_page}, {"$limit": per_page}])  # type: ignore
 
     # Remove MongoDB _id field
     pipeline.append({"$project": {"_id": 0}})
@@ -1102,7 +1102,7 @@ def mongodb_db_get_reports_paginated(self, query):
 
     # Add pagination
     if per_page:
-        pipeline.extend([{"$skip": (page - 1) * per_page}, {"$limit": per_page}])
+        pipeline.extend([{"$skip": (page - 1) * per_page}, {"$limit": per_page}])  # type: ignore
 
     # Remove MongoDB _id field
     pipeline.append({"$project": {"_id": 0}})
