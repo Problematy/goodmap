@@ -741,6 +741,38 @@ def test_admin_get_reports_pagination(test_app):
     assert pagination["per_page"] == 10
 
 
+def test_admin_pagination_edge_cases(test_app):
+    # Test invalid page number - should default to 1
+    response = test_app.get("/api/admin/locations?page=invalid&per_page=10")
+    assert response.status_code == 200
+    data = response.json
+    assert data["pagination"]["page"] == 1
+
+    # Test invalid per_page - should default to 20
+    response = test_app.get("/api/admin/locations?page=1&per_page=invalid")
+    assert response.status_code == 200
+    data = response.json
+    assert data["pagination"]["per_page"] == 20
+
+    # Test per_page="all"
+    response = test_app.get("/api/admin/locations?page=1&per_page=all")
+    assert response.status_code == 200
+    data = response.json
+    assert data["pagination"]["total_pages"] == 1
+
+    # Test sorting
+    response = test_app.get("/api/admin/locations?sort_by=name&sort_order=desc")
+    assert response.status_code == 200
+
+    # Test suggestions with status filter and sorting
+    response = test_app.get("/api/admin/suggestions?status=pending&sort_by=created_at&sort_order=desc")
+    assert response.status_code == 200
+
+    # Test reports with sorting
+    response = test_app.get("/api/admin/reports?sort_by=created_at&sort_order=asc")
+    assert response.status_code == 200
+
+
 @mock.patch("goodmap.core_api.gettext", fake_translation)
 def test_make_tuple_translation():
     keys = ["alpha", "beta"]
