@@ -10,7 +10,7 @@ from goodmap.data_models.location import LocationBase
 #  it should be replaced with dynamic solution
 
 
-def _parse_pagination_params(query):
+def __parse_pagination_params(query):
     """Extract and validate pagination parameters from query."""
     try:
         page = max(1, int(query.get("page", ["1"])[0]))
@@ -32,7 +32,7 @@ def _parse_pagination_params(query):
     return page, per_page, sort_by, sort_order.lower()
 
 
-def _build_pagination_response(items, total, page, per_page):
+def __build_pagination_response(items, total, page, per_page):
     """Build standardized pagination response."""
     if per_page:
         total_pages = (total + per_page - 1) // per_page
@@ -313,7 +313,7 @@ def get_locations(db, location_model):
 
 def google_json_db_get_locations_paginated(self, query, location_model):  # pragma: no cover
     """Google JSON locations with improved pagination."""
-    page, per_page, sort_by, sort_order = _parse_pagination_params(query)
+    page, per_page, sort_by, sort_order = __parse_pagination_params(query)
 
     # Get all locations from raw data
     data = json.loads(self.blob.download_as_text(client=None))["map"]
@@ -349,12 +349,12 @@ def google_json_db_get_locations_paginated(self, query, location_model):  # prag
     else:
         serialized_locations = locations
 
-    return _build_pagination_response(serialized_locations, total_count, page, per_page)
+    return __build_pagination_response(serialized_locations, total_count, page, per_page)
 
 
 def json_db_get_locations_paginated(self, query, location_model):
     """JSON locations with improved pagination."""
-    page, per_page, sort_by, sort_order = _parse_pagination_params(query)
+    page, per_page, sort_by, sort_order = __parse_pagination_params(query)
 
     # Get all locations from raw data
     all_locations = list(get_locations_list_from_raw_data(self.data, query, location_model))
@@ -389,12 +389,12 @@ def json_db_get_locations_paginated(self, query, location_model):
     else:
         serialized_locations = locations
 
-    return _build_pagination_response(serialized_locations, total_count, page, per_page)
+    return __build_pagination_response(serialized_locations, total_count, page, per_page)
 
 
 def json_file_db_get_locations_paginated(self, query, location_model):  # pragma: no cover
     """JSON file locations with improved pagination."""
-    page, per_page, sort_by, sort_order = _parse_pagination_params(query)
+    page, per_page, sort_by, sort_order = __parse_pagination_params(query)
 
     with open(self.data_file_path, "r") as file:
         data = json.load(file)
@@ -432,12 +432,12 @@ def json_file_db_get_locations_paginated(self, query, location_model):  # pragma
     else:
         serialized_locations = locations
 
-    return _build_pagination_response(serialized_locations, total_count, page, per_page)
+    return __build_pagination_response(serialized_locations, total_count, page, per_page)
 
 
 def mongodb_db_get_locations_paginated(self, query, location_model):  # pragma: no cover
     """MongoDB locations with improved pagination."""
-    page, per_page, sort_by, sort_order = _parse_pagination_params(query)
+    page, per_page, sort_by, sort_order = __parse_pagination_params(query)
 
     # Build MongoDB query
     mongo_query = {}
@@ -473,7 +473,7 @@ def mongodb_db_get_locations_paginated(self, query, location_model):  # pragma: 
     else:
         serialized_locations = locations
 
-    return _build_pagination_response(serialized_locations, total_count, page, per_page)
+    return __build_pagination_response(serialized_locations, total_count, page, per_page)
 
 
 def get_locations_paginated(db, location_model):
@@ -670,7 +670,7 @@ def json_db_get_suggestions(self, query_params):
 
 def json_db_get_suggestions_paginated(self, query):
     """JSON suggestions with improved pagination."""
-    page, per_page, sort_by, sort_order = _parse_pagination_params(query)
+    page, per_page, sort_by, sort_order = __parse_pagination_params(query)
 
     suggestions = self.data.get("suggestions", [])
 
@@ -699,7 +699,7 @@ def json_db_get_suggestions_paginated(self, query):
     else:
         items = suggestions
 
-    return _build_pagination_response(items, total_count, page, per_page)
+    return __build_pagination_response(items, total_count, page, per_page)
 
 
 def json_file_db_get_suggestions(self, query_params):
@@ -717,7 +717,7 @@ def json_file_db_get_suggestions(self, query_params):
 
 def json_file_db_get_suggestions_paginated(self, query):  # pragma: no cover
     """JSON file suggestions with improved pagination."""
-    page, per_page, sort_by, sort_order = _parse_pagination_params(query)
+    page, per_page, sort_by, sort_order = __parse_pagination_params(query)
 
     with open(self.data_file_path, "r") as file:
         json_file = json.load(file)
@@ -749,7 +749,7 @@ def json_file_db_get_suggestions_paginated(self, query):  # pragma: no cover
     else:
         items = suggestions
 
-    return _build_pagination_response(items, total_count, page, per_page)
+    return __build_pagination_response(items, total_count, page, per_page)
 
 
 def mongodb_db_get_suggestions(self, query_params):
@@ -763,7 +763,7 @@ def mongodb_db_get_suggestions(self, query_params):
 
 def mongodb_db_get_suggestions_paginated(self, query):  # pragma: no cover
     """MongoDB suggestions with improved pagination."""
-    page, per_page, sort_by, sort_order = _parse_pagination_params(query)
+    page, per_page, sort_by, sort_order = __parse_pagination_params(query)
 
     # Build MongoDB query
     mongo_query = {}
@@ -793,7 +793,7 @@ def mongodb_db_get_suggestions_paginated(self, query):  # pragma: no cover
     cursor = self.db.suggestions.aggregate(pipeline)
     items = list(cursor)
 
-    return _build_pagination_response(items, total_count, page, per_page)
+    return __build_pagination_response(items, total_count, page, per_page)
 
 
 def get_suggestions(db):
@@ -966,7 +966,7 @@ def json_db_get_reports(self, query_params):
 
 def json_db_get_reports_paginated(self, query):
     """JSON reports with improved pagination."""
-    page, per_page, sort_by, sort_order = _parse_pagination_params(query)
+    page, per_page, sort_by, sort_order = __parse_pagination_params(query)
 
     reports = self.data.get("reports", [])
 
@@ -999,7 +999,7 @@ def json_db_get_reports_paginated(self, query):
     else:
         items = reports
 
-    return _build_pagination_response(items, total_count, page, per_page)
+    return __build_pagination_response(items, total_count, page, per_page)
 
 
 def json_file_db_get_reports(self, query_params):
@@ -1021,7 +1021,7 @@ def json_file_db_get_reports(self, query_params):
 
 def json_file_db_get_reports_paginated(self, query):  # pragma: no cover
     """JSON file reports with improved pagination."""
-    page, per_page, sort_by, sort_order = _parse_pagination_params(query)
+    page, per_page, sort_by, sort_order = __parse_pagination_params(query)
 
     with open(self.data_file_path, "r") as file:
         json_file = json.load(file)
@@ -1057,7 +1057,7 @@ def json_file_db_get_reports_paginated(self, query):  # pragma: no cover
     else:
         items = reports
 
-    return _build_pagination_response(items, total_count, page, per_page)
+    return __build_pagination_response(items, total_count, page, per_page)
 
 
 def mongodb_db_get_reports(self, query_params):
@@ -1076,7 +1076,7 @@ def mongodb_db_get_reports(self, query_params):
 
 def mongodb_db_get_reports_paginated(self, query):  # pragma: no cover
     """MongoDB reports with improved pagination."""
-    page, per_page, sort_by, sort_order = _parse_pagination_params(query)
+    page, per_page, sort_by, sort_order = __parse_pagination_params(query)
 
     # Build MongoDB query
     mongo_query = {}
@@ -1111,7 +1111,7 @@ def mongodb_db_get_reports_paginated(self, query):  # pragma: no cover
     cursor = self.db.reports.aggregate(pipeline)
     items = list(cursor)
 
-    return _build_pagination_response(items, total_count, page, per_page)
+    return __build_pagination_response(items, total_count, page, per_page)
 
 
 def get_reports(db):
