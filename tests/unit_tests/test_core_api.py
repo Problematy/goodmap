@@ -765,7 +765,9 @@ def test_admin_pagination_edge_cases(test_app):
     assert response.status_code == 200
 
     # Test suggestions with status filter and sorting
-    response = test_app.get("/api/admin/suggestions?status=pending&sort_by=created_at&sort_order=desc")
+    response = test_app.get(
+        "/api/admin/suggestions?status=pending&sort_by=created_at&sort_order=desc"
+    )
     assert response.status_code == 200
 
     # Test reports with sorting
