@@ -10,6 +10,47 @@ from goodmap.data_models.location import LocationBase
 #  it should be replaced with dynamic solution
 
 
+def _parse_pagination_params(query):
+    """Extract and validate pagination parameters from query."""
+    try:
+        page = max(1, int(query.get("page", ["1"])[0]))
+    except (ValueError, IndexError, TypeError):
+        page = 1
+
+    per_page_raw = query.get("per_page", ["20"])[0] if query.get("per_page") else "20"
+    if per_page_raw == "all":
+        per_page = None
+    else:
+        try:
+            per_page = max(1, min(int(per_page_raw), 1000))  # Cap at 1000
+        except (ValueError, TypeError):
+            per_page = 20
+
+    sort_by = query.get("sort_by", [None])[0]
+    sort_order = query.get("sort_order", ["asc"])[0] if query.get("sort_order") else "asc"
+
+    return page, per_page, sort_by, sort_order.lower()
+
+
+def _build_pagination_response(items, total, page, per_page):
+    """Build standardized pagination response."""
+    if per_page:
+        total_pages = (total + per_page - 1) // per_page
+    else:
+        total_pages = 1
+        per_page = total
+
+    return {
+        "items": items,
+        "pagination": {
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+            "total_pages": total_pages,
+        },
+    }
+
+
 def json_file_atomic_dump(data, file_path):
     dir_name = os.path.dirname(file_path)
     with tempfile.NamedTemporaryFile("w", dir=dir_name, delete=False) as temp_file:
@@ -270,6 +311,177 @@ def get_locations(db, location_model):
     return partial(globals()[f"{db.module_name}_get_locations"], location_model=location_model)
 
 
+def google_json_db_get_locations_paginated(self, query, location_model):
+    """Google JSON locations with improved pagination."""
+    page, per_page, sort_by, sort_order = _parse_pagination_params(query)
+
+    # Get all locations from raw data
+    data = json.loads(self.blob.download_as_text(client=None))["map"]
+    all_locations = list(get_locations_list_from_raw_data(data, query, location_model))
+
+    # Apply sorting
+    if sort_by:
+
+        def get_sort_key(item):
+            value = (
+                item.name
+                if sort_by == "name" and hasattr(item, "name")
+                else getattr(item, sort_by, None)
+            )
+            return (value is not None, value or "")
+
+        reverse = sort_order == "desc"
+        all_locations.sort(key=get_sort_key, reverse=reverse)
+
+    total_count = len(all_locations)
+
+    # Apply pagination
+    if per_page:
+        start_idx = (page - 1) * per_page
+        end_idx = start_idx + per_page
+        locations = all_locations[start_idx:end_idx]
+    else:
+        locations = all_locations
+
+    # Convert items to dict if needed (for location models)
+    if locations and hasattr(locations[0], "model_dump"):
+        serialized_locations = [x.model_dump() for x in locations]
+    else:
+        serialized_locations = locations
+
+    return _build_pagination_response(serialized_locations, total_count, page, per_page)
+
+
+def json_db_get_locations_paginated(self, query, location_model):
+    """JSON locations with improved pagination."""
+    page, per_page, sort_by, sort_order = _parse_pagination_params(query)
+
+    # Get all locations from raw data
+    all_locations = list(get_locations_list_from_raw_data(self.data, query, location_model))
+
+    # Apply sorting
+    if sort_by:
+
+        def get_sort_key(item):
+            value = (
+                item.name
+                if sort_by == "name" and hasattr(item, "name")
+                else getattr(item, sort_by, None)
+            )
+            return (value is not None, value or "")
+
+        reverse = sort_order == "desc"
+        all_locations.sort(key=get_sort_key, reverse=reverse)
+
+    total_count = len(all_locations)
+
+    # Apply pagination
+    if per_page:
+        start_idx = (page - 1) * per_page
+        end_idx = start_idx + per_page
+        locations = all_locations[start_idx:end_idx]
+    else:
+        locations = all_locations
+
+    # Convert items to dict if needed (for location models)
+    if locations and hasattr(locations[0], "model_dump"):
+        serialized_locations = [x.model_dump() for x in locations]
+    else:
+        serialized_locations = locations
+
+    return _build_pagination_response(serialized_locations, total_count, page, per_page)
+
+
+def json_file_db_get_locations_paginated(self, query, location_model):
+    """JSON file locations with improved pagination."""
+    page, per_page, sort_by, sort_order = _parse_pagination_params(query)
+
+    with open(self.data_file_path, "r") as file:
+        data = json.load(file)
+
+    # Get all locations from raw data
+    all_locations = list(get_locations_list_from_raw_data(data["map"], query, location_model))
+
+    # Apply sorting
+    if sort_by:
+
+        def get_sort_key(item):
+            value = (
+                item.name
+                if sort_by == "name" and hasattr(item, "name")
+                else getattr(item, sort_by, None)
+            )
+            return (value is not None, value or "")
+
+        reverse = sort_order == "desc"
+        all_locations.sort(key=get_sort_key, reverse=reverse)
+
+    total_count = len(all_locations)
+
+    # Apply pagination
+    if per_page:
+        start_idx = (page - 1) * per_page
+        end_idx = start_idx + per_page
+        locations = all_locations[start_idx:end_idx]
+    else:
+        locations = all_locations
+
+    # Convert items to dict if needed (for location models)
+    if locations and hasattr(locations[0], "model_dump"):
+        serialized_locations = [x.model_dump() for x in locations]
+    else:
+        serialized_locations = locations
+
+    return _build_pagination_response(serialized_locations, total_count, page, per_page)
+
+
+def mongodb_db_get_locations_paginated(self, query, location_model):
+    """MongoDB locations with improved pagination."""
+    page, per_page, sort_by, sort_order = _parse_pagination_params(query)
+
+    # Build MongoDB query
+    mongo_query = {}
+    for key, values in query.items():
+        if values:
+            mongo_query[key] = {"$in": values}
+
+    # Get total count
+    total_count = self.db.locations.count_documents(mongo_query)
+
+    # Build aggregation pipeline
+    pipeline = [{"$match": mongo_query}]
+
+    # Add sorting
+    if sort_by:
+        sort_direction = -1 if sort_order == "desc" else 1
+        pipeline.append({"$sort": {sort_by: sort_direction}})
+
+    # Add pagination
+    if per_page:
+        pipeline.extend([{"$skip": (page - 1) * per_page}, {"$limit": per_page}])
+
+    # Remove MongoDB _id field
+    pipeline.append({"$project": {"_id": 0}})
+
+    # Execute query
+    cursor = self.db.locations.aggregate(pipeline)
+    locations = [location_model.model_validate(loc) for loc in cursor]
+
+    # Convert items to dict if needed (for location models)
+    if locations and hasattr(locations[0], "model_dump"):
+        serialized_locations = [x.model_dump() for x in locations]
+    else:
+        serialized_locations = locations
+
+    return _build_pagination_response(serialized_locations, total_count, page, per_page)
+
+
+def get_locations_paginated(db, location_model):
+    return partial(
+        globals()[f"{db.module_name}_get_locations_paginated"], location_model=location_model
+    )
+
+
 # ------------------------------------------------
 # add_location
 
@@ -456,6 +668,40 @@ def json_db_get_suggestions(self, query_params):
     return suggestions
 
 
+def json_db_get_suggestions_paginated(self, query):
+    """JSON suggestions with improved pagination."""
+    page, per_page, sort_by, sort_order = _parse_pagination_params(query)
+
+    suggestions = self.data.get("suggestions", [])
+
+    # Apply status filtering
+    statuses = query.get("status")
+    if statuses:
+        suggestions = [s for s in suggestions if s.get("status") in statuses]
+
+    # Apply sorting
+    if sort_by:
+
+        def get_sort_key(item):
+            value = item.get(sort_by) if isinstance(item, dict) else getattr(item, sort_by, None)
+            return (value is not None, value or "")
+
+        reverse = sort_order == "desc"
+        suggestions.sort(key=get_sort_key, reverse=reverse)
+
+    total_count = len(suggestions)
+
+    # Apply pagination
+    if per_page:
+        start_idx = (page - 1) * per_page
+        end_idx = start_idx + per_page
+        items = suggestions[start_idx:end_idx]
+    else:
+        items = suggestions
+
+    return _build_pagination_response(items, total_count, page, per_page)
+
+
 def json_file_db_get_suggestions(self, query_params):
     with open(self.data_file_path, "r") as file:
         json_file = json.load(file)
@@ -469,6 +715,43 @@ def json_file_db_get_suggestions(self, query_params):
     return suggestions
 
 
+def json_file_db_get_suggestions_paginated(self, query):
+    """JSON file suggestions with improved pagination."""
+    page, per_page, sort_by, sort_order = _parse_pagination_params(query)
+
+    with open(self.data_file_path, "r") as file:
+        json_file = json.load(file)
+
+    suggestions = json_file["map"].get("suggestions", [])
+
+    # Apply status filtering
+    statuses = query.get("status")
+    if statuses:
+        suggestions = [s for s in suggestions if s.get("status") in statuses]
+
+    # Apply sorting
+    if sort_by:
+
+        def get_sort_key(item):
+            value = item.get(sort_by) if isinstance(item, dict) else getattr(item, sort_by, None)
+            return (value is not None, value or "")
+
+        reverse = sort_order == "desc"
+        suggestions.sort(key=get_sort_key, reverse=reverse)
+
+    total_count = len(suggestions)
+
+    # Apply pagination
+    if per_page:
+        start_idx = (page - 1) * per_page
+        end_idx = start_idx + per_page
+        items = suggestions[start_idx:end_idx]
+    else:
+        items = suggestions
+
+    return _build_pagination_response(items, total_count, page, per_page)
+
+
 def mongodb_db_get_suggestions(self, query_params):
     query = {}
     statuses = query_params.get("status")
@@ -478,8 +761,47 @@ def mongodb_db_get_suggestions(self, query_params):
     return list(self.db.suggestions.find(query, {"_id": 0}))
 
 
+def mongodb_db_get_suggestions_paginated(self, query):
+    """MongoDB suggestions with improved pagination."""
+    page, per_page, sort_by, sort_order = _parse_pagination_params(query)
+
+    # Build MongoDB query
+    mongo_query = {}
+    statuses = query.get("status")
+    if statuses:
+        mongo_query["status"] = {"$in": statuses}
+
+    # Get total count
+    total_count = self.db.suggestions.count_documents(mongo_query)
+
+    # Build aggregation pipeline
+    pipeline = [{"$match": mongo_query}]
+
+    # Add sorting
+    if sort_by:
+        sort_direction = -1 if sort_order == "desc" else 1
+        pipeline.append({"$sort": {sort_by: sort_direction}})
+
+    # Add pagination
+    if per_page:
+        pipeline.extend([{"$skip": (page - 1) * per_page}, {"$limit": per_page}])
+
+    # Remove MongoDB _id field
+    pipeline.append({"$project": {"_id": 0}})
+
+    # Execute query
+    cursor = self.db.suggestions.aggregate(pipeline)
+    items = list(cursor)
+
+    return _build_pagination_response(items, total_count, page, per_page)
+
+
 def get_suggestions(db):
     return globals()[f"{db.module_name}_get_suggestions"]
+
+
+def get_suggestions_paginated(db):
+    return globals()[f"{db.module_name}_get_suggestions_paginated"]
 
 
 # ------------------------------------------------
@@ -642,6 +964,44 @@ def json_db_get_reports(self, query_params):
     return reports
 
 
+def json_db_get_reports_paginated(self, query):
+    """JSON reports with improved pagination."""
+    page, per_page, sort_by, sort_order = _parse_pagination_params(query)
+
+    reports = self.data.get("reports", [])
+
+    # Apply filtering
+    statuses = query.get("status")
+    if statuses:
+        reports = [r for r in reports if r.get("status") in statuses]
+
+    priorities = query.get("priority")
+    if priorities:
+        reports = [r for r in reports if r.get("priority") in priorities]
+
+    # Apply sorting
+    if sort_by:
+
+        def get_sort_key(item):
+            value = item.get(sort_by) if isinstance(item, dict) else getattr(item, sort_by, None)
+            return (value is not None, value or "")
+
+        reverse = sort_order == "desc"
+        reports.sort(key=get_sort_key, reverse=reverse)
+
+    total_count = len(reports)
+
+    # Apply pagination
+    if per_page:
+        start_idx = (page - 1) * per_page
+        end_idx = start_idx + per_page
+        items = reports[start_idx:end_idx]
+    else:
+        items = reports
+
+    return _build_pagination_response(items, total_count, page, per_page)
+
+
 def json_file_db_get_reports(self, query_params):
     with open(self.data_file_path, "r") as file:
         json_file = json.load(file)
@@ -659,6 +1019,47 @@ def json_file_db_get_reports(self, query_params):
     return reports
 
 
+def json_file_db_get_reports_paginated(self, query):
+    """JSON file reports with improved pagination."""
+    page, per_page, sort_by, sort_order = _parse_pagination_params(query)
+
+    with open(self.data_file_path, "r") as file:
+        json_file = json.load(file)
+
+    reports = json_file["map"].get("reports", [])
+
+    # Apply filtering
+    statuses = query.get("status")
+    if statuses:
+        reports = [r for r in reports if r.get("status") in statuses]
+
+    priorities = query.get("priority")
+    if priorities:
+        reports = [r for r in reports if r.get("priority") in priorities]
+
+    # Apply sorting
+    if sort_by:
+
+        def get_sort_key(item):
+            value = item.get(sort_by) if isinstance(item, dict) else getattr(item, sort_by, None)
+            return (value is not None, value or "")
+
+        reverse = sort_order == "desc"
+        reports.sort(key=get_sort_key, reverse=reverse)
+
+    total_count = len(reports)
+
+    # Apply pagination
+    if per_page:
+        start_idx = (page - 1) * per_page
+        end_idx = start_idx + per_page
+        items = reports[start_idx:end_idx]
+    else:
+        items = reports
+
+    return _build_pagination_response(items, total_count, page, per_page)
+
+
 def mongodb_db_get_reports(self, query_params):
     query = {}
 
@@ -673,8 +1074,52 @@ def mongodb_db_get_reports(self, query_params):
     return list(self.db.reports.find(query, {"_id": 0}))
 
 
+def mongodb_db_get_reports_paginated(self, query):
+    """MongoDB reports with improved pagination."""
+    page, per_page, sort_by, sort_order = _parse_pagination_params(query)
+
+    # Build MongoDB query
+    mongo_query = {}
+
+    statuses = query.get("status")
+    if statuses:
+        mongo_query["status"] = {"$in": statuses}
+
+    priorities = query.get("priority")
+    if priorities:
+        mongo_query["priority"] = {"$in": priorities}
+
+    # Get total count
+    total_count = self.db.reports.count_documents(mongo_query)
+
+    # Build aggregation pipeline
+    pipeline = [{"$match": mongo_query}]
+
+    # Add sorting
+    if sort_by:
+        sort_direction = -1 if sort_order == "desc" else 1
+        pipeline.append({"$sort": {sort_by: sort_direction}})
+
+    # Add pagination
+    if per_page:
+        pipeline.extend([{"$skip": (page - 1) * per_page}, {"$limit": per_page}])
+
+    # Remove MongoDB _id field
+    pipeline.append({"$project": {"_id": 0}})
+
+    # Execute query
+    cursor = self.db.reports.aggregate(pipeline)
+    items = list(cursor)
+
+    return _build_pagination_response(items, total_count, page, per_page)
+
+
 def get_reports(db):
     return globals()[f"{db.module_name}_get_reports"]
+
+
+def get_reports_paginated(db):
+    return globals()[f"{db.module_name}_get_reports_paginated"]
 
 
 # ------------------------------------------------
@@ -800,6 +1245,7 @@ def delete_report(db, report_id):
 def extend_db_with_goodmap_queries(db, location_model):
     db.extend("get_data", get_data(db))
     db.extend("get_locations", get_locations(db, location_model))
+    db.extend("get_locations_paginated", get_locations_paginated(db, location_model))
     db.extend("get_location", get_location(db, location_model))
     db.extend("add_location", partial(add_location, location_model=location_model))
     db.extend("update_location", partial(update_location, location_model=location_model))
@@ -809,11 +1255,13 @@ def extend_db_with_goodmap_queries(db, location_model):
     if db.module_name in ("json_db", "json_file_db", "mongodb_db"):
         db.extend("add_suggestion", add_suggestion)
         db.extend("get_suggestions", get_suggestions(db))
+        db.extend("get_suggestions_paginated", get_suggestions_paginated(db))
         db.extend("get_suggestion", get_suggestion(db))
         db.extend("update_suggestion", update_suggestion)
         db.extend("delete_suggestion", delete_suggestion)
         db.extend("add_report", add_report)
         db.extend("get_reports", get_reports(db))
+        db.extend("get_reports_paginated", get_reports_paginated(db))
         db.extend("get_report", get_report(db))
         db.extend("update_report", update_report)
         db.extend("delete_report", delete_report)

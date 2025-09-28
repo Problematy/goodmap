@@ -6,7 +6,7 @@ import deprecation
 import pytest
 from platzky.config import Config
 
-from goodmap.core_api import get_or_none, make_tuple_translation, paginate_results
+from goodmap.core_api import get_or_none, make_tuple_translation
 from goodmap.goodmap import create_app_from_config
 
 
@@ -690,14 +690,17 @@ def test_admin_get_locations_pagination(test_app):
     assert response.status_code == 200
     data = response.json
     # Check pagination structure is correct
-    assert "total" in data
-    assert "page" in data
-    assert "per_page" in data
-    assert "total_pages" in data
+    assert "pagination" in data
     assert "items" in data
     assert isinstance(data["items"], list)
-    assert data["page"] == 1
-    assert data["per_page"] == 10
+
+    pagination = data["pagination"]
+    assert "total" in pagination
+    assert "page" in pagination
+    assert "per_page" in pagination
+    assert "total_pages" in pagination
+    assert pagination["page"] == 1
+    assert pagination["per_page"] == 10
 
 
 def test_admin_get_suggestions_pagination(test_app):
@@ -706,14 +709,17 @@ def test_admin_get_suggestions_pagination(test_app):
     assert response.status_code == 200
     data = response.json
     # Check pagination structure is correct
-    assert "total" in data
-    assert "page" in data
-    assert "per_page" in data
-    assert "total_pages" in data
+    assert "pagination" in data
     assert "items" in data
     assert isinstance(data["items"], list)
-    assert data["page"] == 1
-    assert data["per_page"] == 10
+
+    pagination = data["pagination"]
+    assert "total" in pagination
+    assert "page" in pagination
+    assert "per_page" in pagination
+    assert "total_pages" in pagination
+    assert pagination["page"] == 1
+    assert pagination["per_page"] == 10
 
 
 def test_admin_get_reports_pagination(test_app):
@@ -722,14 +728,17 @@ def test_admin_get_reports_pagination(test_app):
     assert response.status_code == 200
     data = response.json
     # Check pagination structure is correct
-    assert "total" in data
-    assert "page" in data
-    assert "per_page" in data
-    assert "total_pages" in data
+    assert "pagination" in data
     assert "items" in data
     assert isinstance(data["items"], list)
-    assert data["page"] == 1
-    assert data["per_page"] == 10
+
+    pagination = data["pagination"]
+    assert "total" in pagination
+    assert "page" in pagination
+    assert "per_page" in pagination
+    assert "total_pages" in pagination
+    assert pagination["page"] == 1
+    assert pagination["per_page"] == 10
 
 
 @mock.patch("goodmap.core_api.gettext", fake_translation)
@@ -739,60 +748,6 @@ def test_make_tuple_translation():
         ("alpha", "alpha-translated"),
         ("beta", "beta-translated"),
     ]
-
-
-def test_paginate_results_default():
-    items = [1, 2, 3]
-    page_items, meta = paginate_results(items.copy(), {})
-    assert page_items == items
-    assert meta == {"total": 3, "page": 1, "per_page": 20, "total_pages": 1}
-
-
-def test_paginate_results_invalid_page():
-    items = [1, 2, 3]
-    _, meta = paginate_results(items.copy(), {"page": ["bad"]})
-    assert meta["page"] == 1
-
-
-def test_paginate_results_invalid_per_page():
-    items = [1, 2, 3]
-    _, meta = paginate_results(items.copy(), {"per_page": ["bad"]})
-    assert meta["per_page"] == 20
-
-
-def test_paginate_results_per_page_all():
-    items = [1, 2, 3]
-    page_items, meta = paginate_results(items.copy(), {"per_page": ["all"]})
-    assert meta["per_page"] == len(items)
-    assert page_items == items
-
-
-def test_paginate_results_sorting_dict_asc():
-    items = [{"x": 2}, {"x": 1}, {"x": 3}]
-    page_items, _ = paginate_results(items.copy(), {"sort_by": ["x"], "sort_order": ["asc"]})
-    assert page_items == [{"x": 1}, {"x": 2}, {"x": 3}]
-
-
-# Tests for missing coverage areas
-
-
-def test_paginate_results_sorting_no_sort_by():
-    """Test get_sort_key returning None when no sort_by is provided"""
-    items = [{"x": 2}, {"x": 1}, {"x": 3}]
-    page_items, _ = paginate_results(items.copy(), {})
-    assert page_items == items  # Should remain in original order
-
-
-def test_paginate_results_sorting_non_dict_item():
-    """Test get_sort_key with non-dict items"""
-
-    class MockItem:
-        def __init__(self, x):
-            self.x = x
-
-    items = [MockItem(2), MockItem(1), MockItem(3)]
-    page_items, _ = paginate_results(items.copy(), {"sort_by": ["x"], "sort_order": ["asc"]})
-    assert [item.x for item in page_items] == [1, 2, 3]
 
 
 def test_get_or_none_with_valid_dict():
@@ -951,39 +906,6 @@ def test_admin_put_report_with_invalid_json(test_app):
         headers={"X-CSRFToken": csrf_token},
     )
     assert response.status_code == 400
-
-
-def test_paginate_results_sorting_with_none_values():
-    """Test get_sort_key function when sort_by is None (line 58)"""
-
-    class TestItem:
-        def __init__(self, value):
-            self.sort_field = value
-
-    items = [TestItem(3), TestItem(1), TestItem(2)]
-    # When sort_by is None, items should remain in original order
-    page_items, _ = paginate_results(items.copy(), {})
-    assert [item.sort_field for item in page_items] == [3, 1, 2]
-
-
-def test_paginate_results_sorting_with_missing_attribute():
-    """Test get_sort_key with object missing the sort attribute"""
-
-    class TestItem:
-        def __init__(self, value=None):
-            if value is not None:
-                self.sort_field = value
-
-    items = [TestItem(2), TestItem(), TestItem(1)]  # Middle item has no sort_field
-    page_items, _ = paginate_results(
-        items.copy(), {"sort_by": ["sort_field"], "sort_order": ["asc"]}
-    )
-    # Items with None values have key (False, None) and come first when sorting ascending
-    # Items with values have key (True, value) and come after
-    # So order should be: items without values first, then items with values (sorted by value)
-    assert not hasattr(page_items[0], "sort_field")  # None value comes first
-    assert hasattr(page_items[1], "sort_field") and page_items[1].sort_field == 1
-    assert hasattr(page_items[2], "sort_field") and page_items[2].sort_field == 2
 
 
 @mock.patch("goodmap.core_api.gettext", fake_translation)
@@ -1420,23 +1342,6 @@ def test_admin_database_exceptions_coverage():
             headers={"X-CSRFToken": "test-token"},
         )
         assert response.status_code == 400
-
-
-def test_paginate_results_none_sort_by():
-    """Test paginate_results when sort_by is None (line 58)"""
-    from goodmap.core_api import paginate_results
-
-    items = [{"name": "test1"}, {"name": "test2"}]
-    # Use empty string sort_by but provide sort_by_default to trigger the get_sort_key function
-    # This makes if sort_by check pass, but inside get_sort_key, empty string is falsy
-    raw_params = {"sort_by": [""]}
-
-    page_items, _ = paginate_results(items, raw_params, sort_by_default="name")
-
-    # Should return items in original order when sort_by is empty string
-    assert len(page_items) == 2
-    assert page_items[0]["name"] == "test1"
-    assert page_items[1]["name"] == "test2"
 
 
 @mock.patch("goodmap.core_api.gettext", fake_translation)
