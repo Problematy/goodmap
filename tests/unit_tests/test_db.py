@@ -1542,5 +1542,3 @@ def test_mongodb_db_delete_report_not_found(mock_client):
 
     with pytest.raises(ValueError, match="Report with uuid nonexistent not found"):
         mongodb_db_delete_report(db, "nonexistent")
-
-
