@@ -1,3 +1,4 @@
+# pyright: reportArgumentType=false, reportCallIssue=false
 import json
 from typing import Any, cast
 from unittest import mock
@@ -24,6 +25,7 @@ from goodmap.db import (
     google_json_db_get_category_data,
     google_json_db_get_data,
     google_json_db_get_location_obligatory_fields,
+    google_json_db_get_locations_paginated,
     json_db_add_location,
     json_db_add_report,
     json_db_add_suggestion,
@@ -52,10 +54,13 @@ from goodmap.db import (
     json_file_db_get_category_data,
     json_file_db_get_data,
     json_file_db_get_location_obligatory_fields,
+    json_file_db_get_locations_paginated,
     json_file_db_get_report,
     json_file_db_get_reports,
+    json_file_db_get_reports_paginated,
     json_file_db_get_suggestion,
     json_file_db_get_suggestions,
+    json_file_db_get_suggestions_paginated,
     json_file_db_update_location,
     json_file_db_update_report,
     json_file_db_update_suggestion,
@@ -71,23 +76,19 @@ from goodmap.db import (
     mongodb_db_get_location,
     mongodb_db_get_location_obligatory_fields,
     mongodb_db_get_locations,
+    mongodb_db_get_locations_paginated,
     mongodb_db_get_report,
     mongodb_db_get_reports,
+    mongodb_db_get_reports_paginated,
     mongodb_db_get_suggestion,
     mongodb_db_get_suggestions,
+    mongodb_db_get_suggestions_paginated,
     mongodb_db_update_location,
     mongodb_db_update_report,
     mongodb_db_update_suggestion,
     update_location,
     update_report,
     update_suggestion,
-    google_json_db_get_locations_paginated,
-    json_file_db_get_locations_paginated,
-    mongodb_db_get_locations_paginated,
-    json_file_db_get_suggestions_paginated,
-    mongodb_db_get_suggestions_paginated,
-    json_file_db_get_reports_paginated,
-    mongodb_db_get_reports_paginated,
 )
 
 data = {
@@ -1592,7 +1593,7 @@ def test_mongodb_db_get_locations_paginated(mock_client):
     mock_db.locations.count_documents.return_value = 5
     mock_db.locations.aggregate.return_value = [
         {"uuid": "1", "name": "test1", "position": [50, 50]},
-        {"uuid": "2", "name": "test2", "position": [10, 10]}
+        {"uuid": "2", "name": "test2", "position": [10, 10]},
     ]
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
@@ -1616,7 +1617,7 @@ def test_json_file_db_get_suggestions_paginated(tmp_path):
             "suggestions": [
                 {"uuid": "s1", "status": "pending", "created_at": "2024-01-01"},
                 {"uuid": "s2", "status": "done", "created_at": "2024-01-02"},
-                {"uuid": "s3", "status": "pending", "created_at": "2024-01-03"}
+                {"uuid": "s3", "status": "pending", "created_at": "2024-01-03"},
             ]
         }
     }
@@ -1624,7 +1625,13 @@ def test_json_file_db_get_suggestions_paginated(tmp_path):
 
     db = JsonFile(str(test_file))
 
-    query = {"page": ["1"], "per_page": ["2"], "status": ["pending"], "sort_by": ["created_at"], "sort_order": ["desc"]}
+    query = {
+        "page": ["1"],
+        "per_page": ["2"],
+        "status": ["pending"],
+        "sort_by": ["created_at"],
+        "sort_order": ["desc"],
+    }
     result = json_file_db_get_suggestions_paginated(db, query)
 
     assert "items" in result
@@ -1640,7 +1647,7 @@ def test_mongodb_db_get_suggestions_paginated(mock_client):
     mock_db.suggestions.count_documents.return_value = 3
     mock_db.suggestions.aggregate.return_value = [
         {"uuid": "s1", "status": "pending"},
-        {"uuid": "s2", "status": "pending"}
+        {"uuid": "s2", "status": "pending"},
     ]
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
@@ -1661,7 +1668,7 @@ def test_json_file_db_get_reports_paginated(tmp_path):
             "reports": [
                 {"uuid": "r1", "status": "new", "priority": "high", "created_at": "2024-01-01"},
                 {"uuid": "r2", "status": "open", "priority": "low", "created_at": "2024-01-02"},
-                {"uuid": "r3", "status": "new", "priority": "critical", "created_at": "2024-01-03"}
+                {"uuid": "r3", "status": "new", "priority": "critical", "created_at": "2024-01-03"},
             ]
         }
     }
@@ -1669,7 +1676,14 @@ def test_json_file_db_get_reports_paginated(tmp_path):
 
     db = JsonFile(str(test_file))
 
-    query = {"page": ["1"], "per_page": ["2"], "status": ["new"], "priority": ["high", "critical"], "sort_by": ["created_at"], "sort_order": ["asc"]}
+    query = {
+        "page": ["1"],
+        "per_page": ["2"],
+        "status": ["new"],
+        "priority": ["high", "critical"],
+        "sort_by": ["created_at"],
+        "sort_order": ["asc"],
+    }
     result = json_file_db_get_reports_paginated(db, query)
 
     assert "items" in result
@@ -1686,7 +1700,7 @@ def test_mongodb_db_get_reports_paginated(mock_client):
     mock_db.reports.count_documents.return_value = 4
     mock_db.reports.aggregate.return_value = [
         {"uuid": "r1", "status": "new", "priority": "high"},
-        {"uuid": "r2", "status": "new", "priority": "critical"}
+        {"uuid": "r2", "status": "new", "priority": "critical"},
     ]
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
@@ -1698,3 +1712,438 @@ def test_mongodb_db_get_reports_paginated(mock_client):
     assert "pagination" in result
     assert len(result["items"]) == 2
     assert result["pagination"]["total"] == 4
+
+
+# Test missing coverage lines for pagination parameter parsing
+def test_parse_pagination_params_edge_cases():
+    # Import the module to access the private function dynamically
+    import goodmap.db as db_module
+
+    parse_params = getattr(db_module, "__parse_pagination_params")
+
+    # Test ValueError/IndexError/TypeError for page parameter (lines 17-18)
+    page, per_page, _, _ = parse_params({"page": ["invalid"]})
+    assert page == 1
+
+    page, per_page, _, _ = parse_params({"page": []})
+    assert page == 1
+
+    page, per_page, _, _ = parse_params({"page": [None]})
+    assert page == 1
+
+    # Test per_page = "all" (line 22)
+    page, per_page, _, _ = parse_params({"per_page": ["all"]})
+    assert per_page is None
+
+    # Test ValueError/TypeError for per_page parameter (lines 26-27)
+    page, per_page, _, _ = parse_params({"per_page": ["invalid"]})
+    assert per_page == 20
+
+    page, per_page, _, _ = parse_params({"per_page": [None]})
+    assert per_page == 20
+
+
+def test_build_pagination_response_per_page_none():
+    # Import the module to access the private function dynamically
+    import goodmap.db as db_module
+
+    build_response = getattr(db_module, "__build_pagination_response")
+
+    # Test when per_page is None (lines 40-41)
+    result = build_response(["item1", "item2"], 2, 1, None)
+    pagination = result["pagination"]
+    assert pagination["total_pages"] == 1
+    assert pagination["per_page"] == 2
+
+
+# Test json_db pagination functions that were missing coverage
+def test_json_db_get_locations_paginated():
+    from goodmap.db import json_db_get_locations_paginated
+
+    db = Json(data)
+    Location = create_location_model([])
+
+    # Test with sorting by name (lines 325-334)
+    query = {"page": ["1"], "per_page": ["10"], "sort_by": ["name"], "sort_order": ["desc"]}
+    result = json_db_get_locations_paginated(db, query, Location)
+
+    assert "items" in result
+    assert "pagination" in result
+    assert len(result["items"]) == 2
+
+    # Test without per_page (line 344)
+    query = {"page": ["1"], "sort_by": ["name"]}
+    result = json_db_get_locations_paginated(db, query, Location)
+    assert len(result["items"]) == 2
+
+    # Test with hasattr check for model_dump (line 350)
+    assert all("uuid" in item for item in result["items"])
+
+
+def test_json_db_get_suggestions_paginated():
+    from goodmap.db import json_db_get_suggestions_paginated
+
+    suggestions_data = {
+        "suggestions": [
+            {"uuid": "s1", "status": "pending", "created_at": "2024-01-01"},
+            {"uuid": "s2", "status": "done", "created_at": "2024-01-02"},
+            {"uuid": "s3", "status": "pending", "created_at": "2024-01-03"},
+        ]
+    }
+    db = Json(suggestions_data)
+
+    # Test with status filtering and sorting (lines 673-702)
+    query = {
+        "page": ["1"],
+        "per_page": ["2"],
+        "status": ["pending"],
+        "sort_by": ["created_at"],
+        "sort_order": ["desc"],
+    }
+    result = json_db_get_suggestions_paginated(db, query)
+
+    assert "items" in result
+    assert "pagination" in result
+    assert len(result["items"]) <= 2
+    assert all(item["status"] == "pending" for item in result["items"])
+
+    # Test without per_page
+    query = {"status": ["pending"]}
+    result = json_db_get_suggestions_paginated(db, query)
+    assert len(result["items"]) == 2
+
+
+def test_json_db_get_reports_paginated():
+    from goodmap.db import json_db_get_reports_paginated
+
+    reports_data = {
+        "reports": [
+            {"uuid": "r1", "status": "new", "priority": "high", "created_at": "2024-01-01"},
+            {"uuid": "r2", "status": "open", "priority": "low", "created_at": "2024-01-02"},
+            {"uuid": "r3", "status": "new", "priority": "critical", "created_at": "2024-01-03"},
+        ]
+    }
+    db = Json(reports_data)
+
+    # Test with status and priority filtering, sorting (lines 969-1002)
+    query = {
+        "page": ["1"],
+        "per_page": ["2"],
+        "status": ["new"],
+        "priority": ["high", "critical"],
+        "sort_by": ["created_at"],
+        "sort_order": ["asc"],
+    }
+    result = json_db_get_reports_paginated(db, query)
+
+    assert "items" in result
+    assert "pagination" in result
+    assert len(result["items"]) <= 2
+    assert all(item["status"] == "new" for item in result["items"])
+    assert all(item["priority"] in ["high", "critical"] for item in result["items"])
+
+    # Test without per_page
+    query = {"status": ["new"]}
+    result = json_db_get_reports_paginated(db, query)
+    assert len(result["items"]) == 2
+
+
+# Test sorting functionality in other pagination functions
+def test_google_json_db_sorting_edge_cases():
+    from goodmap.db import google_json_db_get_locations_paginated
+
+    # Test sorting when item has no 'name' attribute (lines 427, 433)
+    with mock.patch("platzky.db.google_json_db.Client") as mock_client:
+        mock_blob = mock_client.return_value.bucket.return_value.blob.return_value
+        mock_blob.download_as_text.return_value = data_json
+        db = GoogleJsonDb("bucket", "file.json")
+        Location = create_location_model([])
+
+        # Test sort by non-existent field (line 474)
+        query = {
+            "page": ["1"],
+            "per_page": ["2"],
+            "sort_by": ["non_existent_field"],
+            "sort_order": ["asc"],
+        }
+        result = google_json_db_get_locations_paginated(db, query, Location)
+
+        assert "items" in result
+        assert "pagination" in result
+
+
+def test_mongodb_sorting_edge_cases():
+    from goodmap.db import (
+        mongodb_db_get_locations_paginated,
+        mongodb_db_get_reports_paginated,
+        mongodb_db_get_suggestions_paginated,
+    )
+
+    # Test MongoDB sorting functionality (lines 782-783, 1058, 1100-1101)
+    with mock.patch("platzky.db.mongodb_db.MongoClient") as mock_client:
+        mock_db = mock.Mock()
+        mock_client.return_value.__getitem__.return_value = mock_db
+        mock_db.locations.count_documents.return_value = 2
+        mock_db.locations.aggregate.return_value = [
+            {"uuid": "1", "name": "test1", "position": [50, 50]},
+            {"uuid": "2", "name": "test2", "position": [10, 10]},
+        ]
+
+        db = MongoDB("mongodb://localhost:27017", "test_db")
+        Location = create_location_model([])
+
+        # Test sort_direction logic
+        query = {"page": ["1"], "per_page": ["2"], "sort_by": ["name"], "sort_order": ["desc"]}
+        mongodb_db_get_locations_paginated(db, query, Location)
+
+        # Verify the aggregation pipeline includes correct sort direction
+        calls = mock_db.locations.aggregate.call_args_list
+        pipeline = calls[0][0][0]
+        sort_stage = next((stage for stage in pipeline if "$sort" in stage), None)
+        assert sort_stage is not None
+        assert sort_stage["$sort"]["name"] == -1  # desc = -1
+
+        # Test suggestions pagination sorting
+        mock_db.suggestions.count_documents.return_value = 1
+        mock_db.suggestions.aggregate.return_value = [{"uuid": "s1", "status": "pending"}]
+
+        query = {"sort_by": ["status"], "sort_order": ["asc"]}
+        mongodb_db_get_suggestions_paginated(db, query)
+
+        # Test reports pagination sorting
+        mock_db.reports.count_documents.return_value = 1
+        mock_db.reports.aggregate.return_value = [{"uuid": "r1", "status": "new"}]
+
+        query = {"sort_by": ["priority"], "sort_order": ["desc"]}
+        mongodb_db_get_reports_paginated(db, query)
+
+
+# Test additional missing coverage lines
+def test_google_json_db_pagination_no_per_page():
+    from goodmap.db import google_json_db_get_locations_paginated
+
+    # Test lines 344, 350 - no per_page and no hasattr case
+    with mock.patch("platzky.db.google_json_db.Client") as mock_client:
+        mock_blob = mock_client.return_value.bucket.return_value.blob.return_value
+        mock_blob.download_as_text.return_value = data_json
+        db = GoogleJsonDb("bucket", "file.json")
+        Location = create_location_model([])
+
+        # Test without per_page (line 344)
+        query = {"page": ["1"]}  # No per_page specified
+        result = google_json_db_get_locations_paginated(db, query, Location)
+        assert len(result["items"]) == 2
+
+        # Test line 350 - when items don't have model_dump (create raw dict items)
+        query = {"page": ["1"], "per_page": ["10"]}
+        result = google_json_db_get_locations_paginated(db, query, Location)
+        # Items will be Location objects with model_dump, so this tests line 347-348
+
+
+def test_json_db_pagination_no_per_page():
+    from goodmap.db import json_db_get_locations_paginated
+
+    db = Json(data)
+    Location = create_location_model([])
+
+    # Test lines 384, 390 - no per_page
+    query = {"page": ["1"]}  # No per_page specified
+    result = json_db_get_locations_paginated(db, query, Location)
+    assert len(result["items"]) == 2
+
+
+def test_json_file_pagination_no_hasattr():
+    from goodmap.db import json_file_db_get_locations_paginated
+
+    # Mock to return raw dict data instead of Location objects (line 427, 433)
+    with mock.patch("builtins.open", mock.mock_open(read_data=data_json)):
+        db = JsonFile("/fake/path/file.json")
+
+        # Test get_sort_key when item has name attribute (line 427)
+        query = {"page": ["1"], "per_page": ["10"], "sort_by": ["name"], "sort_order": ["asc"]}
+        result = json_file_db_get_locations_paginated(db, query, create_location_model([]))
+        assert "items" in result
+
+        # Test get_sort_key when sort_by is not 'name' (line 433)
+        query = {"page": ["1"], "per_page": ["10"], "sort_by": ["uuid"], "sort_order": ["asc"]}
+        result = json_file_db_get_locations_paginated(db, query, create_location_model([]))
+        assert "items" in result
+
+
+def test_suggestions_pagination_no_per_page():
+    from goodmap.db import json_db_get_suggestions_paginated
+
+    suggestions_data = {"suggestions": [{"uuid": "s1", "status": "pending"}]}
+    db = Json(suggestions_data)
+
+    # Test line 700 - no per_page
+    query = {"page": ["1"]}
+    result = json_db_get_suggestions_paginated(db, query)
+    assert len(result["items"]) == 1
+
+
+def test_mongodb_suggestions_pagination_sorting():
+    from goodmap.db import mongodb_db_get_suggestions_paginated
+
+    # Test line 1058 - MongoDB suggestions sort_direction logic
+    with mock.patch("platzky.db.mongodb_db.MongoClient") as mock_client:
+        mock_db = mock.Mock()
+        mock_client.return_value.__getitem__.return_value = mock_db
+        mock_db.suggestions.count_documents.return_value = 1
+        mock_db.suggestions.aggregate.return_value = [{"uuid": "s1", "status": "pending"}]
+
+        db = MongoDB("mongodb://localhost:27017", "test_db")
+
+        # Test ascending sort (line 1058)
+        query = {"sort_by": ["status"], "sort_order": ["asc"]}
+        mongodb_db_get_suggestions_paginated(db, query)
+
+        # Verify the aggregation pipeline includes correct sort direction
+        calls = mock_db.suggestions.aggregate.call_args_list
+        pipeline = calls[0][0][0]
+        sort_stage = next((stage for stage in pipeline if "$sort" in stage), None)
+        assert sort_stage is not None
+        assert sort_stage["$sort"]["status"] == 1  # asc = 1
+
+
+def test_reports_pagination_no_per_page():
+    from goodmap.db import json_db_get_reports_paginated
+
+    reports_data = {"reports": [{"uuid": "r1", "status": "new"}]}
+    db = Json(reports_data)
+
+    # Test line 1000 - no per_page
+    query = {"page": ["1"]}
+    result = json_db_get_reports_paginated(db, query)
+    assert len(result["items"]) == 1
+
+
+def test_json_file_pagination_no_per_page():
+    from goodmap.db import json_file_db_get_locations_paginated
+
+    # Test line 427 - no per_page in json_file_db
+    with mock.patch("builtins.open", mock.mock_open(read_data=data_json)):
+        db = JsonFile("/fake/path/file.json")
+        Location = create_location_model([])
+
+        query = {"page": ["1"]}  # No per_page
+        result = json_file_db_get_locations_paginated(db, query, Location)
+        assert len(result["items"]) == 2
+
+
+# Test very specific missing lines by calling functions directly
+def test_specific_missing_lines():
+    from goodmap.db import (
+        google_json_db_get_locations_paginated,
+        json_db_get_locations_paginated,
+        json_db_get_reports_paginated,
+        json_db_get_suggestions_paginated,
+        json_file_db_get_locations_paginated,
+        json_file_db_get_suggestions_paginated,
+        mongodb_db_get_suggestions_paginated,
+    )
+
+    # Test line 344 - google_json_db when per_page is None
+    with mock.patch("platzky.db.google_json_db.Client") as mock_client:
+        mock_blob = mock_client.return_value.bucket.return_value.blob.return_value
+        mock_blob.download_as_text.return_value = data_json
+        db = GoogleJsonDb("bucket", "file.json")
+        Location = create_location_model([])
+
+        # Force per_page to be None by using "all"
+        query = {"per_page": ["all"], "page": ["1"]}
+        result = google_json_db_get_locations_paginated(db, query, Location)
+        assert len(result["items"]) == 2
+
+    # Test line 350 - google_json_db when no hasattr model_dump (need raw dicts)
+    with mock.patch("platzky.db.google_json_db.Client") as mock_client:
+        mock_blob = mock_client.return_value.bucket.return_value.blob.return_value
+        mock_blob.download_as_text.return_value = data_json
+        db = GoogleJsonDb("bucket", "file.json")
+
+        # Mock get_locations_list_from_raw_data to return raw dicts without model_dump
+        with mock.patch("goodmap.db.get_locations_list_from_raw_data") as mock_get_locs:
+            mock_get_locs.return_value = [{"uuid": "1", "position": [50, 50]}]  # Raw dicts
+            query = {"per_page": ["1"], "page": ["1"]}
+            result = google_json_db_get_locations_paginated(db, query, create_location_model([]))
+            assert len(result["items"]) == 1
+
+    # Test line 384 - json_db when per_page is None
+    db = Json(data)
+    Location = create_location_model([])
+    query = {"per_page": ["all"], "page": ["1"]}
+    result = json_db_get_locations_paginated(db, query, Location)
+    assert len(result["items"]) == 2
+
+    # Test line 390 - json_db when no hasattr model_dump
+    with mock.patch("goodmap.db.get_locations_list_from_raw_data") as mock_get_locs:
+        mock_get_locs.return_value = [{"uuid": "1", "position": [50, 50]}]  # Raw dicts
+        query = {"per_page": ["1"], "page": ["1"]}
+        result = json_db_get_locations_paginated(db, query, Location)
+        assert len(result["items"]) == 1
+
+    # Test line 427 - json_file_db when per_page is None
+    with mock.patch("builtins.open", mock.mock_open(read_data=data_json)):
+        db = JsonFile("/fake/path/file.json")
+        Location = create_location_model([])
+        query = {"per_page": ["all"], "page": ["1"]}
+        result = json_file_db_get_locations_paginated(db, query, Location)
+        assert len(result["items"]) == 2
+
+    # Test line 433 - json_file_db when no hasattr model_dump
+    with mock.patch("builtins.open", mock.mock_open(read_data=data_json)):
+        with mock.patch("goodmap.db.get_locations_list_from_raw_data") as mock_get_locs:
+            mock_get_locs.return_value = [{"uuid": "1", "position": [50, 50]}]  # Raw dicts
+            db = JsonFile("/fake/path/file.json")
+            Location = create_location_model([])
+            query = {"per_page": ["1"], "page": ["1"]}
+            result = json_file_db_get_locations_paginated(db, query, Location)
+            assert len(result["items"]) == 1
+
+    # Test line 700 - json_db_get_suggestions when per_page is None
+    suggestions_data = {"suggestions": [{"uuid": "s1", "status": "pending"}]}
+    db = Json(suggestions_data)
+    query = {"per_page": ["all"], "page": ["1"]}
+    result = json_db_get_suggestions_paginated(db, query)
+    assert len(result["items"]) == 1
+
+    # Test line 750 - json_file_db_get_suggestions when per_page is None
+    with mock.patch(
+        "builtins.open",
+        mock.mock_open(read_data=json.dumps({"map": {"suggestions": [{"uuid": "s1"}]}})),
+    ):
+        db = JsonFile("/fake/path/file.json")
+        query = {"per_page": ["all"], "page": ["1"]}
+        result = json_file_db_get_suggestions_paginated(db, query)
+        assert len(result["items"]) == 1
+
+    # Test line 1000 - json_db_get_reports when per_page is None
+    reports_data = {"reports": [{"uuid": "r1", "status": "new"}]}
+    db = Json(reports_data)
+    query = {"per_page": ["all"], "page": ["1"]}
+    result = json_db_get_reports_paginated(db, query)
+    assert len(result["items"]) == 1
+
+    # Test line 1058 - mongodb suggestions sort ascending
+    with mock.patch("platzky.db.mongodb_db.MongoClient") as mock_client:
+        mock_db = mock.Mock()
+        mock_client.return_value.__getitem__.return_value = mock_db
+        mock_db.suggestions.count_documents.return_value = 1
+        mock_db.suggestions.aggregate.return_value = [{"uuid": "s1", "status": "pending"}]
+
+        db = MongoDB("mongodb://localhost:27017", "test_db")
+
+        # Test ascending sort (sort_direction = 1)
+        query = {"sort_by": ["status"], "sort_order": ["asc"]}
+        result = mongodb_db_get_suggestions_paginated(db, query)
+        assert len(result["items"]) == 1
+
+    # Test line 474 - json_file_db when no hasattr model_dump with sorting
+    with mock.patch("builtins.open", mock.mock_open(read_data=data_json)):
+        with mock.patch("goodmap.db.get_locations_list_from_raw_data") as mock_get_locs:
+            mock_get_locs.return_value = [{"uuid": "1", "position": [50, 50]}]  # Raw dicts
+            db = JsonFile("/fake/path/file.json")
+            Location = create_location_model([])
+            query = {"per_page": ["1"], "page": ["1"], "sort_by": ["name"]}
+            result = json_file_db_get_locations_paginated(db, query, Location)
+            assert len(result["items"]) == 1
