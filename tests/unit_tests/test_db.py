@@ -2147,3 +2147,35 @@ def test_specific_missing_lines():
             query = {"per_page": ["1"], "page": ["1"], "sort_by": ["name"]}
             result = json_file_db_get_locations_paginated(db, query, Location)
             assert len(result["items"]) == 1
+
+
+# Test the two remaining missing lines for 100% coverage
+def test_remaining_missing_coverage_lines():
+    # Test line 474 - MongoDB case when locations list is empty, serialized_locations = locations
+    from goodmap.db import (
+        json_file_db_get_reports_paginated,
+        mongodb_db_get_locations_paginated,
+    )
+
+    with mock.patch("platzky.db.mongodb_db.MongoClient") as mock_client:
+        mock_db = mock.Mock()
+        mock_client.return_value.__getitem__.return_value = mock_db
+        mock_db.locations.count_documents.return_value = 0  # Empty result
+        mock_db.locations.aggregate.return_value = []  # Empty locations list
+
+        db = MongoDB("mongodb://localhost:27017", "test_db")
+        Location = create_location_model([])
+
+        query = {"per_page": ["1"], "page": ["1"]}
+        result = mongodb_db_get_locations_paginated(db, query, Location)
+        assert len(result["items"]) == 0  # This hits line 474: serialized_locations = locations
+
+    # Test line 1058 - when per_page is None in reports pagination (json_file_db)
+    reports_json = json.dumps({"map": {"reports": [{"uuid": "r1", "status": "new"}]}})
+    with mock.patch("builtins.open", mock.mock_open(read_data=reports_json)):
+        db = JsonFile("/fake/path/file.json")
+
+        # Use per_page="all" to make per_page None, triggering line 1058
+        query = {"per_page": ["all"], "page": ["1"]}
+        result = json_file_db_get_reports_paginated(db, query)
+        assert len(result["items"]) == 1  # This hits line 1058: items = reports
