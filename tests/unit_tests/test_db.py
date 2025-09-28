@@ -2207,8 +2207,9 @@ def test_pagination_helper_error_handling():
 
 def test_error_helper_methods():
     """Test ErrorHelper methods for full coverage"""
-    from goodmap.db import ErrorHelper
     import pytest
+
+    from goodmap.db import ErrorHelper
 
     # Test raise_not_found_error (line 240)
     with pytest.raises(ValueError, match="location with uuid test-uuid not found"):
@@ -2217,6 +2218,7 @@ def test_error_helper_methods():
     # Test find_item_by_uuid with dict items (lines 260-271)
     items = [{"uuid": "uuid1", "name": "item1"}, {"uuid": "uuid2", "name": "item2"}]
     found_item = ErrorHelper.find_item_by_uuid(items, "uuid1", "location")
+    assert found_item is not None
     assert found_item["name"] == "item1"
 
     # Test find_item_by_uuid when item not found (lines 260-271)
@@ -2225,10 +2227,12 @@ def test_error_helper_methods():
 
     # Test find_item_by_uuid with object items (lines 260-271)
     class TestItem:
-        def __init__(self, uuid, name):
+        def __init__(self, uuid: str, name: str):
             self.uuid = uuid
             self.name = name
 
     obj_items = [TestItem("uuid1", "item1"), TestItem("uuid2", "item2")]
     found_obj = ErrorHelper.find_item_by_uuid(obj_items, "uuid1", "location")
+    assert found_obj is not None
+    assert isinstance(found_obj, TestItem)
     assert found_obj.name == "item1"
