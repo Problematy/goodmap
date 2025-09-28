@@ -561,7 +561,8 @@ def mongodb_db_get_locations(self, query, location_model):
         if values:
             mongo_query[key] = {"$in": values}
 
-    data = self.db.locations.find(mongo_query, {"_id": 0, "uuid": 1, "position": 1})
+    projection = {"_id": 0, "uuid": 1, "position": 1, "remark": 1}
+    data = self.db.locations.find(mongo_query, projection)
     return (LocationBase.model_validate(loc) for loc in data)
 
 
