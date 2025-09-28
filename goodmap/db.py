@@ -80,7 +80,9 @@ class PaginationHelper:
         # Apply sorting
         if sort_by:
             reverse = sort_order == "desc"
-            items.sort(key=lambda item: PaginationHelper.get_sort_key(item, sort_by), reverse=reverse)
+            items.sort(
+                key=lambda item: PaginationHelper.get_sort_key(item, sort_by), reverse=reverse
+            )
 
         total_count = len(items)
 
@@ -103,17 +105,31 @@ class PaginationHelper:
         if "status" in filters:
             statuses = filters["status"]
             if statuses:
-                filtered_items = [item for item in filtered_items
-                                if (item.get("status") if isinstance(item, dict)
-                                   else getattr(item, "status", None)) in statuses]
+                filtered_items = [
+                    item
+                    for item in filtered_items
+                    if (
+                        item.get("status")
+                        if isinstance(item, dict)
+                        else getattr(item, "status", None)
+                    )
+                    in statuses
+                ]
 
         # Apply priority filtering
         if "priority" in filters:
             priorities = filters["priority"]
             if priorities:
-                filtered_items = [item for item in filtered_items
-                                if (item.get("priority") if isinstance(item, dict)
-                                   else getattr(item, "priority", None)) in priorities]
+                filtered_items = [
+                    item
+                    for item in filtered_items
+                    if (
+                        item.get("priority")
+                        if isinstance(item, dict)
+                        else getattr(item, "priority", None)
+                    )
+                    in priorities
+                ]
 
         return filtered_items
 
@@ -165,7 +181,8 @@ class PaginationHelper:
 
         # Apply pagination and sorting
         paginated_items, total_count = PaginationHelper.apply_pagination_and_sorting(
-            items, page, per_page, sort_by, sort_order)
+            items, page, per_page, sort_by, sort_order
+        )
 
         # Serialize items if needed
         serialized_items = PaginationHelper.serialize_items(paginated_items)
@@ -225,19 +242,78 @@ class ErrorHelper:
     @staticmethod
     def check_item_exists(items, uuid, item_type):
         """Check if item with UUID exists and raise error if it does."""
-        existing = next((item for item in items if
-                        (item.get("uuid") if isinstance(item, dict) else getattr(item, "uuid", None)) == uuid), None)
+        existing = next(
+            (
+                item
+                for item in items
+                if (item.get("uuid") if isinstance(item, dict) else getattr(item, "uuid", None))
+                == uuid
+            ),
+            None,
+        )
         if existing:
             ErrorHelper.raise_already_exists_error(item_type, uuid)
 
     @staticmethod
     def find_item_by_uuid(items, uuid, item_type):
         """Find item by UUID and raise error if not found."""
-        item = next((item for item in items if
-                    (item.get("uuid") if isinstance(item, dict) else getattr(item, "uuid", None)) == uuid), None)
+        item = next(
+            (
+                item
+                for item in items
+                if (item.get("uuid") if isinstance(item, dict) else getattr(item, "uuid", None))
+                == uuid
+            ),
+            None,
+        )
         if not item:
             ErrorHelper.raise_not_found_error(item_type, uuid)
         return item
+
+
+class CRUDHelper:
+    """Common CRUD operation utilities to eliminate duplication."""
+
+    @staticmethod
+    def add_item_to_json_db(db_data, collection_name, item_data, default_status=None):
+        """Add item to JSON in-memory database."""
+        collection = db_data.setdefault(collection_name, [])
+        ErrorHelper.check_item_exists(collection, item_data.get("uuid"),
+                                     collection_name.rstrip('s').capitalize())
+
+        record = dict(item_data)
+        if default_status:
+            record["status"] = default_status
+        collection.append(record)
+
+    @staticmethod
+    def add_item_to_json_file_db(file_path, collection_name, item_data, default_status=None):
+        """Add item to JSON file database."""
+        json_file = FileIOHelper.read_json_file(file_path)
+        collection = json_file["map"].get(collection_name, [])
+
+        ErrorHelper.check_item_exists(collection, item_data.get("uuid"),
+                                     collection_name.rstrip('s').capitalize())
+
+        record = dict(item_data)
+        if default_status:
+            record["status"] = default_status
+        collection.append(record)
+        json_file["map"][collection_name] = collection
+
+        FileIOHelper.write_json_file_atomic(json_file, file_path)
+
+    @staticmethod
+    def add_item_to_mongodb(db_collection, item_data, item_type, default_status=None):
+        """Add item to MongoDB database."""
+        existing = db_collection.find_one({"uuid": item_data.get("uuid")})
+        if existing:
+            ErrorHelper.raise_already_exists_error(item_type, item_data.get("uuid"))
+
+        record = dict(item_data)
+        if default_status:
+            record["status"] = default_status
+        db_collection.insert_one(record)
 
 
 # ------------------------------------------------
@@ -493,126 +569,25 @@ def get_locations(db, location_model):
 
 def google_json_db_get_locations_paginated(self, query, location_model):
     """Google JSON locations with improved pagination."""
-    page, per_page, sort_by, sort_order = __parse_pagination_params(query)
-
     # Get all locations from raw data
     data = json.loads(self.blob.download_as_text(client=None))["map"]
     all_locations = list(get_locations_list_from_raw_data(data, query, location_model))
-
-    # Apply sorting
-    if sort_by:
-
-        def get_sort_key(item):
-            value = (
-                item.name
-                if sort_by == "name" and hasattr(item, "name")
-                else getattr(item, sort_by, None)
-            )
-            return (value is not None, value or "")
-
-        reverse = sort_order == "desc"
-        all_locations.sort(key=get_sort_key, reverse=reverse)
-
-    total_count = len(all_locations)
-
-    # Apply pagination
-    if per_page:
-        start_idx = (page - 1) * per_page
-        end_idx = start_idx + per_page
-        locations = all_locations[start_idx:end_idx]
-    else:
-        locations = all_locations
-
-    # Convert items to dict if needed (for location models)
-    if locations and hasattr(locations[0], "model_dump"):
-        serialized_locations = [x.model_dump() for x in locations]
-    else:
-        serialized_locations = locations
-
-    return __build_pagination_response(serialized_locations, total_count, page, per_page)
+    return PaginationHelper.create_paginated_response(all_locations, query)
 
 
 def json_db_get_locations_paginated(self, query, location_model):
     """JSON locations with improved pagination."""
-    page, per_page, sort_by, sort_order = __parse_pagination_params(query)
-
     # Get all locations from raw data
     all_locations = list(get_locations_list_from_raw_data(self.data, query, location_model))
-
-    # Apply sorting
-    if sort_by:
-
-        def get_sort_key(item):
-            value = (
-                item.name
-                if sort_by == "name" and hasattr(item, "name")
-                else getattr(item, sort_by, None)
-            )
-            return (value is not None, value or "")
-
-        reverse = sort_order == "desc"
-        all_locations.sort(key=get_sort_key, reverse=reverse)
-
-    total_count = len(all_locations)
-
-    # Apply pagination
-    if per_page:
-        start_idx = (page - 1) * per_page
-        end_idx = start_idx + per_page
-        locations = all_locations[start_idx:end_idx]
-    else:
-        locations = all_locations
-
-    # Convert items to dict if needed (for location models)
-    if locations and hasattr(locations[0], "model_dump"):
-        serialized_locations = [x.model_dump() for x in locations]
-    else:
-        serialized_locations = locations
-
-    return __build_pagination_response(serialized_locations, total_count, page, per_page)
+    return PaginationHelper.create_paginated_response(all_locations, query)
 
 
 def json_file_db_get_locations_paginated(self, query, location_model):
     """JSON file locations with improved pagination."""
-    page, per_page, sort_by, sort_order = __parse_pagination_params(query)
-
-    with open(self.data_file_path, "r") as file:
-        data = json.load(file)
-
+    data = FileIOHelper.get_data_from_file(self.data_file_path)
     # Get all locations from raw data
-    all_locations = list(get_locations_list_from_raw_data(data["map"], query, location_model))
-
-    # Apply sorting
-    if sort_by:
-
-        def get_sort_key(item):
-            value = (
-                item.name
-                if sort_by == "name" and hasattr(item, "name")
-                else getattr(item, sort_by, None)
-            )
-            return (value is not None, value or "")
-
-        reverse = sort_order == "desc"
-        all_locations.sort(key=get_sort_key, reverse=reverse)
-
-    total_count = len(all_locations)
-
-    # Apply pagination
-    if per_page:
-        start_idx = (page - 1) * per_page
-        end_idx = start_idx + per_page
-        locations = all_locations[start_idx:end_idx]
-    else:
-        locations = all_locations
-
-    # Convert items to dict if needed (for location models)
-    if locations and hasattr(locations[0], "model_dump"):
-        serialized_locations = [x.model_dump() for x in locations]
-    else:
-        serialized_locations = locations
-
-    return __build_pagination_response(serialized_locations, total_count, page, per_page)
+    all_locations = list(get_locations_list_from_raw_data(data, query, location_model))
+    return PaginationHelper.create_paginated_response(all_locations, query)
 
 
 def mongodb_db_get_locations_paginated(self, query, location_model):
@@ -795,39 +770,15 @@ def delete_location(db, uuid):
 
 
 def json_db_add_suggestion(self, suggestion_data):
-    suggestions = self.data.setdefault("suggestions", [])
-    if any(s.get("uuid") == suggestion_data.get("uuid") for s in suggestions):
-        raise ValueError(f"Suggestion with uuid {suggestion_data['uuid']} already exists")
-
-    record = dict(suggestion_data)
-    record["status"] = "pending"
-    suggestions.append(record)
+    CRUDHelper.add_item_to_json_db(self.data, "suggestions", suggestion_data, "pending")
 
 
 def json_file_db_add_suggestion(self, suggestion_data):
-    with open(self.data_file_path, "r") as file:
-        json_file = json.load(file)
-
-    suggestions = json_file["map"].get("suggestions", [])
-    if any(s.get("uuid") == suggestion_data.get("uuid") for s in suggestions):
-        raise ValueError(f"Suggestion with uuid {suggestion_data['uuid']} already exists")
-
-    record = dict(suggestion_data)
-    record["status"] = "pending"
-    suggestions.append(record)
-    json_file["map"]["suggestions"] = suggestions
-
-    json_file_atomic_dump(json_file, self.data_file_path)
+    CRUDHelper.add_item_to_json_file_db(self.data_file_path, "suggestions", suggestion_data, "pending")
 
 
 def mongodb_db_add_suggestion(self, suggestion_data):
-    existing = self.db.suggestions.find_one({"uuid": suggestion_data.get("uuid")})
-    if existing:
-        raise ValueError(f"Suggestion with uuid {suggestion_data['uuid']} already exists")
-
-    record = dict(suggestion_data)
-    record["status"] = "pending"
-    self.db.suggestions.insert_one(record)
+    CRUDHelper.add_item_to_mongodb(self.db.suggestions, suggestion_data, "Suggestion", "pending")
 
 
 def add_suggestion(db, suggestion_data):
