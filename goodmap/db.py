@@ -60,6 +60,186 @@ def json_file_atomic_dump(data, file_path):
     os.replace(temp_file.name, file_path)
 
 
+class PaginationHelper:
+    """Common pagination utility to eliminate duplication across backends."""
+
+    @staticmethod
+    def get_sort_key(item, sort_by):
+        """Extract sort key from item for both dict and object types."""
+        if sort_by == "name" and hasattr(item, "name"):
+            value = item.name
+        elif isinstance(item, dict):
+            value = item.get(sort_by)
+        else:
+            value = getattr(item, sort_by, None)
+        return (value is not None, value or "")
+
+    @staticmethod
+    def apply_pagination_and_sorting(items, page, per_page, sort_by, sort_order):
+        """Apply sorting and pagination to a list of items."""
+        # Apply sorting
+        if sort_by:
+            reverse = sort_order == "desc"
+            items.sort(key=lambda item: PaginationHelper.get_sort_key(item, sort_by), reverse=reverse)
+
+        total_count = len(items)
+
+        # Apply pagination
+        if per_page:
+            start_idx = (page - 1) * per_page
+            end_idx = start_idx + per_page
+            paginated_items = items[start_idx:end_idx]
+        else:
+            paginated_items = items
+
+        return paginated_items, total_count
+
+    @staticmethod
+    def apply_filters(items, filters):
+        """Apply filtering based on provided filters dictionary."""
+        filtered_items = items
+
+        # Apply status filtering
+        if "status" in filters:
+            statuses = filters["status"]
+            if statuses:
+                filtered_items = [item for item in filtered_items
+                                if (item.get("status") if isinstance(item, dict)
+                                   else getattr(item, "status", None)) in statuses]
+
+        # Apply priority filtering
+        if "priority" in filters:
+            priorities = filters["priority"]
+            if priorities:
+                filtered_items = [item for item in filtered_items
+                                if (item.get("priority") if isinstance(item, dict)
+                                   else getattr(item, "priority", None)) in priorities]
+
+        return filtered_items
+
+    @staticmethod
+    def serialize_items(items):
+        """Convert items to dict if needed (for location models)."""
+        if items and hasattr(items[0], "model_dump"):
+            return [x.model_dump() for x in items]
+        else:
+            return items
+
+    @staticmethod
+    def create_paginated_response(items, query, extract_filters_func=None):
+        """Create a complete paginated response with all common logic."""
+        # Parse pagination parameters using the existing function
+        try:
+            page = max(1, int(query.get("page", ["1"])[0]))
+        except (ValueError, IndexError, TypeError):
+            page = 1
+
+        per_page_raw = query.get("per_page", ["20"])[0] if query.get("per_page") else "20"
+        if per_page_raw == "all":
+            per_page = None
+        else:
+            try:
+                per_page = max(1, min(int(per_page_raw), 1000))  # Cap at 1000
+            except (ValueError, TypeError):
+                per_page = 20
+
+        sort_by = query.get("sort_by", [None])[0]
+        sort_order = query.get("sort_order", ["asc"])[0] if query.get("sort_order") else "asc"
+        sort_order = sort_order.lower()
+
+        # Apply filters if any
+        filters = {}
+        if query:
+            if "status" in query:
+                filters["status"] = query["status"]
+            if "priority" in query:
+                filters["priority"] = query["priority"]
+
+        # Allow custom filter extraction
+        if extract_filters_func:
+            custom_filters = extract_filters_func(query)
+            filters.update(custom_filters)
+
+        if filters:
+            items = PaginationHelper.apply_filters(items, filters)
+
+        # Apply pagination and sorting
+        paginated_items, total_count = PaginationHelper.apply_pagination_and_sorting(
+            items, page, per_page, sort_by, sort_order)
+
+        # Serialize items if needed
+        serialized_items = PaginationHelper.serialize_items(paginated_items)
+
+        # Build pagination response directly
+        if per_page:
+            total_pages = (total_count + per_page - 1) // per_page
+        else:
+            total_pages = 1
+            per_page = total_count
+
+        return {
+            "items": serialized_items,
+            "pagination": {
+                "total": total_count,
+                "page": page,
+                "per_page": per_page,
+                "total_pages": total_pages,
+            },
+        }
+
+
+class FileIOHelper:
+    """Common file I/O utilities to eliminate duplication."""
+
+    @staticmethod
+    def read_json_file(file_path):
+        """Read and parse JSON file."""
+        with open(file_path, "r") as file:
+            return json.load(file)
+
+    @staticmethod
+    def write_json_file_atomic(data, file_path):
+        """Write JSON data to file atomically."""
+        json_file_atomic_dump(data, file_path)
+
+    @staticmethod
+    def get_data_from_file(file_path, data_key="map"):
+        """Get data from JSON file with specified key structure."""
+        json_data = FileIOHelper.read_json_file(file_path)
+        return json_data.get(data_key, {})
+
+
+class ErrorHelper:
+    """Common error handling utilities."""
+
+    @staticmethod
+    def raise_already_exists_error(item_type, uuid):
+        """Raise standardized 'already exists' error."""
+        raise ValueError(f"{item_type} with uuid {uuid} already exists")
+
+    @staticmethod
+    def raise_not_found_error(item_type, uuid):
+        """Raise standardized 'not found' error."""
+        raise ValueError(f"{item_type} with uuid {uuid} not found")
+
+    @staticmethod
+    def check_item_exists(items, uuid, item_type):
+        """Check if item with UUID exists and raise error if it does."""
+        existing = next((item for item in items if
+                        (item.get("uuid") if isinstance(item, dict) else getattr(item, "uuid", None)) == uuid), None)
+        if existing:
+            ErrorHelper.raise_already_exists_error(item_type, uuid)
+
+    @staticmethod
+    def find_item_by_uuid(items, uuid, item_type):
+        """Find item by UUID and raise error if not found."""
+        item = next((item for item in items if
+                    (item.get("uuid") if isinstance(item, dict) else getattr(item, "uuid", None)) == uuid), None)
+        if not item:
+            ErrorHelper.raise_not_found_error(item_type, uuid)
+        return item
+
+
 # ------------------------------------------------
 # get_location_obligatory_fields
 
@@ -670,36 +850,8 @@ def json_db_get_suggestions(self, query_params):
 
 def json_db_get_suggestions_paginated(self, query):
     """JSON suggestions with improved pagination."""
-    page, per_page, sort_by, sort_order = __parse_pagination_params(query)
-
     suggestions = self.data.get("suggestions", [])
-
-    # Apply status filtering
-    statuses = query.get("status")
-    if statuses:
-        suggestions = [s for s in suggestions if s.get("status") in statuses]
-
-    # Apply sorting
-    if sort_by:
-
-        def get_sort_key(item):
-            value = item.get(sort_by) if isinstance(item, dict) else getattr(item, sort_by, None)
-            return (value is not None, value or "")
-
-        reverse = sort_order == "desc"
-        suggestions.sort(key=get_sort_key, reverse=reverse)
-
-    total_count = len(suggestions)
-
-    # Apply pagination
-    if per_page:
-        start_idx = (page - 1) * per_page
-        end_idx = start_idx + per_page
-        items = suggestions[start_idx:end_idx]
-    else:
-        items = suggestions
-
-    return __build_pagination_response(items, total_count, page, per_page)
+    return PaginationHelper.create_paginated_response(suggestions, query)
 
 
 def json_file_db_get_suggestions(self, query_params):
@@ -717,39 +869,11 @@ def json_file_db_get_suggestions(self, query_params):
 
 def json_file_db_get_suggestions_paginated(self, query):
     """JSON file suggestions with improved pagination."""
-    page, per_page, sort_by, sort_order = __parse_pagination_params(query)
-
     with open(self.data_file_path, "r") as file:
         json_file = json.load(file)
 
     suggestions = json_file["map"].get("suggestions", [])
-
-    # Apply status filtering
-    statuses = query.get("status")
-    if statuses:
-        suggestions = [s for s in suggestions if s.get("status") in statuses]
-
-    # Apply sorting
-    if sort_by:
-
-        def get_sort_key(item):
-            value = item.get(sort_by) if isinstance(item, dict) else getattr(item, sort_by, None)
-            return (value is not None, value or "")
-
-        reverse = sort_order == "desc"
-        suggestions.sort(key=get_sort_key, reverse=reverse)
-
-    total_count = len(suggestions)
-
-    # Apply pagination
-    if per_page:
-        start_idx = (page - 1) * per_page
-        end_idx = start_idx + per_page
-        items = suggestions[start_idx:end_idx]
-    else:
-        items = suggestions
-
-    return __build_pagination_response(items, total_count, page, per_page)
+    return PaginationHelper.create_paginated_response(suggestions, query)
 
 
 def mongodb_db_get_suggestions(self, query_params):
@@ -966,40 +1090,8 @@ def json_db_get_reports(self, query_params):
 
 def json_db_get_reports_paginated(self, query):
     """JSON reports with improved pagination."""
-    page, per_page, sort_by, sort_order = __parse_pagination_params(query)
-
     reports = self.data.get("reports", [])
-
-    # Apply filtering
-    statuses = query.get("status")
-    if statuses:
-        reports = [r for r in reports if r.get("status") in statuses]
-
-    priorities = query.get("priority")
-    if priorities:
-        reports = [r for r in reports if r.get("priority") in priorities]
-
-    # Apply sorting
-    if sort_by:
-
-        def get_sort_key(item):
-            value = item.get(sort_by) if isinstance(item, dict) else getattr(item, sort_by, None)
-            return (value is not None, value or "")
-
-        reverse = sort_order == "desc"
-        reports.sort(key=get_sort_key, reverse=reverse)
-
-    total_count = len(reports)
-
-    # Apply pagination
-    if per_page:
-        start_idx = (page - 1) * per_page
-        end_idx = start_idx + per_page
-        items = reports[start_idx:end_idx]
-    else:
-        items = reports
-
-    return __build_pagination_response(items, total_count, page, per_page)
+    return PaginationHelper.create_paginated_response(reports, query)
 
 
 def json_file_db_get_reports(self, query_params):
@@ -1021,43 +1113,9 @@ def json_file_db_get_reports(self, query_params):
 
 def json_file_db_get_reports_paginated(self, query):
     """JSON file reports with improved pagination."""
-    page, per_page, sort_by, sort_order = __parse_pagination_params(query)
-
-    with open(self.data_file_path, "r") as file:
-        json_file = json.load(file)
-
-    reports = json_file["map"].get("reports", [])
-
-    # Apply filtering
-    statuses = query.get("status")
-    if statuses:
-        reports = [r for r in reports if r.get("status") in statuses]
-
-    priorities = query.get("priority")
-    if priorities:
-        reports = [r for r in reports if r.get("priority") in priorities]
-
-    # Apply sorting
-    if sort_by:
-
-        def get_sort_key(item):
-            value = item.get(sort_by) if isinstance(item, dict) else getattr(item, sort_by, None)
-            return (value is not None, value or "")
-
-        reverse = sort_order == "desc"
-        reports.sort(key=get_sort_key, reverse=reverse)
-
-    total_count = len(reports)
-
-    # Apply pagination
-    if per_page:
-        start_idx = (page - 1) * per_page
-        end_idx = start_idx + per_page
-        items = reports[start_idx:end_idx]
-    else:
-        items = reports
-
-    return __build_pagination_response(items, total_count, page, per_page)
+    data = FileIOHelper.get_data_from_file(self.data_file_path)
+    reports = data.get("reports", [])
+    return PaginationHelper.create_paginated_response(reports, query)
 
 
 def mongodb_db_get_reports(self, query_params):
