@@ -1390,7 +1390,8 @@ def test_mongodb_db_get_locations(mock_client):
     assert locations[1].position == (10, 10)
 
     mock_db.locations.find.assert_called_once_with(
-        {"test-category": {"$in": ["searchable"]}}, {"_id": 0, "uuid": 1, "position": 1, "remark": 1}
+        {"test-category": {"$in": ["searchable"]}},
+        {"_id": 0, "uuid": 1, "position": 1, "remark": 1},
     )
 
 
@@ -1407,7 +1408,9 @@ def test_mongodb_db_get_locations_empty_query(mock_client):
     locations = list(mongodb_db_get_locations(db, query, LocationBase))
 
     assert len(locations) == 0
-    mock_db.locations.find.assert_called_once_with({}, {"_id": 0, "uuid": 1, "position": 1, "remark": 1})
+    mock_db.locations.find.assert_called_once_with(
+        {}, {"_id": 0, "uuid": 1, "position": 1, "remark": 1}
+    )
 
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
