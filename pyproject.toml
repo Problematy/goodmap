@@ -31,8 +31,11 @@ pyright = "^1.1.291"
 freezegun = "^1.2.2"
 black = "^24.8.0"
 ruff = "^0.4.4"
-platzky = {path = "vendor/platzky", develop = true}
 platzky-redirections = "^0.1.0"
+python-semantic-release = "^10.4.1"
+
+[tool.poetry.group.local.dependencies]
+platzky = {path = "vendor/platzky", develop = true}
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -81,3 +84,19 @@ addopts = "--ignore=vendor"
 markers = [
     "skip_coverage: skip coverage for this test"
 ]
+
+[tool.semantic_release]
+version_toml = ["pyproject.toml:tool.poetry.version"]
+build_command = "poetry build"
+dist_path = "dist/"
+upload_to_pypi = true
+upload_to_release = true
+remove_dist = false
+commit_author = "semantic-release <semantic-release>"
+commit_message = "chore(release): {version}"
+tag_format = "{version}"
+commit_parser = "conventional"
+changelog_file = "CHANGELOG.md"
+
+[tool.semantic_release.publish]
+dist_glob_patterns = ["dist/*"]
