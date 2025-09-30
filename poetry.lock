@@ -1780,7 +1780,7 @@ type = ["mypy (>=1.14.1)"]
 
 [[package]]
 name = "platzky"
-version = "0.4.0"
+version = "0.4.1"
 description = "Not only blog engine"
 optional = false
 python-versions = "^3.10"
