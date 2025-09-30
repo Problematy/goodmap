@@ -55,3 +55,9 @@ jobs:
           git config --global user.email "semantic-release@users.noreply.github.com"
           poetry run semantic-release version
           poetry run semantic-release publish
+          poetry build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e
+        with:
+          packages-dir: dist/
