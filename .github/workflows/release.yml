@@ -53,7 +53,7 @@ jobs:
           git_committer_email: "semantic-release@users.noreply.github.com"
 
       - name: Publish | Upload to GitHub Release Assets
-        uses: python-semantic-release/publish-action@4d4cb0ab842247caea1963132c242c62aab1e4d5
+        uses: python-semantic-release/publish-action@ae6462adc12bd3d1738070d784b65b5189b955a9
         if: steps.release.outputs.released == 'true'
         with:
           github_token: ${{ steps.generate_token.outputs.token }}
