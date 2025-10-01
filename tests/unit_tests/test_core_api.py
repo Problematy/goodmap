@@ -1266,54 +1266,22 @@ def test_report_location_notification_exception_coverage(test_app):
 
 @mock.patch("goodmap.core_api.gettext", fake_translation)
 @mock.patch("flask_babel.gettext", fake_translation)
-def test_admin_database_exceptions_coverage():
+def test_admin_database_exceptions_coverage(test_app):
     """Test database exceptions in admin endpoints.
 
     Lines: 292-293, 309-310, 321-322, 351-359, 392, 394-395
     """
-    from unittest.mock import MagicMock
 
-    from flask import Flask
+    # Get CSRF token from the test app
+    csrf_token = get_csrf_token(test_app)
 
-    from goodmap.core_api import core_pages
-    from goodmap.data_models.location import create_location_model
+    # Mock the database methods to raise exceptions
+    db = test_app.application.db
 
-    # Mock database to raise exceptions and handle some successful calls
-    mock_database = MagicMock()
     # For locations: two add_location calls (lines 289, 355), first fails, second succeeds
-    mock_database.add_location.side_effect = [Exception("Database error"), None]
-    mock_database.update_location.side_effect = Exception("Update error")
-    mock_database.delete_location.side_effect = Exception("Delete error")
-    mock_database.get_suggestion.return_value = {"status": "pending", "name": "test"}
-    mock_database.update_suggestion.side_effect = ValueError("Suggestion error")
-    mock_database.get_report.return_value = {"status": "pending", "priority": "medium"}
-    mock_database.update_report.side_effect = [
-        None,
-        ValueError("Report error"),
-    ]  # First call succeeds, second fails
-
-    mock_notifier = MagicMock()
-    mock_csrf = MagicMock(return_value="test-token")
-
-    location_model = create_location_model(
-        [("name", str), ("position", list), ("test_category", list), ("type_of_place", str)]
-    )
-
-    blueprint = core_pages(
-        database=mock_database,
-        languages={"en": {"name": "English", "flag": "uk", "country": "GB"}},
-        notifier_function=mock_notifier,
-        csrf_generator=mock_csrf,
-        location_model=location_model,
-        feature_flags={},
-    )
-
-    app = Flask(__name__)
-    app.register_blueprint(blueprint)
-
-    with app.test_client() as client:
+    with mock.patch.object(db, "add_location", side_effect=[Exception("Database error"), None]):
         # Test POST location exception (lines 292-293)
-        response = client.post(
+        response = test_app.post(
             "/api/admin/locations",
             data=json.dumps(
                 {
@@ -1324,12 +1292,13 @@ def test_admin_database_exceptions_coverage():
                 }
             ),
             content_type="application/json",
-            headers={"X-CSRFToken": "test-token"},
+            headers={"X-CSRFToken": csrf_token},
         )
         assert response.status_code == 400
 
-        # Test PUT location exception (lines 309-310)
-        response = client.put(
+    # Test PUT location exception (lines 309-310)
+    with mock.patch.object(db, "update_location", side_effect=Exception("Update error")):
+        response = test_app.put(
             "/api/admin/locations/test-id",
             data=json.dumps(
                 {
@@ -1340,40 +1309,57 @@ def test_admin_database_exceptions_coverage():
                 }
             ),
             content_type="application/json",
-            headers={"X-CSRFToken": "test-token"},
+            headers={"X-CSRFToken": csrf_token},
         )
         assert response.status_code == 400
 
-        # Test DELETE location exception (lines 321-322)
-        response = client.delete(
-            "/api/admin/locations/test-id", headers={"X-CSRFToken": "test-token"}
+    # Test DELETE location exception (lines 321-322)
+    with mock.patch.object(db, "delete_location", side_effect=Exception("Delete error")):
+        response = test_app.delete(
+            "/api/admin/locations/test-id", headers={"X-CSRFToken": csrf_token}
         )
         assert response.status_code == 400
 
-        # Test suggestion update exception (lines 351-359)
-        response = client.put(
+    # Test suggestion update exception (lines 351-359)
+    with (
+        mock.patch.object(db, "get_suggestion", return_value={"status": "pending", "name": "test"}),
+        mock.patch.object(db, "update_suggestion", side_effect=ValueError("Suggestion error")),
+    ):
+        response = test_app.put(
             "/api/admin/suggestions/test-id",
             data=json.dumps({"status": "accepted"}),
             content_type="application/json",
-            headers={"X-CSRFToken": "test-token"},
+            headers={"X-CSRFToken": csrf_token},
         )
         assert response.status_code == 400
 
-        # Test successful report update (line 392)
-        response = client.put(
+    # Test successful report update (line 392)
+    with (
+        mock.patch.object(
+            db, "get_report", return_value={"status": "pending", "priority": "medium"}
+        ),
+        mock.patch.object(db, "update_report", return_value=None),
+    ):
+        response = test_app.put(
             "/api/admin/reports/test-id",
             data=json.dumps({"status": "resolved"}),
             content_type="application/json",
-            headers={"X-CSRFToken": "test-token"},
+            headers={"X-CSRFToken": csrf_token},
         )
         assert response.status_code == 200
 
-        # Test report update exception (lines 394-395)
-        response = client.put(
+    # Test report update exception (lines 394-395)
+    with (
+        mock.patch.object(
+            db, "get_report", return_value={"status": "pending", "priority": "medium"}
+        ),
+        mock.patch.object(db, "update_report", side_effect=ValueError("Report error")),
+    ):
+        response = test_app.put(
             "/api/admin/reports/test-id2",
             data=json.dumps({"status": "resolved"}),
             content_type="application/json",
-            headers={"X-CSRFToken": "test-token"},
+            headers={"X-CSRFToken": csrf_token},
         )
         assert response.status_code == 400
 
