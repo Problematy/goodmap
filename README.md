@@ -1,4 +1,4 @@
-![Github Actions](https://github.com/problematy/goodmap/actions/workflows/tests.yml/badge.svg?event=push&branch=main)
+![Github Actions](https://github.com/problematy/goodmap/actions/workflows/release.yml/badge.svg?event=push&branch=main)
 [![Coverage Status](https://coveralls.io/repos/github/Problematy/goodmap/badge.png)](https://coveralls.io/github/Problematy/goodmap)
 
 # Good Map
