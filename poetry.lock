@@ -1780,7 +1780,7 @@ type = ["mypy (>=1.14.1)"]
 
 [[package]]
 name = "platzky"
-version = "0.4.1"
+version = "0.4.3"
 description = "Not only blog engine"
 optional = false
 python-versions = "^3.10"
@@ -3447,4 +3447,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "c1f4d6f5bf291ccac9c754233bc74c5c848fee6ebc18da57694ac3d585d028ec"
+content-hash = "592c8bf8f801b5790219370ea7949fabf49875289cf76697faf6ba55cd0fb4a7"
