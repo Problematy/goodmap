@@ -11,6 +11,7 @@ lint-check:
 	poetry run black --check .
 	poetry run ruff check .
 	poetry run pyright .
+	poetry run interrogate goodmap/ --verbose
 	cd tests/e2e_tests && npm run lint
 	cd tests/e2e_tests && npm run prettier
 

@@ -13,6 +13,9 @@ coverage.lcov
 # build specific artifacts
 dist
 
+# documentation build artifacts
+docs/_build
+
 
 # IDE-specific directories
 .vscode
