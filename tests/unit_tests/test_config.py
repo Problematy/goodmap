@@ -15,8 +15,7 @@ def test_goodmap_config_default_frontend_url():
         DB=JsonDbConfig(DATA={}, TYPE="json"),
     )
     assert (
-        config.goodmap_frontend_lib_url
-        == "https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.4.2"
+        config.goodmap_frontend_lib_url == "https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.4.2"
     )
 
 
@@ -126,6 +125,5 @@ def test_goodmap_config_inherits_platzky_config():
     assert config.feature_flags == {"test_flag": True}
     # Verify GoodmapConfig specific field
     assert (
-        config.goodmap_frontend_lib_url
-        == "https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.4.2"
+        config.goodmap_frontend_lib_url == "https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.4.2"
     )
