@@ -119,5 +119,5 @@ window.USE_LAZY_LOADING = {{ feature_flags.USE_LAZY_LOADING | default(false) | t
 window.SHOW_ACCESSIBILITY_TABLE = {{ feature_flags.SHOW_ACCESSIBILITY_TABLE | default(false) | tojson }};
 window.FEATURE_FLAGS = {{ feature_flags | tojson }};
 </script>
-<script src="/static/map.js"></script>
+<script src="{{ goodmap_frontend_lib_url }}"></script>
 {% endblock %}

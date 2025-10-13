@@ -4,8 +4,8 @@ from unittest import mock
 
 import deprecation
 import pytest
-from platzky.config import Config
 
+from goodmap.config import GoodmapConfig
 from goodmap.core_api import get_or_none, make_tuple_translation
 from goodmap.goodmap import create_app_from_config
 
@@ -84,7 +84,7 @@ def test_app():
     config_data = get_test_config_data()
     feature_flags: dict[str, bool] = {"CATEGORIES_HELP": True}
     config_data["FEATURE_FLAGS"] = feature_flags
-    config = Config.model_validate(config_data)
+    config = GoodmapConfig.model_validate(config_data)
     app = create_app_from_config(config)
     return app.test_client()
 
@@ -99,7 +99,7 @@ def test_app_without_helpers():
     config_data = get_test_config_data()
     feature_flags: dict[str, bool] = {"CATEGORIES_HELP": False}
     config_data["FEATURE_FLAGS"] = feature_flags
-    config = Config.model_validate(config_data)
+    config = GoodmapConfig.model_validate(config_data)
     app = create_app_from_config(config)
     return app.test_client()
 
@@ -147,10 +147,8 @@ def test_report_location_notification_error(test_app):
 def test_language_endpoint_returns_languages(test_app):
     response = test_app.get("/api/languages")
     assert response.status_code == 200
-    # TODO domain should not be in response if its None
-    assert response.json == {
-        "en": {"country": "GB", "domain": None, "flag": "uk", "name": "English"}
-    }
+    # domain is excluded from response when it's None (as it should be)
+    assert response.json == {"en": {"country": "GB", "flag": "uk", "name": "English"}}
 
 
 # TODO change db_mock of below tests to real json db
@@ -858,7 +856,7 @@ def test_categories_endpoint_with_categories_help():
     config_data["FEATURE_FLAGS"] = {"CATEGORIES_HELP": True}
     # Add categories_help to test data
     config_data["DB"]["DATA"]["categories_help"] = ["option1", "option2"]
-    config = Config.model_validate(config_data)
+    config = GoodmapConfig.model_validate(config_data)
     test_app = create_app_from_config(config)
 
     with test_app.test_client() as client:
@@ -879,7 +877,7 @@ def test_category_data_endpoint_with_categories_options_help():
     config_data["FEATURE_FLAGS"] = {"CATEGORIES_HELP": True}
     # Add categories_options_help to test data
     config_data["DB"]["DATA"]["categories_options_help"] = {"test-category": ["help1", "help2"]}
-    config = Config.model_validate(config_data)
+    config = GoodmapConfig.model_validate(config_data)
     test_app = create_app_from_config(config)
 
     with test_app.test_client() as client:
@@ -966,7 +964,7 @@ def test_categories_endpoint_with_none_categories_help():
     config_data["FEATURE_FLAGS"] = {"CATEGORIES_HELP": True}
     # Set categories_help to None to test line 219
     config_data["DB"]["DATA"]["categories_help"] = None
-    config = Config.model_validate(config_data)
+    config = GoodmapConfig.model_validate(config_data)
     test_app = create_app_from_config(config)
 
     with test_app.test_client() as client:
@@ -983,7 +981,7 @@ def test_category_data_endpoint_with_none_categories_options_help():
     config_data["FEATURE_FLAGS"] = {"CATEGORIES_HELP": True}
     # Remove categories_options_help entirely to test the None path
     config_data["DB"]["DATA"].pop("categories_options_help", None)
-    config = Config.model_validate(config_data)
+    config = GoodmapConfig.model_validate(config_data)
     test_app = create_app_from_config(config)
 
     with test_app.test_client() as client:
