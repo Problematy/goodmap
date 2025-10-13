@@ -786,6 +786,12 @@ def mongodb_db_add_suggestion(self, suggestion_data):
     CRUDHelper.add_item_to_mongodb(self.db.suggestions, suggestion_data, "Suggestion", "pending")
 
 
+def google_json_db_add_suggestion(self, suggestion_data):
+    # Temporary workaround: just use notifier without storing
+    # Full implementation would require writing back to Google Cloud Storage
+    pass
+
+
 def add_suggestion(db, suggestion_data):
     return globals()[f"{db.module_name}_add_suggestion"](db, suggestion_data)
 
@@ -876,6 +882,16 @@ def mongodb_db_get_suggestions_paginated(self, query):
     return __build_pagination_response(items, total_count, page, per_page)
 
 
+def google_json_db_get_suggestions(self, query_params):
+    # GoogleJsonDb is read-only, suggestions not stored in blob
+    return []
+
+
+def google_json_db_get_suggestions_paginated(self, query):
+    """Google JSON suggestions with pagination (read-only)."""
+    return PaginationHelper.create_paginated_response([], query)
+
+
 def get_suggestions(db):
     return globals()[f"{db.module_name}_get_suggestions"]
 
@@ -904,6 +920,11 @@ def json_file_db_get_suggestion(self, suggestion_id):
 
 def mongodb_db_get_suggestion(self, suggestion_id):
     return self.db.suggestions.find_one({"uuid": suggestion_id}, {"_id": 0})
+
+
+def google_json_db_get_suggestion(self, suggestion_id):
+    # GoogleJsonDb is read-only, suggestions not stored in blob
+    return None
 
 
 def get_suggestion(db):
@@ -946,6 +967,11 @@ def mongodb_db_update_suggestion(self, suggestion_id, status):
         raise ValueError(f"Suggestion with uuid {suggestion_id} not found")
 
 
+def google_json_db_update_suggestion(self, suggestion_id, status):
+    # GoogleJsonDb is read-only, no-op
+    pass
+
+
 def update_suggestion(db, suggestion_id, status):
     return globals()[f"{db.module_name}_update_suggestion"](db, suggestion_id, status)
 
@@ -984,6 +1010,11 @@ def mongodb_db_delete_suggestion(self, suggestion_id):
         raise ValueError(f"Suggestion with uuid {suggestion_id} not found")
 
 
+def google_json_db_delete_suggestion(self, suggestion_id):
+    # GoogleJsonDb is read-only, no-op
+    pass
+
+
 def delete_suggestion(db, suggestion_id):
     return globals()[f"{db.module_name}_delete_suggestion"](db, suggestion_id)
 
@@ -1020,6 +1051,12 @@ def mongodb_db_add_report(self, report_data):
         raise ValueError(f"Report with uuid {report_data['uuid']} already exists")
 
     self.db.reports.insert_one(report_data)
+
+
+def google_json_db_add_report(self, report_data):
+    # Temporary workaround: just use notifier without storing
+    # Full implementation would require writing back to Google Cloud Storage
+    pass
 
 
 def add_report(db, report_data):
@@ -1128,6 +1165,16 @@ def mongodb_db_get_reports_paginated(self, query):
     return __build_pagination_response(items, total_count, page, per_page)
 
 
+def google_json_db_get_reports(self, query_params):
+    # GoogleJsonDb is read-only, reports not stored in blob
+    return []
+
+
+def google_json_db_get_reports_paginated(self, query):
+    """Google JSON reports with pagination (read-only)."""
+    return PaginationHelper.create_paginated_response([], query)
+
+
 def get_reports(db):
     return globals()[f"{db.module_name}_get_reports"]
 
@@ -1155,6 +1202,11 @@ def json_file_db_get_report(self, report_id):
 
 def mongodb_db_get_report(self, report_id):
     return self.db.reports.find_one({"uuid": report_id}, {"_id": 0})
+
+
+def google_json_db_get_report(self, report_id):
+    # GoogleJsonDb is read-only, reports not stored in blob
+    return None
 
 
 def get_report(db):
@@ -1210,6 +1262,11 @@ def mongodb_db_update_report(self, report_id, status=None, priority=None):
             raise ValueError(f"Report with uuid {report_id} not found")
 
 
+def google_json_db_update_report(self, report_id, status=None, priority=None):
+    # GoogleJsonDb is read-only, no-op
+    pass
+
+
 def update_report(db, report_id, status=None, priority=None):
     return globals()[f"{db.module_name}_update_report"](db, report_id, status, priority)
 
@@ -1247,6 +1304,11 @@ def mongodb_db_delete_report(self, report_id):
         raise ValueError(f"Report with uuid {report_id} not found")
 
 
+def google_json_db_delete_report(self, report_id):
+    # GoogleJsonDb is read-only, no-op
+    pass
+
+
 def delete_report(db, report_id):
     return globals()[f"{db.module_name}_delete_report"](db, report_id)
 
@@ -1266,17 +1328,16 @@ def extend_db_with_goodmap_queries(db, location_model):
     db.extend("delete_location", delete_location)
     db.extend("get_categories", get_categories(db))
     db.extend("get_category_data", get_category_data(db))
-    if db.module_name in ("json_db", "json_file_db", "mongodb_db"):
-        db.extend("add_suggestion", add_suggestion)
-        db.extend("get_suggestions", get_suggestions(db))
-        db.extend("get_suggestions_paginated", get_suggestions_paginated(db))
-        db.extend("get_suggestion", get_suggestion(db))
-        db.extend("update_suggestion", update_suggestion)
-        db.extend("delete_suggestion", delete_suggestion)
-        db.extend("add_report", add_report)
-        db.extend("get_reports", get_reports(db))
-        db.extend("get_reports_paginated", get_reports_paginated(db))
-        db.extend("get_report", get_report(db))
-        db.extend("update_report", update_report)
-        db.extend("delete_report", delete_report)
+    db.extend("add_suggestion", add_suggestion)
+    db.extend("get_suggestions", get_suggestions(db))
+    db.extend("get_suggestions_paginated", get_suggestions_paginated(db))
+    db.extend("get_suggestion", get_suggestion(db))
+    db.extend("update_suggestion", update_suggestion)
+    db.extend("delete_suggestion", delete_suggestion)
+    db.extend("add_report", add_report)
+    db.extend("get_reports", get_reports(db))
+    db.extend("get_reports_paginated", get_reports_paginated(db))
+    db.extend("get_report", get_report(db))
+    db.extend("update_report", update_report)
+    db.extend("delete_report", delete_report)
     return db
