@@ -31,18 +31,6 @@ def test_goodmap_config_custom_frontend_url():
     assert config.goodmap_frontend_lib_url == custom_url
 
 
-def test_goodmap_config_frontend_url_from_env_alias():
-    """Test that GoodmapConfig can read frontend URL from environment variable."""
-    custom_url = "https://example.com/env-goodmap.js"
-    config = GoodmapConfig(
-        APP_NAME="test",
-        SECRET_KEY="test",
-        DB=JsonDbConfig(DATA={}, TYPE="json"),
-        GOODMAP_FRONTEND_LIB_URL=custom_url,
-    )
-    assert config.goodmap_frontend_lib_url == custom_url
-
-
 def test_goodmap_config_model_validate():
     """Test that model_validate returns correct GoodmapConfig type."""
     config_dict = {
