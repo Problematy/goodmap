@@ -1,5 +1,4 @@
 import sys
-import typing as t
 
 import yaml
 from platzky.config import Config as PlatzkyConfig
