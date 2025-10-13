@@ -9,7 +9,7 @@ class GoodmapConfig(PlatzkyConfig):
     """Extended configuration for Goodmap with additional frontend library URL."""
 
     goodmap_frontend_lib_url: str = Field(
-        default="https://cdn.jsdelivr.net/npm/@problematy/goodmap@latest",
+        default="https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.4.2",
         alias="GOODMAP_FRONTEND_LIB_URL",
     )
 
