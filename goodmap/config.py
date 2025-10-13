@@ -1,3 +1,4 @@
+import sys
 import typing as t
 
 import yaml
@@ -14,13 +15,28 @@ class GoodmapConfig(PlatzkyConfig):
     )
 
     @classmethod
+    def model_validate(
+        cls,
+        obj: t.Any,
+        *,
+        strict: bool | None = None,
+        from_attributes: bool | None = None,
+        context: dict[str, t.Any] | None = None,
+    ) -> "GoodmapConfig":
+        """Override to return correct type for GoodmapConfig."""
+        return t.cast(
+            "GoodmapConfig",
+            super().model_validate(
+                obj, strict=strict, from_attributes=from_attributes, context=context
+            ),
+        )
+
+    @classmethod
     def parse_yaml(cls, path: str) -> "GoodmapConfig":
         """Parse YAML configuration file and return GoodmapConfig instance."""
         try:
             with open(path, "r") as f:
                 return cls.model_validate(yaml.safe_load(f))
         except FileNotFoundError:
-            import sys
-
             print(f"Config file not found: {path}", file=sys.stderr)
             raise SystemExit(1)
