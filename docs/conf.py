@@ -10,9 +10,13 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 # Read version from pyproject.toml
-with open(project_root / "pyproject.toml", "rb") as f:
-    pyproject = tomli.load(f)
-    version = release = pyproject["tool"]["poetry"]["version"]
+try:
+    with open(project_root / "pyproject.toml", "rb") as f:
+        pyproject = tomli.load(f)
+        version = release = pyproject["tool"]["poetry"]["version"]
+except (FileNotFoundError, KeyError) as e:
+    print(f"Warning: Could not read version from pyproject.toml: {e}")
+    version = release = "unknown"
 
 # Project information
 project = "Goodmap"
