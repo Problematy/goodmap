@@ -93,15 +93,6 @@ output = {
         "secondary_color": "#245466",
         "left_bar_width": "300px",
     },
-    "plugins": [
-        {
-            "name": "redirections",
-            "config": {
-                "/test": "/blog/page/about",
-                "/static/map.js": "https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.3.5",
-            },
-        }
-    ],
 }
 
 with open("tests/e2e_tests/e2e_stress_test_data.json", "w") as f:
