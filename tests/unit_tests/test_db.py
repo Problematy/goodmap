@@ -26,6 +26,8 @@ from goodmap.db import (
     google_json_db_get_data,
     google_json_db_get_location_obligatory_fields,
     google_json_db_get_locations_paginated,
+    google_json_db_get_meta_data,
+    google_json_db_get_visible_data,
     json_db_add_location,
     json_db_add_report,
     json_db_add_suggestion,
@@ -55,6 +57,8 @@ from goodmap.db import (
     json_file_db_get_data,
     json_file_db_get_location_obligatory_fields,
     json_file_db_get_locations_paginated,
+    json_file_db_get_meta_data,
+    json_file_db_get_visible_data,
     json_file_db_get_report,
     json_file_db_get_reports,
     json_file_db_get_reports_paginated,
@@ -77,6 +81,8 @@ from goodmap.db import (
     mongodb_db_get_location_obligatory_fields,
     mongodb_db_get_locations,
     mongodb_db_get_locations_paginated,
+    mongodb_db_get_meta_data,
+    mongodb_db_get_visible_data,
     mongodb_db_get_report,
     mongodb_db_get_reports,
     mongodb_db_get_reports_paginated,
@@ -215,6 +221,76 @@ def test_google_json_db_get_data(mock_cli):
     )
     db = GoogleJsonDb("bucket", "blob")
     assert google_json_db_get_data(db) == {"x": 1}
+
+
+# Test get_visible_data and get_meta_data for json_file_db
+@mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {"visible_data": {"field1": "value1"}, "meta_data": {"meta1": "info1"}}})))
+def test_json_file_db_get_visible_data():
+    db = JsonFile("/fake/path/data.json")
+    result = json_file_db_get_visible_data(db)
+    assert result == {"field1": "value1"}
+
+
+@mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {"visible_data": {}, "meta_data": {"meta1": "info1"}}})))
+def test_json_file_db_get_visible_data_empty():
+    db = JsonFile("/fake/path/data.json")
+    result = json_file_db_get_visible_data(db)
+    assert result == {}
+
+
+@mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {"visible_data": {"field1": "value1"}, "meta_data": {"meta1": "info1"}}})))
+def test_json_file_db_get_meta_data():
+    db = JsonFile("/fake/path/data.json")
+    result = json_file_db_get_meta_data(db)
+    assert result == {"meta1": "info1"}
+
+
+@mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {"visible_data": {"field1": "value1"}, "meta_data": {}}})))
+def test_json_file_db_get_meta_data_empty():
+    db = JsonFile("/fake/path/data.json")
+    result = json_file_db_get_meta_data(db)
+    assert result == {}
+
+
+# Test get_visible_data and get_meta_data for google_json_db
+@mock.patch("platzky.db.google_json_db.Client")
+def test_google_json_db_get_visible_data(mock_cli):
+    mock_cli.return_value.bucket.return_value.blob.return_value.download_as_text.return_value = (
+        json.dumps({"map": {"visible_data": {"field1": "value1"}, "meta_data": {"meta1": "info1"}}})
+    )
+    db = GoogleJsonDb("bucket", "blob")
+    result = google_json_db_get_visible_data(db)
+    assert result == {"field1": "value1"}
+
+
+@mock.patch("platzky.db.google_json_db.Client")
+def test_google_json_db_get_visible_data_empty(mock_cli):
+    mock_cli.return_value.bucket.return_value.blob.return_value.download_as_text.return_value = (
+        json.dumps({"map": {}})
+    )
+    db = GoogleJsonDb("bucket", "blob")
+    result = google_json_db_get_visible_data(db)
+    assert result == {}
+
+
+@mock.patch("platzky.db.google_json_db.Client")
+def test_google_json_db_get_meta_data(mock_cli):
+    mock_cli.return_value.bucket.return_value.blob.return_value.download_as_text.return_value = (
+        json.dumps({"map": {"visible_data": {"field1": "value1"}, "meta_data": {"meta1": "info1"}}})
+    )
+    db = GoogleJsonDb("bucket", "blob")
+    result = google_json_db_get_meta_data(db)
+    assert result == {"meta1": "info1"}
+
+
+@mock.patch("platzky.db.google_json_db.Client")
+def test_google_json_db_get_meta_data_empty(mock_cli):
+    mock_cli.return_value.bucket.return_value.blob.return_value.download_as_text.return_value = (
+        json.dumps({"map": {}})
+    )
+    db = GoogleJsonDb("bucket", "blob")
+    result = google_json_db_get_meta_data(db)
+    assert result == {}
 
 
 def test_get_location_from_raw_data_found():
@@ -887,6 +963,85 @@ def test_mongodb_db_get_data_no_config(mock_client):
         "meta_data": {},
     }
     assert result == expected
+
+
+# Test get_visible_data and get_meta_data for mongodb_db
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_visible_data(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.config.find_one.return_value = {
+        "_id": "map_config",
+        "visible_data": {"field1": "value1"},
+        "meta_data": {"meta1": "info1"},
+    }
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    result = mongodb_db_get_visible_data(db)
+    assert result == {"field1": "value1"}
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_visible_data_empty(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.config.find_one.return_value = {
+        "_id": "map_config",
+    }
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    result = mongodb_db_get_visible_data(db)
+    assert result == {}
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_visible_data_no_config(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.config.find_one.return_value = None
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    result = mongodb_db_get_visible_data(db)
+    assert result == {}
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_meta_data(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.config.find_one.return_value = {
+        "_id": "map_config",
+        "visible_data": {"field1": "value1"},
+        "meta_data": {"meta1": "info1"},
+    }
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    result = mongodb_db_get_meta_data(db)
+    assert result == {"meta1": "info1"}
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_meta_data_empty(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.config.find_one.return_value = {
+        "_id": "map_config",
+    }
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    result = mongodb_db_get_meta_data(db)
+    assert result == {}
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_meta_data_no_config(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.config.find_one.return_value = None
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    result = mongodb_db_get_meta_data(db)
+    assert result == {}
 
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")

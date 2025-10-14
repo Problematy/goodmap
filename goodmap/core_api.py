@@ -117,13 +117,8 @@ def core_pages(
             Shows a single location with all data
             """
             location = database.get_location(location_id)
-
-            # TODO getting visible_data and meta_data should be taken from db methods
-            #    e.g. db.get_visible_data() and db.get_meta_data()
-            #    visible_data and meta_data should be models
-            all_data = database.get_data()
-            visible_data = all_data["visible_data"]
-            meta_data = all_data["meta_data"]
+            visible_data = database.get_visible_data()
+            meta_data = database.get_meta_data()
 
             formatted_data = prepare_pin(location.model_dump(), visible_data, meta_data)
             return jsonify(formatted_data)

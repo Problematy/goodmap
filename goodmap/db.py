@@ -388,6 +388,142 @@ def get_data(db):
 
 
 # ------------------------------------------------
+# get_visible_data
+
+
+def google_json_db_get_visible_data(self) -> dict:
+    """
+    Retrieve visible data configuration from Google Cloud Storage JSON blob.
+
+    Returns:
+        dict: Dictionary containing field visibility configuration.
+              Returns empty dict if not found.
+    """
+    return self.data.get("map", {}).get("visible_data", {})
+
+
+def json_file_db_get_visible_data(self) -> dict:
+    """
+    Retrieve visible data configuration from JSON file database.
+
+    Returns:
+        dict: Dictionary containing field visibility configuration.
+              Returns empty dict if not found.
+    """
+    return self.data.get("map", {}).get("visible_data", {})
+
+
+def json_db_get_visible_data(self) -> dict:
+    """
+    Retrieve visible data configuration from in-memory JSON database.
+
+    Returns:
+        dict: Dictionary containing field visibility configuration.
+              Returns empty dict if not found.
+    """
+    return self.data.get("visible_data", {})
+
+
+def mongodb_db_get_visible_data(self) -> dict:
+    """
+    Retrieve visible data configuration from MongoDB.
+
+    Returns:
+        dict: Dictionary containing field visibility configuration.
+              Returns empty dict if config document not found or field missing.
+
+    Raises:
+        pymongo.errors.ConnectionFailure: If database connection fails.
+        pymongo.errors.OperationFailure: If database operation fails.
+    """
+    config_doc = self.db.config.find_one({"_id": "map_config"})
+    if config_doc:
+        return config_doc.get("visible_data", {})
+    return {}
+
+
+def get_visible_data(db):
+    """
+    Get the appropriate get_visible_data function for the given database backend.
+
+    Args:
+        db: Database instance (must have module_name attribute).
+
+    Returns:
+        callable: Backend-specific get_visible_data function.
+    """
+    return globals()[f"{db.module_name}_get_visible_data"]
+
+
+# ------------------------------------------------
+# get_meta_data
+
+
+def google_json_db_get_meta_data(self) -> dict:
+    """
+    Retrieve metadata configuration from Google Cloud Storage JSON blob.
+
+    Returns:
+        dict: Dictionary containing metadata configuration.
+              Returns empty dict if not found.
+    """
+    return self.data.get("map", {}).get("meta_data", {})
+
+
+def json_file_db_get_meta_data(self) -> dict:
+    """
+    Retrieve metadata configuration from JSON file database.
+
+    Returns:
+        dict: Dictionary containing metadata configuration.
+              Returns empty dict if not found.
+    """
+    return self.data.get("map", {}).get("meta_data", {})
+
+
+def json_db_get_meta_data(self) -> dict:
+    """
+    Retrieve metadata configuration from in-memory JSON database.
+
+    Returns:
+        dict: Dictionary containing metadata configuration.
+              Returns empty dict if not found.
+    """
+    return self.data.get("meta_data", {})
+
+
+def mongodb_db_get_meta_data(self) -> dict:
+    """
+    Retrieve metadata configuration from MongoDB.
+
+    Returns:
+        dict: Dictionary containing metadata configuration.
+              Returns empty dict if config document not found or field missing.
+
+    Raises:
+        pymongo.errors.ConnectionFailure: If database connection fails.
+        pymongo.errors.OperationFailure: If database operation fails.
+    """
+    config_doc = self.db.config.find_one({"_id": "map_config"})
+    if config_doc:
+        return config_doc.get("meta_data", {})
+    return {}
+
+
+def get_meta_data(db):
+    """
+    Get the appropriate get_meta_data function for the given database backend.
+
+    Args:
+        db: Database instance (must have module_name attribute).
+
+    Returns:
+        callable: Backend-specific get_meta_data function.
+    """
+    return globals()[f"{db.module_name}_get_meta_data"]
+
+
+# ------------------------------------------------
 # get_categories
 
 
@@ -1320,6 +1456,8 @@ def delete_report(db, report_id):
 
 def extend_db_with_goodmap_queries(db, location_model):
     db.extend("get_data", get_data(db))
+    db.extend("get_visible_data", get_visible_data(db))
+    db.extend("get_meta_data", get_meta_data(db))
     db.extend("get_locations", get_locations(db, location_model))
     db.extend("get_locations_paginated", get_locations_paginated(db, location_model))
     db.extend("get_location", get_location(db, location_model))
