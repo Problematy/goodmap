@@ -2,6 +2,7 @@ import json
 import os
 import tempfile
 from functools import partial
+from typing import Any
 
 from goodmap.core import get_queried_data
 from goodmap.data_models.location import LocationBase
@@ -391,7 +392,7 @@ def get_data(db):
 # get_visible_data
 
 
-def google_json_db_get_visible_data(self) -> dict:
+def google_json_db_get_visible_data(self) -> dict[str, Any]:
     """
     Retrieve visible data configuration from Google Cloud Storage JSON blob.
 
@@ -402,7 +403,7 @@ def google_json_db_get_visible_data(self) -> dict:
     return self.data.get("map", {}).get("visible_data", {})
 
 
-def json_file_db_get_visible_data(self) -> dict:
+def json_file_db_get_visible_data(self) -> dict[str, Any]:
     """
     Retrieve visible data configuration from JSON file database.
 
@@ -413,7 +414,7 @@ def json_file_db_get_visible_data(self) -> dict:
     return self.data.get("map", {}).get("visible_data", {})
 
 
-def json_db_get_visible_data(self) -> dict:
+def json_db_get_visible_data(self) -> dict[str, Any]:
     """
     Retrieve visible data configuration from in-memory JSON database.
 
@@ -424,7 +425,7 @@ def json_db_get_visible_data(self) -> dict:
     return self.data.get("visible_data", {})
 
 
-def mongodb_db_get_visible_data(self) -> dict:
+def mongodb_db_get_visible_data(self) -> dict[str, Any]:
     """
     Retrieve visible data configuration from MongoDB.
 
@@ -459,7 +460,7 @@ def get_visible_data(db):
 # get_meta_data
 
 
-def google_json_db_get_meta_data(self) -> dict:
+def google_json_db_get_meta_data(self) -> dict[str, Any]:
     """
     Retrieve metadata configuration from Google Cloud Storage JSON blob.
 
@@ -470,7 +471,7 @@ def google_json_db_get_meta_data(self) -> dict:
     return self.data.get("map", {}).get("meta_data", {})
 
 
-def json_file_db_get_meta_data(self) -> dict:
+def json_file_db_get_meta_data(self) -> dict[str, Any]:
     """
     Retrieve metadata configuration from JSON file database.
 
@@ -481,7 +482,7 @@ def json_file_db_get_meta_data(self) -> dict:
     return self.data.get("map", {}).get("meta_data", {})
 
 
-def json_db_get_meta_data(self) -> dict:
+def json_db_get_meta_data(self) -> dict[str, Any]:
     """
     Retrieve metadata configuration from in-memory JSON database.
 
@@ -492,7 +493,7 @@ def json_db_get_meta_data(self) -> dict:
     return self.data.get("meta_data", {})
 
 
-def mongodb_db_get_meta_data(self) -> dict:
+def mongodb_db_get_meta_data(self) -> dict[str, Any]:
     """
     Retrieve metadata configuration from MongoDB.
 

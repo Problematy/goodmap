@@ -58,13 +58,13 @@ from goodmap.db import (
     json_file_db_get_location_obligatory_fields,
     json_file_db_get_locations_paginated,
     json_file_db_get_meta_data,
-    json_file_db_get_visible_data,
     json_file_db_get_report,
     json_file_db_get_reports,
     json_file_db_get_reports_paginated,
     json_file_db_get_suggestion,
     json_file_db_get_suggestions,
     json_file_db_get_suggestions_paginated,
+    json_file_db_get_visible_data,
     json_file_db_update_location,
     json_file_db_update_report,
     json_file_db_update_suggestion,
@@ -82,13 +82,13 @@ from goodmap.db import (
     mongodb_db_get_locations,
     mongodb_db_get_locations_paginated,
     mongodb_db_get_meta_data,
-    mongodb_db_get_visible_data,
     mongodb_db_get_report,
     mongodb_db_get_reports,
     mongodb_db_get_reports_paginated,
     mongodb_db_get_suggestion,
     mongodb_db_get_suggestions,
     mongodb_db_get_suggestions_paginated,
+    mongodb_db_get_visible_data,
     mongodb_db_update_location,
     mongodb_db_update_report,
     mongodb_db_update_suggestion,
@@ -224,28 +224,52 @@ def test_google_json_db_get_data(mock_cli):
 
 
 # Test get_visible_data and get_meta_data for json_file_db
-@mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {"visible_data": {"field1": "value1"}, "meta_data": {"meta1": "info1"}}})))
+@mock.patch(
+    "builtins.open",
+    mock.mock_open(
+        read_data=json.dumps(
+            {"map": {"visible_data": {"field1": "value1"}, "meta_data": {"meta1": "info1"}}}
+        )
+    ),
+)
 def test_json_file_db_get_visible_data():
     db = JsonFile("/fake/path/data.json")
     result = json_file_db_get_visible_data(db)
     assert result == {"field1": "value1"}
 
 
-@mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {"visible_data": {}, "meta_data": {"meta1": "info1"}}})))
+@mock.patch(
+    "builtins.open",
+    mock.mock_open(
+        read_data=json.dumps({"map": {"visible_data": {}, "meta_data": {"meta1": "info1"}}})
+    ),
+)
 def test_json_file_db_get_visible_data_empty():
     db = JsonFile("/fake/path/data.json")
     result = json_file_db_get_visible_data(db)
     assert result == {}
 
 
-@mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {"visible_data": {"field1": "value1"}, "meta_data": {"meta1": "info1"}}})))
+@mock.patch(
+    "builtins.open",
+    mock.mock_open(
+        read_data=json.dumps(
+            {"map": {"visible_data": {"field1": "value1"}, "meta_data": {"meta1": "info1"}}}
+        )
+    ),
+)
 def test_json_file_db_get_meta_data():
     db = JsonFile("/fake/path/data.json")
     result = json_file_db_get_meta_data(db)
     assert result == {"meta1": "info1"}
 
 
-@mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {"visible_data": {"field1": "value1"}, "meta_data": {}}})))
+@mock.patch(
+    "builtins.open",
+    mock.mock_open(
+        read_data=json.dumps({"map": {"visible_data": {"field1": "value1"}, "meta_data": {}}})
+    ),
+)
 def test_json_file_db_get_meta_data_empty():
     db = JsonFile("/fake/path/data.json")
     result = json_file_db_get_meta_data(db)
