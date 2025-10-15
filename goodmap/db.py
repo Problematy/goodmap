@@ -333,7 +333,7 @@ def json_file_db_get_location_obligatory_fields(db):
 
 
 def google_json_db_get_location_obligatory_fields(db):
-    return json.loads(db.blob.download_as_text(client=None))["map"]["location_obligatory_fields"]
+    return db.data.get("map", {}).get("location_obligatory_fields", [])
 
 
 def mongodb_db_get_location_obligatory_fields(db):
@@ -352,7 +352,7 @@ def get_location_obligatory_fields(db):
 
 
 def google_json_db_get_data(self):
-    return json.loads(self.blob.download_as_text(client=None))["map"]
+    return self.data.get("map", {})
 
 
 def json_file_db_get_data(self):
@@ -538,7 +538,7 @@ def json_file_db_get_categories(self):
 
 
 def google_json_db_get_categories(self):
-    return json.loads(self.blob.download_as_text(client=None))["map"]["categories"].keys()
+    return self.data.get("map", {}).get("categories", {}).keys()
 
 
 def mongodb_db_get_categories(self):
@@ -591,17 +591,17 @@ def json_file_db_get_category_data(self, category_type=None):
 
 
 def google_json_db_get_category_data(self, category_type=None):
-    data = json.loads(self.blob.download_as_text(client=None))["map"]
+    data = self.data.get("map", {})
     if category_type:
         return {
-            "categories": {category_type: data["categories"].get(category_type, [])},
+            "categories": {category_type: data.get("categories", {}).get(category_type, [])},
             "categories_help": data.get("categories_help", []),
             "categories_options_help": {
                 category_type: data.get("categories_options_help", {}).get(category_type, [])
             },
         }
     return {
-        "categories": data["categories"],
+        "categories": data.get("categories", {}),
         "categories_help": data.get("categories_help", []),
         "categories_options_help": data.get("categories_options_help", {}),
     }
@@ -645,7 +645,7 @@ def get_location_from_raw_data(raw_data, uuid, location_model):
 
 def google_json_db_get_location(self, uuid, location_model):
     return get_location_from_raw_data(
-        json.loads(self.blob.download_as_text(client=None))["map"], uuid, location_model
+        self.data.get("map", {}), uuid, location_model
     )
 
 
@@ -678,9 +678,7 @@ def get_locations_list_from_raw_data(map_data, query, location_model):
 
 
 def google_json_db_get_locations(self, query, location_model):
-    return get_locations_list_from_raw_data(
-        json.loads(self.blob.download_as_text(client=None))["map"], query, location_model
-    )
+    return get_locations_list_from_raw_data(self.data.get("map", {}), query, location_model)
 
 
 def json_file_db_get_locations(self, query, location_model):
@@ -710,7 +708,7 @@ def get_locations(db, location_model):
 def google_json_db_get_locations_paginated(self, query, location_model):
     """Google JSON locations with improved pagination."""
     # Get all locations from raw data
-    data = json.loads(self.blob.download_as_text(client=None))["map"]
+    data = self.data.get("map", {})
     all_locations = list(get_locations_list_from_raw_data(data, query, location_model))
     return PaginationHelper.create_paginated_response(all_locations, query)
 
