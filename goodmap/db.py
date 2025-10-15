@@ -644,9 +644,7 @@ def get_location_from_raw_data(raw_data, uuid, location_model):
 
 
 def google_json_db_get_location(self, uuid, location_model):
-    return get_location_from_raw_data(
-        self.data.get("map", {}), uuid, location_model
-    )
+    return get_location_from_raw_data(self.data.get("map", {}), uuid, location_model)
 
 
 def json_file_db_get_location(self, uuid, location_model):
