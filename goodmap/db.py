@@ -671,8 +671,41 @@ def get_location(db, location_model):
 
 
 def get_locations_list_from_raw_data(map_data, query, location_model):
+    import json
+    import logging
+
     filtered_locations = get_queried_data(map_data["data"], map_data["categories"], query)
-    return [location_model.model_validate(point) for point in filtered_locations]
+    validated_locations = []
+    for point in filtered_locations:
+        try:
+            validated_locations.append(location_model.model_validate(point))
+        except Exception as e:
+            logger = logging.getLogger(__name__)
+
+            # Log the error with raw data in the message
+            logger.error(
+                f"Location validation failed: {e}. Raw data: {json.dumps(point, ensure_ascii=False)}"
+            )
+
+            # Also add to OpenTelemetry span if available
+            try:
+                from opentelemetry import trace
+                span = trace.get_current_span()
+                if span.is_recording():
+                    span.add_event(
+                        "validation_error",
+                        attributes={
+                            "error": str(e),
+                            "error_type": type(e).__name__,
+                            "raw_data": json.dumps(point, ensure_ascii=False)
+                        }
+                    )
+                    span.set_status(trace.Status(trace.StatusCode.ERROR, str(e)))
+            except Exception:
+                pass  # OpenTelemetry not available or span not recording
+
+            raise
+    return validated_locations
 
 
 def google_json_db_get_locations(self, query, location_model):
