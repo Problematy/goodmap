@@ -6,7 +6,6 @@ from pydantic import BaseModel, Field, create_model, field_validator
 class LocationBase(BaseModel, extra="allow"):
     position: tuple[float, float]
     uuid: str
-    remark: str = ""
 
     @field_validator("position")
     @classmethod
@@ -18,7 +17,7 @@ class LocationBase(BaseModel, extra="allow"):
         return v
 
     def basic_info(self):
-        return {"uuid": self.uuid, "position": self.position, "remark": bool(self.remark)}
+        return {"uuid": self.uuid, "position": self.position, "remark": bool(getattr(self, "remark", False))}
 
 
 def create_location_model(obligatory_fields: list[tuple[str, Type[Any]]]) -> Type[BaseModel]:
