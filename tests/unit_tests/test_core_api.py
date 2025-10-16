@@ -46,6 +46,7 @@ def get_test_config_data() -> dict[str, Any]:
                         "test_category": ["test"],
                         "type_of_place": "test-place",
                         "uuid": "1",
+                        "remark": "this is a remark",
                     },
                     {
                         "name": "test2",
@@ -82,7 +83,7 @@ def get_csrf_token(test_client):
 @pytest.fixture
 def test_app():
     config_data = get_test_config_data()
-    feature_flags: dict[str, bool] = {"CATEGORIES_HELP": True}
+    feature_flags: dict[str, bool] = {"CATEGORIES_HELP": True, "USE_LAZY_LOADING": True}
     config_data["FEATURE_FLAGS"] = feature_flags
     config = GoodmapConfig.model_validate(config_data)
     app = create_app_from_config(config)
@@ -292,7 +293,7 @@ def test_get_locations(test_app):
     response = test_app.get("/api/locations")
     assert response.status_code == 200
     assert response.json == [
-        {"uuid": "1", "position": [50, 50], "remark": False},
+        {"uuid": "1", "position": [50, 50], "remark": True},
         {"uuid": "2", "position": [60, 60], "remark": False},
     ]
 
