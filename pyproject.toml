@@ -119,7 +119,7 @@ dist_glob_patterns = ["dist/*"]
 upload_to_vcs_release = true
 
 [tool.interrogate]
-fail-under = 24
+fail-under = 28
 ignore-init-method = true
 ignore-init-module = true
 ignore-magic = true
