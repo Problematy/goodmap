@@ -17,7 +17,11 @@ class LocationBase(BaseModel, extra="allow"):
         return v
 
     def basic_info(self):
-        return {"uuid": self.uuid, "position": self.position, "remark": bool(getattr(self, "remark", False))}
+        return {
+            "uuid": self.uuid,
+            "position": self.position,
+            "remark": bool(getattr(self, "remark", False)),
+        }
 
 
 def create_location_model(obligatory_fields: list[tuple[str, Type[Any]]]) -> Type[BaseModel]:
