@@ -112,6 +112,7 @@ function hideLoading() {
 window.APP_LANG = "{{ current_language }}";
 window.SECONDARY_COLOR = "{{ secondary_color }}";
 window.PRIMARY_COLOR = "{{ primary_color }}";
+window.LOADING_GIF = "{{ loading_gif }}";
 
 window.SHOW_SUGGEST_NEW_POINT_BUTTON = {{ feature_flags.SHOW_SUGGEST_NEW_POINT_BUTTON | default(false) | tojson }};
 window.SHOW_SEARCH_BAR = {{ feature_flags.SHOW_SEARCH_BAR | default(false) | tojson }};
