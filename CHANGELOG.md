@@ -1,5 +1,17 @@
 # Changelog
 
+#### 0.5.3
+  * helpers for categories introduced
+
+#### 0.5.2
+  * fix for wrong remark types
+
+#### 0.5.1
+  * admin panel added
+
+#### 0.5.0
+  * removed deprecated `data` attribute from `/api/data` endpoint
+
 #### 0.4.4
   * feature: added accessibility table for improved screen reader support
 

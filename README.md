@@ -1,4 +1,4 @@
-![Github Actions](https://github.com/problematy/goodmap/actions/workflows/tests.yml/badge.svg?event=push&branch=main)
+![Github Actions](https://github.com/problematy/goodmap/actions/workflows/release.yml/badge.svg?event=push&branch=main)
 [![Coverage Status](https://coveralls.io/repos/github/Problematy/goodmap/badge.png)](https://coveralls.io/github/Problematy/goodmap)
 
 # Good Map
@@ -54,10 +54,16 @@ you can simply run app with test dataset provided in `tests/e2e_tests` directory
 ### Configuration
 
 If you want to serve app with your configuration rename config-template.yml to config.yml and change its contents according to your needs.
-Values descriptions you can find inside config-template.yml.
 
 Afterwards run it with:
 > poetry run flask --app 'goodmap.goodmap:create_app(config_path="/PATH/TO/YOUR/CONFIG")' --debug run
+
+
+| Option                   | Description                                                                                                                        |
+|--------------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| USE_LAZY_LOADING         | Loads point data only after the user clicks a point. If set to false, point data is loaded together with the initial map.          |
+| FAKE_LOGIN               | If set to true, allows access to the admin panel by simply selecting the role instead of logging in. **DO NOT USE IN PRODUCTION!** |
+| SHOW_ACCESSIBILITY_TABLE | If set as true it shows special view to help with accessing application.                                                           |
 
 ## Database
 
@@ -92,3 +98,5 @@ You can define the fields in all these subsections. Besides these types of field
 You can find examples of working configuration and database in `tests/e2e_tests` named:
 - `e2e_test_config.yml`
 - `e2e_test_data.json`
+
+

@@ -17,5 +17,9 @@ LANGUAGES:
     country: PL
 
 FEATURE_FLAGS:
-  USE_LAZY_LOADING: False
+  USE_LAZY_LOADING: True
   SHOW_ACCESSIBILITY_TABLE: True
+  FAKE_LOGIN: True
+  CATEGORIES_HELP: False
+
+GOODMAP_FRONTEND_LIB_URL: "https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.4.1"

@@ -1,0 +1,743 @@
+{% extends "admin.html" %}
+
+{% block head_meta %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+      integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+      crossorigin=""/>
+<style>
+  .map { height: 400px; }
+  /* Ensure dropdowns appear above maps */
+  .dropdown-menu { z-index: 2000 !important; }
+  /* Modernize button spacing and padding */
+  .container-fluid .btn {
+    padding: 0.6rem 1.2rem;
+    margin: 0.3rem;
+  }
+</style>
+{% endblock %}
+{% block title %}{{ gettext("Goodmap Admin Panel") }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <h1 class="mb-4">{{ gettext("Admin Panel") }}</h1>
+  <!-- Tabs navigation -->
+  <ul class="nav nav-tabs mb-3" id="adminTab" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="locations-tab" data-bs-toggle="tab" data-bs-target="#locations" type="button" role="tab" aria-controls="locations" aria-selected="true">{{ gettext("Locations") }}</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="suggestions-tab" data-bs-toggle="tab" data-bs-target="#suggestions" type="button" role="tab" aria-controls="suggestions" aria-selected="false">{{ gettext("Suggestions") }}</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="reports-tab" data-bs-toggle="tab" data-bs-target="#reports" type="button" role="tab" aria-controls="reports" aria-selected="false">{{ gettext("Reports") }}</button>
+    </li>
+  </ul>
+  <div class="tab-content" id="adminTabContent">
+    <!-- Locations Tab -->
+    <div class="tab-pane fade show active" id="locations" role="tabpanel" aria-labelledby="locations-tab">
+      <div class="d-flex flex-wrap align-items-center mb-3">
+        <h2 class="me-auto">{{ gettext("Locations") }}</h2>
+        <div class="btn-group ms-2">
+          <button id="add-location-btn" class="btn btn-primary">{{ gettext("Add Location") }}</button>
+        </div>
+        <div class="btn-group ms-2">
+          <button class="btn btn-secondary dropdown-toggle" type="button" id="filter-type-btn" data-bs-toggle="dropdown" aria-expanded="false">{{ gettext("Filter by Type") }}</button>
+          <div class="dropdown-menu p-3" id="filter-type-menu"></div>
+        </div>
+        <div class="btn-group ms-2">
+          <button class="btn btn-secondary dropdown-toggle" type="button" id="filter-access-btn" data-bs-toggle="dropdown" aria-expanded="false">{{ gettext("Filter by Accessibility") }}</button>
+          <div class="dropdown-menu p-3" id="filter-access-menu"></div>
+        </div>
+      </div>
+      <table class="table table-striped table-bordered">
+        <thead>
+          <tr>
+            <th>{{ gettext("UUID") }}</th>
+            <th>{{ gettext("Name") }}</th>
+            <th>{{ gettext("Position") }}</th>
+            <th>{{ gettext("Accessible By") }}</th>
+            <th>{{ gettext("Type") }}</th>
+            <th>{{ gettext("Actions") }}</th>
+          </tr>
+        </thead>
+        <tbody id="locations-body"></tbody>
+      </table>
+      <div id="locations-pagination" class="d-flex justify-content-between align-items-center mb-3"></div>
+      <!-- Location Form -->
+      <div class="card mt-4" id="location-form-card" style="display:none">
+        <div class="card-body">
+          <h3 id="location-form-title"></h3>
+          <form id="location-form">
+            <input type="hidden" id="location-uuid">
+            <div class="mb-3">
+              <label for="location-name" class="form-label">{{ gettext("Name") }}</label>
+              <input type="text" class="form-control" id="location-name" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">{{ gettext("Position") }}</label>
+              <div id="location-map" class="map"></div>
+              <input type="hidden" id="location-position">
+            </div>
+            <div class="mb-3">
+              <label for="location-type" class="form-label">{{ gettext("Type") }}</label>
+              <select class="form-select" id="location-type" required></select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">{{ gettext("Accessible By") }}</label>
+              <div id="location-accessible" class="d-flex flex-wrap"></div>
+            </div>
+            <button type="submit" class="btn btn-success">{{ gettext("Save") }}</button>
+            <button type="button" class="btn btn-secondary" id="location-cancel-btn">{{ gettext("Cancel") }}</button>
+            <button type="button" class="btn btn-danger" id="location-delete-btn" style="display:none">{{ gettext("Delete") }}</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    <!-- Suggestions Tab -->
+    <div class="tab-pane fade" id="suggestions" role="tabpanel" aria-labelledby="suggestions-tab">
+      <div class="d-flex align-items-center mb-3">
+        <h2 class="me-auto">{{ gettext("Suggestions") }}</h2>
+        <div class="btn-group">
+          <button class="btn btn-secondary dropdown-toggle" type="button" id="suggestions-filter-btn" data-bs-toggle="dropdown" aria-expanded="false">{{ gettext("Filter by Status") }}</button>
+          <div class="dropdown-menu p-3" id="suggestions-filter-menu"></div>
+        </div>
+      </div>
+      <div id="suggestions-map" class="map mb-3"></div>
+      <table class="table table-striped table-bordered">
+        <thead>
+          <tr>
+            <th>{{ gettext("UUID") }}</th>
+            <th>{{ gettext("Name") }}</th>
+            <th>{{ gettext("Position") }}</th>
+            <th>{{ gettext("Status") }}</th>
+            <th>{{ gettext("Actions") }}</th>
+          </tr>
+        </thead>
+        <tbody id="suggestions-body"></tbody>
+      </table>
+      <div id="suggestions-pagination" class="d-flex justify-content-between align-items-center mb-3"></div>
+    </div>
+    <!-- Reports Tab -->
+    <div class="tab-pane fade" id="reports" role="tabpanel" aria-labelledby="reports-tab">
+      <div class="d-flex align-items-center mb-3">
+        <h2 class="me-auto">{{ gettext("Reports") }}</h2>
+        <div class="btn-group me-2">
+          <button class="btn btn-secondary dropdown-toggle" type="button" id="reports-filter-status-btn" data-bs-toggle="dropdown" aria-expanded="false">{{ gettext("Filter by Status") }}</button>
+          <div class="dropdown-menu p-3" id="reports-filter-status-menu"></div>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-secondary dropdown-toggle" type="button" id="reports-filter-priority-btn" data-bs-toggle="dropdown" aria-expanded="false">{{ gettext("Filter by Priority") }}</button>
+          <div class="dropdown-menu p-3" id="reports-filter-priority-menu"></div>
+        </div>
+      </div>
+      <table class="table table-striped table-bordered">
+        <thead>
+          <tr>
+            <th>{{ gettext("UUID") }}</th>
+            <th>{{ gettext("Location ID") }}</th>
+            <th>{{ gettext("Description") }}</th>
+            <th>{{ gettext("Status") }}</th>
+            <th>{{ gettext("Priority") }}</th>
+          </tr>
+        </thead>
+        <tbody id="reports-body"></tbody>
+      </table>
+      <div id="reports-pagination" class="d-flex justify-content-between align-items-center mb-3"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Load Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha256-yDc0eil8GjWFKqN1OSzHSVCiuGghTosZCcRje4tj7iQ=" crossorigin=""></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  let csrfToken = '{{ csrf_token() }}';
+
+  // Data containers
+  let locationsData = [];
+  let suggestionsData = [];
+  let reportsData = [];
+
+  // Category options
+  const categories = { accessible_by: [], type_of_place: [] };
+
+  // Maps
+  let locationMap, locationMarker;
+  let suggestionsMap, suggestionsTile;
+  // Default map center (Poland)
+  const POLAND_CENTER = [52.237, 21.017];
+  const POLAND_ZOOM = 6;
+
+  // Priority order for sorting reports
+  const priorityOrder = { critical: 1, high: 2, medium: 3, low: 4 };
+
+  // Filters state
+  const locFilters = { type: [], access: [] };
+  const suggFilters = { status: ['pending'] };
+  const repFilters = { status: ['pending'], priority: [] };
+  // Pagination and sorting state
+  const locState = { page: 1, per_page: 20, sort_by: null, sort_order: 'asc' };
+  const suggState = { page: 1, per_page: 20, sort_by: null, sort_order: 'asc' };
+  const repState = { page: 1, per_page: 20, sort_by: null, sort_order: 'asc' };
+
+  // Initialize UI
+  initCategories().then(() => {
+    buildLocationFilters();
+    buildLocationFormOptions();
+    buildSuggestionFilters();
+    buildReportFilters();
+    loadLocations();
+    loadSuggestions();
+    loadReports();
+  });
+
+  function escapeHTML(str) {
+    const div = document.createElement('div');
+    div.innerText = str;
+    return div.innerHTML;
+  }
+
+  // Category fetch
+  function initCategories() {
+    return Promise.all([
+      fetch('/api/category/accessible_by').then(r => r.json()),
+      fetch('/api/category/type_of_place').then(r => r.json())
+    ]).then(([accessOpts, typeOpts]) => {
+      categories.accessible_by = accessOpts.map(o => o[0]);
+      categories.type_of_place = typeOpts.map(o => o[0]);
+    });
+  }
+
+  // Location Filters
+  function buildLocationFilters() {
+    const typeMenu = document.getElementById('filter-type-menu');
+    categories.type_of_place.forEach(type => {
+      const div = document.createElement('div'); div.className = 'form-check';
+      const cb = document.createElement('input'); cb.className = 'form-check-input loc-filter-type'; cb.type = 'checkbox'; cb.value = type;
+      cb.id = 'filter-type-' + type; cb.addEventListener('change', applyLocationFilters);
+      const lbl = document.createElement('label'); lbl.className = 'form-check-label'; lbl.htmlFor = cb.id; lbl.innerText = type;
+      div.append(cb, lbl); typeMenu.append(div);
+    });
+    const accessMenu = document.getElementById('filter-access-menu');
+    categories.accessible_by.forEach(acc => {
+      const div = document.createElement('div'); div.className = 'form-check';
+      const cb = document.createElement('input'); cb.className = 'form-check-input loc-filter-access'; cb.type = 'checkbox'; cb.value = acc;
+      cb.id = 'filter-access-' + acc; cb.addEventListener('change', applyLocationFilters);
+      const lbl = document.createElement('label'); lbl.className = 'form-check-label'; lbl.htmlFor = cb.id; lbl.innerText = acc;
+      div.append(cb, lbl); accessMenu.append(div);
+    });
+    document.getElementById('add-location-btn').addEventListener('click', () => showLocationForm());
+    document.getElementById('location-cancel-btn').addEventListener('click', hideLocationForm);
+  }
+
+  function applyLocationFilters() {
+    locFilters.type = Array.from(document.querySelectorAll('.loc-filter-type:checked')).map(cb => cb.value);
+    locFilters.access = Array.from(document.querySelectorAll('.loc-filter-access:checked')).map(cb => cb.value);
+    locState.page = 1;
+    loadLocations();
+  }
+
+  // Location Form
+  function buildLocationFormOptions() {
+    const typeSel = document.getElementById('location-type');
+    categories.type_of_place.forEach(type => {
+      const opt = document.createElement('option'); opt.value = type; opt.innerText = type; typeSel.append(opt);
+    });
+    const acDiv = document.getElementById('location-accessible');
+    categories.accessible_by.forEach(acc => {
+      const div = document.createElement('div'); div.className = 'form-check me-3';
+      const cb = document.createElement('input'); cb.className = 'form-check-input'; cb.type = 'checkbox'; cb.id = 'loc-form-access-' + acc; cb.value = acc;
+      const lbl = document.createElement('label'); lbl.className = 'form-check-label'; lbl.htmlFor = cb.id; lbl.innerText = acc;
+      div.append(cb, lbl); acDiv.append(div);
+    });
+    document.getElementById('location-form').addEventListener('submit', submitLocationForm);
+    document.getElementById('location-delete-btn').addEventListener('click', deleteLocation);
+  }
+
+  function showLocationForm(loc) {
+    document.getElementById('location-form-title').innerText = loc ? '{{ gettext("Edit Location") }}' : '{{ gettext("Add Location") }}';
+    document.getElementById('location-uuid').value = loc ? loc.uuid : '';
+    document.getElementById('location-name').value = loc ? loc.name : '';
+    document.getElementById('location-type').value = loc ? loc.type_of_place : '';
+    categories.accessible_by.forEach(acc => {
+      document.getElementById('loc-form-access-' + acc).checked = loc && loc.accessible_by.includes(acc);
+    });
+    document.getElementById('location-delete-btn').style.display = loc ? 'inline-block' : 'none';
+    const posInput = document.getElementById('location-position');
+    const card = document.getElementById('location-form-card');
+    if (!locationMap) initLocationMap();
+    // Set form values (marker placement handled after resize)
+    if (loc) {
+      document.getElementById('location-uuid').value = loc.uuid;
+      document.getElementById('location-name').value = loc.name;
+      document.getElementById('location-type').value = loc.type_of_place;
+      categories.accessible_by.forEach(acc => {
+        document.getElementById('loc-form-access-' + acc).checked = loc.accessible_by.includes(acc);
+      });
+      posInput.value = JSON.stringify(loc.position);
+    } else {
+      // Reset form for new
+      document.getElementById('location-uuid').value = '';
+      document.getElementById('location-name').value = '';
+      document.getElementById('location-type').value = '';
+      categories.accessible_by.forEach(acc => {
+        document.getElementById('loc-form-access-' + acc).checked = false;
+      });
+      if (locationMarker) locationMap.removeLayer(locationMarker);
+      posInput.value = '';
+    }
+    // Show form
+    card.style.display = 'block';
+    // Allow layout then resize map to fit
+    setTimeout(() => {
+      locationMap.invalidateSize();
+      if (loc) {
+        const latlng = L.latLng(loc.position[0], loc.position[1]);
+        placeLocationMarker(latlng);
+        locationMap.setView(latlng, 15);
+      } else {
+        locationMap.setView(POLAND_CENTER, POLAND_ZOOM);
+      }
+    }, 0);
+    window.scrollTo(0, card.offsetTop);
+  }
+
+  function hideLocationForm() {
+    document.getElementById('location-form-card').style.display = 'none';
+  }
+
+  function initLocationMap() {
+    locationMap = L.map('location-map').setView(POLAND_CENTER, POLAND_ZOOM);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ attribution: '© OpenStreetMap contributors' }).addTo(locationMap);
+    locationMap.on('click', e => placeLocationMarker(e.latlng));
+  }
+
+  function placeLocationMarker(latlng) {
+    if (!locationMarker) {
+      locationMarker = L.marker(latlng,{ draggable:true }).addTo(locationMap);
+      locationMarker.on('dragend', e => updateLocationPosition(e.target.getLatLng()));
+    } else {
+      locationMarker.setLatLng(latlng);
+    }
+    updateLocationPosition(latlng);
+  }
+
+  function updateLocationPosition(latlng) {
+    document.getElementById('location-position').value = JSON.stringify([latlng.lat, latlng.lng]);
+  }
+
+  function submitLocationForm(e) {
+    e.preventDefault();
+    const uuid = document.getElementById('location-uuid').value;
+    const name = document.getElementById('location-name').value;
+    const position = JSON.parse(document.getElementById('location-position').value || '[]');
+    const type = document.getElementById('location-type').value;
+    const accessible_by = categories.accessible_by.filter(acc => document.getElementById('loc-form-access-' + acc).checked);
+    const payload = { name, position, type_of_place: type, accessible_by };
+    const method = uuid ? 'PUT' : 'POST';
+    const url = '/api/admin/locations' + (uuid ? '/' + uuid : '');
+    fetch(url, { method, headers: { 'Content-Type':'application/json','X-CSRFToken':csrfToken }, body: JSON.stringify(payload) })
+      .then(r => { if (r.ok) { hideLocationForm(); loadLocations(); } else r.json().then(err => alert(err.message)); });
+  }
+
+  function deleteLocation() {
+    const uuid = document.getElementById('location-uuid').value;
+    if (!uuid) return;
+    fetch('/api/admin/locations/' + uuid, { method: 'DELETE', headers:{ 'X-CSRFToken':csrfToken } })
+      .then(r => { if (r.ok) { hideLocationForm(); loadLocations(); } else alert('{{ gettext("Error deleting location") }}'); });
+  }
+
+  function loadLocations() {
+    const params = new URLSearchParams();
+    params.append('page', locState.page);
+    // Handle per_page parameter ('all' for no limit)
+    params.append('per_page', locState.per_page === null ? 'all' : locState.per_page);
+    if (locState.sort_by) {
+      params.append('sort_by', locState.sort_by);
+      params.append('sort_order', locState.sort_order);
+    }
+    locFilters.type.forEach(t => params.append('type_of_place', t));
+    locFilters.access.forEach(a => params.append('accessible_by', a));
+    fetch('/api/admin/locations?' + params.toString())
+      .then(r => r.json())
+      .then(data => {
+        if (data.items !== undefined) {
+          locationsData = data.items;
+          locState.total = data.total;
+          locState.total_pages = data.total_pages;
+        } else {
+          locationsData = data;
+          locState.total = locationsData.length;
+          locState.total_pages = 1;
+        }
+        renderLocations();
+        renderLocationPagination();
+      });
+  }
+
+  function renderLocations() {
+    const tbody = document.getElementById('locations-body'); tbody.innerHTML='';
+    locationsData.forEach(loc => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${loc.uuid}</td><td>${loc.name}</td><td>[${loc.position}]</td><td>${loc.accessible_by.join(', ')}</td><td>${loc.type_of_place}</td><td><button class="btn btn-sm btn-primary edit-loc-btn" data-id="${loc.uuid}">{{gettext("Edit")}}</button></td>`;
+        tbody.appendChild(tr);
+        tr.querySelector('.edit-loc-btn').addEventListener('click', () => { const l = locationsData.find(x => x.uuid == loc.uuid); showLocationForm(l); });
+    });
+  }
+  // Pagination for Locations
+  function renderLocationPagination() {
+    const pag = document.getElementById('locations-pagination');
+    pag.innerHTML = '';
+    const info = document.createElement('div');
+    if (locState.per_page === null) {
+      info.innerText = `Showing all ${locState.total} items`;
+    } else {
+      const start = (locState.page - 1) * locState.per_page + 1;
+      const end = Math.min(locState.page * locState.per_page, locState.total);
+      info.innerText = `Showing ${start}-${end} of ${locState.total}`;
+    }
+    pag.appendChild(info);
+    const nav = document.createElement('div');
+    nav.className = 'btn-group';
+    const prev = document.createElement('button');
+    prev.className = 'btn btn-sm btn-secondary';
+    prev.innerText = '{{ gettext("Previous") }}';
+    prev.disabled = locState.page <= 1;
+    prev.addEventListener('click', () => { if (locState.page > 1) { locState.page--; loadLocations(); } });
+    const next = document.createElement('button');
+    next.className = 'btn btn-sm btn-secondary';
+    next.innerText = '{{ gettext("Next") }}';
+    next.disabled = locState.page >= locState.total_pages;
+    next.addEventListener('click', () => { if (locState.page < locState.total_pages) { locState.page++; loadLocations(); } });
+    nav.append(prev, next);
+    pag.appendChild(nav);
+    const selDiv = document.createElement('div');
+    const lbl = document.createElement('label');
+    lbl.className = 'me-2';
+    lbl.innerText = '{{ gettext("Items per page:") }}';
+    const sel = document.createElement('select');
+    sel.className = 'form-select form-select-sm d-inline-block w-auto';
+    [['20','20'],['50','50'],['100','100'],['all','{{ gettext("All") }}']].forEach(([val,text]) => {
+      const opt = document.createElement('option');
+      opt.value = val;
+      opt.innerText = text;
+      if ((locState.per_page === null && val === 'all') || (locState.per_page == parseInt(val))) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    sel.addEventListener('change', () => {
+      const v = sel.value;
+      locState.per_page = v === 'all' ? null : parseInt(v);
+      locState.page = 1;
+      loadLocations();
+    });
+    selDiv.append(lbl, sel);
+    pag.appendChild(selDiv);
+  }
+
+  // Suggestions
+  function buildSuggestionFilters() {
+    const menu = document.getElementById('suggestions-filter-menu');
+    ['pending','accepted','rejected'].forEach(status => {
+      const div = document.createElement('div'); div.className='form-check';
+      const cb = document.createElement('input'); cb.className='form-check-input sugg-filter-status'; cb.type='checkbox'; cb.value=status; cb.id='sugg-filter-'+status;
+      if (status==='pending') cb.checked=true; cb.addEventListener('change', applySuggestionFilters);
+      const lbl = document.createElement('label'); lbl.className='form-check-label'; lbl.htmlFor=cb.id; lbl.innerText=status;
+      div.append(cb,lbl); menu.append(div);
+    });
+  }
+
+  function applySuggestionFilters() {
+    suggFilters.status = Array.from(document.querySelectorAll('.sugg-filter-status:checked')).map(cb=>cb.value);
+    suggState.page = 1;
+    loadSuggestions();
+  }
+
+  function loadSuggestions() {
+    const params = new URLSearchParams();
+    params.append('page', suggState.page);
+    // Handle per_page parameter ('all' for no limit)
+    params.append('per_page', suggState.per_page === null ? 'all' : suggState.per_page);
+    if (suggState.sort_by) {
+      params.append('sort_by', suggState.sort_by);
+      params.append('sort_order', suggState.sort_order);
+    }
+    suggFilters.status.forEach(s => params.append('status', s));
+    fetch('/api/admin/suggestions?' + params.toString())
+      .then(r => r.json())
+      .then(data => {
+        if (data.items !== undefined) {
+          suggestionsData = data.items;
+          suggState.total = data.total;
+          suggState.total_pages = data.total_pages;
+        } else {
+          suggestionsData = data;
+          suggState.total = suggestionsData.length;
+          suggState.total_pages = 1;
+        }
+        renderSuggestions();
+        renderSuggestionPagination();
+      });
+  }
+
+  function initSuggestionsMap() {
+    suggestionsMap = L.map('suggestions-map').setView(POLAND_CENTER, POLAND_ZOOM);
+    suggestionsTile = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ attribution:'© OpenStreetMap contributors' }).addTo(suggestionsMap);
+  }
+
+  function renderSuggestions() {
+    if (!suggestionsMap) initSuggestionsMap();
+    const filtered = suggestionsData.filter(s=>suggFilters.status.length===0 || suggFilters.status.includes(s.status));
+    suggestionsMap.eachLayer(layer=>{ if (layer!==suggestionsTile) suggestionsMap.removeLayer(layer); });
+    filtered.forEach(s=> {
+      const safeName = escapeHTML(s.name || '');
+      const m = L.marker([s.position[0], s.position[1]]).addTo(suggestionsMap);
+      m.bindPopup(`<strong>${safeName}</strong><br>${s.status}`);
+    });
+
+    const tbody = document.getElementById('suggestions-body'); tbody.innerHTML='';
+    filtered.forEach(s=> {
+      const safeName = escapeHTML(s.name || '');
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${s.uuid}</td>
+                      <td>${safeName}</td>
+                      <td>[${s.position}]</td>
+                      <td>${s.status}</td>
+                      <td>
+                        <button class="btn btn-sm btn-success sugg-accept-btn" data-id="${s.uuid}">{{ gettext("Accept") }}</button>
+                        <button class="btn btn-sm btn-danger sugg-reject-btn" data-id="${s.uuid}">{{ gettext("Reject") }}</button>
+                      </td>`;
+      tbody.appendChild(tr);
+      tr.querySelector('.sugg-accept-btn').addEventListener('click', ()=> updateSuggestion(s.uuid,'accepted'));
+      tr.querySelector('.sugg-reject-btn').addEventListener('click', ()=> updateSuggestion(s.uuid,'rejected'));
+    });
+  }
+
+  function updateSuggestion(id,status) {
+    fetch('/api/admin/suggestions/'+id, { method:'PUT', headers:{'Content-Type':'application/json','X-CSRFToken':csrfToken}, body: JSON.stringify({status}) })
+      .then(r=>{ if (r.ok) loadSuggestions(); else r.json().then(err=>alert(err.message)); });
+  }
+  // Pagination for Suggestions
+  function renderSuggestionPagination() {
+    const pag = document.getElementById('suggestions-pagination');
+    pag.innerHTML = '';
+    const info = document.createElement('div');
+    if (suggState.per_page === null) {
+      info.innerText = `Showing all ${suggState.total} items`;
+    } else {
+      const start = (suggState.page - 1) * suggState.per_page + 1;
+      const end = Math.min(suggState.page * suggState.per_page, suggState.total);
+      info.innerText = `Showing ${start}-${end} of ${suggState.total}`;
+    }
+    pag.appendChild(info);
+    const nav = document.createElement('div');
+    nav.className = 'btn-group';
+    const prev = document.createElement('button');
+    prev.className = 'btn btn-sm btn-secondary';
+    prev.innerText = '{{ gettext("Previous") }}';
+    prev.disabled = suggState.page <= 1;
+    prev.addEventListener('click', () => { if (suggState.page > 1) { suggState.page--; loadSuggestions(); } });
+    const next = document.createElement('button');
+    next.className = 'btn btn-sm btn-secondary';
+    next.innerText = '{{ gettext("Next") }}';
+    next.disabled = suggState.page >= suggState.total_pages;
+    next.addEventListener('click', () => { if (suggState.page < suggState.total_pages) { suggState.page++; loadSuggestions(); } });
+    nav.append(prev, next);
+    pag.appendChild(nav);
+    const selDiv = document.createElement('div');
+    const lbl = document.createElement('label');
+    lbl.className = 'me-2';
+    lbl.innerText = '{{ gettext("Items per page:") }}';
+    const sel = document.createElement('select');
+    sel.className = 'form-select form-select-sm d-inline-block w-auto';
+    [['20','20'],['50','50'],['100','100'],['all','{{ gettext("All") }}']].forEach(([val,text]) => {
+      const opt = document.createElement('option');
+      opt.value = val;
+      opt.innerText = text;
+      if ((suggState.per_page === null && val === 'all') || (suggState.per_page == parseInt(val))) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    sel.addEventListener('change', () => {
+      const v = sel.value;
+      suggState.per_page = v === 'all' ? null : parseInt(v);
+      suggState.page = 1;
+      loadSuggestions();
+    });
+    selDiv.append(lbl, sel);
+    pag.appendChild(selDiv);
+  }
+
+  // Reports
+  function buildReportFilters() {
+    const statMenu = document.getElementById('reports-filter-status-menu');
+    ['pending','resolved','rejected'].forEach(status => {
+      const div = document.createElement('div'); div.className='form-check';
+      const cb = document.createElement('input'); cb.className='form-check-input rep-filter-status'; cb.type='checkbox'; cb.value=status; cb.id='rep-filter-status-'+status;
+      if (status==='pending') cb.checked=true; cb.addEventListener('change', applyReportFilters);
+      const lbl = document.createElement('label'); lbl.className='form-check-label'; lbl.htmlFor=cb.id; lbl.innerText=status;
+      div.append(cb,lbl); statMenu.append(div);
+    });
+    const priMenu = document.getElementById('reports-filter-priority-menu');
+    ['critical','high','medium','low'].forEach(pr => {
+      const div = document.createElement('div'); div.className='form-check';
+      const cb = document.createElement('input'); cb.className='form-check-input rep-filter-priority'; cb.type='checkbox'; cb.value=pr; cb.id='rep-filter-priority-'+pr;
+      cb.addEventListener('change', applyReportFilters);
+      const lbl = document.createElement('label'); lbl.className='form-check-label'; lbl.htmlFor=cb.id; lbl.innerText=pr;
+      div.append(cb,lbl); priMenu.append(div);
+    });
+  }
+
+  function applyReportFilters() {
+    repFilters.status = Array.from(document.querySelectorAll('.rep-filter-status:checked')).map(cb=>cb.value);
+    repFilters.priority = Array.from(document.querySelectorAll('.rep-filter-priority:checked')).map(cb=>cb.value);
+    repState.page = 1;
+    loadReports();
+  }
+
+  function loadReports() {
+    const params = new URLSearchParams();
+    params.append('page', repState.page);
+    // Handle per_page parameter ('all' for no limit)
+    params.append('per_page', repState.per_page === null ? 'all' : repState.per_page);
+    if (repState.sort_by) {
+      params.append('sort_by', repState.sort_by);
+      params.append('sort_order', repState.sort_order);
+    }
+    repFilters.status.forEach(s => params.append('status', s));
+    repFilters.priority.forEach(p => params.append('priority', p));
+    fetch('/api/admin/reports?' + params.toString())
+      .then(r => r.json())
+      .then(data => {
+        if (data.items !== undefined) {
+          reportsData = data.items;
+          repState.total = data.total;
+          repState.total_pages = data.total_pages;
+        } else {
+          reportsData = data;
+          repState.total = reportsData.length;
+          repState.total_pages = 1;
+        }
+        renderReports();
+        renderReportPagination();
+      });
+  }
+
+  function renderReports() {
+    const tbody = document.getElementById('reports-body'); tbody.innerHTML='';
+    reportsData
+      .filter(r => (repFilters.status.length===0 || repFilters.status.includes(r.status)) && (repFilters.priority.length===0 || repFilters.priority.includes(r.priority)))
+      .sort((a,b)=> priorityOrder[a.priority] - priorityOrder[b.priority])
+      .forEach(r => {
+        const safeDescription = escapeHTML(r.description);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${r.uuid}</td>
+                        <td>${r.location_id}</td>
+                        <td>${safeDescription}</td>
+                        <td>
+                          <select class="form-select form-select-sm rep-status-select" data-id="${r.uuid}">
+                            <option value="pending"${r.status==='pending'?' selected':''}>{{ gettext("pending") }}</option>
+                            <option value="resolved"${r.status==='resolved'?' selected':''}>{{ gettext("resolved") }}</option>
+                            <option value="rejected"${r.status==='rejected'?' selected':''}>{{ gettext("rejected") }}</option>
+                          </select>
+                        </td>
+                        <td>
+                          <select class="form-select form-select-sm rep-priority-select" data-id="${r.uuid}">
+                            <option value="critical"${r.priority==='critical'?' selected':''}>{{ gettext("critical") }}</option>
+                            <option value="high"${r.priority==='high'?' selected':''}>{{ gettext("high") }}</option>
+                            <option value="medium"${r.priority==='medium'?' selected':''}>{{ gettext("medium") }}</option>
+                            <option value="low"${r.priority==='low'?' selected':''}>{{ gettext("low") }}</option>
+                          </select>
+                        </td>`;
+        tbody.appendChild(tr);
+        tr.querySelector('.rep-status-select').addEventListener('change', e=> updateReport(r.uuid,{ status: e.target.value }));
+        tr.querySelector('.rep-priority-select').addEventListener('change', e=> updateReport(r.uuid,{ priority: e.target.value }));
+      });
+  }
+
+  function updateReport(id, data) {
+    fetch('/api/admin/reports/'+id, { method:'PUT', headers:{'Content-Type':'application/json','X-CSRFToken':csrfToken}, body: JSON.stringify(data) })
+      .then(r=>{ if (r.ok) loadReports(); else r.json().then(err=>alert(err.message)); });
+  }
+  // Pagination for Reports
+  function renderReportPagination() {
+    const pag = document.getElementById('reports-pagination');
+    pag.innerHTML = '';
+    const info = document.createElement('div');
+    if (repState.per_page === null) {
+      info.innerText = `Showing all ${repState.total} items`;
+    } else {
+      const start = (repState.page - 1) * repState.per_page + 1;
+      const end = Math.min(repState.page * repState.per_page, repState.total);
+      info.innerText = `Showing ${start}-${end} of ${repState.total}`;
+    }
+    pag.appendChild(info);
+    const nav = document.createElement('div');
+    nav.className = 'btn-group';
+    const prev = document.createElement('button');
+    prev.className = 'btn btn-sm btn-secondary';
+    prev.innerText = '{{ gettext("Previous") }}';
+    prev.disabled = repState.page <= 1;
+    prev.addEventListener('click', () => { if (repState.page > 1) { repState.page--; loadReports(); } });
+    const next = document.createElement('button');
+    next.className = 'btn btn-sm btn-secondary';
+    next.innerText = '{{ gettext("Next") }}';
+    next.disabled = repState.page >= repState.total_pages;
+    next.addEventListener('click', () => { if (repState.page < repState.total_pages) { repState.page++; loadReports(); } });
+    nav.append(prev, next);
+    pag.appendChild(nav);
+    const selDiv = document.createElement('div');
+    const lbl = document.createElement('label');
+    lbl.className = 'me-2';
+    lbl.innerText = '{{ gettext("Items per page:") }}';
+    const sel = document.createElement('select');
+    sel.className = 'form-select form-select-sm d-inline-block w-auto';
+    [['20','20'],['50','50'],['100','100'],['all','{{ gettext("All") }}']].forEach(([val,text]) => {
+      const opt = document.createElement('option');
+      opt.value = val;
+      opt.innerText = text;
+      if ((repState.per_page === null && val === 'all') || (repState.per_page == parseInt(val))) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    sel.addEventListener('change', () => {
+      const v = sel.value;
+      repState.per_page = v === 'all' ? null : parseInt(v);
+      repState.page = 1;
+      loadReports();
+    });
+    selDiv.append(lbl, sel);
+    pag.appendChild(selDiv);
+  }
+  // Handle tab hash in URL and map resizing on tab change
+  const tabButtons = document.querySelectorAll('button[data-bs-toggle="tab"]');
+  tabButtons.forEach(btn => {
+    btn.addEventListener('shown.bs.tab', e => {
+      const target = e.target.getAttribute('data-bs-target');
+      history.replaceState(null, '', target);
+      if (target === '#suggestions' && suggestionsMap) {
+        suggestionsMap.invalidateSize();
+        suggestionsMap.setView(POLAND_CENTER, POLAND_ZOOM);
+      }
+    });
+  });
+  // Activate tab from URL hash on load
+  const hash = window.location.hash;
+  if (hash) {
+    const triggerEl = document.querySelector('button[data-bs-target="' + hash + '"]');
+    if (triggerEl) {
+      const tab = new bootstrap.Tab(triggerEl);
+      tab.show();
+    }
+  }
+});
+</script>
+<script>
+    window.APP_LANG = "{{ current_language }}";
+    window.SECONDARY_COLOR = "{{ secondary_color }}";
+    window.PRIMARY_COLOR = "{{ primary_color }}";
+    
+    window.SHOW_SUGGEST_NEW_POINT_BUTTON = {{ feature_flags.SHOW_SUGGEST_NEW_POINT_BUTTON | default(false) | tojson }};
+    window.SHOW_SEARCH_BAR = {{ feature_flags.SHOW_SEARCH_BAR | default(false) | tojson }};
+    window.USE_LAZY_LOADING = {{ feature_flags.USE_LAZY_LOADING | default(false) | tojson }};
+    window.SHOW_ACCESSIBILITY_TABLE = {{ feature_flags.SHOW_ACCESSIBILITY_TABLE | default(false) | tojson }};
+</script>
+<script src="{{ goodmap_frontend_lib_url }}"></script>
+{% endblock %}
