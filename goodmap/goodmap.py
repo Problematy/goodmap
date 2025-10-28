@@ -17,11 +17,6 @@ def create_app(config_path: str) -> platzky.Engine:
     return create_app_from_config(config)
 
 
-# TODO Checking if there is a feature flag secition should be part of configs logic not client app
-def is_feature_enabled(config: GoodmapConfig, feature: str) -> bool:
-    return config.feature_flags.get(feature, False) if config.feature_flags else False
-
-
 def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
     directory = os.path.dirname(os.path.realpath(__file__))
 
@@ -29,7 +24,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
     config.translation_directories.append(locale_dir)
     app = platzky.create_app_from_config(config)
 
-    if is_feature_enabled(config, "USE_LAZY_LOADING"):
+    if config.is_feature_enabled("USE_LAZY_LOADING"):
         location_obligatory_fields = get_location_obligatory_fields(app.db)
     else:
         location_obligatory_fields = []

@@ -40,3 +40,14 @@ class GoodmapConfig(PlatzkyConfig):
         except FileNotFoundError:
             print(f"Config file not found: {path}", file=sys.stderr)
             raise SystemExit(1)
+
+    def is_feature_enabled(self, feature: str) -> bool:
+        """Check if a feature flag is enabled.
+
+        Args:
+            feature: Name of the feature flag to check
+
+        Returns:
+            True if the feature is enabled, False otherwise
+        """
+        return self.feature_flags.get(feature, False) if self.feature_flags else False

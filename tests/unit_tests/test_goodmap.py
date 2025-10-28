@@ -43,8 +43,8 @@ def test_is_feature_enabled():
         DB=JsonDbConfig(DATA={}, TYPE="json"),
         FEATURE_FLAGS={"flag": True, "other": False},
     )
-    assert goodmap.is_feature_enabled(config_with_flag, "flag") is True
-    assert goodmap.is_feature_enabled(config_with_flag, "other") is False
+    assert config_with_flag.is_feature_enabled("flag") is True
+    assert config_with_flag.is_feature_enabled("other") is False
 
     # Test with feature flags set to empty dict
     config_no_flag = GoodmapConfig(
@@ -53,7 +53,15 @@ def test_is_feature_enabled():
         DB=JsonDbConfig(DATA={}, TYPE="json"),
         FEATURE_FLAGS={},
     )
-    assert goodmap.is_feature_enabled(config_no_flag, "flag") is False
+    assert config_no_flag.is_feature_enabled("flag") is False
+
+    # Test with feature flags set to None
+    config_none_flag = GoodmapConfig(
+        APP_NAME="test",
+        SECRET_KEY="test",
+        DB=JsonDbConfig(DATA={}, TYPE="json"),
+    )
+    assert config_none_flag.is_feature_enabled("flag") is False
 
 
 @mock.patch("goodmap.goodmap.get_location_obligatory_fields")
