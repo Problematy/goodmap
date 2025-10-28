@@ -1,5 +1,8 @@
 - Feature: Suggesting new points button
 
+# 0.4.4
+- Fix: fix for zero accuracy
+
 # 0.4.3
 - Feature: Added asterisk icon on remarks
 
