@@ -1,5 +1,8 @@
 - Feature: Suggesting new points button
 
+# 0.4.3
+- Feature: Added asterisk icon on remarks
+
 # 0.4.1
 - Fix: disabled not working loading screen added
 

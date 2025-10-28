@@ -23,10 +23,10 @@ httpService.getCategoriesData.mockResolvedValue(categories);
 
 describe('Creates good filter_form box', () => {
     beforeAll(() => {
-        global.window.FEATURE_FLAGS = { CATEGORIES_HELP: true };
+        globalThis.FEATURE_FLAGS = { CATEGORIES_HELP: true };
     });
     beforeEach(() => {
-        jest.spyOn(global, 'fetch').mockResolvedValue({
+        jest.spyOn(globalThis, 'fetch').mockResolvedValue({
             json: jest.fn().mockResolvedValue(categories),
         });
         return act(() =>
@@ -39,7 +39,7 @@ describe('Creates good filter_form box', () => {
     });
 
     afterEach(() => {
-        global.fetch.mockRestore();
+        globalThis.fetch.mockRestore();
     });
 
     it('should properly render the table', () => {

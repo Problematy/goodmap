@@ -1,11 +1,14 @@
-import i18n from 'i18next';
+import i18next from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
 import enMap from './locales/en/map.json';
 import plMap from './locales/pl/map.json';
 import uaMap from './locales/ua/map.json';
 
-i18n.use(initReactI18next).init({
+// Configure i18next instance
+const i18n = i18next.use(initReactI18next);
+
+i18n.init({
     resources: {
         en: {
             map: enMap,
@@ -17,7 +20,7 @@ i18n.use(initReactI18next).init({
             map: uaMap,
         },
     },
-    lng: window.APP_LANG,
+    lng: globalThis.APP_LANG,
     fallbackLng: 'en',
     ns: ['map'],
     defaultNS: 'map',
@@ -27,4 +30,5 @@ i18n.use(initReactI18next).init({
     },
 });
 
+export { i18n };
 export default i18n;

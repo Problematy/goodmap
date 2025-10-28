@@ -24,7 +24,7 @@ const mockUploadingFileWithSizeInMB = sizeInMB => {
 
 describe('SuggestNewPointButton', () => {
     it('displays error message when geolocation is not supported', () => {
-        global.navigator.geolocation = undefined;
+        globalThis.navigator.geolocation = undefined;
 
         render(<SuggestNewPointButton />);
         clickSuggestionsButton();
@@ -37,7 +37,7 @@ describe('SuggestNewPointButton', () => {
     });
 
     it('displays error message when location services are not enabled', () => {
-        global.navigator.geolocation = {
+        globalThis.navigator.geolocation = {
             getCurrentPosition: jest.fn((success, error) => error()),
         };
 
@@ -53,7 +53,7 @@ describe('SuggestNewPointButton', () => {
     });
 
     it('opens new point suggestion box when location services are enabled', () => {
-        global.navigator.geolocation = {
+        globalThis.navigator.geolocation = {
             getCurrentPosition: jest.fn(success =>
                 success({ coords: { latitude: 0, longitude: 0 } }),
             ),
@@ -69,7 +69,7 @@ describe('SuggestNewPointButton', () => {
     });
 
     it('displays error message when selected file is too large', () => {
-        global.navigator.geolocation = {
+        globalThis.navigator.geolocation = {
             getCurrentPosition: jest.fn(success =>
                 success({ coords: { latitude: 0, longitude: 0 } }),
             ),
@@ -95,7 +95,7 @@ describe('SuggestNewPointButton', () => {
     it('submits new point suggestion when form is filled correctly', () => {
         axios.post.mockResolvedValue({});
 
-        global.navigator.geolocation = {
+        globalThis.navigator.geolocation = {
             getCurrentPosition: jest.fn(success =>
                 success({ coords: { latitude: 0, longitude: 0 } }),
             ),

@@ -3,6 +3,15 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@mui/material';
 import styled from 'styled-components';
 
+/**
+ * Button component that toggles the accessibility table list view.
+ * Positioned in the bottom-left corner of the map.
+ * Prevents event bubbling to avoid triggering map interactions.
+ *
+ * @param {Object} props - Component props
+ * @param {Function} props.onClick - Callback function triggered when button is clicked
+ * @returns {React.ReactElement} Styled button for toggling list view
+ */
 const ListView = ({ onClick }) => {
     const { t } = useTranslation();
 
@@ -17,7 +26,7 @@ const ListView = ({ onClick }) => {
                 id="listViewButton"
                 onClick={handleOnClick}
                 style={{
-                    backgroundColor: window.SECONDARY_COLOR,
+                    backgroundColor: globalThis.SECONDARY_COLOR || '#0066CC',
                 }}
                 variant="contained"
             >
@@ -27,6 +36,11 @@ const ListView = ({ onClick }) => {
     );
 };
 
+/**
+ * Styled wrapper container for the list view button.
+ * Positioned absolutely in the bottom-left corner with high z-index.
+ * Responsive width adjusts for mobile devices.
+ */
 const Wrapper = styled.div`
     position: absolute;
     width: 100px;

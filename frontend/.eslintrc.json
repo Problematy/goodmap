@@ -13,7 +13,8 @@
     },
     "globals": {
         "document": true,
-        "navigator": true
+        "navigator": true,
+        "globalThis": true
     },
     "env": {
         "jest": true,
@@ -37,6 +38,7 @@
         "comma-dangle": "off",
         "es-x/no-rest-spread-properties": "off",
         "es-x/no-trailing-function-commas": "off",
+        "es-x/no-global-this": "off",
         "indent": ["error", 4],
         "implicit-arrow-linebreak": "off",
         "react/function-component-definition": [

@@ -23,6 +23,13 @@ import axios from 'axios';
 import { buttonStyle } from '../../../styles/buttonStyle';
 import { useEffect } from 'react';
 
+/**
+ * Button component that allows users to suggest new map points/locations.
+ * Opens a dialog form for users to submit their current position, a photo, and select an organization.
+ * Requires user's geolocation permission to function properly.
+ *
+ * @returns {React.ReactElement} Button with dialog form for suggesting new points
+ */
 export const SuggestNewPointButton = () => {
     const [userPosition, setUserPosition] = useState({ lat: null, lng: null });
 

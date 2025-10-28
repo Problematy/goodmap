@@ -12,5 +12,8 @@
     "describeOtherProblem": "Opisz problem",
     "listView": "Widok listy",
     "listViewButtonUserLocation": "Aby włączyć widok listy, proszę zezwolić na dostęp do swojej lokalizacji",
-    "navigateMeButton": "Prowadź mnie"
+    "navigateMeButton": "Prowadź mnie",
+    "loading": "Ładowanie...",
+    "loadLocationError": "Nie udało się załadować szczegółów lokalizacji",
+    "locationServicesDisabled": "Usługi lokalizacji są wyłączone. Włącz je, aby korzystać z tej funkcji."
 }

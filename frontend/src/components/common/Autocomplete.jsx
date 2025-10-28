@@ -5,6 +5,14 @@ import PropTypes from 'prop-types';
 import useDebounce from '../../utils/hooks/useDebounce';
 import useAutocomplete from '../../services/hooks/useAutocomplete';
 
+/**
+ * Autocomplete search component with debounced input and suggestion dropdown.
+ * Provides search functionality with real-time suggestions from an autocomplete service.
+ *
+ * @param {Object} props - Component props
+ * @param {Function} props.onClick - Callback function triggered when a suggestion is clicked
+ * @returns {React.ReactElement} Autocomplete input with suggestion dropdown
+ */
 const AutoComplete = ({ onClick }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const searchTermDebounced = useDebounce(searchTerm);
@@ -35,7 +43,7 @@ const AutoComplete = ({ onClick }) => {
                 />
             </InputBox>
 
-            {data.length > 0 && data.filter(it => it.display_name !== searchTerm).length > 0 && (
+            {data.some(it => it.display_name !== searchTerm) && (
                 <SuggestionList>
                     {data
                         .filter(it => it.display_name !== searchTerm)
@@ -56,7 +64,7 @@ AutoComplete.propTypes = {
 
 const Box = styled.div`
     z-index: 999999999;
-    background-color: ${window.SECONDARY_COLOR};
+    background-color: ${globalThis.SECONDARY_COLOR || '#0066CC'};
     border-radius: 5px;
 `;
 
@@ -73,7 +81,7 @@ const StyledInput = styled.input`
     white-space: nowrap;
     text-align: center;
     outline: none;
-    background-color: ${window.SECONDARY_COLOR};
+    background-color: ${globalThis.SECONDARY_COLOR || '#0066CC'};
     color: white;
     border: none;
     border-radius: 5px;

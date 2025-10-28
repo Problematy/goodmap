@@ -6,6 +6,13 @@ import ZoomInIcon from '@mui/icons-material/ZoomIn'; // Zoom in icon
 import ZoomOutIcon from '@mui/icons-material/ZoomOut'; // Zoom out icon
 import { zoomButtonStyle } from '../../../styles/buttonStyle';
 
+/**
+ * Custom zoom control component for the Leaflet map.
+ * Renders zoom in and zoom out buttons in the top-right corner of the map.
+ * Provides a styled alternative to the default Leaflet zoom controls.
+ *
+ * @returns {React.ReactElement} Control component with zoom in/out buttons
+ */
 export const CustomZoomControl = () => {
     const map = useMap();
 

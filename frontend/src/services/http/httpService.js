@@ -9,31 +9,61 @@ import {
 } from './endpoints';
 import { useMapStore } from '../../components/Map/store/map.store';
 
+/**
+ * Converts filter object to URL query string parameters.
+ * Also includes map configuration (zoom, bounds) if server-side clustering is enabled.
+ *
+ * @param {Object} filters - Filter object with category keys and array values
+ * @returns {string} URL-encoded query string
+ */
 function filtersToQuery(filters) {
     const params = new URLSearchParams();
-    Object.entries(filters || {}).forEach(([key, values = []]) => {
-        values.forEach(value => params.append(key, String(value)));
-    });
-    if (window.FEATURE_FLAGS?.USE_SERVER_SIDE_CLUSTERING) {
+    for (const [key, values = []] of Object.entries(filters || {})) {
+        for (const value of values) {
+            params.append(key, String(value));
+        }
+    }
+    if (globalThis.FEATURE_FLAGS?.USE_SERVER_SIDE_CLUSTERING) {
         const mapConfigurationData = useMapStore.getState().mapConfiguration;
         if (mapConfigurationData) {
-            Object.entries(mapConfigurationData).forEach(([k, v]) =>
-                params.append(String(k), String(v)),
-            );
+            for (const [k, v] of Object.entries(mapConfigurationData)) {
+                params.append(String(k), String(v));
+            }
         }
     }
     return params.toString();
 }
 
+/**
+ * HTTP service object containing all API interaction methods.
+ * Provides methods for fetching categories, locations, languages, and address search.
+ */
 export const httpService = {
+    /**
+     * Fetches all available categories.
+     *
+     * @returns {Promise<Object>} Promise resolving to categories data
+     */
     getCategories: () => fetch(CATEGORIES).then(response => response.json()),
 
+    /**
+     * Fetches subcategories for a specific category.
+     *
+     * @param {string} category - Category name
+     * @returns {Promise<Object>} Promise resolving to subcategories data
+     */
     getSubcategories: category =>
         fetch(`${CATEGORY}/${category}`).then(response => response.json()),
 
+    /**
+     * Fetches complete categories data including subcategories and optional help text.
+     * Combines categories with their respective subcategories and help information.
+     *
+     * @returns {Promise<Array>} Promise resolving to array of category data tuples
+     */
     getCategoriesData: async () => {
         const categories = await httpService.getCategories();
-        const categories_ = window.FEATURE_FLAGS?.CATEGORIES_HELP ? categories.categories : categories
+        const categories_ = globalThis.FEATURE_FLAGS?.CATEGORIES_HELP ? categories.categories : categories
 
         const subcategoriesPromises = categories_.map(([categoryName, _translation]) =>
             httpService.getSubcategories(categoryName),
@@ -41,7 +71,7 @@ export const httpService = {
         const subcategoriesResponse = Promise.all(subcategoriesPromises);
 
         const mainResponse = subcategoriesResponse.then(subcategories => {
-            if (window.FEATURE_FLAGS?.CATEGORIES_HELP) {
+            if (globalThis.FEATURE_FLAGS?.CATEGORIES_HELP) {
                 return categories_.map((subcategory, index) => [
                     subcategory,
                     subcategories[index].categories_options ?? null,
@@ -59,11 +89,18 @@ export const httpService = {
         return mainResponse;
     },
 
+    /**
+     * Fetches locations based on filter criteria.
+     * Uses server-side clustering if enabled via feature flags.
+     *
+     * @param {Object} filters - Filter object with category keys and array values
+     * @returns {Promise<Array>} Promise resolving to array of location objects
+     */
     getLocations: async filters => {
         const filtersUrlParams = filtersToQuery(filters);
 
         let ENDPOINT = LOCATIONS;
-        if (window.FEATURE_FLAGS?.USE_SERVER_SIDE_CLUSTERING) {
+        if (globalThis.FEATURE_FLAGS?.USE_SERVER_SIDE_CLUSTERING) {
             ENDPOINT = LOCATIONS_CLUSTERED;
         }
 
@@ -76,6 +113,15 @@ export const httpService = {
         return response.json();
     },
 
+    /**
+     * Fetches locations near a specific geographic coordinate with filtering.
+     * Results are limited to 10 locations closest to the provided coordinates.
+     *
+     * @param {number} lat - Latitude coordinate
+     * @param {number} lon - Longitude coordinate
+     * @param {Object} filters - Filter object with category keys and array values
+     * @returns {Promise<Array>} Promise resolving to array of nearby location objects
+     */
     getLocationsWithLatLon: async (lat, lon, filters) => {
         const filtersUrlParams = filtersToQuery(filters);
         const response = await fetch(
@@ -90,6 +136,12 @@ export const httpService = {
         return response.json();
     },
 
+    /**
+     * Fetches detailed information for a single location by its UUID.
+     *
+     * @param {string} locationId - UUID of the location
+     * @returns {Promise<Object>} Promise resolving to location details object
+     */
     getLocation: async locationId => {
         const response = await fetch(`${LOCATION}/${locationId}`, {
             method: 'GET',
@@ -100,6 +152,16 @@ export const httpService = {
         return response.json();
     },
 
+    /**
+     * Fetches detailed data for multiple locations near a coordinate.
+     * First fetches nearby location UUIDs, then fetches full details for each location.
+     *
+     * @param {number} lat - Latitude coordinate
+     * @param {number} lon - Longitude coordinate
+     * @param {Object} filters - Filter object with category keys and array values
+     * @returns {Promise<Array>} Promise resolving to array of detailed location objects
+     * @throws {Error} If fetching location data fails
+     */
     getLocationsData: async (lat, lon, filters) => {
         const locations = await httpService.getLocationsWithLatLon(lat, lon, filters);
         try {
@@ -111,14 +173,26 @@ export const httpService = {
         }
     },
 
+    /**
+     * Fetches available languages for the application.
+     *
+     * @returns {Promise<Array>} Promise resolving to array of language objects
+     */
     getLanguages: () => fetch(LANGUAGES).then(response => response.json()),
 
+    /**
+     * Searches for addresses using OpenStreetMap Nominatim API.
+     * Returns up to 5 results with geocoded coordinates.
+     *
+     * @param {string} search - Search query string
+     * @returns {Promise<Array>} Promise resolving to array of address search results
+     */
     getSearchAddress: search => {
         const params = {
             format: 'json',
             limit: 5,
             q: search,
-            'accept-language': window.APP_LANG || 'pl',
+            'accept-language': globalThis.APP_LANG || 'pl',
         };
 
         const queryString = new URLSearchParams(params).toString();

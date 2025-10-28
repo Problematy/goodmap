@@ -4,6 +4,13 @@ import { IconButton } from '@mui/material';
 import Close from '@mui/icons-material/Close';
 import { useMaxToasts } from '../../utils/hooks/useMaxToasts';
 
+/**
+ * Global toast notification component for displaying user feedback messages.
+ * Uses react-hot-toast library with custom styling and close button.
+ * Automatically limits the maximum number of toasts displayed using useMaxToasts hook.
+ *
+ * @returns {React.ReactElement} Toaster component configured for the application
+ */
 export const AppToaster = () => {
     useMaxToasts();
 

@@ -6,6 +6,13 @@ import { httpService } from '../../services/http/httpService';
 import { useMapStore } from '../Map/store/map.store';
 import FiltersTooltip from './FiltersTooltip';
 
+/**
+ * Filters form component that allows users to filter map locations by categories.
+ * Fetches category data from the API and renders checkboxes for each filter option.
+ * Manages filter state through the Categories context and debounces map configuration updates.
+ *
+ * @returns {React.ReactElement} Form element containing categorized filter checkboxes with optional tooltips
+ */
 export const FiltersForm = () => {
     const { setCategories } = useCategories();
     const [categoriesData, setCategoriesData] = useState([]);
@@ -49,9 +56,9 @@ export const FiltersForm = () => {
         fetchCategories();
     }, []);
 
-    const renderFilterOptions = (filters, category) =>
-        filters[1].map(([name, translation]) => {
-            const tooltipData = window.FEATURE_FLAGS?.CATEGORIES_HELP
+    const renderFilterOptions = (filters, category) => {
+        return filters[1].map(([name, translation]) => {
+            const tooltipData = globalThis.FEATURE_FLAGS?.CATEGORIES_HELP
                 ? filters[3].find(it => it[name])
                 : '';
             return (
@@ -71,6 +78,7 @@ export const FiltersForm = () => {
                 </div>
             );
         });
+    };
 
     const sections = categoriesData.map(filtersData => (
         <div
@@ -80,7 +88,7 @@ export const FiltersForm = () => {
             <span id={`filter-label-${filtersData[0][0]}-${filtersData[0][1]}`}>
                 {filtersData[0][1]}
             </span>
-            {window.FEATURE_FLAGS?.CATEGORIES_HELP &&
+            {globalThis.FEATURE_FLAGS?.CATEGORIES_HELP &&
                 filtersData[2].find(it => it[filtersData[0][0]]) && (
                     <FiltersTooltip
                         text={filtersData[2].find(it => it[filtersData[0][0]])[filtersData[0][0]]}

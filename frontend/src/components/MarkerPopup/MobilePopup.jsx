@@ -3,6 +3,16 @@ import { Dialog, DialogContent, DialogTitle, IconButton, Slide } from '@mui/mate
 import CloseIcon from '@mui/icons-material/Close';
 import { useLeafletContext } from '@react-leaflet/core';
 
+/**
+ * Mobile-optimized popup component for displaying location details.
+ * Renders as a bottom sheet dialog that slides up from the bottom of the screen.
+ * Automatically pans the map to center the marker when opened.
+ * Compatible with react-leaflet's Marker component through overlay container integration.
+ *
+ * @param {Object} props - Component props
+ * @param {React.ReactNode} props.children - Content to display inside the popup dialog
+ * @returns {React.ReactElement} Material-UI Dialog styled as a bottom sheet
+ */
 export const MobilePopup = ({ children }) => {
     const [isOpen, setIsOpen] = useState(true);
     const context = useLeafletContext();
@@ -71,6 +81,14 @@ export const MobilePopup = ({ children }) => {
     );
 };
 
+/**
+ * Slide transition component for the mobile popup dialog.
+ * Animates the dialog sliding up from the bottom of the screen.
+ *
+ * @param {Object} props - Transition props passed by Material-UI
+ * @param {React.Ref} ref - Forwarded ref for the transition component
+ * @returns {React.ReactElement} Slide transition component
+ */
 const SlideTransition = React.forwardRef(function Transition(props, ref) {
     return <Slide direction="up" ref={ref} {...props} />;
 });

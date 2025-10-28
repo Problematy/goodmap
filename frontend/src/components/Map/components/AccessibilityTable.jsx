@@ -14,6 +14,19 @@ import { httpService } from '../../../services/http/httpService';
 import { mapCustomTypeToReactComponent } from '../../MarkerPopup/mapCustomTypeToReactComponent';
 import { useCategories } from '../../Categories/CategoriesContext';
 
+/**
+ * Accessibility table component that displays location data in a tabular format.
+ * Fetches location data based on user position and selected categories.
+ * Dynamically builds table headers from all unique data fields across all locations.
+ * Provides a back button to return to map view.
+ *
+ * @param {Object} props - Component props
+ * @param {Object} props.userPosition - User's current position
+ * @param {number} props.userPosition.lat - Latitude coordinate
+ * @param {number} props.userPosition.lng - Longitude coordinate
+ * @param {Function} props.setIsAccessibilityTableOpen - Callback to close the table and return to map view
+ * @returns {React.ReactElement} Table container with location data and back button
+ */
 const AccessibilityTable = ({ userPosition, setIsAccessibilityTableOpen }) => {
     const { categories } = useCategories();
     const { t } = useTranslation();
@@ -37,15 +50,15 @@ const AccessibilityTable = ({ userPosition, setIsAccessibilityTableOpen }) => {
                 return;
             }
             uniqueHeadersSet.add(t('title'));
-            data.forEach(place => {
-                place.data.forEach(item => {
+            for (const place of data) {
+                for (const item of place.data) {
                     uniqueHeadersSet.add(item[0]);
-                });
-            });
+                }
+            }
             const uniqueNumberedKeys = {};
-            Array.from(uniqueHeadersSet).forEach((key, index) => {
+            for (const [index, key] of Array.from(uniqueHeadersSet).entries()) {
                 uniqueNumberedKeys[key] = index;
-            });
+            }
             const orderedKeysArray = Object.keys(uniqueNumberedKeys).sort(
                 (a, b) => uniqueNumberedKeys[a] - uniqueNumberedKeys[b],
             );
@@ -61,12 +74,12 @@ const AccessibilityTable = ({ userPosition, setIsAccessibilityTableOpen }) => {
                 return item;
             };
 
-            data.forEach(it => {
+            for (const it of data) {
                 const row = [];
                 const place = it.data;
                 row.push(it.title);
-                for (let i = 1; i < orderedKeysArray.length; i += 1) {
-                    const key = orderedKeysArray[i];
+                // Skip first element (title) and iterate over remaining keys
+                for (const key of orderedKeysArray.slice(1)) {
                     const values = getArr(place, key);
                     if (values === undefined) {
                         continue;
@@ -80,7 +93,7 @@ const AccessibilityTable = ({ userPosition, setIsAccessibilityTableOpen }) => {
                     row.push(value);
                 }
                 rowsLocal.push(row);
-            });
+            }
             setRows(rowsLocal);
         } catch (error) {
             console.log('AccessibilityTable: ', error);

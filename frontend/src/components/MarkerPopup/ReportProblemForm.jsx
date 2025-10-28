@@ -4,28 +4,43 @@ import styled from 'styled-components';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
+/**
+ * Styled form component with flexbox column layout.
+ */
 const Form = styled.form`
     display: flex;
     flex-direction: column;
     gap: 10px;
 `;
 
+/**
+ * Styled label component with column layout for form fields.
+ */
 const Label = styled.label`
     display: flex;
     flex-direction: column;
     font-size: 1rem;
 `;
 
+/**
+ * Styled select dropdown component.
+ */
 const Select = styled.select`
     padding: 5px;
     font-size: 1rem;
 `;
 
+/**
+ * Styled text input component.
+ */
 const Input = styled.input`
     padding: 5px;
     font-size: 1rem;
 `;
 
+/**
+ * Styled submit button component with hover effect.
+ */
 const SubmitButton = styled.input`
     padding: 10px;
     background-color: #007bff;
@@ -40,6 +55,16 @@ const SubmitButton = styled.input`
     }
 `;
 
+/**
+ * Form component for reporting problems with a location.
+ * Allows users to select from predefined problem types or describe a custom issue.
+ * Fetches CSRF token and submits the report to the API.
+ * Shows a success message after submission.
+ *
+ * @param {Object} props - Component props
+ * @param {string} props.placeId - UUID of the location being reported
+ * @returns {React.ReactElement} Form for reporting problems or success message after submission
+ */
 export const ReportProblemForm = ({ placeId }) => {
     const { t } = useTranslation();
     const [problem, setProblem] = useState('');

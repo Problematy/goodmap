@@ -12,5 +12,8 @@
     "describeOtherProblem": "Please describe",
     "listView": "List view",
     "listViewButtonUserLocation": "To enable the list view, please allow access to your location",
-    "navigateMeButton": "Navigate me"
+    "navigateMeButton": "Navigate me",
+    "loading": "Loading...",
+    "loadLocationError": "Failed to load location details",
+    "locationServicesDisabled": "Location services are disabled. Please enable them to use this feature."
 }

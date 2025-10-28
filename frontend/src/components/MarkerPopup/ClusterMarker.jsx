@@ -1,14 +1,37 @@
 import PropTypes from 'prop-types';
-import React from 'react';
-import { Marker } from '@adamscybot/react-leaflet-component-marker';
+import React, { useMemo } from 'react';
+import { useMap, Marker } from 'react-leaflet';
+import { DivIcon } from 'leaflet';
+import ReactDOMServer from 'react-dom/server';
 import styled from 'styled-components';
-import { useMap } from 'react-leaflet';
 
+/**
+ * Marker component for displaying server-side clustered locations.
+ * When clicked, zooms in by 5 levels to reveal individual markers within the cluster.
+ * Displays the cluster count in a circular blue icon.
+ *
+ * @param {Object} props - Component props
+ * @param {Object} props.cluster - Cluster data object
+ * @param {number[]} props.cluster.position - Coordinates [latitude, longitude] of cluster center
+ * @param {number} props.cluster.cluster_count - Number of markers in this cluster
+ * @returns {React.ReactElement} Marker component with custom cluster icon
+ */
 export const ClusterMarker = ({ cluster }) => {
     const map = useMap();
     const handleClusterClick = () => {
-        map.flyTo(cluster.position, map.getZoom() + 5);
+        const targetZoom = Math.min(map.getZoom() + 5, map.getMaxZoom());
+        map.flyTo(cluster.position, targetZoom);
     };
+
+    // Create a DivIcon with the rendered React component (memoized to prevent recreation)
+    const clusterIcon = useMemo(() => {
+        return new DivIcon({
+            html: ReactDOMServer.renderToString(<ClusterMarkerIcon cluster={cluster} />),
+            className: 'custom-cluster-icon',
+            iconSize: [30, 30],
+            iconAnchor: [15, 15],
+        });
+    }, [cluster.cluster_count]);
 
     return (
         <Marker
@@ -16,11 +39,20 @@ export const ClusterMarker = ({ cluster }) => {
             eventHandlers={{
                 click: handleClusterClick,
             }}
-            icon={<ClusterMarkerIcon cluster={cluster} />}
+            icon={clusterIcon}
         />
     );
 };
 
+/**
+ * Icon component that renders the visual representation of a cluster.
+ * Displays the cluster count inside a circular blue container.
+ *
+ * @param {Object} props - Component props
+ * @param {Object} props.cluster - Cluster data object
+ * @param {number} props.cluster.cluster_count - Number of markers in this cluster
+ * @returns {React.ReactElement} Styled circular icon with cluster count
+ */
 const ClusterMarkerIcon = ({ cluster }) => {
     return (
         <ClusterMarkerContainer>
@@ -29,6 +61,10 @@ const ClusterMarkerIcon = ({ cluster }) => {
     );
 };
 
+/**
+ * Styled container for the cluster marker icon.
+ * Creates a circular blue container with centered white text.
+ */
 const ClusterMarkerContainer = styled.div`
     width: 30px;
     height: 30px;
