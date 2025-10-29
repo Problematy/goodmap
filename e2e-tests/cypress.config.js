@@ -5,15 +5,22 @@ module.exports = defineConfig({
   e2e: {
     baseUrl: 'http://localhost:5000/',
     setupNodeEvents(on, config) {
-      // Task to fetch from webpack-dev-server
       on('task', {
         fetchWebpackScript() {
           return new Promise((resolve, reject) => {
-            http.get('http://localhost:8080/index.js', (res) => {
+            const req = http.get('http://localhost:8080/index.js', (res) => {
+              if (res.statusCode !== 200) {
+                reject(new Error(`HTTP ${res.statusCode}: ${res.statusMessage}`));
+                return;
+              }
               let data = '';
               res.on('data', chunk => data += chunk);
               res.on('end', () => resolve(data));
             }).on('error', (err) => reject(err));
+            req.setTimeout(10000, () => {
+              req.destroy();
+              reject(new Error('Request timeout after 10s'));
+            });
           });
         }
       });
