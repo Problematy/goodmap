@@ -10,13 +10,6 @@ describe('Go To My Location Button', () => {
     });
 
     it('should click the go-to-my-location button and move the map', () => {
-        cy.window().then(win => {
-            win.navigator.permissions.query = () =>
-                Promise.resolve({
-                    state: 'granted',
-                });
-        });
-
         cy.get('.MuiButtonBase-root > [data-testid="MyLocationIcon"] > path').click();
         cy.get('.leaflet-tile-container > img', { timeout: 10000 }).should(
             'have.attr',

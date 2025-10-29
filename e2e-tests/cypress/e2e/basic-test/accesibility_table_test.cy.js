@@ -9,7 +9,11 @@ describe('Accessibility table test', () => {
         const latitude = 51.10655;
         const longitude = 17.0555;
         cy.visit('/', fakeLocation(latitude, longitude));
-        cy.get('button[id="listViewButton"]').click();
+        // Wait for map markers to load before clicking list view button
+        cy.get('.leaflet-marker-icon', { timeout: 10000 }).should('exist');
+        cy.get('button[id="listViewButton"]', { timeout: 10000 }).should('be.visible').click();
+        // Wait for table to appear after clicking list view
+        cy.get('table', { timeout: 10000 }).should('be.visible');
     });
 
     it('should properly display places', () => {

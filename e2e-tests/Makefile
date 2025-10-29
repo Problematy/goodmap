@@ -1,5 +1,6 @@
 GOODMAP_VERSION ?=
-CONFIG_PATH='e2e_test_config.yml'
+CONFIG_PATH ?= e2e_test_config.yml
+GOODMAP_PATH ?= .
 
 install-goodmap:
 	pip install goodmap${GOODMAP_VERSION:+==}${GOODMAP_VERSION}
@@ -13,7 +14,7 @@ lint-check:
 	npm run prettier
 
 run-e2e-goodmap:
-	poetry run flask --app "goodmap.goodmap:create_app(config_path=$(CONFIG_PATH))" run
+	@PYTHONPATH="$(GOODMAP_PATH)" $$(cd "$(GOODMAP_PATH)" && poetry run which flask) --app "goodmap.goodmap:create_app(config_path='$(CONFIG_PATH)')" run
 
 install-test-dependencies:
 	npm install

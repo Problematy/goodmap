@@ -11,3 +11,4 @@ jobs:
     with:
       goodmap-version: 'main'
       goodmap-frontend-version: 'main'
+      goodmap-e2e-version: ${{ github.sha }}

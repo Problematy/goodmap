@@ -1,6 +1,6 @@
 {
   "devDependencies": {
-    "cypress": "^13.17.0",
+    "cypress": "^15.5.0",
     "eslint": "^9.17.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-cypress": "^4.1.0",

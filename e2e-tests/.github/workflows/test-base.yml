@@ -15,6 +15,10 @@ on:
         required: false
         type: string
         default: problematy/goodmap-frontend
+      goodmap-e2e-version:
+        required: false
+        type: string
+
 
 jobs:
   e2e-tests:
@@ -26,7 +30,7 @@ jobs:
       with:
         path: goodmap-e2e-tests
         repository: problematy/goodmap-e2e-tests
-        ref: main
+        ref: ${{ inputs.goodmap-e2e-version }}
     - name: Checkout goodmap repository
       uses: actions/checkout@v4
       with:
@@ -51,21 +55,20 @@ jobs:
       uses: snok/install-poetry@v1
       with:
         version: 'latest'
-    - name: Init poetry
-      run : poetry init -n --python=^3.10
     - name: Install python dependencies
-      run : poetry add goodmap
-    - name: Install dependencies
+      working-directory: goodmap
+      run: poetry install
+    - name: Install e2e dependencies
       working-directory: goodmap-e2e-tests
       run: npm install
-    - name: Install Caddy
-      working-directory: goodmap-e2e-tests
-      run: curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/setup.deb.sh' | sudo -E bash && sudo apt install -y caddy
     - name: Run tests
       working-directory: goodmap-e2e-tests
+      env:
+        CONFIG_PATH: /home/runner/work/goodmap-e2e-tests/goodmap-e2e-tests/goodmap-e2e-tests/e2e_test_config.yml
+        GOODMAP_PATH: /home/runner/work/goodmap-e2e-tests/goodmap-e2e-tests/goodmap
+        GOODMAP_FRONTEND_REPOSITORY: ${{ inputs.goodmap-frontend-repository }}
       run: |
         set -e
         (cd ../goodmap-frontend && make serve)&
-        caddy run&
         make run-e2e-goodmap&
         make e2e-tests
