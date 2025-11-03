@@ -72,6 +72,7 @@
       ]
     },
     "visible_data": [
+      "remark",
       "accessible_by",
       "type_of_place",
       "CTA"
