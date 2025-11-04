@@ -145,17 +145,19 @@ jobs:
     - name: Add stress test results to summary
       if: always()
       run: |
-        if [ -f ${{ inputs.e2e-tests-path }}/cypress/results/stress-test-perf.json ]; then
+        PERF_FILE="${{ github.workspace }}/${{ inputs.e2e-tests-path }}/cypress/results/stress-test-perf.json"
+
+        if [ -f "$PERF_FILE" ]; then
           echo "## 📊 E2E Stress Test Performance" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
           # Parse and display performance metrics
-          AVG=$(jq -r '.avgTime' ${{ inputs.e2e-tests-path }}/cypress/results/stress-test-perf.json)
-          MIN=$(jq -r '.minTime' ${{ inputs.e2e-tests-path }}/cypress/results/stress-test-perf.json)
-          MAX=$(jq -r '.maxTime' ${{ inputs.e2e-tests-path }}/cypress/results/stress-test-perf.json)
-          LIMIT=$(jq -r '.maxAllowed' ${{ inputs.e2e-tests-path }}/cypress/results/stress-test-perf.json)
-          PASSED=$(jq -r '.passed' ${{ inputs.e2e-tests-path }}/cypress/results/stress-test-perf.json)
-          RUNS=$(jq -r '.numRuns' ${{ inputs.e2e-tests-path }}/cypress/results/stress-test-perf.json)
+          AVG=$(jq -r '.avgTime' "$PERF_FILE")
+          MIN=$(jq -r '.minTime' "$PERF_FILE")
+          MAX=$(jq -r '.maxTime' "$PERF_FILE")
+          LIMIT=$(jq -r '.maxAllowed' "$PERF_FILE")
+          PASSED=$(jq -r '.passed' "$PERF_FILE")
+          RUNS=$(jq -r '.numRuns' "$PERF_FILE")
 
           if [ "$PASSED" = "true" ]; then
             echo "✅ **Status**: PASSED (${MAX}ms max < ${LIMIT}ms limit)" >> $GITHUB_STEP_SUMMARY
@@ -178,12 +180,14 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Run | Time (ms) |" >> $GITHUB_STEP_SUMMARY
           echo "|-----|----------|" >> $GITHUB_STEP_SUMMARY
-          jq -r '.runTimes[] | "| Run \(.run) | \(.time)ms |"' ${{ inputs.e2e-tests-path }}/cypress/results/stress-test-perf.json >> $GITHUB_STEP_SUMMARY
+          jq -r '.runTimes[] | "| Run \(.run) | \(.time)ms |"' "$PERF_FILE" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "</details>" >> $GITHUB_STEP_SUMMARY
         else
           echo "## ⚠️ E2E Stress Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "Performance data not found. See workflow logs for details" >> $GITHUB_STEP_SUMMARY
+          echo "Performance data not found at: $PERF_FILE" >> $GITHUB_STEP_SUMMARY
+          echo "Searching for file..." >> $GITHUB_STEP_SUMMARY
+          find ${{ github.workspace }} -name "stress-test-perf.json" 2>/dev/null >> $GITHUB_STEP_SUMMARY || echo "No file found" >> $GITHUB_STEP_SUMMARY
         fi
 
     - name: Save PR metadata for comment workflow
