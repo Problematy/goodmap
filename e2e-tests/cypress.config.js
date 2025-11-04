@@ -30,7 +30,6 @@ module.exports = defineConfig({
       });
       return config;
     },
-    experimentalStudio: true,
 }
 });
 
