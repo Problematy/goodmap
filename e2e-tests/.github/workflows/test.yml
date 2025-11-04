@@ -1,3 +1,5 @@
+name: E2E Tests
+
 on:
   pull_request:
     branches:
@@ -5,10 +7,23 @@ on:
   push:
     branches:
       - main
+
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   e2e-tests:
     uses: ./.github/workflows/test-base.yml
+    permissions:
+      contents: read
+      pull-requests: write
+    secrets: inherit
     with:
       goodmap-version: 'main'
       goodmap-frontend-version: 'main'
       goodmap-e2e-version: ${{ github.sha }}
+      calling-repo: 'goodmap-e2e-tests'
+      e2e-tests-path: '.'
+      goodmap-path: 'goodmap'
+      goodmap-frontend-path: 'goodmap-frontend'

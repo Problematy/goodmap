@@ -104,5 +104,5 @@ output = {
     ],
 }
 
-with open("tests/e2e_tests/e2e_stress_test_data.json", "w") as f:
+with open("e2e_stress_test_data.json", "w") as f:
     json.dump(output, f, ensure_ascii=False, indent=2)

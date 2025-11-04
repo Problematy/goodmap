@@ -23,13 +23,13 @@ e2e-tests:
 	node_modules/cypress/bin/cypress run --browser chromium --spec "cypress/e2e/basic-test/*.cy.js"
 
 e2e-stress-tests-generate-data:
-	python tests/e2e_tests/cypress/support/generate_stress_test_data.py
+	python cypress/support/generate_stress_test_data.py
 
 e2e-stress-tests:
 	node_modules/cypress/bin/cypress run --browser chromium --spec cypress/e2e/stress-test/*
 
 run-e2e-stress-env:
-	poetry run flask --app "goodmap.goodmap:create_app(config_path='e2e_stress_test_config.yml')" --debug run
+	@PYTHONPATH="$(GOODMAP_PATH)" $$(cd "$(GOODMAP_PATH)" && poetry run which flask) --app "goodmap.goodmap:create_app(config_path='e2e_stress_test_config.yml')" run
 
 cleanup:
 	pip remove goodmap

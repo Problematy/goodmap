@@ -7,68 +7,207 @@ on:
       goodmap-frontend-version:
         required: true
         type: string
-      goodmap-repository:
-        required: false
-        type: string
-        default: problematy/goodmap
-      goodmap-frontend-repository:
-        required: false
-        type: string
-        default: problematy/goodmap-frontend
       goodmap-e2e-version:
+        required: true
+        type: string
+      calling-repo:
+        description: 'Which repository is calling this workflow (goodmap-e2e-tests, goodmap, or goodmap-frontend)'
         required: false
         type: string
+      e2e-tests-path:
+        description: 'Path to e2e-tests repository (leave empty to auto-detect based on calling-repo)'
+        required: false
+        type: string
+        default: '.'
+      goodmap-path:
+        description: 'Path to goodmap repository (leave empty to auto-detect based on calling-repo)'
+        required: false
+        type: string
+        default: 'goodmap'
+      goodmap-frontend-path:
+        description: 'Path to goodmap-frontend repository (leave empty to auto-detect based on calling-repo)'
+        required: false
+        type: string
+        default: 'goodmap-frontend'
 
+permissions:
+  contents: read
+  pull-requests: write
 
 jobs:
   e2e-tests:
     name: E2E tests
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout tests repository
+    - name: Checkout calling repository
       uses: actions/checkout@v4
       with:
-        path: goodmap-e2e-tests
+        submodules: ${{ inputs.calling-repo == 'goodmap' && 'true' || 'false' }}
+
+    - name: Checkout e2e-tests repository
+      if: inputs.calling-repo != 'goodmap-e2e-tests'
+      uses: actions/checkout@v4
+      with:
+        path: ${{ inputs.e2e-tests-path }}
         repository: problematy/goodmap-e2e-tests
         ref: ${{ inputs.goodmap-e2e-version }}
+
     - name: Checkout goodmap repository
+      if: inputs.calling-repo != 'goodmap'
       uses: actions/checkout@v4
       with:
-        path: goodmap
+        path: ${{ inputs.goodmap-path }}
         repository: problematy/goodmap
         submodules: 'true'
         ref: ${{ inputs.goodmap-version }}
-    - name: Checkout goodmap frontend repository
+
+    - name: Checkout goodmap-frontend repository
+      if: inputs.calling-repo != 'goodmap-frontend'
       uses: actions/checkout@v4
       with:
         repository: problematy/goodmap-frontend
         ref: ${{ inputs.goodmap-frontend-version }}
-        path: goodmap-frontend
+        path: ${{ inputs.goodmap-frontend-path }}
+
     - name: Install frontend dependencies
-      working-directory: goodmap-frontend
+      working-directory: ${{ inputs.goodmap-frontend-path }}
       run: npm install
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: "3.10"
+
     - name: Install Poetry
       uses: snok/install-poetry@v1
       with:
         version: 'latest'
+
     - name: Install python dependencies
-      working-directory: goodmap
+      working-directory: ${{ inputs.goodmap-path }}
       run: poetry install
+
     - name: Install e2e dependencies
-      working-directory: goodmap-e2e-tests
+      working-directory: ${{ inputs.e2e-tests-path }}
       run: npm install
-    - name: Run tests
-      working-directory: goodmap-e2e-tests
+
+    - name: Start frontend server
+      working-directory: ${{ inputs.goodmap-frontend-path }}
+      run: |
+        make serve &
+        echo $! > /tmp/frontend.pid
+        sleep 3
+
+    - name: Run e2e tests
+      working-directory: ${{ inputs.e2e-tests-path }}
       env:
-        CONFIG_PATH: ${{ github.workspace }}/goodmap-e2e-tests/e2e_test_config.yml
-        GOODMAP_PATH: ${{ github.workspace }}/goodmap
-        GOODMAP_FRONTEND_REPOSITORY: ${{ inputs.goodmap-frontend-repository }}
+        CONFIG_PATH: ${{ github.workspace }}/${{ inputs.e2e-tests-path }}/e2e_test_config.yml
+        GOODMAP_PATH: ${{ github.workspace }}/${{ inputs.goodmap-path }}
+        NO_COLOR: 1
       run: |
         set -e
-        (cd ../goodmap-frontend && make serve)&
-        make run-e2e-goodmap&
-        make e2e-tests
+        cd ${{ github.workspace }}/${{ inputs.goodmap-path }}
+        make run-e2e-goodmap &
+        sleep 5
+        cd ${{ github.workspace }}/${{ inputs.e2e-tests-path }}
+        make e2e-tests | tee /tmp/e2e-tests-output.txt
+        pkill -f "flask.*e2e_test_config" || true
+        sleep 1
+
+    - name: Add e2e test results to summary
+      if: always()
+      run: |
+        if [ -f /tmp/e2e-tests-output.txt ]; then
+          echo "## ✅ Basic E2E Tests Completed" >> $GITHUB_STEP_SUMMARY
+          echo "See workflow logs for details" >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: Generate e2e stress test data
+      working-directory: ${{ inputs.e2e-tests-path }}
+      run: make e2e-stress-tests-generate-data
+
+    - name: Run e2e stress tests
+      working-directory: ${{ inputs.e2e-tests-path }}
+      env:
+        CONFIG_PATH: ${{ github.workspace }}/${{ inputs.e2e-tests-path }}/e2e_stress_test_config.yml
+        GOODMAP_PATH: ${{ github.workspace }}/${{ inputs.goodmap-path }}
+        NO_COLOR: 1
+      run: |
+        set -e
+        cd ${{ github.workspace }}/${{ inputs.goodmap-path }}
+        make run-e2e-stress-env &
+        sleep 5
+        cd ${{ github.workspace }}/${{ inputs.e2e-tests-path }}
+        make e2e-stress-tests | tee /tmp/e2e-stress-tests-output.txt
+        pkill -f "flask.*e2e_stress_test_config" || true
+        sleep 1
+
+    - name: Add stress test results to summary
+      if: always()
+      run: |
+        if [ -f ${{ inputs.e2e-tests-path }}/cypress/results/stress-test-perf.json ]; then
+          echo "## 📊 E2E Stress Test Performance" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Parse and display performance metrics
+          AVG=$(jq -r '.avgTime' ${{ inputs.e2e-tests-path }}/cypress/results/stress-test-perf.json)
+          MIN=$(jq -r '.minTime' ${{ inputs.e2e-tests-path }}/cypress/results/stress-test-perf.json)
+          MAX=$(jq -r '.maxTime' ${{ inputs.e2e-tests-path }}/cypress/results/stress-test-perf.json)
+          LIMIT=$(jq -r '.maxAllowed' ${{ inputs.e2e-tests-path }}/cypress/results/stress-test-perf.json)
+          PASSED=$(jq -r '.passed' ${{ inputs.e2e-tests-path }}/cypress/results/stress-test-perf.json)
+          RUNS=$(jq -r '.numRuns' ${{ inputs.e2e-tests-path }}/cypress/results/stress-test-perf.json)
+
+          if [ "$PASSED" = "true" ]; then
+            echo "✅ **Status**: PASSED (${MAX}ms max < ${LIMIT}ms limit)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Status**: FAILED (${MAX}ms max >= ${LIMIT}ms limit)" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Average Time** | ${AVG}ms |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Minimum Time** | ${MIN}ms |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Maximum Time** | ${MAX}ms |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Number of Runs** | ${RUNS} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Individual run times
+          echo "<details>" >> $GITHUB_STEP_SUMMARY
+          echo "<summary>📈 Individual Run Times</summary>" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Run | Time (ms) |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|----------|" >> $GITHUB_STEP_SUMMARY
+          jq -r '.runTimes[] | "| Run \(.run) | \(.time)ms |"' ${{ inputs.e2e-tests-path }}/cypress/results/stress-test-perf.json >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "</details>" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "## ⚠️ E2E Stress Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "Performance data not found. See workflow logs for details" >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: Save PR metadata for comment workflow
+      if: always() && github.event.pull_request.number
+      run: |
+        echo ${{ github.event.pull_request.number }} > /tmp/pr-number.txt
+        echo ${{ github.event.pull_request.head.sha }} > /tmp/pr-sha.txt
+
+    - name: Upload test results as artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: |
+          /tmp/e2e-tests-output.txt
+          /tmp/e2e-stress-tests-output.txt
+          /tmp/pr-number.txt
+          /tmp/pr-sha.txt
+          ${{ inputs.e2e-tests-path }}/cypress/results/stress-test-perf.json
+        retention-days: 1
+
+    - name: Stop frontend server
+      if: always()
+      run: |
+        if [ -f /tmp/frontend.pid ]; then
+          kill $(cat /tmp/frontend.pid) 2>/dev/null || true
+        fi

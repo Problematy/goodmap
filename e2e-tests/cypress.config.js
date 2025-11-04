@@ -22,6 +22,10 @@ module.exports = defineConfig({
               reject(new Error('Request timeout after 10s'));
             });
           });
+        },
+        log(message) {
+          console.log(message);
+          return null;
         }
       });
       return config;

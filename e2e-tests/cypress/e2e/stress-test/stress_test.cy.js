@@ -31,6 +31,25 @@ describe("Stress test", () => {
 
     cy.then(() => {
       const maxAllowedTime = 20000;
+
+      // Calculate stats
+      const avgTime = runTimes.reduce((a, b) => a + b, 0) / runTimes.length;
+      const minTime = Math.min(...runTimes);
+
+      // Write performance metrics to file for PR comment
+      const perfData = {
+        numRuns: numRuns,
+        runTimes: runTimes.map((t, i) => ({ run: i + 1, time: Math.round(t) })),
+        avgTime: Math.round(avgTime),
+        minTime: Math.round(minTime),
+        maxTime: Math.round(slowestTime),
+        maxAllowed: maxAllowedTime,
+        passed: slowestTime < maxAllowedTime
+      };
+
+      cy.writeFile('cypress/results/stress-test-perf.json', perfData);
+      cy.log(`Performance data saved - Avg: ${Math.round(avgTime)}ms, Max: ${Math.round(slowestTime)}ms`);
+
       expect(slowestTime).to.be.lessThan(maxAllowedTime, `The slowest run should be below ${maxAllowedTime}ms`);
     });
   });

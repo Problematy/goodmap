@@ -1,0 +1,127 @@
+name: Post E2E Test Results
+
+on:
+  workflow_run:
+    workflows: ["E2E Tests"]
+    types:
+      - completed
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion != 'cancelled'
+    steps:
+      - name: Debug workflow_run event
+        run: |
+          echo "Workflow run ID: ${{ github.event.workflow_run.id }}"
+          echo "Workflow name: ${{ github.event.workflow_run.name }}"
+          echo "Conclusion: ${{ github.event.workflow_run.conclusion }}"
+          echo "Head branch: ${{ github.event.workflow_run.head_branch }}"
+          echo "Event: ${{ github.event.workflow_run.event }}"
+      - name: Download test results
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: ${{ github.event.workflow_run.id }}
+            });
+
+            const matchArtifact = artifacts.data.artifacts.find(artifact => artifact.name === 'test-results');
+            if (!matchArtifact) {
+              console.log('No test-results artifact found');
+              return;
+            }
+
+            const download = await github.rest.actions.downloadArtifact({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              artifact_id: matchArtifact.id,
+              archive_format: 'zip'
+            });
+
+            const fs = require('fs');
+            fs.writeFileSync('${{ github.workspace }}/test-results.zip', Buffer.from(download.data));
+
+      - name: Extract artifacts
+        run: |
+          unzip -o test-results.zip || echo "No artifact to extract"
+
+      - name: Read PR metadata
+        id: pr-metadata
+        run: |
+          if [ -f tmp/pr-number.txt ]; then
+            echo "pr-number=$(cat tmp/pr-number.txt)" >> $GITHUB_OUTPUT
+            echo "pr-sha=$(cat tmp/pr-sha.txt)" >> $GITHUB_OUTPUT
+          else
+            echo "No PR metadata found - not a PR build"
+            echo "pr-number=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Post comment with test results
+        if: steps.pr-metadata.outputs.pr-number != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            const prNumber = parseInt('${{ steps.pr-metadata.outputs.pr-number }}');
+            const prSha = '${{ steps.pr-metadata.outputs.pr-sha }}';
+            const conclusion = '${{ github.event.workflow_run.conclusion }}';
+            const runUrl = '${{ github.event.workflow_run.html_url }}';
+
+            let comment = '## 🧪 E2E Test Results\n\n';
+
+            // Add workflow status
+            if (conclusion === 'success') {
+              comment += '✅ **Status**: All tests passed\n\n';
+            } else if (conclusion === 'failure') {
+              comment += '❌ **Status**: Tests failed\n\n';
+            } else {
+              comment += `⚠️ **Status**: ${conclusion}\n\n`;
+            }
+
+            comment += `📊 [View full workflow run](${runUrl})\n`;
+            comment += `🔗 Commit: \`${prSha.substring(0, 7)}\`\n\n`;
+
+            // Add detailed performance metrics if available
+            if (fs.existsSync('cypress/results/stress-test-perf.json')) {
+              const perfData = JSON.parse(fs.readFileSync('cypress/results/stress-test-perf.json', 'utf8'));
+
+              comment += '#### 📊 Performance Metrics\n\n';
+
+              // Summary stats
+              const status = perfData.passed ? '✅' : '❌';
+              comment += `${status} **Result**: ${perfData.maxTime}ms max (limit: ${perfData.maxAllowed}ms)\n\n`;
+
+              comment += '| Metric | Value |\n';
+              comment += '|--------|-------|\n';
+              comment += `| **Average Time** | ${perfData.avgTime}ms |\n`;
+              comment += `| **Minimum Time** | ${perfData.minTime}ms |\n`;
+              comment += `| **Maximum Time** | ${perfData.maxTime}ms |\n`;
+              comment += `| **Number of Runs** | ${perfData.numRuns} |\n\n`;
+
+              // Individual run times
+              comment += '<details>\n<summary>📈 Individual Run Times</summary>\n\n';
+              comment += '| Run | Time (ms) |\n';
+              comment += '|-----|----------|\n';
+              perfData.runTimes.forEach(run => {
+                comment += `| Run ${run.run} | ${run.time}ms |\n`;
+              });
+              comment += '\n</details>\n';
+            }
+
+            // Post comment to PR
+            await github.rest.issues.createComment({
+              issue_number: prNumber,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+            console.log(`✓ Posted test results to PR #${prNumber}`);
