@@ -182,7 +182,7 @@ jobs:
         PERF_FILE="${{ github.workspace }}/${{ inputs.e2e-tests-path }}/cypress/results/stress-test-perf.json"
 
         if [ -f "$PERF_FILE" ]; then
-          echo "## � E2E Stress Test Performance" >> $GITHUB_STEP_SUMMARY
+          echo "## 📊 E2E Stress Test Performance" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
           # Parse and display performance metrics
@@ -210,7 +210,7 @@ jobs:
 
           # Individual run times
           echo "<details>" >> $GITHUB_STEP_SUMMARY
-          echo "<summary>� Individual Run Times</summary>" >> $GITHUB_STEP_SUMMARY
+          echo "<summary>📈 Individual Run Times</summary>" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Run | Time (ms) |" >> $GITHUB_STEP_SUMMARY
           echo "|-----|----------|" >> $GITHUB_STEP_SUMMARY

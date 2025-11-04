@@ -47,9 +47,7 @@ jobs:
       - name: Extract artifacts
         if: steps.download.outputs.artifact-found == 'true'
         run: |
-          unzip -o test-results.zip || echo "No artifact to extract"
-          echo "Files extracted:"
-          find . -type f -name "*.json" -o -name "*.txt"
+          unzip -o test-results.zip
 
       - name: Read PR metadata
         if: steps.download.outputs.artifact-found == 'true'
@@ -90,13 +88,10 @@ jobs:
             comment += `🔗 Commit: \`${prSha.substring(0, 7)}\`\n\n`;
 
             // Add detailed performance metrics if available
-            console.log('Checking for performance file at: cypress/results/stress-test-perf.json');
-            console.log('Current directory:', process.cwd());
-            console.log('Files in current directory:', require('child_process').execSync('ls -la').toString());
+            const perfPath = 'home/runner/work/goodmap-e2e-tests/goodmap-e2e-tests/cypress/results/stress-test-perf.json';
 
-            if (fs.existsSync('cypress/results/stress-test-perf.json')) {
-              const perfData = JSON.parse(fs.readFileSync('cypress/results/stress-test-perf.json', 'utf8'));
-              console.log('Performance data found:', perfData);
+            if (fs.existsSync(perfPath)) {
+              const perfData = JSON.parse(fs.readFileSync(perfPath, 'utf8'));
 
               comment += '## 📊 E2E Stress Test Performance\n\n';
 
