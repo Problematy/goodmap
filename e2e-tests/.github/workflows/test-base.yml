@@ -98,19 +98,36 @@ jobs:
         echo $! > /tmp/frontend.pid
         sleep 3
 
+    - name: Start backend for e2e tests
+      working-directory: ${{ inputs.e2e-tests-path }}
+      env:
+        CONFIG_PATH: e2e_test_config.yml
+        GOODMAP_PATH: ${{ github.workspace }}/${{ inputs.goodmap-path }}
+      run: |
+        make run-e2e-goodmap > /tmp/backend-e2e.log 2>&1 &
+        echo $! > /tmp/backend-e2e.pid
+        sleep 5
+        # Check if backend started successfully
+        if ! kill -0 $(cat /tmp/backend-e2e.pid) 2>/dev/null; then
+          echo "Backend failed to start. Log:"
+          cat /tmp/backend-e2e.log
+          exit 1
+        fi
+        echo "Backend started with PID $(cat /tmp/backend-e2e.pid)"
+
     - name: Run e2e tests
       working-directory: ${{ inputs.e2e-tests-path }}
       env:
-        CONFIG_PATH: ${{ github.workspace }}/${{ inputs.e2e-tests-path }}/e2e_test_config.yml
-        GOODMAP_PATH: ${{ github.workspace }}/${{ inputs.goodmap-path }}
         NO_COLOR: 1
       run: |
-        set -e
-        cd ${{ github.workspace }}/${{ inputs.goodmap-path }}
-        make run-e2e-goodmap &
-        sleep 5
-        cd ${{ github.workspace }}/${{ inputs.e2e-tests-path }}
         make e2e-tests | tee /tmp/e2e-tests-output.txt
+
+    - name: Stop backend for e2e tests
+      if: always()
+      run: |
+        if [ -f /tmp/backend-e2e.pid ]; then
+          kill $(cat /tmp/backend-e2e.pid) 2>/dev/null || true
+        fi
         pkill -f "flask.*e2e_test_config" || true
         sleep 1
 
@@ -126,19 +143,36 @@ jobs:
       working-directory: ${{ inputs.e2e-tests-path }}
       run: make e2e-stress-tests-generate-data
 
+    - name: Start backend for stress tests
+      working-directory: ${{ inputs.e2e-tests-path }}
+      env:
+        CONFIG_PATH: e2e_stress_test_config.yml
+        GOODMAP_PATH: ${{ github.workspace }}/${{ inputs.goodmap-path }}
+      run: |
+        make run-e2e-stress-env > /tmp/backend-stress.log 2>&1 &
+        echo $! > /tmp/backend-stress.pid
+        sleep 5
+        # Check if backend started successfully
+        if ! kill -0 $(cat /tmp/backend-stress.pid) 2>/dev/null; then
+          echo "Backend failed to start. Log:"
+          cat /tmp/backend-stress.log
+          exit 1
+        fi
+        echo "Backend started with PID $(cat /tmp/backend-stress.pid)"
+
     - name: Run e2e stress tests
       working-directory: ${{ inputs.e2e-tests-path }}
       env:
-        CONFIG_PATH: ${{ github.workspace }}/${{ inputs.e2e-tests-path }}/e2e_stress_test_config.yml
-        GOODMAP_PATH: ${{ github.workspace }}/${{ inputs.goodmap-path }}
         NO_COLOR: 1
       run: |
-        set -e
-        cd ${{ github.workspace }}/${{ inputs.goodmap-path }}
-        make run-e2e-stress-env &
-        sleep 5
-        cd ${{ github.workspace }}/${{ inputs.e2e-tests-path }}
         make e2e-stress-tests | tee /tmp/e2e-stress-tests-output.txt
+
+    - name: Stop backend for stress tests
+      if: always()
+      run: |
+        if [ -f /tmp/backend-stress.pid ]; then
+          kill $(cat /tmp/backend-stress.pid) 2>/dev/null || true
+        fi
         pkill -f "flask.*e2e_stress_test_config" || true
         sleep 1
 
@@ -208,6 +242,7 @@ jobs:
           /tmp/pr-sha.txt
           ${{ inputs.e2e-tests-path }}/cypress/results/stress-test-perf.json
         retention-days: 1
+        if-no-files-found: ignore
 
     - name: Stop frontend server
       if: always()
