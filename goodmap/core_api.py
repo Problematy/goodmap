@@ -1,11 +1,17 @@
 import importlib.metadata
 import uuid
 
+import numpy
+import pysupercluster
 from flask import Blueprint, jsonify, make_response, request
 from flask_babel import gettext
 from flask_restx import Api, Resource, fields
 from platzky.config import LanguagesMapping
 
+from goodmap.clustering import (
+    map_clustering_data_to_proper_lazy_loading_object,
+    match_clusters_uuids,
+)
 from goodmap.formatter import prepare_pin
 
 
@@ -109,6 +115,39 @@ def core_pages(
             query_params = request.args.to_dict(flat=False)
             all_locations = database.get_locations(query_params)
             return jsonify([x.basic_info() for x in all_locations])
+
+    @core_api.route("/locations-clustered")
+    class GetLocationsClustered(Resource):
+        def get(self):
+            """
+            Shows list of locations with uuid, position and clusters
+            """
+            query_params = request.args.to_dict(flat=False)
+            all_locations = database.get_locations(query_params)
+            points = [x.basic_info() for x in all_locations]
+            points_numpy = numpy.array(
+                [(point["position"][0], point["position"][1]) for point in points]
+            )
+
+            # Will help in future with securing bounds
+            # north_west_bound_lng = float(query_params.get("northWestBoundLng", [-180])[0])
+            # north_west_bound_lat = float(query_params.get("northWestBoundLat", [90])[0])
+            # south_east_bound_lat = float(query_params.get("southEastBoundLng", [-90])[0])
+            # south_east_bound_lng = float(query_params.get("southEastBoundLat", [180])[0])
+            zoom = int(query_params.get("zoom", [7])[0])
+
+            index = pysupercluster.SuperCluster(
+                points_numpy, min_zoom=0, max_zoom=16, radius=200, extent=512
+            )
+
+            clusters = index.getClusters(
+                top_left=(-180.0, 90.0),
+                bottom_right=(180.0, -90.0),
+                zoom=zoom,
+            )
+            clusters = match_clusters_uuids(points, clusters)
+
+            return jsonify(map_clustering_data_to_proper_lazy_loading_object(clusters))
 
     @core_api.route("/location/<location_id>")
     class GetLocation(Resource):

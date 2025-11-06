@@ -18,5 +18,6 @@ LANGUAGES:
 
 FEATURE_FLAGS:
   USE_LAZY_LOADING: True
+  USE_SERVER_SIDE_CLUSTERING: True
 
 GOODMAP_FRONTEND_LIB_URL: "https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.4.4"

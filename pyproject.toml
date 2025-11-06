@@ -22,6 +22,9 @@ aiohttp = "^3.8.4"
 pydantic = "^2.7.1"
 platzky = "^1.0.0"
 deprecation = "^2.1.0"
+numpy = "^2.2.0"
+pysupercluster = { git = "https://github.com/x-Milosz/pysupercluster.git", rev = "master" }
+scipy = "^1.15.1"
 sphinx = {version = "^8.0.0", optional = true}
 sphinx-rtd-theme = {version = "^3.0.0", optional = true}
 tomli = {version = "^2.0.0", optional = true}
@@ -51,7 +54,7 @@ interrogate = "^1.7.0"
 platzky = {path = "vendor/platzky", develop = true}
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core>=1.0.0", "numpy"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pyright]
