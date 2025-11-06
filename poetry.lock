@@ -2679,7 +2679,7 @@ numpy = "*"
 
 [package.source]
 type = "git"
-url = "https://github.com/x-Milosz/pysupercluster.git"
+url = "https://github.com/Problematy/pysupercluster.git"
 reference = "master"
 resolved_reference = "0eedc54638ac78165b2b6a7b3849b899200a6334"
 
@@ -4161,4 +4161,4 @@ docs = ["myst-parser", "sphinx", "sphinx-rtd-theme", "tomli"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "67eb6f394f5353558d0e919897fae7c2e025134e56f921e5a611cb3dc30f89c3"
+content-hash = "1f1d035cc64afb0200dce51db8233b2207769c60b5f72f016dc0fde036f072e4"
