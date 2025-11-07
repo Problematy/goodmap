@@ -129,11 +129,8 @@ def core_pages(
                 [(point["position"][0], point["position"][1]) for point in points]
             )
 
-            # Will help in future with securing bounds
-            # north_west_bound_lng = float(query_params.get("northWestBoundLng", [-180])[0])
-            # north_west_bound_lat = float(query_params.get("northWestBoundLat", [90])[0])
-            # south_east_bound_lat = float(query_params.get("southEastBoundLng", [-90])[0])
-            # south_east_bound_lng = float(query_params.get("southEastBoundLat", [180])[0])
+            # TODO: Implement bounds filtering to improve performance
+            # See issue #XXX for tracking
             zoom = int(query_params.get("zoom", [7])[0])
 
             index = pysupercluster.SuperCluster(
