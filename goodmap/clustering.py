@@ -32,12 +32,12 @@ def map_clustering_data_to_proper_lazy_loading_object(input_array):
 def match_clusters_uuids(points, clusters):
     """
     Match single-point clusters to their original point UUIDs.
-    
+
     Args:
         points: List of point dicts with 'position' and 'uuid' keys
         clusters: List of cluster dicts with 'longitude', 'latitude', 'count', and 'uuid' keys
                  (modified in place)
-    
+
     Returns:
         The modified clusters list
     """
