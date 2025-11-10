@@ -26,7 +26,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install poetry==2.0.1
         poetry install
-        cd tests/e2e_tests && npm install
     - name: Run linters
       run: make lint-check
     - name: Run tests without coverage
