@@ -48,3 +48,4 @@ jobs:
       goodmap-frontend-version: 'main'
       goodmap-path: '.'
       goodmap-config-path: tests/e2e_tests/e2e_test_config.yml
+      e2e-tests-path: ../goodmap-e2e-tests
