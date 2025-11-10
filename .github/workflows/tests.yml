@@ -40,7 +40,6 @@ jobs:
 
   e2e-tests:
     needs: backend-test
-
     uses: raven-wing/goodmap-e2e-tests/.github/workflows/test-base.yml@changes
     with:
       calling-repo: 'goodmap'
