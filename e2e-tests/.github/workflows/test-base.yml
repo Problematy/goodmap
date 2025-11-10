@@ -29,6 +29,11 @@ on:
         required: false
         type: string
         default: 'goodmap-frontend'
+      goodmap-config-path:
+        description: 'Path to goodmap configuration file for e2e tests'
+        required: false
+        type: string
+        default: e2e_test_config.yml
 
 permissions:
   contents: read
@@ -101,7 +106,7 @@ jobs:
     - name: Start backend for e2e tests
       working-directory: ${{ inputs.e2e-tests-path }}
       env:
-        CONFIG_PATH: e2e_test_config.yml
+        CONFIG_PATH: ${{ inputs.goodmap-config-path }}
         GOODMAP_PATH: ${{ github.workspace }}/${{ inputs.goodmap-path }}
       run: |
         make run-e2e-goodmap > /tmp/backend-e2e.log 2>&1 &

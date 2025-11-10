@@ -30,13 +30,23 @@
           "pedestrians"
         ],
         "type_of_place": "small bridge",
-        "uuid": "dattarro"
+        "uuid": "dattarro",
+        "remark": "very old bridge"
       }
     ],
     "location_obligatory_fields": [
-      ["name", "str"],
-      ["accessible_by", "list"],
-      ["type_of_place", "str"]
+      [
+        "name",
+        "str"
+      ],
+      [
+        "accessible_by",
+        "list"
+      ],
+      [
+        "type_of_place",
+        "str"
+      ]
     ],
     "categories": {
       "accessible_by": [
@@ -49,7 +59,20 @@
         "small bridge"
       ]
     },
+    "categories_help": [
+      "accessible_by"
+    ],
+    "categories_options_help": {
+      "type_of_place": [
+        "small bridge"
+      ],
+      "accessible_by": [
+        "cars",
+        "pedestrians"
+      ]
+    },
     "visible_data": [
+      "remark",
       "accessible_by",
       "type_of_place",
       "CTA"
@@ -121,8 +144,5 @@
     "primary_color": "#FFFFFF",
     "secondary_color": "#245466",
     "left_bar_width": "300px"
-  },
-  "plugins": [
-
-  ]
+  }
 }
