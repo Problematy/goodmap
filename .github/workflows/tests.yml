@@ -47,5 +47,6 @@ jobs:
       goodmap-version: 'main'
       goodmap-e2e-version: main
       goodmap-frontend-version: 'main'
+      goodmap-path: '.'
       e2e-tests-path: 'goodmap-e2e-tests'
       goodmap-config-path: tests/e2e_tests/e2e_test_config.yml
