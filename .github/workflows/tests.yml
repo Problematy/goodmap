@@ -43,9 +43,9 @@ jobs:
 
     uses: problematy/goodmap-e2e-tests/.github/workflows/test-base.yml@main
     with:
+      calling-repo: 'goodmap'
       goodmap-version: 'main'
       goodmap-e2e-version: main
       goodmap-frontend-version: 'main'
       goodmap-path: '.'
       goodmap-config-path: tests/e2e_tests/e2e_test_config.yml
-      e2e-tests-path: /home/runner/work/goodmap/goodmap/goodmap-e2e-tests
