@@ -1,0 +1,17 @@
+name: Post E2E Test Results
+
+on:
+  workflow_run:
+    workflows: ["Testing pipeline"]
+    types:
+      - completed
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  post-results:
+    uses: raven-wing/goodmap-e2e-tests/.github/workflows/test-comment.yml@changes2
+    secrets:
+      comment_token: ${{ secrets.GITHUB_TOKEN }}
