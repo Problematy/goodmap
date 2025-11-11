@@ -53,6 +53,9 @@ jobs:
   post-results:
     needs: e2e-tests
     if: always()
+    permissions:
+      contents: read
+      pull-requests: write
     uses: raven-wing/goodmap-e2e-tests/.github/workflows/test-comment.yml@changes2
     with:
       run_id: ${{ github.run_id }}
