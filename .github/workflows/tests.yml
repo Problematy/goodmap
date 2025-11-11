@@ -60,4 +60,4 @@ jobs:
     with:
       run_id: ${{ github.run_id }}
     secrets:
-      github_token: ${{ secrets.GITHUB_TOKEN }}
+      comment_token: ${{ secrets.GITHUB_TOKEN }}
