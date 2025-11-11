@@ -13,5 +13,7 @@ permissions:
 jobs:
   post-results:
     uses: raven-wing/goodmap-e2e-tests/.github/workflows/test-comment.yml@changes2
+    with:
+      run_id: ${{ github.event.workflow_run.id }}
     secrets:
       comment_token: ${{ secrets.GITHUB_TOKEN }}
