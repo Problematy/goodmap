@@ -59,4 +59,5 @@ jobs:
     uses: raven-wing/goodmap-e2e-tests/.github/workflows/test-comment.yml@changes2
     with:
       run_id: ${{ github.run_id }}
-    secrets: inherit
+    secrets:
+      github_token: ${{ secrets.GITHUB_TOKEN }}
