@@ -30,7 +30,7 @@ describe("Stress test", () => {
     });
 
     cy.then(() => {
-      const maxAllowedTime = 20000;
+      const maxAllowedTime = 100;
 
       // Always write performance data, even if we didn't complete all runs
       if (runTimes.length > 0) {
