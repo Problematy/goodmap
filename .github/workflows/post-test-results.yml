@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   post-results:
-    uses: raven-wing/goodmap-e2e-tests/.github/workflows/pr-comment.yml@fix_workflow
+    uses: raven-wing/goodmap-e2e-tests/.github/workflows/pr-comment.yml@a31eb5cd9acb2029654849eacce7b364e74fb504
     with:
       run_id: ${{ github.event.workflow_run.id }}
     secrets:
