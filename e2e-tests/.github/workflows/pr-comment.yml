@@ -53,6 +53,8 @@ jobs:
         if: steps.download.outputs.artifact-found == 'true'
         run: |
           unzip -o test-results.zip
+          echo "=== Extracted files ==="
+          find . -type f -name "*.js" -o -name "*.json" | head -20
 
       - name: Read PR metadata
         if: steps.download.outputs.artifact-found == 'true'
@@ -85,15 +87,74 @@ jobs:
             comment += `📊 [View full workflow run](${runUrl})\n`;
             comment += `🔗 Commit: \`${prSha.substring(0, 7)}\`\n\n`;
 
-            // Add detailed performance metrics using the shared script
+            // Add detailed performance metrics by reading the JSON directly
             let perfSummary = '';
             try {
-              const perfPath = `${e2eTestsPath}/cypress/results/stress-test-perf.json`;
-              const { generatePerfSummary } = require(`${e2eTestsPath}/.github/scripts/generate-perf-summary.js`);
-              perfSummary = generatePerfSummary(perfPath, 'pr-comment');
+              const path = require('path');
+              const perfPath = path.join(process.cwd(), e2eTestsPath, 'cypress/results/stress-test-perf.json');
+
+              console.log('Looking for perf data at:', perfPath);
+
+              if (!fs.existsSync(perfPath)) {
+                perfSummary = '## ⚠️ E2E Stress Test Results\n\nPerformance data not found. See workflow logs for details.\n';
+              } else {
+                const perfData = JSON.parse(fs.readFileSync(perfPath, 'utf8'));
+
+                perfSummary = '## 📊 E2E Stress Test Performance\n\n';
+
+                // Status section
+                if (perfData.error) {
+                  perfSummary += `❌ **Status**: ERROR - ${perfData.error}\n\n`;
+                } else if (perfData.expectedRuns && perfData.numRuns < perfData.expectedRuns) {
+                  perfSummary += `⚠️ **Status**: INCOMPLETE - Only ${perfData.numRuns}/${perfData.expectedRuns} runs completed\n\n`;
+                } else if (perfData.passed) {
+                  perfSummary += `✅ **Status**: PASSED (${perfData.maxTime}ms max < ${perfData.maxAllowed}ms limit)\n\n`;
+                } else {
+                  perfSummary += `❌ **Status**: FAILED (${perfData.maxTime}ms max >= ${perfData.maxAllowed}ms limit)\n\n`;
+                }
+
+                // Summary table
+                if (perfData.numRuns > 0) {
+                  perfSummary += '| Metric | Value |\n';
+                  perfSummary += '|--------|-------|\n';
+                  perfSummary += `| **Average Time** | ${perfData.avgTime}ms |\n`;
+                  perfSummary += `| **Minimum Time** | ${perfData.minTime}ms |\n`;
+                  perfSummary += `| **Maximum Time** | ${perfData.maxTime}ms |\n`;
+                  perfSummary += `| **Completed Runs** | ${perfData.numRuns}${perfData.expectedRuns ? '/' + perfData.expectedRuns : ''} |\n`;
+
+                  if (perfData.avgMarkers !== undefined) {
+                    perfSummary += `| **Avg Markers Loaded** | ${perfData.avgMarkers} |\n`;
+                  }
+                  perfSummary += '\n';
+
+                  // Individual run times
+                  if (perfData.runTimes && perfData.runTimes.length > 0) {
+                    perfSummary += '<details>\n';
+                    perfSummary += '<summary>📈 Individual Run Times</summary>\n\n';
+
+                    const hasMarkerData = perfData.runTimes[0] && perfData.runTimes[0].markers !== undefined;
+
+                    if (hasMarkerData) {
+                      perfSummary += '| Run | Time (ms) | Markers |\n';
+                      perfSummary += '|-----|-----------|--------|\n';
+                      perfData.runTimes.forEach(run => {
+                        perfSummary += `| Run ${run.run} | ${run.time}ms | ${run.markers} |\n`;
+                      });
+                    } else {
+                      perfSummary += '| Run | Time (ms) |\n';
+                      perfSummary += '|-----|----------|\n';
+                      perfData.runTimes.forEach(run => {
+                        perfSummary += `| Run ${run.run} | ${run.time}ms |\n`;
+                      });
+                    }
+                    perfSummary += '\n</details>\n';
+                  }
+                }
+              }
             } catch (error) {
               console.warn('Failed to generate performance summary:', error.message);
-              perfSummary = '⚠️ Performance summary unavailable';
+              console.warn('Stack:', error.stack);
+              perfSummary = '⚠️ Performance summary unavailable\n';
             }
             comment += perfSummary;
 

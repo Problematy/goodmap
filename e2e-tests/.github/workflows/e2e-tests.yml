@@ -56,46 +56,61 @@ jobs:
         WORKFLOW_RUN_URL="${{ github.api_url }}/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         echo "Fetching: $WORKFLOW_RUN_URL"
 
-        RESPONSE=$(curl -s "$WORKFLOW_RUN_URL")
+        RESPONSE=$(curl -s -H "Authorization: Bearer ${{ github.token }}" "$WORKFLOW_RUN_URL")
+
+        # Debug: show API response structure
+        echo "API Response (first 500 chars):"
+        echo "$RESPONSE" | head -c 500
+        echo ""
 
         # Extract the first referenced workflow (this reusable workflow)
         REFERENCED=$(echo "$RESPONSE" | jq -r '.referenced_workflows[0]')
 
         if [ "$REFERENCED" = "null" ] || [ -z "$REFERENCED" ]; then
           echo "ERROR: No referenced_workflows found in API response"
-          echo "This shouldn't happen for reusable workflows"
+          echo "Dumping full API response for debugging:"
+          echo "$RESPONSE" | jq '.'
           exit 1
         fi
 
         # Extract repository and ref from the path
         # Format: owner/repo/.github/workflows/workflow.yml@ref
         WORKFLOW_PATH=$(echo "$REFERENCED" | jq -r '.path')
-        REF=$(echo "$REFERENCED" | jq -r '.ref')
 
         echo "Workflow path: $WORKFLOW_PATH"
-        echo "Ref from API: $REF"
 
         # Extract repository (everything before /.github/)
         REPO=$(echo "$WORKFLOW_PATH" | sed 's|/\.github/.*||')
         echo "Extracted repository: $REPO"
 
-        # Clean ref (remove refs/heads/ or refs/tags/ prefix)
-        CLEANED_REF=$(echo "$REF" | sed 's|^refs/heads/||' | sed 's|^refs/tags/||')
-        echo "Cleaned ref: $CLEANED_REF"
+        # Extract ref from path (everything after @)
+        # The path format is: owner/repo/.github/workflows/file.yml@ref
+        if [[ "$WORKFLOW_PATH" == *"@"* ]]; then
+          REF=$(echo "$WORKFLOW_PATH" | sed 's|.*@||')
+          echo "Extracted ref from path: $REF"
+        else
+          # Fallback to .ref field if no @ in path
+          REF=$(echo "$REFERENCED" | jq -r '.ref')
+          echo "Ref from API .ref field: $REF"
+          # Clean ref (remove refs/heads/ or refs/tags/ prefix)
+          REF=$(echo "$REF" | sed 's|^refs/heads/||' | sed 's|^refs/tags/||')
+        fi
+
+        echo "Final ref: $REF"
 
         # Validate
-        if [ -z "$REPO" ] || [ -z "$CLEANED_REF" ]; then
+        if [ -z "$REPO" ] || [ -z "$REF" ] || [ "$REF" = "null" ]; then
           echo "ERROR: Failed to extract repository or ref"
-          echo "REPO='$REPO', CLEANED_REF='$CLEANED_REF'"
+          echo "REPO='$REPO', REF='$REF'"
           exit 1
         fi
 
-        echo "✅ Will checkout e2e-tests from: $REPO @ $CLEANED_REF"
+        echo "✅ Will checkout e2e-tests from: $REPO @ $REF"
         echo "repository=$REPO" >> $GITHUB_OUTPUT
-        echo "ref=$CLEANED_REF" >> $GITHUB_OUTPUT
+        echo "ref=$REF" >> $GITHUB_OUTPUT
 
     - name: Checkout e2e-tests repository
-      if: inputs.calling-repo != 'goodmap-e2e-tests'
+      if: inputs.calling-repo != 'goodmap-e2e-tests' && steps.determine-e2e-ref.outcome == 'success'
       uses: actions/checkout@v4
       with:
         path: ${{ inputs.e2e-tests-path }}

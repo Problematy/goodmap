@@ -51,17 +51,34 @@ function generatePerfSummary(perfPath, format = 'github') {
     } else {
       summary += `| **Completed Runs** | ${perfData.numRuns}${perfData.expectedRuns ? '/' + perfData.expectedRuns : ''} |\n`;
     }
+
+    // Add average markers if available
+    if (perfData.avgMarkers !== undefined) {
+      summary += `| **Avg Markers Loaded** | ${perfData.avgMarkers} |\n`;
+    }
     summary += '\n';
 
     // Individual run times
     if (perfData.runTimes && perfData.runTimes.length > 0) {
       summary += '<details>\n';
       summary += '<summary>📈 Individual Run Times</summary>\n\n';
-      summary += '| Run | Time (ms) |\n';
-      summary += '|-----|----------|\n';
-      perfData.runTimes.forEach(run => {
-        summary += `| Run ${run.run} | ${run.time}ms |\n`;
-      });
+
+      // Check if marker data is available
+      const hasMarkerData = perfData.runTimes[0] && perfData.runTimes[0].markers !== undefined;
+
+      if (hasMarkerData) {
+        summary += '| Run | Time (ms) | Markers |\n';
+        summary += '|-----|-----------|--------|\n';
+        perfData.runTimes.forEach(run => {
+          summary += `| Run ${run.run} | ${run.time}ms | ${run.markers} |\n`;
+        });
+      } else {
+        summary += '| Run | Time (ms) |\n';
+        summary += '|-----|----------|\n';
+        perfData.runTimes.forEach(run => {
+          summary += `| Run ${run.run} | ${run.time}ms |\n`;
+        });
+      }
       summary += '\n</details>\n';
     }
   }
