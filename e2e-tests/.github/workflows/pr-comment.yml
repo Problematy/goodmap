@@ -90,10 +90,12 @@ jobs:
             // Add detailed performance metrics by reading the JSON directly
             let perfSummary = '';
             try {
-              const path = require('path');
-              const perfPath = path.join(process.cwd(), e2eTestsPath, 'cypress/results/stress-test-perf.json');
+              // Performance data is now in /tmp for clean paths across all repos
+              const perfPath = 'tmp/stress-test-perf.json';
 
               console.log('Looking for perf data at:', perfPath);
+              console.log('Current directory:', process.cwd());
+              console.log('File exists:', fs.existsSync(perfPath));
 
               if (!fs.existsSync(perfPath)) {
                 perfSummary = '## ⚠️ E2E Stress Test Results\n\nPerformance data not found. See workflow logs for details.\n';
