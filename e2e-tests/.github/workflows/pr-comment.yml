@@ -60,15 +60,23 @@ jobs:
         if: steps.download.outputs.artifact-found == 'true'
         id: pr-metadata
         run: |
-          if [ -f tmp/pr-number.txt ]; then
-            echo "pr-number=$(cat tmp/pr-number.txt)" >> $GITHUB_OUTPUT
-            echo "pr-sha=$(cat tmp/pr-sha.txt)" >> $GITHUB_OUTPUT
-            echo "e2e-tests-path=$(cat tmp/e2e-tests-path.txt)" >> $GITHUB_OUTPUT
+          if [ -f pr-number.txt ]; then
+            echo "pr-number=$(cat pr-number.txt)" >> $GITHUB_OUTPUT
+            echo "pr-sha=$(cat pr-sha.txt)" >> $GITHUB_OUTPUT
+            echo "e2e-tests-path=$(cat e2e-tests-path.txt)" >> $GITHUB_OUTPUT
           else
             echo "No PR metadata found - not a PR build"
             echo "pr-number=" >> $GITHUB_OUTPUT
             echo "e2e-tests-path=." >> $GITHUB_OUTPUT
           fi
+
+      - name: Add PR link to job summary
+        if: steps.pr-metadata.outputs.pr-number != ''
+        run: |
+          PR_NUMBER="${{ steps.pr-metadata.outputs.pr-number }}"
+          echo "### 🔗 Posting results to PR #$PR_NUMBER" >> $GITHUB_STEP_SUMMARY
+          echo "[View Pull Request](https://github.com/${{ github.repository }}/pull/$PR_NUMBER)" >> $GITHUB_STEP_SUMMARY
+          echo "::notice title=Posting to PR #$PR_NUMBER::Processing test results for pull request #$PR_NUMBER"
 
       - name: Post comment with test results
         if: steps.pr-metadata.outputs.pr-number != ''
@@ -90,8 +98,8 @@ jobs:
             // Add detailed performance metrics by reading the JSON directly
             let perfSummary = '';
             try {
-              // Performance data is now in /tmp for clean paths across all repos
-              const perfPath = 'tmp/stress-test-perf.json';
+              // Performance data is extracted from artifact (uploaded from /tmp but extracts to current dir)
+              const perfPath = 'stress-test-perf.json';
 
               console.log('Looking for perf data at:', perfPath);
               console.log('Current directory:', process.cwd());

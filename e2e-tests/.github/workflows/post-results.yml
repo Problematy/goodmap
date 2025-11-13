@@ -1,5 +1,7 @@
 name: Post E2E Test Results
 
+run-name: "Post results to PR #${{ github.event.workflow_run.pull_requests[0].number || 'N/A' }}"
+
 on:
   workflow_run:
     workflows: ["E2E Tests"]
