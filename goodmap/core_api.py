@@ -14,6 +14,12 @@ from goodmap.clustering import (
 )
 from goodmap.formatter import prepare_pin
 
+# SuperCluster configuration constants
+MIN_ZOOM = 0
+MAX_ZOOM = 16
+CLUSTER_RADIUS = 200
+CLUSTER_EXTENT = 512
+
 
 def make_tuple_translation(keys_to_translate):
     return [(x, gettext(x)) for x in keys_to_translate]
@@ -126,11 +132,11 @@ def core_pages(
                 query_params = request.args.to_dict(flat=False)
                 zoom = int(query_params.get("zoom", [7])[0])
 
-                # Validate zoom level
-                if not 0 <= zoom <= 20:
+                # Validate zoom level (aligned with SuperCluster min_zoom/max_zoom)
+                if not MIN_ZOOM <= zoom <= MAX_ZOOM:
                     return make_response(
-                        jsonify({"message": "Zoom must be between 0 and 20"}),
-                        400
+                        jsonify({"message": f"Zoom must be between {MIN_ZOOM} and {MAX_ZOOM}"}),
+                        400,
                     )
 
                 all_locations = database.get_locations(query_params)
@@ -143,7 +149,11 @@ def core_pages(
                 )
 
                 index = pysupercluster.SuperCluster(
-                    points_numpy, min_zoom=0, max_zoom=16, radius=200, extent=512
+                    points_numpy,
+                    min_zoom=MIN_ZOOM,
+                    max_zoom=MAX_ZOOM,
+                    radius=CLUSTER_RADIUS,
+                    extent=CLUSTER_EXTENT,
                 )
 
                 clusters = index.getClusters(

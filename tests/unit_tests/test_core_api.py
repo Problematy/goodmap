@@ -1436,15 +1436,15 @@ def test_location_clustering_with_zoom_below_minimum(test_app):
     response = test_app.get("/api/locations-clustered?zoom=-1")
     assert response.status_code == 400
     data = response.json
-    assert "Zoom must be between 0 and 20" in data["message"]
+    assert "Zoom must be between 0 and 16" in data["message"]
 
 
 def test_location_clustering_with_zoom_above_maximum(test_app):
-    """Test that zoom > 20 returns 400 error"""
-    response = test_app.get("/api/locations-clustered?zoom=21")
+    """Test that zoom > 16 returns 400 error"""
+    response = test_app.get("/api/locations-clustered?zoom=17")
     assert response.status_code == 400
     data = response.json
-    assert "Zoom must be between 0 and 20" in data["message"]
+    assert "Zoom must be between 0 and 16" in data["message"]
 
 
 def test_location_clustering_with_zoom_at_minimum_boundary(test_app):
@@ -1457,8 +1457,8 @@ def test_location_clustering_with_zoom_at_minimum_boundary(test_app):
 
 
 def test_location_clustering_with_zoom_at_maximum_boundary(test_app):
-    """Test that zoom = 20 is valid"""
-    response = test_app.get("/api/locations-clustered?zoom=20")
+    """Test that zoom = 16 is valid"""
+    response = test_app.get("/api/locations-clustered?zoom=16")
     assert response.status_code == 200
     # Should return valid clustering data
     json = response.json
