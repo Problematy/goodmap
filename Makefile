@@ -38,6 +38,9 @@ html-cov: coverage
 run-e2e-env:
 	poetry run flask --app "goodmap.goodmap:create_app(config_path='$(CONFIG_PATH)')" --debug run
 
+run-e2e-goodmap:
+	poetry run flask --app "goodmap.goodmap:create_app(config_path='$(CONFIG_PATH)')" run
+
 run-e2e-stress-env:
 	poetry run flask --app "goodmap.goodmap:create_app(config_path='tests/e2e_tests/e2e_stress_test_config.yml')" --debug run
 
