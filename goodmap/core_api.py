@@ -122,28 +122,42 @@ def core_pages(
             """
             Shows list of locations with uuid, position and clusters
             """
-            query_params = request.args.to_dict(flat=False)
-            all_locations = database.get_locations(query_params)
-            points = [x.basic_info() for x in all_locations]
-            points_numpy = numpy.array(
-                [(point["position"][0], point["position"][1]) for point in points]
-            )
+            try:
+                query_params = request.args.to_dict(flat=False)
+                zoom = int(query_params.get("zoom", [7])[0])
 
-            # TODO: Implement bounds filtering to improve performance
-            zoom = int(query_params.get("zoom", [7])[0])
+                # Validate zoom level
+                if not 0 <= zoom <= 20:
+                    return make_response(
+                        jsonify({"message": "Zoom must be between 0 and 20"}),
+                        400
+                    )
 
-            index = pysupercluster.SuperCluster(
-                points_numpy, min_zoom=0, max_zoom=16, radius=200, extent=512
-            )
+                all_locations = database.get_locations(query_params)
+                if not all_locations:
+                    return jsonify([])
 
-            clusters = index.getClusters(
-                top_left=(-180.0, 90.0),
-                bottom_right=(180.0, -90.0),
-                zoom=zoom,
-            )
-            clusters = match_clusters_uuids(points, clusters)
+                points = [x.basic_info() for x in all_locations]
+                points_numpy = numpy.array(
+                    [(point["position"][0], point["position"][1]) for point in points]
+                )
 
-            return jsonify(map_clustering_data_to_proper_lazy_loading_object(clusters))
+                index = pysupercluster.SuperCluster(
+                    points_numpy, min_zoom=0, max_zoom=16, radius=200, extent=512
+                )
+
+                clusters = index.getClusters(
+                    top_left=(-180.0, 90.0),
+                    bottom_right=(180.0, -90.0),
+                    zoom=zoom,
+                )
+                clusters = match_clusters_uuids(points, clusters)
+
+                return jsonify(map_clustering_data_to_proper_lazy_loading_object(clusters))
+            except ValueError as e:
+                return make_response(jsonify({"message": f"Invalid parameters: {e}"}), 400)
+            except Exception as e:
+                return make_response(jsonify({"message": f"Clustering error: {e}"}), 500)
 
     @core_api.route("/location/<location_id>")
     class GetLocation(Resource):

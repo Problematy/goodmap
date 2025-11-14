@@ -1418,3 +1418,77 @@ def test_location_clustering_should_return_clusters_on_not_spread_points(test_ap
     json = response.json
     assert len(json) == 1
     assert json[0]["type"] == "cluster"
+
+
+# Tests for clustering endpoint validation and error handling
+
+
+def test_location_clustering_with_invalid_zoom_parameter_non_integer(test_app):
+    """Test that non-integer zoom parameter returns 400 error"""
+    response = test_app.get("/api/locations-clustered?zoom=invalid")
+    assert response.status_code == 400
+    data = response.json
+    assert "Invalid parameters" in data["message"]
+
+
+def test_location_clustering_with_zoom_below_minimum(test_app):
+    """Test that zoom < 0 returns 400 error"""
+    response = test_app.get("/api/locations-clustered?zoom=-1")
+    assert response.status_code == 400
+    data = response.json
+    assert "Zoom must be between 0 and 20" in data["message"]
+
+
+def test_location_clustering_with_zoom_above_maximum(test_app):
+    """Test that zoom > 20 returns 400 error"""
+    response = test_app.get("/api/locations-clustered?zoom=21")
+    assert response.status_code == 400
+    data = response.json
+    assert "Zoom must be between 0 and 20" in data["message"]
+
+
+def test_location_clustering_with_zoom_at_minimum_boundary(test_app):
+    """Test that zoom = 0 is valid"""
+    response = test_app.get("/api/locations-clustered?zoom=0")
+    assert response.status_code == 200
+    # Should return valid clustering data
+    json = response.json
+    assert isinstance(json, list)
+
+
+def test_location_clustering_with_zoom_at_maximum_boundary(test_app):
+    """Test that zoom = 20 is valid"""
+    response = test_app.get("/api/locations-clustered?zoom=20")
+    assert response.status_code == 200
+    # Should return valid clustering data
+    json = response.json
+    assert isinstance(json, list)
+
+
+def test_location_clustering_with_empty_locations():
+    """Test that empty locations returns empty array"""
+    # Create a test app with no location data
+    config_data = get_test_config_data()
+    config_data["DB"]["DATA"]["data"] = []  # No locations
+    config = GoodmapConfig.model_validate(config_data)
+    app = create_app_from_config(config)
+    test_client = app.test_client()
+
+    response = test_client.get("/api/locations-clustered?zoom=10")
+    assert response.status_code == 200
+    data = response.json
+    assert data == []
+
+
+def test_location_clustering_error_handling_with_malformed_position_data(test_app):
+    """Test clustering error handling when location data is malformed"""
+    # This test verifies the general exception handler
+    # We need to patch the clustering functions to raise an exception
+    with mock.patch(
+        "goodmap.core_api.pysupercluster.SuperCluster",
+        side_effect=Exception("Clustering failed"),
+    ):
+        response = test_app.get("/api/locations-clustered?zoom=10")
+        assert response.status_code == 500
+        data = response.json
+        assert "Clustering error" in data["message"]
