@@ -130,7 +130,6 @@ def core_pages(
             )
 
             # TODO: Implement bounds filtering to improve performance
-            # See issue #XXX for tracking
             zoom = int(query_params.get("zoom", [7])[0])
 
             index = pysupercluster.SuperCluster(
