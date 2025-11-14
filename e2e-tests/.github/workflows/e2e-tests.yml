@@ -199,6 +199,7 @@ jobs:
       env:
         NO_COLOR: 1
       run: |
+        set -o pipefail
         make e2e-tests | tee /tmp/e2e-tests-output.txt
 
     - name: Stop backend for e2e tests
@@ -239,6 +240,7 @@ jobs:
       env:
         NO_COLOR: 1
       run: |
+        set -o pipefail
         make e2e-stress-tests | tee /tmp/e2e-stress-tests-output.txt
 
     - name: Stop backend for stress tests
