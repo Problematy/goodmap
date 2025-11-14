@@ -3,7 +3,7 @@ SECRET_KEY: SECRET
 BLOG_PREFIX: "/blog"
 DB:
   TYPE: json_file
-  PATH: tests/e2e_tests/e2e_test_data.json
+  PATH: e2e_test_data.json
 
 #TODO this should not be necessary argument
 LANGUAGES:
