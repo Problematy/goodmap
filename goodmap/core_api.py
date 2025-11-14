@@ -1,4 +1,5 @@
 import importlib.metadata
+import logging
 import uuid
 
 import numpy
@@ -20,6 +21,8 @@ MAX_ZOOM = 16
 CLUSTER_RADIUS = 200
 CLUSTER_EXTENT = 512
 
+logger = logging.getLogger(__name__)
+
 
 def make_tuple_translation(keys_to_translate):
     return [(x, gettext(x)) for x in keys_to_translate]
@@ -32,6 +35,27 @@ def get_or_none(data, *keys):
         else:
             return None
     return data
+
+
+def get_locations_from_request(database, request_args, as_basic_info=False):
+    """
+    Shared helper to fetch locations from database based on request arguments.
+
+    Args:
+        database: Database instance
+        request_args: Request arguments (flask.request.args)
+        as_basic_info: If True, returns list of basic_info dicts, otherwise returns Location objects
+
+    Returns:
+        List of locations (either as objects or basic_info dicts)
+    """
+    query_params = request_args.to_dict(flat=False)
+    all_locations = database.get_locations(query_params)
+
+    if as_basic_info:
+        return [x.basic_info() for x in all_locations]
+
+    return all_locations
 
 
 def core_pages(
@@ -118,9 +142,8 @@ def core_pages(
             """
             Shows list of locations with uuid and position
             """
-            query_params = request.args.to_dict(flat=False)
-            all_locations = database.get_locations(query_params)
-            return jsonify([x.basic_info() for x in all_locations])
+            locations = get_locations_from_request(database, request.args, as_basic_info=True)
+            return jsonify(locations)
 
     @core_api.route("/locations-clustered")
     class GetLocationsClustered(Resource):
@@ -139,11 +162,10 @@ def core_pages(
                         400,
                     )
 
-                all_locations = database.get_locations(query_params)
-                if not all_locations:
+                points = get_locations_from_request(database, request.args, as_basic_info=True)
+                if not points:
                     return jsonify([])
 
-                points = [x.basic_info() for x in all_locations]
                 points_numpy = numpy.array(
                     [(point["position"][0], point["position"][1]) for point in points]
                 )
@@ -165,9 +187,13 @@ def core_pages(
 
                 return jsonify(map_clustering_data_to_proper_lazy_loading_object(clusters))
             except ValueError as e:
-                return make_response(jsonify({"message": f"Invalid parameters: {e}"}), 400)
+                logger.warning("Invalid parameter in clustering request: %s", e)
+                return make_response(jsonify({"message": "Invalid parameters provided"}), 400)
             except Exception as e:
-                return make_response(jsonify({"message": f"Clustering error: {e}"}), 500)
+                logger.error("Clustering operation failed: %s", e, exc_info=True)
+                return make_response(
+                    jsonify({"message": "An error occurred during clustering"}), 500
+                )
 
     @core_api.route("/location/<location_id>")
     class GetLocation(Resource):
