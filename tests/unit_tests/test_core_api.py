@@ -1404,7 +1404,7 @@ def test_location_clustering_should_not_return_error(test_app):
     assert response.status_code == 200
 
 
-def test_location_clustering_should_return_not_clusters_on_high_zoom(test_app):
+def test_location_clustering_should_return_no_clusters_on_high_zoom(test_app):
     response = test_app.get("/api/locations-clustered?zoom=16")
     assert response.status_code == 200
     json = response.json
