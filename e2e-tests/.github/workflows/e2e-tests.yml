@@ -34,7 +34,6 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
   e2e-tests:
@@ -188,8 +187,8 @@ jobs:
         bash "${{ github.workspace }}/${{ inputs.e2e-tests-path }}/.github/scripts/start-backend.sh" \
           "${{ inputs.goodmap-config-path }}" \
           "${{ github.workspace }}/${{ inputs.goodmap-path }}" \
-          "${{ inputs.goodmap-path }}" \
-          "run-e2e-env" \
+          "${{ inputs.e2e-tests-path }}" \
+          "run-e2e-goodmap" \
           "/tmp/backend-e2e.log" \
           "/tmp/backend-e2e.pid" \
           "5"
