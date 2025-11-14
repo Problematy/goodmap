@@ -26,7 +26,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install poetry==2.0.1
         poetry install
-        cd tests/e2e_tests && npm install
     - name: Run linters
       run: make lint-check
     - name: Run tests without coverage
@@ -41,9 +40,11 @@ jobs:
 
   e2e-tests:
     needs: backend-test
-
-    uses: problematy/goodmap-e2e-tests/.github/workflows/test-base.yml@5f81b8a446d988af95799e619d8ea94753167eb8
+    uses: problematy/goodmap-e2e-tests/.github/workflows/e2e-tests.yml@a5db54ec60dd67781019e4d599a69b00722b1a7f
     with:
+      calling-repo: 'goodmap'
       goodmap-version: 'main'
-      goodmap-e2e-version: 5f81b8a446d988af95799e619d8ea94753167eb8
       goodmap-frontend-version: 'main'
+      goodmap-path: '.'
+      e2e-tests-path: 'goodmap-e2e-tests'
+      goodmap-config-path: tests/e2e_tests/e2e_test_config.yml

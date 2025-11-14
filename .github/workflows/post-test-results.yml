@@ -1,0 +1,19 @@
+name: Post E2E Test Results
+
+on:
+  workflow_run:
+    workflows: ["Testing pipeline"]
+    types:
+      - completed
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  post-results:
+    uses: problematy/goodmap-e2e-tests/.github/workflows/pr-comment.yml@a5db54ec60dd67781019e4d599a69b00722b1a7f
+    with:
+      run_id: ${{ github.event.workflow_run.id }}
+    secrets:
+      comment_token: ${{ secrets.GITHUB_TOKEN }}

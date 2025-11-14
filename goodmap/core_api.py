@@ -1,12 +1,27 @@
 import importlib.metadata
+import logging
 import uuid
 
+import numpy
+import pysupercluster
 from flask import Blueprint, jsonify, make_response, request
 from flask_babel import gettext
 from flask_restx import Api, Resource, fields
 from platzky.config import LanguagesMapping
 
+from goodmap.clustering import (
+    map_clustering_data_to_proper_lazy_loading_object,
+    match_clusters_uuids,
+)
 from goodmap.formatter import prepare_pin
+
+# SuperCluster configuration constants
+MIN_ZOOM = 0
+MAX_ZOOM = 16
+CLUSTER_RADIUS = 200
+CLUSTER_EXTENT = 512
+
+logger = logging.getLogger(__name__)
 
 
 def make_tuple_translation(keys_to_translate):
@@ -20,6 +35,27 @@ def get_or_none(data, *keys):
         else:
             return None
     return data
+
+
+def get_locations_from_request(database, request_args, as_basic_info=False):
+    """
+    Shared helper to fetch locations from database based on request arguments.
+
+    Args:
+        database: Database instance
+        request_args: Request arguments (flask.request.args)
+        as_basic_info: If True, returns list of basic_info dicts, otherwise returns Location objects
+
+    Returns:
+        List of locations (either as objects or basic_info dicts)
+    """
+    query_params = request_args.to_dict(flat=False)
+    all_locations = database.get_locations(query_params)
+
+    if as_basic_info:
+        return [x.basic_info() for x in all_locations]
+
+    return all_locations
 
 
 def core_pages(
@@ -106,9 +142,58 @@ def core_pages(
             """
             Shows list of locations with uuid and position
             """
-            query_params = request.args.to_dict(flat=False)
-            all_locations = database.get_locations(query_params)
-            return jsonify([x.basic_info() for x in all_locations])
+            locations = get_locations_from_request(database, request.args, as_basic_info=True)
+            return jsonify(locations)
+
+    @core_api.route("/locations-clustered")
+    class GetLocationsClustered(Resource):
+        def get(self):
+            """
+            Shows list of locations with uuid, position and clusters
+            """
+            try:
+                query_params = request.args.to_dict(flat=False)
+                zoom = int(query_params.get("zoom", [7])[0])
+
+                # Validate zoom level (aligned with SuperCluster min_zoom/max_zoom)
+                if not MIN_ZOOM <= zoom <= MAX_ZOOM:
+                    return make_response(
+                        jsonify({"message": f"Zoom must be between {MIN_ZOOM} and {MAX_ZOOM}"}),
+                        400,
+                    )
+
+                points = get_locations_from_request(database, request.args, as_basic_info=True)
+                if not points:
+                    return jsonify([])
+
+                points_numpy = numpy.array(
+                    [(point["position"][0], point["position"][1]) for point in points]
+                )
+
+                index = pysupercluster.SuperCluster(
+                    points_numpy,
+                    min_zoom=MIN_ZOOM,
+                    max_zoom=MAX_ZOOM,
+                    radius=CLUSTER_RADIUS,
+                    extent=CLUSTER_EXTENT,
+                )
+
+                clusters = index.getClusters(
+                    top_left=(-180.0, 90.0),
+                    bottom_right=(180.0, -90.0),
+                    zoom=zoom,
+                )
+                clusters = match_clusters_uuids(points, clusters)
+
+                return jsonify(map_clustering_data_to_proper_lazy_loading_object(clusters))
+            except ValueError as e:
+                logger.warning("Invalid parameter in clustering request: %s", e)
+                return make_response(jsonify({"message": "Invalid parameters provided"}), 400)
+            except Exception as e:
+                logger.error("Clustering operation failed: %s", e, exc_info=True)
+                return make_response(
+                    jsonify({"message": "An error occurred during clustering"}), 500
+                )
 
     @core_api.route("/location/<location_id>")
     class GetLocation(Resource):

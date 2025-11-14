@@ -1,8 +1,8 @@
+CONFIG_PATH ?= tests/e2e_tests/e2e_test_config.yml
+
 lint-fix:
 	poetry run black .
 	poetry run ruff check --fix .
-	cd tests/e2e_tests && npm run lint-fix
-	cd tests/e2e_tests && npm run prettier-fix
 
 dev: lint-fix
 	poetry run pyright .
@@ -12,8 +12,6 @@ lint-check:
 	poetry run ruff check .
 	poetry run pyright .
 	poetry run interrogate goodmap/ --verbose
-	cd tests/e2e_tests && npm run lint
-	cd tests/e2e_tests && npm run prettier
 
 unit-tests:
 	poetry run python -m pytest
@@ -38,7 +36,7 @@ html-cov: coverage
 	poetry run coverage html
 
 run-e2e-env:
-	poetry run flask --app "goodmap.goodmap:create_app(config_path='tests/e2e_tests/e2e_test_config.yml')" --debug run
+	poetry run flask --app "goodmap.goodmap:create_app(config_path='$(CONFIG_PATH)')" --debug run
 
 run-e2e-stress-env:
 	poetry run flask --app "goodmap.goodmap:create_app(config_path='tests/e2e_tests/e2e_stress_test_config.yml')" --debug run

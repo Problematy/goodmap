@@ -1397,3 +1397,161 @@ def test_admin_suggestion_processing_coverage(test_app):
     # Verify the suggestion was actually updated
     updated_suggestion = test_app.application.db.get_suggestion("test-id2")
     assert updated_suggestion["status"] == "rejected"
+
+
+def test_location_clustering_should_not_return_error(test_app):
+    response = test_app.get("/api/locations-clustered")
+    assert response.status_code == 200
+
+
+def test_location_clustering_should_return_no_clusters_on_high_zoom(test_app):
+    response = test_app.get("/api/locations-clustered?zoom=16")
+    assert response.status_code == 200
+    json = response.json
+    assert json[0]["type"] == "point"
+    assert json[1]["type"] == "point"
+
+
+def test_location_clustering_should_return_clusters_on_not_spread_points(test_app):
+    response = test_app.get("/api/locations-clustered?zoom=1")
+    assert response.status_code == 200
+    json = response.json
+    assert len(json) == 1
+    assert json[0]["type"] == "cluster"
+
+
+# Tests for clustering endpoint validation and error handling
+
+
+def test_location_clustering_with_invalid_zoom_parameter_non_integer(test_app):
+    """Test that non-integer zoom parameter returns 400 error"""
+    response = test_app.get("/api/locations-clustered?zoom=invalid")
+    assert response.status_code == 400
+    data = response.json
+    assert "Invalid parameters provided" in data["message"]
+
+
+def test_location_clustering_with_zoom_below_minimum(test_app):
+    """Test that zoom < 0 returns 400 error"""
+    response = test_app.get("/api/locations-clustered?zoom=-1")
+    assert response.status_code == 400
+    data = response.json
+    assert "Zoom must be between 0 and 16" in data["message"]
+
+
+def test_location_clustering_with_zoom_above_maximum(test_app):
+    """Test that zoom > 16 returns 400 error"""
+    response = test_app.get("/api/locations-clustered?zoom=17")
+    assert response.status_code == 400
+    data = response.json
+    assert "Zoom must be between 0 and 16" in data["message"]
+
+
+def test_location_clustering_with_zoom_at_minimum_boundary(test_app):
+    """Test that zoom = 0 is valid"""
+    response = test_app.get("/api/locations-clustered?zoom=0")
+    assert response.status_code == 200
+    # Should return valid clustering data
+    json = response.json
+    assert isinstance(json, list)
+
+
+def test_location_clustering_with_zoom_at_maximum_boundary(test_app):
+    """Test that zoom = 16 is valid"""
+    response = test_app.get("/api/locations-clustered?zoom=16")
+    assert response.status_code == 200
+    # Should return valid clustering data
+    json = response.json
+    assert isinstance(json, list)
+
+
+def test_location_clustering_with_empty_locations():
+    """Test that empty locations returns empty array"""
+    # Create a test app with no location data
+    config_data = get_test_config_data()
+    config_data["DB"]["DATA"]["data"] = []  # No locations
+    config = GoodmapConfig.model_validate(config_data)
+    app = create_app_from_config(config)
+    test_client = app.test_client()
+
+    response = test_client.get("/api/locations-clustered?zoom=10")
+    assert response.status_code == 200
+    data = response.json
+    assert data == []
+
+
+def test_location_clustering_error_handling_with_malformed_position_data(test_app):
+    """Test clustering error handling when location data is malformed"""
+    # This test verifies the general exception handler
+    # We need to patch the clustering functions to raise an exception
+    with mock.patch(
+        "goodmap.core_api.pysupercluster.SuperCluster",
+        side_effect=Exception("Clustering failed"),
+    ):
+        response = test_app.get("/api/locations-clustered?zoom=10")
+        assert response.status_code == 500
+        data = response.json
+        assert "An error occurred during clustering" in data["message"]
+
+
+def test_location_clustering_logs_on_invalid_parameter(test_app):
+    """Test that invalid parameters are logged"""
+    with mock.patch("goodmap.core_api.logger") as mock_logger:
+        response = test_app.get("/api/locations-clustered?zoom=invalid")
+        assert response.status_code == 400
+        # Verify warning was logged
+        mock_logger.warning.assert_called_once()
+        call_args = mock_logger.warning.call_args[0]
+        assert "Invalid parameter" in call_args[0]
+
+
+def test_location_clustering_logs_on_exception(test_app):
+    """Test that clustering exceptions are logged with full traceback"""
+    with (
+        mock.patch(
+            "goodmap.core_api.pysupercluster.SuperCluster",
+            side_effect=Exception("Clustering failed"),
+        ),
+        mock.patch("goodmap.core_api.logger") as mock_logger,
+    ):
+        response = test_app.get("/api/locations-clustered?zoom=10")
+        assert response.status_code == 500
+        # Verify error was logged with exc_info=True for traceback
+        mock_logger.error.assert_called_once()
+        call_args = mock_logger.error.call_args
+        assert "Clustering operation failed" in call_args[0][0]
+        assert call_args[1]["exc_info"] is True
+
+
+def test_get_locations_from_request_helper(test_app):
+    """Test the shared helper function for getting locations"""
+    from goodmap.core_api import get_locations_from_request
+
+    # Create a mock request args object
+    class MockArgs:
+        def to_dict(self, flat=False):
+            return {}
+
+    mock_request_args = MockArgs()
+
+    # Test with as_basic_info=False (returns objects)
+    with test_app.application.app_context():
+        locations = get_locations_from_request(
+            test_app.application.db, mock_request_args, as_basic_info=False
+        )
+        assert isinstance(locations, list)
+        # Should return Location objects
+        if locations:
+            assert hasattr(locations[0], "basic_info")
+
+    # Test with as_basic_info=True (returns dicts)
+    with test_app.application.app_context():
+        locations = get_locations_from_request(
+            test_app.application.db, mock_request_args, as_basic_info=True
+        )
+        assert isinstance(locations, list)
+        # Should return basic_info dicts
+        if locations:
+            assert isinstance(locations[0], dict)
+            assert "uuid" in locations[0]
+            assert "position" in locations[0]
