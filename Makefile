@@ -20,9 +20,6 @@ unit-tests:
 unit-tests-no-coverage:
 	poetry run python -m pytest -m "skip_coverage"
 
-e2e-stress-tests-generate-data:
-	python tests/e2e_tests/cypress/support/generate_stress_test_data.py
-
 coverage:
 	poetry run coverage run --branch --source=goodmap -m pytest -m "not skip_coverage"
 	poetry run coverage lcov
