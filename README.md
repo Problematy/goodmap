@@ -47,9 +47,9 @@ poetry run <command>
 
 ### TL;DR
 If you don't want to go through all the configuration, e.g. you just simply want to test if everything works,
-you can simply run app with test dataset provided in `tests/e2e_tests` directory:
+you can simply run app with test dataset provided in `examples` directory:
 
-> poetry run flask --app 'goodmap.goodmap:create_app(config_path="./tests/e2e_tests/e2e_test_config.yml")' run
+> poetry run flask --app 'goodmap.goodmap:create_app(config_path="./examples/e2e_test_config.yml")' run
 
 ### Configuration
 
@@ -67,7 +67,7 @@ Afterwards run it with:
 
 ## Database
 
-The database is stored in JSON, in the `map` section. For an example database see `tests/e2e_tests/e2e_test_data.json`. The first subsection `data` consists of the actual datapoints, representing points on a map.
+The database is stored in JSON, in the `map` section. For an example database see `examples/e2e_test_data.json`. The first subsection `data` consists of the actual datapoints, representing points on a map.
 
 Datapoints have fields. The next subsections define special types of fields:
 - `obligatory_fields` - here are explicitely stated all the fields that the application assumes are presnt in all datapoints. E.g.
@@ -95,8 +95,9 @@ You can define the fields in all these subsections. Besides these types of field
 
 ## Examples
 
-You can find examples of working configuration and database in `tests/e2e_tests` named:
-- `e2e_test_config.yml`
-- `e2e_test_data.json`
+You can find examples of working configuration and database in `examples/` directory:
+- `e2e_test_config.yml` - Basic configuration example
+- `e2e_test_data.json` - Example database with sample location data
+- `mongo_e2e_test_config.yml` - MongoDB configuration example
 
 

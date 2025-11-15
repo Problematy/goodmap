@@ -1,4 +1,4 @@
-CONFIG_PATH ?= tests/e2e_tests/e2e_test_config.yml
+CONFIG_PATH ?= examples/e2e_test_config.yml
 RUNNING_DIRECTORY ?= .
 
 lint-fix:
