@@ -47,3 +47,4 @@ jobs:
       goodmap-frontend-version: 'main'
       goodmap-path: '.'
       e2e-tests-path: 'goodmap-e2e-tests'
+
