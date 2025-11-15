@@ -13,6 +13,9 @@ permissions:
 jobs:
   tests:
     uses: ./.github/workflows/tests.yml
+    permissions:
+      contents: read
+      actions: read  # Required for nested e2e-tests workflow
 
   release:
     runs-on: ubuntu-latest
