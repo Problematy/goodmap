@@ -2665,23 +2665,18 @@ dev = ["twine (>=3.4.1)"]
 nodejs = ["nodejs-wheel-binaries"]
 
 [[package]]
-name = "pysupercluster"
+name = "pysupercluster-problematy"
 version = "0.7.8"
-description = "A fast geospatial point clustering module."
+description = "A fast geospatial point clustering module (Problematy fork)."
 optional = false
 python-versions = ">=3"
 groups = ["main"]
-files = []
-develop = false
+files = [
+    {file = "pysupercluster_problematy-0.7.8.tar.gz", hash = "sha256:d844a0c367721e454f7c335b92842f45a3fe47aab682448d896f92c56a4dfb36"},
+]
 
 [package.dependencies]
 numpy = "*"
-
-[package.source]
-type = "git"
-url = "https://github.com/Problematy/pysupercluster.git"
-reference = "master"
-resolved_reference = "0eedc54638ac78165b2b6a7b3849b899200a6334"
 
 [[package]]
 name = "pytest"
@@ -4161,4 +4156,4 @@ docs = ["myst-parser", "sphinx", "sphinx-rtd-theme", "tomli"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "780ef189a58374549e496514d4e6a796232a50b19f17b6a2e691136e769a9b1a"
+content-hash = "b1c07f3af61ef9ffaba737b3d428d58208bc93adfd57bbb209dd89d29a7b6eae"

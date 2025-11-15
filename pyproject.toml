@@ -25,7 +25,7 @@ deprecation = "^2.1.0"
 numpy = "^2.2.0"
 # Using fork because official PyPI version (0.7.7) has outdated numpy setup hack
 # that breaks with numpy >= 2.0. Fork simply removes the obsolete hack.
-pysupercluster = { git = "https://github.com/Problematy/pysupercluster.git", rev = "0eedc54638ac78165b2b6a7b3849b899200a6334" }
+pysupercluster-problematy = "^0.7.8"
 scipy = "^1.15.1"
 sphinx = {version = "^8.0.0", optional = true}
 sphinx-rtd-theme = {version = "^3.0.0", optional = true}
