@@ -44,4 +44,3 @@ extract-translations:
 build:
 	poetry run pybabel compile -d goodmap/locale
 	poetry build
-
