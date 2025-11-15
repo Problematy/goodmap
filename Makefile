@@ -1,4 +1,5 @@
-CONFIG_PATH ?= tests/e2e_tests/e2e_test_config.yml
+CONFIG_PATH ?= examples/e2e_test_config.yml
+RUNNING_DIRECTORY ?= .
 
 lint-fix:
 	poetry run black .
@@ -19,15 +20,6 @@ unit-tests:
 unit-tests-no-coverage:
 	poetry run python -m pytest -m "skip_coverage"
 
-e2e-tests:
-	cd tests/e2e_tests && node_modules/cypress/bin/cypress run --browser chromium --spec "cypress/e2e/basic-test/*.cy.js"
-
-e2e-stress-tests-generate-data:
-	python tests/e2e_tests/cypress/support/generate_stress_test_data.py
-
-e2e-stress-tests:
-	cd tests/e2e_tests && node_modules/cypress/bin/cypress run --browser chromium --spec cypress/e2e/stress-test/*
-
 coverage:
 	poetry run coverage run --branch --source=goodmap -m pytest -m "not skip_coverage"
 	poetry run coverage lcov
@@ -35,11 +27,8 @@ coverage:
 html-cov: coverage
 	poetry run coverage html
 
-run-e2e-env:
-	poetry run flask --app "goodmap.goodmap:create_app(config_path='$(CONFIG_PATH)')" --debug run
-
-run-e2e-stress-env:
-	poetry run flask --app "goodmap.goodmap:create_app(config_path='tests/e2e_tests/e2e_stress_test_config.yml')" --debug run
+run-example-env:
+	poetry --project '$(RUNNING_DIRECTORY)' run flask --app "goodmap.goodmap:create_app(config_path='$(CONFIG_PATH)')" --debug run
 
 verify-json-data:
 ifndef JSON_DATA_FILE
@@ -55,4 +44,3 @@ extract-translations:
 build:
 	poetry run pybabel compile -d goodmap/locale
 	poetry build
-

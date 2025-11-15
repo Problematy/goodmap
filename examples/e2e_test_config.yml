@@ -3,9 +3,8 @@ SECRET_KEY: SECRET
 BLOG_PREFIX: "/blog"
 DB:
   TYPE: json_file
-  PATH: tests/e2e_tests/e2e_test_data.json
+  PATH: examples/e2e_test_data.json
 
-#TODO this should not be necessary argument
 LANGUAGES:
   en:
     name: English
@@ -20,7 +19,7 @@ FEATURE_FLAGS:
   USE_LAZY_LOADING: True
   USE_SERVER_SIDE_CLUSTERING: False
   SHOW_ACCESSIBILITY_TABLE: True
-  FAKE_LOGIN: True
+  FAKE_LOGIN: False
   CATEGORIES_HELP: True
 
 GOODMAP_FRONTEND_LIB_URL: "https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.4.4"
