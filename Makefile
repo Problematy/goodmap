@@ -31,7 +31,7 @@ html-cov: coverage
 	poetry run coverage html
 
 run-e2e-env:
-	poetry run --project '$(RUNNING_DIRECTORY)' flask --app "goodmap.goodmap:create_app(config_path='$(CONFIG_PATH)')" --debug run
+	poetry --project '$(RUNNING_DIRECTORY)' run flask --app "goodmap.goodmap:create_app(config_path='$(CONFIG_PATH)')" --debug run
 
 run-e2e-goodmap:
 	PYTHONPATH=$(CURDIR) poetry run flask --app "goodmap.goodmap:create_app(config_path='$(CONFIG_PATH)')" run
