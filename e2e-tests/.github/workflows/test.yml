@@ -16,6 +16,7 @@ jobs:
     uses: ./.github/workflows/e2e-tests.yml
     permissions:
       contents: read
+      actions: read  # Required for canonical/get-workflow-version-action
     secrets: inherit
     with:
       goodmap-version: 'main'
