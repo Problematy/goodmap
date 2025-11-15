@@ -29,6 +29,7 @@ on:
 
 permissions:
   contents: read
+  actions: read  # Required for canonical/get-workflow-version-action
 
 jobs:
   e2e-tests:
@@ -40,119 +41,38 @@ jobs:
       with:
         submodules: ${{ inputs.calling-repo == 'goodmap' && 'true' || 'false' }}
 
-    - name: Detect e2e-tests repository from GitHub API
+    - name: Get e2e-tests workflow version
       if: inputs.calling-repo != 'goodmap-e2e-tests'
       id: determine-e2e-ref
+      uses: canonical/get-workflow-version-action@v1
+      with:
+        repository-name: problematy/goodmap-e2e-tests
+        file-name: e2e-tests.yml
+        github-token: ${{ github.token }}
+
+    - name: Set e2e-tests repository outputs
+      if: inputs.calling-repo != 'goodmap-e2e-tests'
+      id: set-e2e-outputs
       run: |
-        echo "=== Detecting e2e-tests repository from workflow run details ==="
-
-        # Fetch workflow run details to get referenced_workflows
-        WORKFLOW_RUN_URL="${{ github.api_url }}/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-        echo "Fetching: $WORKFLOW_RUN_URL"
-
-        RESPONSE=$(curl -s -H "Authorization: Bearer ${{ github.token }}" "$WORKFLOW_RUN_URL")
-
-        # Debug: show API response structure
-        echo "API Response (first 500 chars):"
-        echo "$RESPONSE" | head -c 500
-        echo ""
-
-        # Try to find the e2e-tests workflow in referenced_workflows
-        # In nested workflow_call scenarios, the first entry might be an intermediate workflow
-        REPO=""
-        REF=""
-
-        # Get the calling repository name (e.g., "Problematy/goodmap")
-        CALLING_REPO="${{ github.repository }}"
-        echo "Calling repository: $CALLING_REPO"
-
-        # Check all referenced workflows to find the e2e-tests one
-        WORKFLOW_COUNT=$(echo "$RESPONSE" | jq -r '.referenced_workflows | length')
-        echo "Found $WORKFLOW_COUNT referenced workflow(s)"
-
-        for i in $(seq 0 $((WORKFLOW_COUNT - 1))); do
-          REFERENCED=$(echo "$RESPONSE" | jq -r ".referenced_workflows[$i]")
-          WORKFLOW_PATH=$(echo "$REFERENCED" | jq -r '.path')
-          echo "Checking workflow $i: $WORKFLOW_PATH"
-
-          # Extract repository (everything before /.github/)
-          WORKFLOW_REPO=$(echo "$WORKFLOW_PATH" | sed 's|/\.github/.*||')
-
-          # If this workflow is from a different repo than the calling repo,
-          # it's likely the e2e-tests repo we're looking for
-          if [[ "$WORKFLOW_REPO" != "$CALLING_REPO" ]] && [[ "$WORKFLOW_PATH" == *"e2e-tests.yml"* ]]; then
-            REPO="$WORKFLOW_REPO"
-
-            # Extract ref from path (everything after @)
-            if [[ "$WORKFLOW_PATH" == *"@"* ]]; then
-              REF=$(echo "$WORKFLOW_PATH" | sed 's|.*@||')
-              echo "Found e2e-tests workflow at: $REPO @ $REF"
-            else
-              # Fallback to .ref field if no @ in path
-              REF=$(echo "$REFERENCED" | jq -r '.ref')
-              # Clean ref (remove refs/heads/ or refs/tags/ prefix)
-              REF=$(echo "$REF" | sed 's|^refs/heads/||' | sed 's|^refs/tags/||')
-              echo "Found e2e-tests workflow at: $REPO @ $REF (from .ref field)"
-            fi
-            break
-          fi
-        done
-
-        # If we didn't find a different repo, fall back to the first referenced workflow
-        # (This handles the direct call case, like from pull_request)
-        if [ -z "$REPO" ]; then
-          echo "No external e2e-tests workflow found, using first referenced workflow"
-          REFERENCED=$(echo "$RESPONSE" | jq -r '.referenced_workflows[0]')
-
-          if [ "$REFERENCED" = "null" ] || [ -z "$REFERENCED" ]; then
-            echo "ERROR: No referenced_workflows found in API response"
-            echo "Dumping full API response for debugging:"
-            echo "$RESPONSE" | jq '.'
-            exit 1
-          fi
-
-          WORKFLOW_PATH=$(echo "$REFERENCED" | jq -r '.path')
-          echo "Workflow path: $WORKFLOW_PATH"
-
-          REPO=$(echo "$WORKFLOW_PATH" | sed 's|/\.github/.*||')
-
-          if [[ "$WORKFLOW_PATH" == *"@"* ]]; then
-            REF=$(echo "$WORKFLOW_PATH" | sed 's|.*@||')
-          else
-            REF=$(echo "$REFERENCED" | jq -r '.ref')
-            REF=$(echo "$REF" | sed 's|^refs/heads/||' | sed 's|^refs/tags/||')
-          fi
-        fi
-
-        echo "Final extracted repository: $REPO"
-        echo "Final extracted ref: $REF"
-
-        # Validate
-        if [ -z "$REPO" ] || [ -z "$REF" ] || [ "$REF" = "null" ]; then
-          echo "ERROR: Failed to extract repository or ref"
-          echo "REPO='$REPO', REF='$REF'"
-          exit 1
-        fi
-
-        echo "✅ Will checkout e2e-tests from: $REPO @ $REF"
-        echo "repository=$REPO" >> $GITHUB_OUTPUT
-        echo "ref=$REF" >> $GITHUB_OUTPUT
+        echo "repository=problematy/goodmap-e2e-tests" >> $GITHUB_OUTPUT
+        echo "ref=${{ steps.determine-e2e-ref.outputs.sha }}" >> $GITHUB_OUTPUT
+        echo "✅ Will checkout e2e-tests from: problematy/goodmap-e2e-tests @ ${{ steps.determine-e2e-ref.outputs.sha }}"
 
     - name: Checkout e2e-tests repository
       if: inputs.calling-repo != 'goodmap-e2e-tests' && steps.determine-e2e-ref.outcome == 'success'
       uses: actions/checkout@v4
       with:
         path: ${{ inputs.e2e-tests-path }}
-        repository: ${{ steps.determine-e2e-ref.outputs.repository }}
-        ref: ${{ steps.determine-e2e-ref.outputs.ref }}
+        repository: ${{ steps.set-e2e-outputs.outputs.repository }}
+        ref: ${{ steps.set-e2e-outputs.outputs.ref }}
 
     - name: Verify e2e-tests checkout
       if: inputs.calling-repo != 'goodmap-e2e-tests'
       run: |
         echo "=== Verifying e2e-tests checkout ==="
         echo "Expected path: ${{ github.workspace }}/${{ inputs.e2e-tests-path }}"
-        echo "Repository: ${{ steps.determine-e2e-ref.outputs.repository }}"
-        echo "Ref: ${{ steps.determine-e2e-ref.outputs.ref }}"
+        echo "Repository: ${{ steps.set-e2e-outputs.outputs.repository }}"
+        echo "Ref: ${{ steps.set-e2e-outputs.outputs.ref }}"
         echo ""
         echo "=== Directory contents ==="
         ls -la "${{ github.workspace }}/${{ inputs.e2e-tests-path }}/" || echo "❌ Directory not found!"
