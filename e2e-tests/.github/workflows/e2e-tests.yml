@@ -26,11 +26,6 @@ on:
         required: false
         type: string
         default: 'goodmap-frontend'
-      goodmap-config-path:
-        description: 'Path to goodmap configuration file for e2e tests'
-        required: false
-        type: string
-        default: e2e_test_config.yml
 
 permissions:
   contents: read
@@ -183,15 +178,16 @@ jobs:
         sleep 3
 
     - name: Start backend for e2e tests
+      working-directory: ${{ inputs.e2e-tests-path }}
       run: |
+        CONFIG_PATH="${{ github.workspace }}/${{ inputs.e2e-tests-path }}/e2e_test_config.yml"
+        GOODMAP_PATH="${{ github.workspace }}/${{ inputs.goodmap-path }}"
+
         bash "${{ github.workspace }}/${{ inputs.e2e-tests-path }}/.github/scripts/start-backend.sh" \
-          "${{ inputs.goodmap-config-path }}" \
-          "${{ github.workspace }}/${{ inputs.goodmap-path }}" \
-          "${{ inputs.e2e-tests-path }}" \
-          "run-e2e-goodmap" \
           "/tmp/backend-e2e.log" \
           "/tmp/backend-e2e.pid" \
-          "5"
+          "5" \
+          "CONFIG_PATH='$CONFIG_PATH' GOODMAP_PATH='$GOODMAP_PATH' make run-e2e-env"
 
     - name: Run e2e tests
       working-directory: ${{ inputs.e2e-tests-path }}
@@ -224,15 +220,15 @@ jobs:
       run: make e2e-stress-tests-generate-data
 
     - name: Start backend for stress tests
+      working-directory: ${{ inputs.e2e-tests-path }}
       run: |
+        CONFIG_PATH="${{ github.workspace }}/${{ inputs.e2e-tests-path }}/e2e_stress_test_config.yml"
+        GOODMAP_PATH="${{ github.workspace }}/${{ inputs.goodmap-path }}"
         bash "${{ github.workspace }}/${{ inputs.e2e-tests-path }}/.github/scripts/start-backend.sh" \
-          "e2e_stress_test_config.yml" \
-          "${{ github.workspace }}/${{ inputs.goodmap-path }}" \
-          "${{ inputs.e2e-tests-path }}" \
-          "run-e2e-stress-env" \
           "/tmp/backend-stress.log" \
           "/tmp/backend-stress.pid" \
-          "5"
+          "5" \
+          "CONFIG_PATH='$CONFIG_PATH' GOODMAP_PATH='$GOODMAP_PATH' make run-e2e-env"
 
     - name: Run e2e stress tests
       working-directory: ${{ inputs.e2e-tests-path }}

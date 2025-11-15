@@ -1,9 +1,6 @@
-GOODMAP_VERSION ?=
 CONFIG_PATH ?= e2e_test_config.yml
 GOODMAP_PATH ?= .
-
-install-goodmap:
-	pip install goodmap${GOODMAP_VERSION:+==}${GOODMAP_VERSION}
+CYPRESS_SPEC ?= cypress/e2e/**/*.cy.js
 
 lint-fix:
 	npm run lint-fix
@@ -13,24 +10,18 @@ lint-check:
 	npm run lint
 	npm run prettier
 
-run-e2e-goodmap:
-	@PYTHONPATH="$(GOODMAP_PATH)" $$(cd "$(GOODMAP_PATH)" && poetry run which flask) --app "goodmap.goodmap:create_app(config_path='$(CONFIG_PATH)')" run
-
-install-test-dependencies:
-	npm install
+cypress-run:
+	node_modules/cypress/bin/cypress run --browser chromium --spec "$(CYPRESS_SPEC)"
 
 e2e-tests:
-	node_modules/cypress/bin/cypress run --browser chromium --spec "cypress/e2e/basic-test/*.cy.js"
+	$(MAKE) cypress-run CYPRESS_SPEC="cypress/e2e/basic-test/*.cy.js"
 
 e2e-stress-tests-generate-data:
 	python cypress/support/generate_stress_test_data.py
 
 e2e-stress-tests:
-	node_modules/cypress/bin/cypress run --browser chromium --spec cypress/e2e/stress-test/*
+	$(MAKE) cypress-run CYPRESS_SPEC="cypress/e2e/stress-test/*"
 
-run-e2e-stress-env:
-	@PYTHONPATH="$(GOODMAP_PATH)" $$(cd "$(GOODMAP_PATH)" && poetry run which flask) --app "goodmap.goodmap:create_app(config_path='$(CONFIG_PATH)')" run
+run-e2e-env:
+	poetry --project '$(GOODMAP_PATH)' run flask --app "goodmap.goodmap:create_app(config_path='$(CONFIG_PATH)')" --debug run
 
-cleanup:
-	pip remove goodmap
-	npm remove

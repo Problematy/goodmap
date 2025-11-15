@@ -8,14 +8,12 @@ This test suite verifies the functionality of the Goodmap application through Cy
 
 - Backend (Flask-based Goodmap application)
 - Frontend (Goodmap frontend application)
-- Caddy as a reverse proxy to handle routing between components
 
 ## Prerequisites
 
 - Node.js and npm
 - Python 3.10+
 - Poetry (Python dependency management)
-- Caddy server
 
 ## Configuration
 
@@ -24,52 +22,41 @@ The test environment uses several configuration files:
 - `e2e_test_config.yml`: Main configuration for the test instance
 - `e2e_test_data.json`: Test data for the test suite
 - `cypress.config.js`: Cypress testing framework configuration
-- `Caddyfile`: Caddy server configuration for proxying requests
 
 ## Getting Started
 
-### Installation
-
-1. Install Goodmap dependencies:
-    ```bash
-    make install-goodmap
-    ```
-
 ### Running Tests
-Basic E2E Tests
-1. Start the Goodmap backend:
 
+**Note:** Set `GOODMAP_PATH` to the path where you have the goodmap repository cloned (e.g., `../goodmap` if it's in the parent directory).
+
+#### Basic E2E Tests
+1. Start the frontend server:
     ```bash
-    make run-e2e-goodmap
+    cd <path-to-goodmap-frontend> && make serve
     ```
 
-2. Start the frontend server (in a separate terminal):
+2. Start the Goodmap backend (in a separate terminal):
     ```bash
-    cd goodmap-frontend && make serve
+    CONFIG_PATH=e2e_test_config.yml GOODMAP_PATH=<path-to-goodmap> make run-e2e-env
     ```
 
-3. Start Caddy (in a separate terminal):
-    ```bash
-    caddy run
-    ```
-
-4. Run the tests:
+3. Run the tests (in a separate terminal):
     ```bash
     make e2e-tests
     ```
 
-5. Stress Tests
-Generate stress test data:
+#### Stress Tests
+1. Generate stress test data:
     ```bash
     make e2e-stress-tests-generate-data
     ```
 
-6. Start the stress test environment:
+2. Start the stress test environment:
     ```bash
-    make run-e2e-stress-env
+    CONFIG_PATH=e2e_stress_test_config.yml GOODMAP_PATH=<path-to-goodmap> make run-e2e-env
     ```
 
-7. Run stress tests:
+3. Run stress tests (in a separate terminal):
     ```bash
     make e2e-stress-tests
     ```
@@ -131,9 +118,8 @@ jobs:
 | `e2e-tests-path` | No | `.` | Path where e2e-tests will be checked out |
 | `goodmap-path` | No | `goodmap` | Path where goodmap will be checked out |
 | `goodmap-frontend-path` | No | `goodmap-frontend` | Path where goodmap-frontend will be checked out |
-| `goodmap-config-path` | No | `e2e_test_config.yml` | Config file for goodmap E2E tests |
 
-**Note:** The workflow automatically detects which version of e2e-tests to use based on the `@ref` specified in the `uses:` statement. For example, if you call `uses: problematy/goodmap-e2e-tests/.github/workflows/e2e-tests.yml@changes2`, it will checkout the `changes2` branch. This also works with forks: `uses: raven-wing/goodmap-e2e-tests/.github/workflows/e2e-tests.yml@my-feature` will checkout from the fork.
+**Note:** The workflow automatically detects which version of e2e-tests to use based on the `@ref` specified in the `uses:` statement. For example, if you call `uses: problematy/goodmap-e2e-tests/.github/workflows/e2e-tests.yml@changes`, it will checkout the `changes` branch. This also works with forks: `uses: raven-wing/goodmap-e2e-tests/.github/workflows/e2e-tests.yml@my-feature` will checkout from the fork.
 
 ### Example: Testing a goodmap PR
 
@@ -202,30 +188,26 @@ Starts the Goodmap Flask backend with automatic health checking.
 
 **Usage:**
 ```bash
-start-backend.sh <config-path> <goodmap-path> <working-directory> <make-target> <log-file> <pid-file> [startup-wait-seconds]
+start-backend.sh <log-file> <pid-file> <startup-wait-seconds> <command...>
 ```
 
 **Parameters:**
-- `config-path`: Path to Goodmap configuration file
-- `goodmap-path`: Path to Goodmap repository
-- `working-directory`: Working directory to run make from
-- `make-target`: Make target to run (e.g., `run-e2e-env`)
 - `log-file`: Path to store backend logs
 - `pid-file`: Path to store backend PID
-- `startup-wait-seconds`: Seconds to wait for startup (optional, default: 5)
+- `startup-wait-seconds`: Seconds to wait for startup (default: 5)
+- `command...`: The complete command to run (can include environment variables and make targets)
 
 **Example:**
 ```yaml
 - name: Start backend
   run: |
+    CONFIG_PATH="${{ github.workspace }}/e2e-tests/e2e_test_config.yml"
+    GOODMAP_PATH="${{ github.workspace }}/goodmap"
     bash .github/scripts/start-backend.sh \
-      "e2e_test_config.yml" \
-      "${{ github.workspace }}/goodmap" \
-      "goodmap" \
-      "run-e2e-env" \
       "/tmp/backend.log" \
       "/tmp/backend.pid" \
-      "5"
+      "5" \
+      "CONFIG_PATH='$CONFIG_PATH' GOODMAP_PATH='$GOODMAP_PATH' make run-e2e-env"
 ```
 
 #### Stop Backend Script
