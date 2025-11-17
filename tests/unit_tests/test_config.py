@@ -115,3 +115,34 @@ def test_goodmap_config_inherits_platzky_config():
     assert (
         config.goodmap_frontend_lib_url == "https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.4.2"
     )
+
+
+def test_is_feature_enabled_method():
+    """Test the is_feature_enabled method on GoodmapConfig."""
+    # Test with feature flags enabled
+    config_enabled = GoodmapConfig(
+        APP_NAME="test",
+        SECRET_KEY="test",
+        DB=JsonDbConfig(DATA={}, TYPE="json"),
+        FEATURE_FLAGS={"feature1": True, "feature2": False},
+    )
+    assert config_enabled.is_feature_enabled("feature1") is True
+    assert config_enabled.is_feature_enabled("feature2") is False
+    assert config_enabled.is_feature_enabled("non_existent") is False
+
+    # Test with no feature flags
+    config_no_flags = GoodmapConfig(
+        APP_NAME="test",
+        SECRET_KEY="test",
+        DB=JsonDbConfig(DATA={}, TYPE="json"),
+    )
+    assert config_no_flags.is_feature_enabled("any_feature") is False
+
+    # Test with empty feature flags dict
+    config_empty_flags = GoodmapConfig(
+        APP_NAME="test",
+        SECRET_KEY="test",
+        DB=JsonDbConfig(DATA={}, TYPE="json"),
+        FEATURE_FLAGS={},
+    )
+    assert config_empty_flags.is_feature_enabled("any_feature") is False
