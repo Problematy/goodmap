@@ -97,10 +97,10 @@ from goodmap.db import (
     update_suggestion,
 )
 from goodmap.exceptions import (
+    AlreadyExistsError,
     LocationAlreadyExistsError,
     LocationNotFoundError,
     ReportNotFoundError,
-    SuggestionAlreadyExistsError,
 )
 
 data = {
@@ -466,7 +466,7 @@ def test_json_db_add_duplicate_suggestion():
     db = Json({})
     suggestion = {"uuid": "s1"}
     json_db_add_suggestion(db, suggestion)
-    with pytest.raises(SuggestionAlreadyExistsError):
+    with pytest.raises(AlreadyExistsError):
         json_db_add_suggestion(db, suggestion)
 
 
@@ -545,7 +545,7 @@ def test_json_file_db_add_duplicate_suggestion():
     file_path = "sug.json"
     db = JsonFile(file_path)
     suggestion = {"uuid": "s1"}
-    with pytest.raises(SuggestionAlreadyExistsError):
+    with pytest.raises(AlreadyExistsError):
         json_file_db_add_suggestion(db, suggestion)
 
 
@@ -1234,7 +1234,7 @@ def test_mongodb_db_add_duplicate_suggestion(mock_client):
     suggestion_data = {"uuid": s1_uuid, "content": "test"}
 
     with pytest.raises(
-        SuggestionAlreadyExistsError, match=f"Suggestion with uuid '{s1_uuid}' already exists"
+        AlreadyExistsError, match=f"Suggestion with uuid '{s1_uuid}' already exists"
     ):
         mongodb_db_add_suggestion(db, suggestion_data)
 
@@ -2409,40 +2409,3 @@ def test_pagination_helper_error_handling():
     items = [{"name": "test", "custom_field": "test_value"}]
     result = PaginationHelper.create_paginated_response(items, query, custom_extract)
     assert len(result["items"]) == 1  # Custom filter should pass the item
-
-
-def test_error_helper_methods():
-    """Test ErrorHelper methods for full coverage"""
-    import pytest
-
-    from goodmap.db import ErrorHelper
-
-    # Test raise_not_found_error
-    test_uuid = "550e8400-e29b-41d4-a716-446655440000"
-    with pytest.raises(LocationNotFoundError, match=f"Location with uuid '{test_uuid}' not found"):
-        ErrorHelper.raise_not_found_error("location", test_uuid)
-
-    # Test find_item_by_uuid with dict items
-    items = [{"uuid": "uuid1", "name": "item1"}, {"uuid": "uuid2", "name": "item2"}]
-    found_item = ErrorHelper.find_item_by_uuid(items, "uuid1", "location")
-    assert found_item is not None
-    assert found_item["name"] == "item1"
-
-    # Test find_item_by_uuid when item not found
-    nonexistent_uuid = "650e8400-e29b-41d4-a716-446655440000"
-    with pytest.raises(
-        LocationNotFoundError, match=f"Location with uuid '{nonexistent_uuid}' not found"
-    ):
-        ErrorHelper.find_item_by_uuid(items, nonexistent_uuid, "location")
-
-    # Test find_item_by_uuid with object items
-    class TestItem:
-        def __init__(self, uuid: str, name: str):
-            self.uuid = uuid
-            self.name = name
-
-    obj_items = [TestItem("uuid1", "item1"), TestItem("uuid2", "item2")]
-    found_obj = ErrorHelper.find_item_by_uuid(obj_items, "uuid1", "location")
-    assert found_obj is not None
-    assert isinstance(found_obj, TestItem)
-    assert found_obj.name == "item1"

@@ -11,10 +11,7 @@ from goodmap.exceptions import (
     AlreadyExistsError,
     LocationAlreadyExistsError,
     LocationNotFoundError,
-    NotFoundError,
     ReportNotFoundError,
-    SuggestionAlreadyExistsError,
-    SuggestionNotFoundError,
 )
 
 logger = logging.getLogger(__name__)
@@ -239,63 +236,6 @@ class FileIOHelper:
         return json_data.get(data_key, {})
 
 
-class ErrorHelper:
-    """Common error handling utilities."""
-
-    @staticmethod
-    def raise_already_exists_error(item_type, uuid):
-        """Raise standardized 'already exists' error."""
-        item_type_lower = item_type.lower()
-        if item_type_lower == "location":
-            raise LocationAlreadyExistsError(uuid)
-        elif item_type_lower == "suggestion":
-            raise SuggestionAlreadyExistsError(uuid)
-        raise AlreadyExistsError(f"{item_type} with uuid {uuid} already exists")
-
-    @staticmethod
-    def raise_not_found_error(item_type, uuid):
-        """Raise standardized 'not found' error."""
-        item_type_lower = item_type.lower()
-        if item_type_lower == "location":
-            raise LocationNotFoundError(uuid)
-        elif item_type_lower == "suggestion":
-            raise SuggestionNotFoundError(uuid)
-        elif item_type_lower == "report":
-            raise ReportNotFoundError(uuid)
-        raise NotFoundError(f"{item_type} with uuid {uuid} not found")
-
-    @staticmethod
-    def check_item_exists(items, uuid, item_type):
-        """Check if item with UUID exists and raise error if it does."""
-        existing = next(
-            (
-                item
-                for item in items
-                if (item.get("uuid") if isinstance(item, dict) else getattr(item, "uuid", None))
-                == uuid
-            ),
-            None,
-        )
-        if existing:
-            ErrorHelper.raise_already_exists_error(item_type, uuid)
-
-    @staticmethod
-    def find_item_by_uuid(items, uuid, item_type):
-        """Find item by UUID and raise error if not found."""
-        item = next(
-            (
-                item
-                for item in items
-                if (item.get("uuid") if isinstance(item, dict) else getattr(item, "uuid", None))
-                == uuid
-            ),
-            None,
-        )
-        if not item:
-            ErrorHelper.raise_not_found_error(item_type, uuid)
-        return item
-
-
 class CRUDHelper:
     """Common CRUD operation utilities to eliminate duplication."""
 
@@ -303,9 +243,21 @@ class CRUDHelper:
     def add_item_to_json_db(db_data, collection_name, item_data, default_status=None):
         """Add item to JSON in-memory database."""
         collection = db_data.setdefault(collection_name, [])
-        ErrorHelper.check_item_exists(
-            collection, item_data.get("uuid"), collection_name.rstrip("s").capitalize()
+        uuid = item_data.get("uuid")
+        resource_type = collection_name.rstrip("s").capitalize()
+
+        # Check if item already exists
+        existing = next(
+            (
+                item
+                for item in collection
+                if (item.get("uuid") if isinstance(item, dict) else getattr(item, "uuid", None))
+                == uuid
+            ),
+            None,
         )
+        if existing:
+            raise AlreadyExistsError(uuid, resource_type)
 
         record = dict(item_data)
         if default_status:
@@ -318,9 +270,21 @@ class CRUDHelper:
         json_file = FileIOHelper.read_json_file(file_path)
         collection = json_file["map"].get(collection_name, [])
 
-        ErrorHelper.check_item_exists(
-            collection, item_data.get("uuid"), collection_name.rstrip("s").capitalize()
+        uuid = item_data.get("uuid")
+        resource_type = collection_name.rstrip("s").capitalize()
+
+        # Check if item already exists
+        existing = next(
+            (
+                item
+                for item in collection
+                if (item.get("uuid") if isinstance(item, dict) else getattr(item, "uuid", None))
+                == uuid
+            ),
+            None,
         )
+        if existing:
+            raise AlreadyExistsError(uuid, resource_type)
 
         record = dict(item_data)
         if default_status:
@@ -335,7 +299,7 @@ class CRUDHelper:
         """Add item to MongoDB database."""
         existing = db_collection.find_one({"uuid": item_data.get("uuid")})
         if existing:
-            ErrorHelper.raise_already_exists_error(item_type, item_data.get("uuid"))
+            raise AlreadyExistsError(item_data.get("uuid"), item_type)
 
         record = dict(item_data)
         if default_status:
