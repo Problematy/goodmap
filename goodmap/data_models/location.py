@@ -1,6 +1,6 @@
 from typing import Any, Type
 
-from pydantic import BaseModel, Field, create_model, field_validator
+from pydantic import BaseModel, Field, create_model, field_validator, model_validator
 
 
 class LocationBase(BaseModel, extra="allow"):
@@ -15,6 +15,14 @@ class LocationBase(BaseModel, extra="allow"):
         if v[1] < -180 or v[1] > 180:
             raise ValueError("longitude must be in range -180 to 180")
         return v
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_uuid_exists(cls, data: Any) -> Any:
+        """Ensure UUID is present before validation for better error messages."""
+        if isinstance(data, dict) and "uuid" not in data:
+            raise ValueError("Location data must include 'uuid' field")
+        return data
 
     def basic_info(self):
         return {

@@ -1,14 +1,59 @@
 import json
+import logging
 import os
 import tempfile
 from functools import partial
 from typing import Any
 
+from pydantic import ValidationError as PydanticValidationError
+
 from goodmap.core import get_queried_data
 from goodmap.data_models.location import LocationBase
+from goodmap.exceptions import (
+    AlreadyExistsError,
+    LocationAlreadyExistsError,
+    LocationNotFoundError,
+    LocationValidationError,
+    NotFoundError,
+)
+
+logger = logging.getLogger(__name__)
 
 # TODO file is temporary solution to be compatible with old, static code,
 #  it should be replaced with dynamic solution
+
+
+def _validate_location_model(data: dict, model):
+    """
+    Validate location data and enrich errors with context.
+
+    Args:
+        data: Dictionary containing location data
+        model: Pydantic model class to validate against
+
+    Returns:
+        Validated model instance
+
+    Raises:
+        LocationValidationError: With UUID context if validation fails
+    """
+    try:
+        return model.model_validate(data)
+    except PydanticValidationError as e:
+        uuid = data.get("uuid", "<unknown>")
+        errors = e.errors()
+
+        logger.error(
+            "Location validation failed",
+            extra={
+                "event": "location_validation_error",
+                "uuid": uuid,
+                "error_count": len(errors),
+                "errors": errors,
+                "model": model.__name__,
+            },
+        )
+        raise LocationValidationError(e, uuid=uuid) from e
 
 
 def __parse_pagination_params(query):
@@ -233,12 +278,16 @@ class ErrorHelper:
     @staticmethod
     def raise_already_exists_error(item_type, uuid):
         """Raise standardized 'already exists' error."""
-        raise ValueError(f"{item_type} with uuid {uuid} already exists")
+        if item_type.lower() == "location":
+            raise LocationAlreadyExistsError(uuid)
+        raise AlreadyExistsError(f"{item_type} with uuid {uuid} already exists")
 
     @staticmethod
     def raise_not_found_error(item_type, uuid):
         """Raise standardized 'not found' error."""
-        raise ValueError(f"{item_type} with uuid {uuid} not found")
+        if item_type.lower() == "location":
+            raise LocationNotFoundError(uuid)
+        raise NotFoundError(f"{item_type} with uuid {uuid} not found")
 
     @staticmethod
     def check_item_exists(items, uuid, item_type):
@@ -640,7 +689,7 @@ def get_category_data(db):
 
 def get_location_from_raw_data(raw_data, uuid, location_model):
     point = next((point for point in raw_data["data"] if point["uuid"] == uuid), None)
-    return location_model.model_validate(point) if point else None
+    return _validate_location_model(point, location_model) if point else None
 
 
 def google_json_db_get_location(self, uuid, location_model):
@@ -659,7 +708,7 @@ def json_db_get_location(self, uuid, location_model):
 
 def mongodb_db_get_location(self, uuid, location_model):
     location_doc = self.db.locations.find_one({"uuid": uuid}, {"_id": 0})
-    return location_model.model_validate(location_doc) if location_doc else None
+    return _validate_location_model(location_doc, location_model) if location_doc else None
 
 
 def get_location(db, location_model):
@@ -672,7 +721,7 @@ def get_location(db, location_model):
 
 def get_locations_list_from_raw_data(map_data, query, location_model):
     filtered_locations = get_queried_data(map_data["data"], map_data["categories"], query)
-    return [location_model.model_validate(point) for point in filtered_locations]
+    return [_validate_location_model(point, location_model) for point in filtered_locations]
 
 
 def google_json_db_get_locations(self, query, location_model):
@@ -696,7 +745,7 @@ def mongodb_db_get_locations(self, query, location_model):
 
     projection = {"_id": 0, "uuid": 1, "position": 1, "remark": 1}
     data = self.db.locations.find(mongo_query, projection)
-    return (LocationBase.model_validate(loc) for loc in data)
+    return (_validate_location_model(loc, LocationBase) for loc in data)
 
 
 def get_locations(db, location_model):
@@ -756,7 +805,7 @@ def mongodb_db_get_locations_paginated(self, query, location_model):
 
     # Execute query
     cursor = self.db.locations.aggregate(pipeline)
-    locations = [location_model.model_validate(loc) for loc in cursor]
+    locations = [_validate_location_model(loc, location_model) for loc in cursor]
 
     # Convert items to dict if needed (for location models)
     if locations and hasattr(locations[0], "model_dump"):
@@ -778,7 +827,7 @@ def get_locations_paginated(db, location_model):
 
 
 def json_file_db_add_location(self, location_data, location_model):
-    location = location_model.model_validate(location_data)
+    location = _validate_location_model(location_data, location_model)
     with open(self.data_file_path, "r") as file:
         json_file = json.load(file)
 
@@ -787,7 +836,7 @@ def json_file_db_add_location(self, location_data, location_model):
         (i for i, point in enumerate(map_data) if point.get("uuid") == location_data["uuid"]), None
     )
     if idx is not None:
-        raise ValueError(f"Location with uuid {location_data['uuid']} already exists")
+        raise LocationAlreadyExistsError(location_data["uuid"])
 
     map_data.append(location.model_dump())
     json_file["map"]["data"] = map_data
@@ -796,7 +845,7 @@ def json_file_db_add_location(self, location_data, location_model):
 
 
 def json_db_add_location(self, location_data, location_model):
-    location = location_model.model_validate(location_data)
+    location = _validate_location_model(location_data, location_model)
     idx = next(
         (
             i
@@ -806,15 +855,15 @@ def json_db_add_location(self, location_data, location_model):
         None,
     )
     if idx is not None:
-        raise ValueError(f"Location with uuid {location_data['uuid']} already exists")
+        raise LocationAlreadyExistsError(location_data["uuid"])
     self.data["data"].append(location.model_dump())
 
 
 def mongodb_db_add_location(self, location_data, location_model):
-    location = location_model.model_validate(location_data)
+    location = _validate_location_model(location_data, location_model)
     existing = self.db.locations.find_one({"uuid": location_data["uuid"]})
     if existing:
-        raise ValueError(f"Location with uuid {location_data['uuid']} already exists")
+        raise LocationAlreadyExistsError(location_data["uuid"])
     self.db.locations.insert_one(location.model_dump())
 
 
@@ -827,14 +876,14 @@ def add_location(db, location_data, location_model):
 
 
 def json_file_db_update_location(self, uuid, location_data, location_model):
-    location = location_model.model_validate(location_data)
+    location = _validate_location_model(location_data, location_model)
     with open(self.data_file_path, "r") as file:
         json_file = json.load(file)
 
     map_data = json_file["map"].get("data", [])
     idx = next((i for i, point in enumerate(map_data) if point.get("uuid") == uuid), None)
     if idx is None:
-        raise ValueError(f"Location with uuid {uuid} not found")
+        raise LocationNotFoundError(uuid)
 
     map_data[idx] = location.model_dump()
     json_file["map"]["data"] = map_data
@@ -843,20 +892,20 @@ def json_file_db_update_location(self, uuid, location_data, location_model):
 
 
 def json_db_update_location(self, uuid, location_data, location_model):
-    location = location_model.model_validate(location_data)
+    location = _validate_location_model(location_data, location_model)
     idx = next(
         (i for i, point in enumerate(self.data.get("data", [])) if point.get("uuid") == uuid), None
     )
     if idx is None:
-        raise ValueError(f"Location with uuid {uuid} not found")
+        raise LocationNotFoundError(uuid)
     self.data["data"][idx] = location.model_dump()
 
 
 def mongodb_db_update_location(self, uuid, location_data, location_model):
-    location = location_model.model_validate(location_data)
+    location = _validate_location_model(location_data, location_model)
     result = self.db.locations.update_one({"uuid": uuid}, {"$set": location.model_dump()})
     if result.matched_count == 0:
-        raise ValueError(f"Location with uuid {uuid} not found")
+        raise LocationNotFoundError(uuid)
 
 
 def update_location(db, uuid, location_data, location_model):
@@ -874,7 +923,7 @@ def json_file_db_delete_location(self, uuid):
     map_data = json_file["map"].get("data", [])
     idx = next((i for i, point in enumerate(map_data) if point.get("uuid") == uuid), None)
     if idx is None:
-        raise ValueError(f"Location with uuid {uuid} not found")
+        raise LocationNotFoundError(uuid)
 
     del map_data[idx]
     json_file["map"]["data"] = map_data
@@ -887,14 +936,14 @@ def json_db_delete_location(self, uuid):
         (i for i, point in enumerate(self.data.get("data", [])) if point.get("uuid") == uuid), None
     )
     if idx is None:
-        raise ValueError(f"Location with uuid {uuid} not found")
+        raise LocationNotFoundError(uuid)
     del self.data["data"][idx]
 
 
 def mongodb_db_delete_location(self, uuid):
     result = self.db.locations.delete_one({"uuid": uuid})
     if result.deleted_count == 0:
-        raise ValueError(f"Location with uuid {uuid} not found")
+        raise LocationNotFoundError(uuid)
 
 
 def delete_location(db, uuid):
