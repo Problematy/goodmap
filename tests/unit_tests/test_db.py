@@ -10,12 +10,6 @@ from platzky.db.json_file_db import JsonFile
 from platzky.db.mongodb_db import MongoDB
 
 from goodmap.data_models.location import LocationBase, create_location_model
-from goodmap.exceptions import (
-    AlreadyExistsError,
-    LocationAlreadyExistsError,
-    LocationNotFoundError,
-    NotFoundError,
-)
 from goodmap.db import (
     add_location,
     add_report,
@@ -101,6 +95,11 @@ from goodmap.db import (
     update_location,
     update_report,
     update_suggestion,
+)
+from goodmap.exceptions import (
+    AlreadyExistsError,
+    LocationAlreadyExistsError,
+    LocationNotFoundError,
 )
 
 data = {
@@ -1130,7 +1129,9 @@ def test_mongodb_db_add_duplicate_location(mock_client):
     db = MongoDB("mongodb://localhost:27017", "test_db")
     location_data = {"uuid": "existing", "position": [10, 20]}
 
-    with pytest.raises(LocationAlreadyExistsError, match="Location with uuid 'existing' already exists"):
+    with pytest.raises(
+        LocationAlreadyExistsError, match="Location with uuid 'existing' already exists"
+    ):
         mongodb_db_add_location(db, location_data, Location)
 
 
