@@ -1,6 +1,7 @@
 """Custom exceptions for Goodmap application."""
 
 import logging
+
 from pydantic import ValidationError as PydanticValidationError
 
 logger = logging.getLogger(__name__)

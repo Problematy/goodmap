@@ -1,6 +1,13 @@
 from typing import Any, Type
 
-from pydantic import BaseModel, Field, ValidationError, create_model, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    ValidationError,
+    create_model,
+    field_validator,
+    model_validator,
+)
 
 from goodmap.exceptions import LocationValidationError
 
