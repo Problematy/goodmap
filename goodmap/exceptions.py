@@ -25,6 +25,17 @@ class LocationValidationError(ValidationError):
         self.uuid = uuid
         self.original_error = validation_error
         self.validation_errors = validation_error.errors()
+
+        # Log the validation error
+        logger.error(
+            "Location validation failed",
+            extra={
+                "event": "location_validation_error",
+                "uuid": uuid or "<unknown>",
+                "error_count": len(validation_error.errors()),
+                "errors": validation_error.errors(),
+            },
+        )
         super().__init__(str(validation_error))
 
     def __str__(self):

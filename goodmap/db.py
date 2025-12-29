@@ -5,15 +5,12 @@ import tempfile
 from functools import partial
 from typing import Any
 
-from pydantic import ValidationError as PydanticValidationError
-
 from goodmap.core import get_queried_data
 from goodmap.data_models.location import LocationBase
 from goodmap.exceptions import (
     AlreadyExistsError,
     LocationAlreadyExistsError,
     LocationNotFoundError,
-    LocationValidationError,
     NotFoundError,
 )
 
@@ -21,39 +18,6 @@ logger = logging.getLogger(__name__)
 
 # TODO file is temporary solution to be compatible with old, static code,
 #  it should be replaced with dynamic solution
-
-
-def _validate_location_model(data: dict, model):
-    """
-    Validate location data and enrich errors with context.
-
-    Args:
-        data: Dictionary containing location data
-        model: Pydantic model class to validate against
-
-    Returns:
-        Validated model instance
-
-    Raises:
-        LocationValidationError: With UUID context if validation fails
-    """
-    try:
-        return model.model_validate(data)
-    except PydanticValidationError as e:
-        uuid = data.get("uuid", "<unknown>")
-        errors = e.errors()
-
-        logger.error(
-            "Location validation failed",
-            extra={
-                "event": "location_validation_error",
-                "uuid": uuid,
-                "error_count": len(errors),
-                "errors": errors,
-                "model": model.__name__,
-            },
-        )
-        raise LocationValidationError(e, uuid=uuid) from e
 
 
 def __parse_pagination_params(query):
@@ -689,7 +653,7 @@ def get_category_data(db):
 
 def get_location_from_raw_data(raw_data, uuid, location_model):
     point = next((point for point in raw_data["data"] if point["uuid"] == uuid), None)
-    return _validate_location_model(point, location_model) if point else None
+    return location_model.model_validate(point) if point else None
 
 
 def google_json_db_get_location(self, uuid, location_model):
@@ -708,7 +672,7 @@ def json_db_get_location(self, uuid, location_model):
 
 def mongodb_db_get_location(self, uuid, location_model):
     location_doc = self.db.locations.find_one({"uuid": uuid}, {"_id": 0})
-    return _validate_location_model(location_doc, location_model) if location_doc else None
+    return location_model.model_validate(location_doc) if location_doc else None
 
 
 def get_location(db, location_model):
@@ -721,7 +685,7 @@ def get_location(db, location_model):
 
 def get_locations_list_from_raw_data(map_data, query, location_model):
     filtered_locations = get_queried_data(map_data["data"], map_data["categories"], query)
-    return [_validate_location_model(point, location_model) for point in filtered_locations]
+    return [location_model.model_validate(point) for point in filtered_locations]
 
 
 def google_json_db_get_locations(self, query, location_model):
@@ -745,7 +709,7 @@ def mongodb_db_get_locations(self, query, location_model):
 
     projection = {"_id": 0, "uuid": 1, "position": 1, "remark": 1}
     data = self.db.locations.find(mongo_query, projection)
-    return (_validate_location_model(loc, LocationBase) for loc in data)
+    return (LocationBase.model_validate(loc) for loc in data)
 
 
 def get_locations(db, location_model):
@@ -805,7 +769,7 @@ def mongodb_db_get_locations_paginated(self, query, location_model):
 
     # Execute query
     cursor = self.db.locations.aggregate(pipeline)
-    locations = [_validate_location_model(loc, location_model) for loc in cursor]
+    locations = [location_model.model_validate(loc) for loc in cursor]
 
     # Convert items to dict if needed (for location models)
     if locations and hasattr(locations[0], "model_dump"):
@@ -827,7 +791,7 @@ def get_locations_paginated(db, location_model):
 
 
 def json_file_db_add_location(self, location_data, location_model):
-    location = _validate_location_model(location_data, location_model)
+    location = location_model.model_validate(location_data)
     with open(self.data_file_path, "r") as file:
         json_file = json.load(file)
 
@@ -845,7 +809,7 @@ def json_file_db_add_location(self, location_data, location_model):
 
 
 def json_db_add_location(self, location_data, location_model):
-    location = _validate_location_model(location_data, location_model)
+    location = location_model.model_validate(location_data)
     idx = next(
         (
             i
@@ -860,7 +824,7 @@ def json_db_add_location(self, location_data, location_model):
 
 
 def mongodb_db_add_location(self, location_data, location_model):
-    location = _validate_location_model(location_data, location_model)
+    location = location_model.model_validate(location_data)
     existing = self.db.locations.find_one({"uuid": location_data["uuid"]})
     if existing:
         raise LocationAlreadyExistsError(location_data["uuid"])
@@ -876,7 +840,7 @@ def add_location(db, location_data, location_model):
 
 
 def json_file_db_update_location(self, uuid, location_data, location_model):
-    location = _validate_location_model(location_data, location_model)
+    location = location_model.model_validate(location_data)
     with open(self.data_file_path, "r") as file:
         json_file = json.load(file)
 
@@ -892,7 +856,7 @@ def json_file_db_update_location(self, uuid, location_data, location_model):
 
 
 def json_db_update_location(self, uuid, location_data, location_model):
-    location = _validate_location_model(location_data, location_model)
+    location = location_model.model_validate(location_data)
     idx = next(
         (i for i, point in enumerate(self.data.get("data", [])) if point.get("uuid") == uuid), None
     )
@@ -902,7 +866,7 @@ def json_db_update_location(self, uuid, location_data, location_model):
 
 
 def mongodb_db_update_location(self, uuid, location_data, location_model):
-    location = _validate_location_model(location_data, location_model)
+    location = location_model.model_validate(location_data)
     result = self.db.locations.update_one({"uuid": uuid}, {"$set": location.model_dump()})
     if result.matched_count == 0:
         raise LocationNotFoundError(uuid)
