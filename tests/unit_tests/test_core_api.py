@@ -534,7 +534,7 @@ def test_admin_put_suggestion_invalid_status(test_app):
         headers={"X-CSRFToken": csrf_token},
     )
     assert response.status_code == 400
-    assert "Invalid status: bad" in response.json["message"]
+    assert "Invalid status" in response.json["message"]
 
 
 def test_admin_put_suggestion_not_found(test_app):
@@ -622,7 +622,7 @@ def test_admin_put_report_invalid_status(test_app):
         headers={"X-CSRFToken": csrf_token},
     )
     assert response.status_code == 400
-    assert "Invalid status: bad" in response.json["message"]
+    assert "Invalid status" in response.json["message"]
 
 
 def test_admin_put_report_invalid_priority(test_app):
@@ -636,7 +636,7 @@ def test_admin_put_report_invalid_priority(test_app):
         headers={"X-CSRFToken": csrf_token},
     )
     assert response.status_code == 400
-    assert "Invalid priority: bad" in response.json["message"]
+    assert "Invalid priority" in response.json["message"]
 
 
 def test_admin_put_report_not_found(test_app):
@@ -1368,7 +1368,7 @@ def test_admin_database_exceptions_coverage(test_app):
             content_type="application/json",
             headers={"X-CSRFToken": csrf_token},
         )
-        assert response.status_code == 400
+        assert response.status_code == 500
 
 
 @mock.patch("goodmap.core_api.gettext", fake_translation)

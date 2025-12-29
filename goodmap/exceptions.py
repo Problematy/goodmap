@@ -1,10 +1,24 @@
 """Custom exceptions for Goodmap application."""
 
 import logging
+import uuid as uuid_lib
 
 from pydantic import ValidationError as PydanticValidationError
 
 logger = logging.getLogger(__name__)
+
+
+def _sanitize_uuid(uuid: str | None) -> str:
+    """Validate and sanitize UUID to prevent injection attacks."""
+    if uuid is None:
+        return "<unknown>"
+    try:
+        # Validate UUID format
+        uuid_lib.UUID(uuid)
+        return uuid
+    except (ValueError, AttributeError, TypeError):
+        logger.warning("Invalid UUID format detected", extra={"raw_uuid": repr(uuid)})
+        return "<invalid-uuid>"
 
 
 class GoodmapError(Exception):
@@ -23,25 +37,16 @@ class LocationValidationError(ValidationError):
     """Validation error for location data with enhanced context."""
 
     def __init__(self, validation_error: PydanticValidationError, uuid: str | None = None):
-        self.uuid = uuid
+        self.uuid = _sanitize_uuid(uuid)
         self.original_error = validation_error
         self.validation_errors = validation_error.errors()
-
-        # Log the validation error
-        logger.error(
-            "Location validation failed",
-            extra={
-                "event": "location_validation_error",
-                "uuid": uuid or "<unknown>",
-                "error_count": len(validation_error.errors()),
-                "errors": validation_error.errors(),
-            },
-        )
         super().__init__(str(validation_error))
 
     def __str__(self):
-        uuid_context = f" for location uuid='{self.uuid}'" if self.uuid else ""
-        return f"Validation failed{uuid_context}:\n{self.original_error}"
+        # Don't expose error details in string representation
+        if self.uuid and self.uuid not in ("<unknown>", "<invalid-uuid>"):
+            return f"Validation failed for location '{self.uuid}'"
+        return "Validation failed"
 
 
 class NotFoundError(GoodmapError):
@@ -54,15 +59,8 @@ class LocationNotFoundError(NotFoundError):
     """Location with specified UUID not found."""
 
     def __init__(self, uuid: str):
-        self.uuid = uuid
-        logger.warning(
-            "Location not found",
-            extra={
-                "event": "location_not_found",
-                "uuid": uuid,
-            },
-        )
-        super().__init__(f"Location with uuid '{uuid}' not found")
+        self.uuid = _sanitize_uuid(uuid)
+        super().__init__(f"Location with uuid '{self.uuid}' not found")
 
 
 class AlreadyExistsError(GoodmapError):
@@ -75,12 +73,29 @@ class LocationAlreadyExistsError(AlreadyExistsError):
     """Location with specified UUID already exists."""
 
     def __init__(self, uuid: str):
-        self.uuid = uuid
-        logger.warning(
-            "Location already exists",
-            extra={
-                "event": "location_already_exists",
-                "uuid": uuid,
-            },
-        )
-        super().__init__(f"Location with uuid '{uuid}' already exists")
+        self.uuid = _sanitize_uuid(uuid)
+        super().__init__(f"Location with uuid '{self.uuid}' already exists")
+
+
+class SuggestionNotFoundError(NotFoundError):
+    """Suggestion with specified UUID not found."""
+
+    def __init__(self, uuid: str):
+        self.uuid = _sanitize_uuid(uuid)
+        super().__init__(f"Suggestion with uuid '{self.uuid}' not found")
+
+
+class SuggestionAlreadyExistsError(AlreadyExistsError):
+    """Suggestion with specified UUID already exists."""
+
+    def __init__(self, uuid: str):
+        self.uuid = _sanitize_uuid(uuid)
+        super().__init__(f"Suggestion with uuid '{self.uuid}' already exists")
+
+
+class ReportNotFoundError(NotFoundError):
+    """Report with specified UUID not found."""
+
+    def __init__(self, uuid: str):
+        self.uuid = _sanitize_uuid(uuid)
+        super().__init__(f"Report with uuid '{self.uuid}' not found")

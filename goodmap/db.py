@@ -12,6 +12,9 @@ from goodmap.exceptions import (
     LocationAlreadyExistsError,
     LocationNotFoundError,
     NotFoundError,
+    ReportNotFoundError,
+    SuggestionAlreadyExistsError,
+    SuggestionNotFoundError,
 )
 
 logger = logging.getLogger(__name__)
@@ -242,15 +245,23 @@ class ErrorHelper:
     @staticmethod
     def raise_already_exists_error(item_type, uuid):
         """Raise standardized 'already exists' error."""
-        if item_type.lower() == "location":
+        item_type_lower = item_type.lower()
+        if item_type_lower == "location":
             raise LocationAlreadyExistsError(uuid)
+        elif item_type_lower == "suggestion":
+            raise SuggestionAlreadyExistsError(uuid)
         raise AlreadyExistsError(f"{item_type} with uuid {uuid} already exists")
 
     @staticmethod
     def raise_not_found_error(item_type, uuid):
         """Raise standardized 'not found' error."""
-        if item_type.lower() == "location":
+        item_type_lower = item_type.lower()
+        if item_type_lower == "location":
             raise LocationNotFoundError(uuid)
+        elif item_type_lower == "suggestion":
+            raise SuggestionNotFoundError(uuid)
+        elif item_type_lower == "report":
+            raise ReportNotFoundError(uuid)
         raise NotFoundError(f"{item_type} with uuid {uuid} not found")
 
     @staticmethod

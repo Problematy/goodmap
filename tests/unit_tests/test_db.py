@@ -100,6 +100,9 @@ from goodmap.exceptions import (
     AlreadyExistsError,
     LocationAlreadyExistsError,
     LocationNotFoundError,
+    SuggestionAlreadyExistsError,
+    SuggestionNotFoundError,
+    ReportNotFoundError,
 )
 
 data = {
@@ -1123,14 +1126,15 @@ def test_mongodb_db_add_location(mock_client):
 def test_mongodb_db_add_duplicate_location(mock_client):
     mock_db = mock.Mock()
     mock_client.return_value.__getitem__.return_value = mock_db
-    mock_db.locations.find_one.return_value = {"uuid": "existing"}
+    existing_uuid = "450e8400-e29b-41d4-a716-446655440000"
+    mock_db.locations.find_one.return_value = {"uuid": existing_uuid}
 
     Location = create_location_model([])
     db = MongoDB("mongodb://localhost:27017", "test_db")
-    location_data = {"uuid": "existing", "position": [10, 20]}
+    location_data = {"uuid": existing_uuid, "position": [10, 20]}
 
     with pytest.raises(
-        LocationAlreadyExistsError, match="Location with uuid 'existing' already exists"
+        LocationAlreadyExistsError, match=f"Location with uuid '{existing_uuid}' already exists"
     ):
         mongodb_db_add_location(db, location_data, Location)
 
@@ -1162,10 +1166,11 @@ def test_mongodb_db_update_location_not_found(mock_client):
 
     Location = create_location_model([])
     db = MongoDB("mongodb://localhost:27017", "test_db")
-    location_data = {"uuid": "nonexistent", "position": [30, 40]}
+    nonexistent_uuid = "850e8400-e29b-41d4-a716-446655440000"
+    location_data = {"uuid": nonexistent_uuid, "position": [30, 40]}
 
-    with pytest.raises(LocationNotFoundError, match="Location with uuid 'nonexistent' not found"):
-        mongodb_db_update_location(db, "nonexistent", location_data, Location)
+    with pytest.raises(LocationNotFoundError, match=f"Location with uuid '{nonexistent_uuid}' not found"):
+        mongodb_db_update_location(db, nonexistent_uuid, location_data, Location)
 
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
@@ -1191,9 +1196,10 @@ def test_mongodb_db_delete_location_not_found(mock_client):
     mock_db.locations.delete_one.return_value = mock_result
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
+    nonexistent_uuid = "750e8400-e29b-41d4-a716-446655440000"
 
-    with pytest.raises(LocationNotFoundError, match="Location with uuid 'nonexistent' not found"):
-        mongodb_db_delete_location(db, "nonexistent")
+    with pytest.raises(LocationNotFoundError, match=f"Location with uuid '{nonexistent_uuid}' not found"):
+        mongodb_db_delete_location(db, nonexistent_uuid)
 
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
@@ -1215,12 +1221,13 @@ def test_mongodb_db_add_suggestion(mock_client):
 def test_mongodb_db_add_duplicate_suggestion(mock_client):
     mock_db = mock.Mock()
     mock_client.return_value.__getitem__.return_value = mock_db
-    mock_db.suggestions.find_one.return_value = {"uuid": "s1"}
+    s1_uuid = "950e8400-e29b-41d4-a716-446655440000"
+    mock_db.suggestions.find_one.return_value = {"uuid": s1_uuid}
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
-    suggestion_data = {"uuid": "s1", "content": "test"}
+    suggestion_data = {"uuid": s1_uuid, "content": "test"}
 
-    with pytest.raises(AlreadyExistsError, match="Suggestion with uuid s1 already exists"):
+    with pytest.raises(SuggestionAlreadyExistsError, match=f"Suggestion with uuid '{s1_uuid}' already exists"):
         mongodb_db_add_suggestion(db, suggestion_data)
 
 
@@ -2401,8 +2408,9 @@ def test_error_helper_methods():
     from goodmap.db import ErrorHelper
 
     # Test raise_not_found_error
-    with pytest.raises(LocationNotFoundError, match="Location with uuid 'test-uuid' not found"):
-        ErrorHelper.raise_not_found_error("location", "test-uuid")
+    test_uuid = "550e8400-e29b-41d4-a716-446655440000"
+    with pytest.raises(LocationNotFoundError, match=f"Location with uuid '{test_uuid}' not found"):
+        ErrorHelper.raise_not_found_error("location", test_uuid)
 
     # Test find_item_by_uuid with dict items
     items = [{"uuid": "uuid1", "name": "item1"}, {"uuid": "uuid2", "name": "item2"}]
@@ -2411,8 +2419,9 @@ def test_error_helper_methods():
     assert found_item["name"] == "item1"
 
     # Test find_item_by_uuid when item not found
-    with pytest.raises(LocationNotFoundError, match="Location with uuid 'nonexistent' not found"):
-        ErrorHelper.find_item_by_uuid(items, "nonexistent", "location")
+    nonexistent_uuid = "650e8400-e29b-41d4-a716-446655440000"
+    with pytest.raises(LocationNotFoundError, match=f"Location with uuid '{nonexistent_uuid}' not found"):
+        ErrorHelper.find_item_by_uuid(items, nonexistent_uuid, "location")
 
     # Test find_item_by_uuid with object items
     class TestItem:
