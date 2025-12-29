@@ -7,8 +7,8 @@ import pysupercluster
 from flask import Blueprint, jsonify, make_response, request
 from flask_babel import gettext
 from flask_restx import Api, Resource, fields
-from werkzeug.exceptions import BadRequest
 from platzky.config import LanguagesMapping
+from werkzeug.exceptions import BadRequest
 
 from goodmap.clustering import (
     map_clustering_data_to_proper_lazy_loading_object,
@@ -19,8 +19,6 @@ from goodmap.exceptions import (
     LocationNotFoundError,
     LocationValidationError,
     ReportNotFoundError,
-    SuggestionAlreadyExistsError,
-    SuggestionNotFoundError,
 )
 from goodmap.formatter import prepare_pin
 
@@ -111,15 +109,20 @@ def core_pages(
                     f"at position: {location.position}"
                 )
                 notifier_function(message)
-            except BadRequest as e:
+            except BadRequest:
                 logger.warning("Invalid JSON in suggest endpoint")
                 return make_response(jsonify({"message": "Invalid request data"}), 400)
             except LocationValidationError as e:
-                logger.warning("Location validation failed in suggest endpoint", extra={"errors": e.validation_errors})
+                logger.warning(
+                    "Location validation failed in suggest endpoint",
+                    extra={"errors": e.validation_errors},
+                )
                 return make_response(jsonify({"message": "Invalid location data"}), 400)
-            except Exception as e:
+            except Exception:
                 logger.error("Error in suggest location endpoint", exc_info=True)
-                return make_response(jsonify({"message": "An error occurred while processing your suggestion"}), 500)
+                return make_response(
+                    jsonify({"message": "An error occurred while processing your suggestion"}), 500
+                )
             return make_response(jsonify({"message": "Location suggested"}), 200)
 
     @core_api.route("/report-location")
@@ -142,14 +145,16 @@ def core_pages(
                     f"with problem: {location_report['description']}"
                 )
                 notifier_function(message)
-            except BadRequest as e:
+            except BadRequest:
                 logger.warning("Invalid JSON in report location endpoint")
                 return make_response(jsonify({"message": "Invalid request data"}), 400)
             except KeyError as e:
-                logger.warning("Missing required field in report location", extra={"missing_field": str(e)})
+                logger.warning(
+                    "Missing required field in report location", extra={"missing_field": str(e)}
+                )
                 error_message = gettext("Error reporting location")
                 return make_response(jsonify({"message": error_message}), 400)
-            except Exception as e:
+            except Exception:
                 logger.error("Error in report location endpoint", exc_info=True)
                 error_message = gettext("Error sending notification")
                 return make_response(jsonify({"message": error_message}), 500)
@@ -316,12 +321,15 @@ def core_pages(
                 location = location_model.model_validate(location_data)
                 database.add_location(location.model_dump())
             except LocationValidationError as e:
-                logger.warning("Location validation failed", extra={"uuid": e.uuid, "errors": e.validation_errors})
+                logger.warning(
+                    "Location validation failed",
+                    extra={"uuid": e.uuid, "errors": e.validation_errors},
+                )
                 return make_response(jsonify({"message": "Invalid location data"}), 400)
             except LocationAlreadyExistsError as e:
                 logger.warning("Attempted to create duplicate location", extra={"uuid": e.uuid})
                 return make_response(jsonify({"message": "Location already exists"}), 409)
-            except Exception as e:
+            except Exception:
                 logger.error("Error creating location", exc_info=True)
                 return make_response(jsonify({"message": "An internal error occurred"}), 500)
             return jsonify(location.model_dump())
@@ -338,12 +346,15 @@ def core_pages(
                 location = location_model.model_validate(location_data)
                 database.update_location(location_id, location.model_dump())
             except LocationValidationError as e:
-                logger.warning("Location validation failed", extra={"uuid": e.uuid, "errors": e.validation_errors})
+                logger.warning(
+                    "Location validation failed",
+                    extra={"uuid": e.uuid, "errors": e.validation_errors},
+                )
                 return make_response(jsonify({"message": "Invalid location data"}), 400)
             except LocationNotFoundError as e:
                 logger.info("Location not found for update", extra={"uuid": e.uuid})
                 return make_response(jsonify({"message": "Location not found"}), 404)
-            except Exception as e:
+            except Exception:
                 logger.error("Error updating location", exc_info=True)
                 return make_response(jsonify({"message": "An internal error occurred"}), 500)
             return jsonify(location.model_dump())
@@ -357,7 +368,7 @@ def core_pages(
             except LocationNotFoundError as e:
                 logger.info("Location not found for deletion", extra={"uuid": e.uuid})
                 return make_response(jsonify({"message": "Location not found"}), 404)
-            except Exception as e:
+            except Exception:
                 logger.error("Error deleting location", exc_info=True)
                 return make_response(jsonify({"message": "An internal error occurred"}), 500)
             return "", 204
@@ -394,12 +405,17 @@ def core_pages(
                     database.add_location(suggestion_data)
                 database.update_suggestion(suggestion_id, status)
             except LocationValidationError as e:
-                logger.warning("Location validation failed in suggestion", extra={"uuid": e.uuid, "errors": e.validation_errors})
+                logger.warning(
+                    "Location validation failed in suggestion",
+                    extra={"uuid": e.uuid, "errors": e.validation_errors},
+                )
                 return make_response(jsonify({"message": "Invalid location data"}), 400)
             except LocationAlreadyExistsError as e:
-                logger.warning("Attempted to create duplicate location from suggestion", extra={"uuid": e.uuid})
+                logger.warning(
+                    "Attempted to create duplicate location from suggestion", extra={"uuid": e.uuid}
+                )
                 return make_response(jsonify({"message": "Location already exists"}), 409)
-            except Exception as e:
+            except Exception:
                 logger.error("Error processing suggestion", exc_info=True)
                 return make_response(jsonify({"message": "An internal error occurred"}), 500)
             return jsonify(database.get_suggestion(suggestion_id))
@@ -435,13 +451,13 @@ def core_pages(
                 if not report:
                     return make_response(jsonify({"message": "Report not found"}), 404)
                 database.update_report(report_id, status=status, priority=priority)
-            except BadRequest as e:
+            except BadRequest:
                 logger.warning("Invalid JSON in report update endpoint")
                 return make_response(jsonify({"message": "Invalid request data"}), 400)
             except ReportNotFoundError as e:
                 logger.info("Report not found for update", extra={"uuid": e.uuid})
                 return make_response(jsonify({"message": "Report not found"}), 404)
-            except Exception as e:
+            except Exception:
                 logger.error("Error updating report", exc_info=True)
                 return make_response(jsonify({"message": "An internal error occurred"}), 500)
             return jsonify(database.get_report(report_id))

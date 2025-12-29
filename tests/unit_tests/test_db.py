@@ -101,8 +101,6 @@ from goodmap.exceptions import (
     LocationAlreadyExistsError,
     LocationNotFoundError,
     SuggestionAlreadyExistsError,
-    SuggestionNotFoundError,
-    ReportNotFoundError,
 )
 
 data = {
@@ -1169,7 +1167,9 @@ def test_mongodb_db_update_location_not_found(mock_client):
     nonexistent_uuid = "850e8400-e29b-41d4-a716-446655440000"
     location_data = {"uuid": nonexistent_uuid, "position": [30, 40]}
 
-    with pytest.raises(LocationNotFoundError, match=f"Location with uuid '{nonexistent_uuid}' not found"):
+    with pytest.raises(
+        LocationNotFoundError, match=f"Location with uuid '{nonexistent_uuid}' not found"
+    ):
         mongodb_db_update_location(db, nonexistent_uuid, location_data, Location)
 
 
@@ -1198,7 +1198,9 @@ def test_mongodb_db_delete_location_not_found(mock_client):
     db = MongoDB("mongodb://localhost:27017", "test_db")
     nonexistent_uuid = "750e8400-e29b-41d4-a716-446655440000"
 
-    with pytest.raises(LocationNotFoundError, match=f"Location with uuid '{nonexistent_uuid}' not found"):
+    with pytest.raises(
+        LocationNotFoundError, match=f"Location with uuid '{nonexistent_uuid}' not found"
+    ):
         mongodb_db_delete_location(db, nonexistent_uuid)
 
 
@@ -1227,7 +1229,9 @@ def test_mongodb_db_add_duplicate_suggestion(mock_client):
     db = MongoDB("mongodb://localhost:27017", "test_db")
     suggestion_data = {"uuid": s1_uuid, "content": "test"}
 
-    with pytest.raises(SuggestionAlreadyExistsError, match=f"Suggestion with uuid '{s1_uuid}' already exists"):
+    with pytest.raises(
+        SuggestionAlreadyExistsError, match=f"Suggestion with uuid '{s1_uuid}' already exists"
+    ):
         mongodb_db_add_suggestion(db, suggestion_data)
 
 
@@ -2420,7 +2424,9 @@ def test_error_helper_methods():
 
     # Test find_item_by_uuid when item not found
     nonexistent_uuid = "650e8400-e29b-41d4-a716-446655440000"
-    with pytest.raises(LocationNotFoundError, match=f"Location with uuid '{nonexistent_uuid}' not found"):
+    with pytest.raises(
+        LocationNotFoundError, match=f"Location with uuid '{nonexistent_uuid}' not found"
+    ):
         ErrorHelper.find_item_by_uuid(items, nonexistent_uuid, "location")
 
     # Test find_item_by_uuid with object items
