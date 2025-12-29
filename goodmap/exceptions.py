@@ -52,50 +52,49 @@ class LocationValidationError(ValidationError):
 class NotFoundError(GoodmapError):
     """Resource not found error."""
 
-    pass
+    def __init__(self, uuid: str, resource_type: str = "Resource"):
+        self.uuid = _sanitize_uuid(uuid)
+        super().__init__(f"{resource_type} with uuid '{self.uuid}' not found")
 
 
 class LocationNotFoundError(NotFoundError):
     """Location with specified UUID not found."""
 
     def __init__(self, uuid: str):
-        self.uuid = _sanitize_uuid(uuid)
-        super().__init__(f"Location with uuid '{self.uuid}' not found")
+        super().__init__(uuid, "Location")
 
 
 class AlreadyExistsError(GoodmapError):
     """Resource already exists error."""
 
-    pass
+    def __init__(self, uuid: str, resource_type: str = "Resource"):
+        self.uuid = _sanitize_uuid(uuid)
+        super().__init__(f"{resource_type} with uuid '{self.uuid}' already exists")
 
 
 class LocationAlreadyExistsError(AlreadyExistsError):
     """Location with specified UUID already exists."""
 
     def __init__(self, uuid: str):
-        self.uuid = _sanitize_uuid(uuid)
-        super().__init__(f"Location with uuid '{self.uuid}' already exists")
+        super().__init__(uuid, "Location")
 
 
 class SuggestionNotFoundError(NotFoundError):
     """Suggestion with specified UUID not found."""
 
     def __init__(self, uuid: str):
-        self.uuid = _sanitize_uuid(uuid)
-        super().__init__(f"Suggestion with uuid '{self.uuid}' not found")
+        super().__init__(uuid, "Suggestion")
 
 
 class SuggestionAlreadyExistsError(AlreadyExistsError):
     """Suggestion with specified UUID already exists."""
 
     def __init__(self, uuid: str):
-        self.uuid = _sanitize_uuid(uuid)
-        super().__init__(f"Suggestion with uuid '{self.uuid}' already exists")
+        super().__init__(uuid, "Suggestion")
 
 
 class ReportNotFoundError(NotFoundError):
     """Report with specified UUID not found."""
 
     def __init__(self, uuid: str):
-        self.uuid = _sanitize_uuid(uuid)
-        super().__init__(f"Report with uuid '{self.uuid}' not found")
+        super().__init__(uuid, "Report")
