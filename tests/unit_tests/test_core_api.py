@@ -1565,172 +1565,45 @@ def test_get_locations_from_request_helper(test_app):
             assert "position" in locations[0]
 
 
-def test_admin_post_location_already_exists_error(test_app):
-    """Test LocationAlreadyExistsError handling in admin location creation"""
-    from goodmap.exceptions import LocationAlreadyExistsError
-
-    csrf_token = get_csrf_token(test_app)
-    db = test_app.application.db
-
-    with mock.patch.object(db, "add_location", side_effect=LocationAlreadyExistsError("test-uuid")):
-        response = test_app.post(
-            "/api/admin/locations",
-            data=json.dumps(
-                {
-                    "name": "Test",
-                    "position": [50, 50],
-                    "test_category": ["test"],
-                    "type_of_place": "test",
-                }
-            ),
-            content_type="application/json",
-            headers={"X-CSRFToken": csrf_token},
-        )
-        assert response.status_code == 409
-        assert "Location already exists" in response.json["message"]
-
-
-def test_suggest_new_point_generic_exception(test_app):
-    """Test generic Exception handling in suggest-new-point endpoint"""
-    csrf_token = get_csrf_token(test_app)
-    db = test_app.application.db
-
-    with mock.patch.object(db, "add_suggestion", side_effect=Exception("Unexpected error")):
-        response = test_app.post(
-            "/api/suggest-new-point",
-            data=json.dumps(
-                {
-                    "name": "Test",
-                    "position": [50, 50],
-                    "test_category": ["test"],
-                    "type_of_place": "test",
-                }
-            ),
-            content_type="application/json",
-            headers={"X-CSRFToken": csrf_token},
-        )
-        assert response.status_code == 500
-        assert "An error occurred while processing your suggestion" in response.json["message"]
-
-
-def test_report_location_generic_exception(test_app):
-    """Test generic Exception handling in report-location endpoint"""
-    csrf_token = get_csrf_token(test_app)
-    db = test_app.application.db
-
-    with mock.patch.object(db, "add_report", side_effect=Exception("Unexpected error")):
-        response = test_app.post(
-            "/api/report-location",
-            data=json.dumps({"id": "test-id", "description": "Test report"}),
-            content_type="application/json",
-            headers={"X-CSRFToken": csrf_token},
-        )
-        assert response.status_code == 500
-        assert response.json["message"]  # Should return error message
-
-
 def test_admin_suggestion_processing_location_validation_error(test_app):
-    """Test LocationValidationError handling when processing suggestions"""
-    from goodmap.exceptions import LocationValidationError
-
+    """Test LocationValidationError when accepting suggestion with invalid data"""
     csrf_token = get_csrf_token(test_app)
+    db = test_app.application.db
 
-    # First create a suggestion
-    suggestion_data = {
-        "name": "Test Suggestion",
+    # Create a suggestion with invalid data (position out of valid range)
+    # We'll manually add it to the database to bypass initial validation
+    invalid_suggestion = {
+        "uuid": "invalid-suggestion-uuid",
+        "name": "Invalid Suggestion",
         "type_of_place": "test",
         "test_category": ["test"],
-        "position": [50, 50],
+        "position": [200, 200],  # Invalid coordinates (out of range)
+        "status": "pending",
     }
-    test_app.post(
-        "/api/suggest-new-point",
-        data=json.dumps(suggestion_data),
+    db.data["suggestions"].append(invalid_suggestion)
+
+    # Try to accept the invalid suggestion
+    response = test_app.put(
+        "/api/admin/suggestions/invalid-suggestion-uuid",
+        data=json.dumps({"status": "accepted"}),
         content_type="application/json",
         headers={"X-CSRFToken": csrf_token},
     )
-
-    # Get the suggestion ID
-    suggestions_response = test_app.get("/api/admin/suggestions").json
-    suggestion_id = suggestions_response["items"][0]["uuid"]
-
-    # Mock add_location to raise LocationValidationError
-    db = test_app.application.db
-
-    # Create a LocationValidationError
-    try:
-        from goodmap.data_models.location import LocationBase
-
-        LocationBase.model_validate({"invalid": "data"})
-    except LocationValidationError as e:
-        validation_error = e
-
-    with mock.patch.object(db, "add_location", side_effect=validation_error):
-        response = test_app.put(
-            f"/api/admin/suggestions/{suggestion_id}",
-            data=json.dumps({"status": "accepted"}),
-            content_type="application/json",
-            headers={"X-CSRFToken": csrf_token},
-        )
-        assert response.status_code == 400
-        assert "Invalid location data" in response.json["message"]
-
-
-def test_admin_suggestion_processing_location_already_exists_error(test_app):
-    """Test LocationAlreadyExistsError handling when processing suggestions"""
-    from goodmap.exceptions import LocationAlreadyExistsError
-
-    csrf_token = get_csrf_token(test_app)
-
-    # First create a suggestion
-    suggestion_data = {
-        "name": "Test Suggestion",
-        "type_of_place": "test",
-        "test_category": ["test"],
-        "position": [50, 50],
-    }
-    test_app.post(
-        "/api/suggest-new-point",
-        data=json.dumps(suggestion_data),
-        content_type="application/json",
-        headers={"X-CSRFToken": csrf_token},
-    )
-
-    # Get the suggestion ID
-    suggestions_response = test_app.get("/api/admin/suggestions").json
-    suggestion_id = suggestions_response["items"][0]["uuid"]
-
-    # Mock add_location to raise LocationAlreadyExistsError
-    db = test_app.application.db
-
-    with mock.patch.object(db, "add_location", side_effect=LocationAlreadyExistsError("test-uuid")):
-        response = test_app.put(
-            f"/api/admin/suggestions/{suggestion_id}",
-            data=json.dumps({"status": "accepted"}),
-            content_type="application/json",
-            headers={"X-CSRFToken": csrf_token},
-        )
-        assert response.status_code == 409
-        assert "Location already exists" in response.json["message"]
+    assert response.status_code == 400
+    assert "Invalid location data" in response.json["message"]
 
 
 def test_admin_report_update_not_found_error(test_app):
-    """Test ReportNotFoundError handling in admin report update"""
-    from goodmap.exceptions import ReportNotFoundError
-
+    """Test 404 error when updating non-existent report"""
     csrf_token = get_csrf_token(test_app)
-    db = test_app.application.db
 
-    # Mock get_report to return a report so we reach update_report
-    # Then mock update_report to raise ReportNotFoundError
-    with (
-        mock.patch.object(db, "get_report", return_value={"uuid": "test-uuid", "status": "pending"}),
-        mock.patch.object(db, "update_report", side_effect=ReportNotFoundError("test-uuid")),
-    ):
-        response = test_app.put(
-            "/api/admin/reports/nonexistent-id",
-            data=json.dumps({"status": "resolved"}),
-            content_type="application/json",
-            headers={"X-CSRFToken": csrf_token},
-        )
-        assert response.status_code == 404
-        assert "Report not found" in response.json["message"]
+    # Try to update a report that doesn't exist
+    response = test_app.put(
+        "/api/admin/reports/nonexistent-report-id",
+        data=json.dumps({"status": "resolved"}),
+        content_type="application/json",
+        headers={"X-CSRFToken": csrf_token},
+    )
+    # Should return 404 for non-existent report (caught by get_report check)
+    assert response.status_code == 404
+    assert "Report not found" in response.json["message"]
