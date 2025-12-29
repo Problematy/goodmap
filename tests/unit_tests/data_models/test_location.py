@@ -25,3 +25,12 @@ def test_longitude_out_of_scope():
     Location = create_location_model(obligatory_fields=[])
     with pytest.raises(LocationValidationError):
         Location(uuid="one", position=(50, 350))
+
+
+def test_missing_uuid_field():
+    """Test that LocationBase requires uuid field"""
+    Location = create_location_model(obligatory_fields=[])
+    with pytest.raises(LocationValidationError) as exc_info:
+        Location(position=(50, 50))
+    # Check that the error message mentions the uuid field requirement
+    assert "uuid" in str(exc_info.value).lower() or "uuid" in repr(exc_info.value)
