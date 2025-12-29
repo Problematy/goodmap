@@ -1383,7 +1383,7 @@ def json_db_update_report(self, report_id, status=None, priority=None):
             if priority:
                 r["priority"] = priority
             return
-    raise ValueError(f"Report with uuid {report_id} not found")
+    raise ReportNotFoundError(report_id)
 
 
 def json_file_db_update_report(self, report_id, status=None, priority=None):
@@ -1399,7 +1399,7 @@ def json_file_db_update_report(self, report_id, status=None, priority=None):
                 r["priority"] = priority
             break
     else:
-        raise ValueError(f"Report with uuid {report_id} not found")
+        raise ReportNotFoundError(report_id)
 
     json_file["map"]["reports"] = reports
 
@@ -1416,7 +1416,7 @@ def mongodb_db_update_report(self, report_id, status=None, priority=None):
     if update_doc:
         result = self.db.reports.update_one({"uuid": report_id}, {"$set": update_doc})
         if result.matched_count == 0:
-            raise ValueError(f"Report with uuid {report_id} not found")
+            raise ReportNotFoundError(report_id)
 
 
 def google_json_db_update_report(self, report_id, status=None, priority=None):
@@ -1436,7 +1436,7 @@ def json_db_delete_report(self, report_id):
     reports = self.data.get("reports", [])
     idx = next((i for i, r in enumerate(reports) if r.get("uuid") == report_id), None)
     if idx is None:
-        raise ValueError(f"Report with uuid {report_id} not found")
+        raise ReportNotFoundError(report_id)
     del reports[idx]
 
 
@@ -1447,7 +1447,7 @@ def json_file_db_delete_report(self, report_id):
     reports = json_file["map"].get("reports", [])
     idx = next((i for i, r in enumerate(reports) if r.get("uuid") == report_id), None)
     if idx is None:
-        raise ValueError(f"Report with uuid {report_id} not found")
+        raise ReportNotFoundError(report_id)
 
     del reports[idx]
     json_file["map"]["reports"] = reports
@@ -1458,7 +1458,7 @@ def json_file_db_delete_report(self, report_id):
 def mongodb_db_delete_report(self, report_id):
     result = self.db.reports.delete_one({"uuid": report_id})
     if result.deleted_count == 0:
-        raise ValueError(f"Report with uuid {report_id} not found")
+        raise ReportNotFoundError(report_id)
 
 
 def google_json_db_delete_report(self, report_id):

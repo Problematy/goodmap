@@ -97,9 +97,9 @@ from goodmap.db import (
     update_suggestion,
 )
 from goodmap.exceptions import (
-    AlreadyExistsError,
     LocationAlreadyExistsError,
     LocationNotFoundError,
+    ReportNotFoundError,
     SuggestionAlreadyExistsError,
 )
 
@@ -466,7 +466,7 @@ def test_json_db_add_duplicate_suggestion():
     db = Json({})
     suggestion = {"uuid": "s1"}
     json_db_add_suggestion(db, suggestion)
-    with pytest.raises(AlreadyExistsError):
+    with pytest.raises(SuggestionAlreadyExistsError):
         json_db_add_suggestion(db, suggestion)
 
 
@@ -545,7 +545,7 @@ def test_json_file_db_add_duplicate_suggestion():
     file_path = "sug.json"
     db = JsonFile(file_path)
     suggestion = {"uuid": "s1"}
-    with pytest.raises(AlreadyExistsError):
+    with pytest.raises(SuggestionAlreadyExistsError):
         json_file_db_add_suggestion(db, suggestion)
 
 
@@ -708,8 +708,9 @@ def test_json_db_update_report_fields():
 
 def test_json_db_update_report_not_found():
     db = Json({"reports": []})
-    with pytest.raises(ValueError):
-        json_db_update_report(db, "x", status="a")
+    report_uuid = "550e8400-e29b-41d4-a716-446655440000"
+    with pytest.raises(ReportNotFoundError):
+        json_db_update_report(db, report_uuid, status="a")
 
 
 def test_json_db_update_report_multiple():
@@ -732,8 +733,9 @@ def test_json_db_delete_report():
 
 def test_json_db_delete_report_not_found():
     db = Json({"reports": []})
-    with pytest.raises(ValueError):
-        json_db_delete_report(db, "r1")
+    report_uuid = "550e8400-e29b-41d4-a716-446655440001"
+    with pytest.raises(ReportNotFoundError):
+        json_db_delete_report(db, report_uuid)
 
 
 @mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {"reports": []}})))
@@ -829,8 +831,9 @@ def test_json_file_db_update_report_fields(mock_atomic_dump):
 def test_json_file_db_update_report_not_found():
     file_path = "rep.json"
     db = JsonFile(file_path)
-    with pytest.raises(ValueError):
-        json_file_db_update_report(db, "x", status="a")
+    report_uuid = "550e8400-e29b-41d4-a716-446655440002"
+    with pytest.raises(ReportNotFoundError):
+        json_file_db_update_report(db, report_uuid, status="a")
 
 
 @mock.patch(
@@ -874,8 +877,9 @@ def test_json_file_db_delete_report(mock_atomic_dump):
 def test_json_file_db_delete_report_not_found():
     file_path = "rep.json"
     db = JsonFile(file_path)
-    with pytest.raises(ValueError):
-        json_file_db_delete_report(db, "r1")
+    report_uuid = "550e8400-e29b-41d4-a716-446655440003"
+    with pytest.raises(ReportNotFoundError):
+        json_file_db_delete_report(db, report_uuid)
 
 
 def test_dispatch_add_update_delete_location():
@@ -1709,8 +1713,9 @@ def test_mongodb_db_update_report_not_found(mock_client):
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
 
-    with pytest.raises(ValueError, match="Report with uuid nonexistent not found"):
-        mongodb_db_update_report(db, "nonexistent", status="closed")
+    report_uuid = "550e8400-e29b-41d4-a716-446655440004"
+    with pytest.raises(ReportNotFoundError, match=f"Report with uuid '{report_uuid}' not found"):
+        mongodb_db_update_report(db, report_uuid, status="closed")
 
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
@@ -1748,8 +1753,9 @@ def test_mongodb_db_delete_report_not_found(mock_client):
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
 
-    with pytest.raises(ValueError, match="Report with uuid nonexistent not found"):
-        mongodb_db_delete_report(db, "nonexistent")
+    report_uuid = "550e8400-e29b-41d4-a716-446655440005"
+    with pytest.raises(ReportNotFoundError, match=f"Report with uuid '{report_uuid}' not found"):
+        mongodb_db_delete_report(db, report_uuid)
 
 
 def test_json_file_db_get_locations_paginated(tmp_path):
