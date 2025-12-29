@@ -13,6 +13,11 @@ from goodmap.clustering import (
     map_clustering_data_to_proper_lazy_loading_object,
     match_clusters_uuids,
 )
+from goodmap.exceptions import (
+    LocationAlreadyExistsError,
+    LocationNotFoundError,
+    LocationValidationError,
+)
 from goodmap.formatter import prepare_pin
 
 # SuperCluster configuration constants
@@ -296,10 +301,12 @@ def core_pages(
                 location_data.update({"uuid": str(uuid.uuid4())})
                 location = location_model.model_validate(location_data)
                 database.add_location(location.model_dump())
-            except ValueError as e:
+            except LocationValidationError as e:
                 return make_response(jsonify({"message": f"Invalid location data: {e}"}), 400)
+            except LocationAlreadyExistsError as e:
+                return make_response(jsonify({"message": f"Location already exists: {e}"}), 409)
             except Exception as e:
-                return make_response(jsonify({"message": f"Error creating location: {e}"}), 400)
+                return make_response(jsonify({"message": f"Error creating location: {e}"}), 500)
             return jsonify(location.model_dump())
 
     @core_api.route("/admin/locations/<location_id>")
@@ -313,10 +320,12 @@ def core_pages(
                 location_data.update({"uuid": location_id})
                 location = location_model.model_validate(location_data)
                 database.update_location(location_id, location.model_dump())
-            except ValueError as e:
+            except LocationValidationError as e:
                 return make_response(jsonify({"message": f"Invalid location data: {e}"}), 400)
+            except LocationNotFoundError as e:
+                return make_response(jsonify({"message": f"Location not found: {e}"}), 404)
             except Exception as e:
-                return make_response(jsonify({"message": f"Error updating location: {e}"}), 400)
+                return make_response(jsonify({"message": f"Error updating location: {e}"}), 500)
             return jsonify(location.model_dump())
 
         def delete(self, location_id):
@@ -325,10 +334,10 @@ def core_pages(
             """
             try:
                 database.delete_location(location_id)
-            except ValueError as e:
+            except LocationNotFoundError as e:
                 return make_response(jsonify({"message": f"Location not found: {e}"}), 404)
             except Exception as e:
-                return make_response(jsonify({"message": f"Error deleting location: {e}"}), 400)
+                return make_response(jsonify({"message": f"Error deleting location: {e}"}), 500)
             return "", 204
 
     @core_api.route("/admin/suggestions")
@@ -362,8 +371,12 @@ def core_pages(
                     suggestion_data = {k: v for k, v in suggestion.items() if k != "status"}
                     database.add_location(suggestion_data)
                 database.update_suggestion(suggestion_id, status)
-            except ValueError as e:
-                return make_response(jsonify({"message": f"{e}"}), 400)
+            except LocationValidationError as e:
+                return make_response(jsonify({"message": f"Invalid location data: {e}"}), 400)
+            except LocationAlreadyExistsError as e:
+                return make_response(jsonify({"message": f"Location already exists: {e}"}), 409)
+            except Exception as e:
+                return make_response(jsonify({"message": f"Error processing suggestion: {e}"}), 500)
             return jsonify(database.get_suggestion(suggestion_id))
 
     @core_api.route("/admin/reports")
