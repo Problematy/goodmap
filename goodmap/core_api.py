@@ -107,7 +107,7 @@ def core_pages(
                     f"at position: {location.position}"
                 )
                 notifier_function(message)
-            except ValueError as e:
+            except LocationValidationError as e:
                 return make_response(jsonify({"message": f"Invalid location data: {e}"}), 400)
             except Exception as e:
                 return make_response(jsonify({"message": f"Error sending notification : {e}"}), 400)
