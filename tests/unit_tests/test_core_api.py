@@ -90,7 +90,7 @@ def test_app():
     config = GoodmapConfig.model_validate(config_data)
     app = create_app_from_config(config)
     # Disable CSRF protection for tests
-    app.config['WTF_CSRF_ENABLED'] = False
+    app.config["WTF_CSRF_ENABLED"] = False
     return app.test_client()
 
 

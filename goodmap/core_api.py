@@ -106,9 +106,10 @@ def core_pages(
             """Suggest new location"""
             try:
                 # Handle both multipart/form-data (with file uploads) and JSON
-                if request.content_type and 'multipart/form-data' in request.content_type:
+                if request.content_type and "multipart/form-data" in request.content_type:
                     # Parse form data dynamically
                     import json as json_lib
+
                     suggested_location = {}
 
                     for key in request.form:
