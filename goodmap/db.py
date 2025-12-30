@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import tempfile
 from functools import partial
@@ -6,6 +7,14 @@ from typing import Any
 
 from goodmap.core import get_queried_data
 from goodmap.data_models.location import LocationBase
+from goodmap.exceptions import (
+    AlreadyExistsError,
+    LocationAlreadyExistsError,
+    LocationNotFoundError,
+    ReportNotFoundError,
+)
+
+logger = logging.getLogger(__name__)
 
 # TODO file is temporary solution to be compatible with old, static code,
 #  it should be replaced with dynamic solution
@@ -227,51 +236,6 @@ class FileIOHelper:
         return json_data.get(data_key, {})
 
 
-class ErrorHelper:
-    """Common error handling utilities."""
-
-    @staticmethod
-    def raise_already_exists_error(item_type, uuid):
-        """Raise standardized 'already exists' error."""
-        raise ValueError(f"{item_type} with uuid {uuid} already exists")
-
-    @staticmethod
-    def raise_not_found_error(item_type, uuid):
-        """Raise standardized 'not found' error."""
-        raise ValueError(f"{item_type} with uuid {uuid} not found")
-
-    @staticmethod
-    def check_item_exists(items, uuid, item_type):
-        """Check if item with UUID exists and raise error if it does."""
-        existing = next(
-            (
-                item
-                for item in items
-                if (item.get("uuid") if isinstance(item, dict) else getattr(item, "uuid", None))
-                == uuid
-            ),
-            None,
-        )
-        if existing:
-            ErrorHelper.raise_already_exists_error(item_type, uuid)
-
-    @staticmethod
-    def find_item_by_uuid(items, uuid, item_type):
-        """Find item by UUID and raise error if not found."""
-        item = next(
-            (
-                item
-                for item in items
-                if (item.get("uuid") if isinstance(item, dict) else getattr(item, "uuid", None))
-                == uuid
-            ),
-            None,
-        )
-        if not item:
-            ErrorHelper.raise_not_found_error(item_type, uuid)
-        return item
-
-
 class CRUDHelper:
     """Common CRUD operation utilities to eliminate duplication."""
 
@@ -279,9 +243,21 @@ class CRUDHelper:
     def add_item_to_json_db(db_data, collection_name, item_data, default_status=None):
         """Add item to JSON in-memory database."""
         collection = db_data.setdefault(collection_name, [])
-        ErrorHelper.check_item_exists(
-            collection, item_data.get("uuid"), collection_name.rstrip("s").capitalize()
+        uuid = item_data.get("uuid")
+        resource_type = collection_name.rstrip("s").capitalize()
+
+        # Check if item already exists
+        existing = next(
+            (
+                item
+                for item in collection
+                if (item.get("uuid") if isinstance(item, dict) else getattr(item, "uuid", None))
+                == uuid
+            ),
+            None,
         )
+        if existing:
+            raise AlreadyExistsError(uuid, resource_type)
 
         record = dict(item_data)
         if default_status:
@@ -294,9 +270,21 @@ class CRUDHelper:
         json_file = FileIOHelper.read_json_file(file_path)
         collection = json_file["map"].get(collection_name, [])
 
-        ErrorHelper.check_item_exists(
-            collection, item_data.get("uuid"), collection_name.rstrip("s").capitalize()
+        uuid = item_data.get("uuid")
+        resource_type = collection_name.rstrip("s").capitalize()
+
+        # Check if item already exists
+        existing = next(
+            (
+                item
+                for item in collection
+                if (item.get("uuid") if isinstance(item, dict) else getattr(item, "uuid", None))
+                == uuid
+            ),
+            None,
         )
+        if existing:
+            raise AlreadyExistsError(uuid, resource_type)
 
         record = dict(item_data)
         if default_status:
@@ -311,7 +299,7 @@ class CRUDHelper:
         """Add item to MongoDB database."""
         existing = db_collection.find_one({"uuid": item_data.get("uuid")})
         if existing:
-            ErrorHelper.raise_already_exists_error(item_type, item_data.get("uuid"))
+            raise AlreadyExistsError(item_data.get("uuid"), item_type)
 
         record = dict(item_data)
         if default_status:
@@ -787,7 +775,7 @@ def json_file_db_add_location(self, location_data, location_model):
         (i for i, point in enumerate(map_data) if point.get("uuid") == location_data["uuid"]), None
     )
     if idx is not None:
-        raise ValueError(f"Location with uuid {location_data['uuid']} already exists")
+        raise LocationAlreadyExistsError(location_data["uuid"])
 
     map_data.append(location.model_dump())
     json_file["map"]["data"] = map_data
@@ -806,7 +794,7 @@ def json_db_add_location(self, location_data, location_model):
         None,
     )
     if idx is not None:
-        raise ValueError(f"Location with uuid {location_data['uuid']} already exists")
+        raise LocationAlreadyExistsError(location_data["uuid"])
     self.data["data"].append(location.model_dump())
 
 
@@ -814,7 +802,7 @@ def mongodb_db_add_location(self, location_data, location_model):
     location = location_model.model_validate(location_data)
     existing = self.db.locations.find_one({"uuid": location_data["uuid"]})
     if existing:
-        raise ValueError(f"Location with uuid {location_data['uuid']} already exists")
+        raise LocationAlreadyExistsError(location_data["uuid"])
     self.db.locations.insert_one(location.model_dump())
 
 
@@ -834,7 +822,7 @@ def json_file_db_update_location(self, uuid, location_data, location_model):
     map_data = json_file["map"].get("data", [])
     idx = next((i for i, point in enumerate(map_data) if point.get("uuid") == uuid), None)
     if idx is None:
-        raise ValueError(f"Location with uuid {uuid} not found")
+        raise LocationNotFoundError(uuid)
 
     map_data[idx] = location.model_dump()
     json_file["map"]["data"] = map_data
@@ -848,7 +836,7 @@ def json_db_update_location(self, uuid, location_data, location_model):
         (i for i, point in enumerate(self.data.get("data", [])) if point.get("uuid") == uuid), None
     )
     if idx is None:
-        raise ValueError(f"Location with uuid {uuid} not found")
+        raise LocationNotFoundError(uuid)
     self.data["data"][idx] = location.model_dump()
 
 
@@ -856,7 +844,7 @@ def mongodb_db_update_location(self, uuid, location_data, location_model):
     location = location_model.model_validate(location_data)
     result = self.db.locations.update_one({"uuid": uuid}, {"$set": location.model_dump()})
     if result.matched_count == 0:
-        raise ValueError(f"Location with uuid {uuid} not found")
+        raise LocationNotFoundError(uuid)
 
 
 def update_location(db, uuid, location_data, location_model):
@@ -874,7 +862,7 @@ def json_file_db_delete_location(self, uuid):
     map_data = json_file["map"].get("data", [])
     idx = next((i for i, point in enumerate(map_data) if point.get("uuid") == uuid), None)
     if idx is None:
-        raise ValueError(f"Location with uuid {uuid} not found")
+        raise LocationNotFoundError(uuid)
 
     del map_data[idx]
     json_file["map"]["data"] = map_data
@@ -887,14 +875,14 @@ def json_db_delete_location(self, uuid):
         (i for i, point in enumerate(self.data.get("data", [])) if point.get("uuid") == uuid), None
     )
     if idx is None:
-        raise ValueError(f"Location with uuid {uuid} not found")
+        raise LocationNotFoundError(uuid)
     del self.data["data"][idx]
 
 
 def mongodb_db_delete_location(self, uuid):
     result = self.db.locations.delete_one({"uuid": uuid})
     if result.deleted_count == 0:
-        raise ValueError(f"Location with uuid {uuid} not found")
+        raise LocationNotFoundError(uuid)
 
 
 def delete_location(db, uuid):
@@ -1359,7 +1347,7 @@ def json_db_update_report(self, report_id, status=None, priority=None):
             if priority:
                 r["priority"] = priority
             return
-    raise ValueError(f"Report with uuid {report_id} not found")
+    raise ReportNotFoundError(report_id)
 
 
 def json_file_db_update_report(self, report_id, status=None, priority=None):
@@ -1375,7 +1363,7 @@ def json_file_db_update_report(self, report_id, status=None, priority=None):
                 r["priority"] = priority
             break
     else:
-        raise ValueError(f"Report with uuid {report_id} not found")
+        raise ReportNotFoundError(report_id)
 
     json_file["map"]["reports"] = reports
 
@@ -1392,7 +1380,7 @@ def mongodb_db_update_report(self, report_id, status=None, priority=None):
     if update_doc:
         result = self.db.reports.update_one({"uuid": report_id}, {"$set": update_doc})
         if result.matched_count == 0:
-            raise ValueError(f"Report with uuid {report_id} not found")
+            raise ReportNotFoundError(report_id)
 
 
 def google_json_db_update_report(self, report_id, status=None, priority=None):
@@ -1412,7 +1400,7 @@ def json_db_delete_report(self, report_id):
     reports = self.data.get("reports", [])
     idx = next((i for i, r in enumerate(reports) if r.get("uuid") == report_id), None)
     if idx is None:
-        raise ValueError(f"Report with uuid {report_id} not found")
+        raise ReportNotFoundError(report_id)
     del reports[idx]
 
 
@@ -1423,7 +1411,7 @@ def json_file_db_delete_report(self, report_id):
     reports = json_file["map"].get("reports", [])
     idx = next((i for i, r in enumerate(reports) if r.get("uuid") == report_id), None)
     if idx is None:
-        raise ValueError(f"Report with uuid {report_id} not found")
+        raise ReportNotFoundError(report_id)
 
     del reports[idx]
     json_file["map"]["reports"] = reports
@@ -1434,7 +1422,7 @@ def json_file_db_delete_report(self, report_id):
 def mongodb_db_delete_report(self, report_id):
     result = self.db.reports.delete_one({"uuid": report_id})
     if result.deleted_count == 0:
-        raise ValueError(f"Report with uuid {report_id} not found")
+        raise ReportNotFoundError(report_id)
 
 
 def google_json_db_delete_report(self, report_id):

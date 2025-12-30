@@ -1,6 +1,15 @@
 from typing import Any, Type
 
-from pydantic import BaseModel, Field, create_model, field_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    ValidationError,
+    create_model,
+    field_validator,
+    model_validator,
+)
+
+from goodmap.exceptions import LocationValidationError
 
 
 class LocationBase(BaseModel, extra="allow"):
@@ -15,6 +24,24 @@ class LocationBase(BaseModel, extra="allow"):
         if v[1] < -180 or v[1] > 180:
             raise ValueError("longitude must be in range -180 to 180")
         return v
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_uuid_exists(cls, data: Any) -> Any:
+        """Ensure UUID is present before validation for better error messages."""
+        if isinstance(data, dict) and "uuid" not in data:
+            raise ValueError("Location data must include 'uuid' field")
+        return data
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def enrich_validation_errors(cls, data, handler):
+        """Wrap validation errors with UUID context for better debugging."""
+        try:
+            return handler(data)
+        except ValidationError as e:
+            uuid = data.get("uuid") if isinstance(data, dict) else None
+            raise LocationValidationError(e, uuid=uuid) from e
 
     def basic_info(self):
         return {

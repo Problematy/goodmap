@@ -96,6 +96,12 @@ from goodmap.db import (
     update_report,
     update_suggestion,
 )
+from goodmap.exceptions import (
+    AlreadyExistsError,
+    LocationAlreadyExistsError,
+    LocationNotFoundError,
+    ReportNotFoundError,
+)
 
 data = {
     "data": [
@@ -346,7 +352,7 @@ def test_json_db_add_duplicate_location():
     db = Json({"data": []})
     location = {"uuid": "1", "position": [1, 2]}
     json_db_add_location(db, location, Location)
-    with pytest.raises(ValueError):
+    with pytest.raises(LocationAlreadyExistsError):
         json_db_add_location(db, location, Location)
 
 
@@ -362,7 +368,7 @@ def test_json_db_update_location_not_found():
     Location = create_location_model([])
     db = Json({"data": []})
     location_update = {"uuid": "1", "position": [3, 4]}
-    with pytest.raises(ValueError):
+    with pytest.raises(LocationNotFoundError):
         json_db_update_location(db, "1", location_update, Location)
 
 
@@ -374,7 +380,7 @@ def test_json_db_delete_location():
 
 def test_json_db_delete_location_not_found():
     db = Json({"data": []})
-    with pytest.raises(ValueError):
+    with pytest.raises(LocationNotFoundError):
         json_db_delete_location(db, "1")
 
 
@@ -399,7 +405,7 @@ def test_json_file_db_add_duplicate_location():
     file_path = "locs.json"
     db = JsonFile(file_path)
     location = {"uuid": "a", "position": [5, 6]}
-    with pytest.raises(ValueError):
+    with pytest.raises(LocationAlreadyExistsError):
         json_file_db_add_location(db, location, Location)
 
 
@@ -424,7 +430,7 @@ def test_json_file_db_update_location_not_found():
     file_path = "locs.json"
     db = JsonFile(file_path)
     location_update_raw = {"uuid": "a", "position": [7, 8]}
-    with pytest.raises(ValueError):
+    with pytest.raises(LocationNotFoundError):
         json_file_db_update_location(db, "a", location_update_raw, Location)
 
 
@@ -444,7 +450,7 @@ def test_json_file_db_delete_location(mock_atomic_dump):
 def test_json_file_db_delete_location_not_found():
     file_path = "locs.json"
     db = JsonFile(file_path)
-    with pytest.raises(ValueError):
+    with pytest.raises(LocationNotFoundError):
         json_file_db_delete_location(db, "a")
 
 
@@ -460,7 +466,7 @@ def test_json_db_add_duplicate_suggestion():
     db = Json({})
     suggestion = {"uuid": "s1"}
     json_db_add_suggestion(db, suggestion)
-    with pytest.raises(ValueError):
+    with pytest.raises(AlreadyExistsError):
         json_db_add_suggestion(db, suggestion)
 
 
@@ -539,7 +545,7 @@ def test_json_file_db_add_duplicate_suggestion():
     file_path = "sug.json"
     db = JsonFile(file_path)
     suggestion = {"uuid": "s1"}
-    with pytest.raises(ValueError):
+    with pytest.raises(AlreadyExistsError):
         json_file_db_add_suggestion(db, suggestion)
 
 
@@ -702,8 +708,9 @@ def test_json_db_update_report_fields():
 
 def test_json_db_update_report_not_found():
     db = Json({"reports": []})
-    with pytest.raises(ValueError):
-        json_db_update_report(db, "x", status="a")
+    report_uuid = "550e8400-e29b-41d4-a716-446655440000"
+    with pytest.raises(ReportNotFoundError):
+        json_db_update_report(db, report_uuid, status="a")
 
 
 def test_json_db_update_report_multiple():
@@ -726,8 +733,9 @@ def test_json_db_delete_report():
 
 def test_json_db_delete_report_not_found():
     db = Json({"reports": []})
-    with pytest.raises(ValueError):
-        json_db_delete_report(db, "r1")
+    report_uuid = "550e8400-e29b-41d4-a716-446655440001"
+    with pytest.raises(ReportNotFoundError):
+        json_db_delete_report(db, report_uuid)
 
 
 @mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {"reports": []}})))
@@ -823,8 +831,9 @@ def test_json_file_db_update_report_fields(mock_atomic_dump):
 def test_json_file_db_update_report_not_found():
     file_path = "rep.json"
     db = JsonFile(file_path)
-    with pytest.raises(ValueError):
-        json_file_db_update_report(db, "x", status="a")
+    report_uuid = "550e8400-e29b-41d4-a716-446655440002"
+    with pytest.raises(ReportNotFoundError):
+        json_file_db_update_report(db, report_uuid, status="a")
 
 
 @mock.patch(
@@ -868,8 +877,9 @@ def test_json_file_db_delete_report(mock_atomic_dump):
 def test_json_file_db_delete_report_not_found():
     file_path = "rep.json"
     db = JsonFile(file_path)
-    with pytest.raises(ValueError):
-        json_file_db_delete_report(db, "r1")
+    report_uuid = "550e8400-e29b-41d4-a716-446655440003"
+    with pytest.raises(ReportNotFoundError):
+        json_file_db_delete_report(db, report_uuid)
 
 
 def test_dispatch_add_update_delete_location():
@@ -1118,13 +1128,16 @@ def test_mongodb_db_add_location(mock_client):
 def test_mongodb_db_add_duplicate_location(mock_client):
     mock_db = mock.Mock()
     mock_client.return_value.__getitem__.return_value = mock_db
-    mock_db.locations.find_one.return_value = {"uuid": "existing"}
+    existing_uuid = "450e8400-e29b-41d4-a716-446655440000"
+    mock_db.locations.find_one.return_value = {"uuid": existing_uuid}
 
     Location = create_location_model([])
     db = MongoDB("mongodb://localhost:27017", "test_db")
-    location_data = {"uuid": "existing", "position": [10, 20]}
+    location_data = {"uuid": existing_uuid, "position": [10, 20]}
 
-    with pytest.raises(ValueError, match="Location with uuid existing already exists"):
+    with pytest.raises(
+        LocationAlreadyExistsError, match=f"Location with uuid '{existing_uuid}' already exists"
+    ):
         mongodb_db_add_location(db, location_data, Location)
 
 
@@ -1155,10 +1168,13 @@ def test_mongodb_db_update_location_not_found(mock_client):
 
     Location = create_location_model([])
     db = MongoDB("mongodb://localhost:27017", "test_db")
-    location_data = {"uuid": "nonexistent", "position": [30, 40]}
+    nonexistent_uuid = "850e8400-e29b-41d4-a716-446655440000"
+    location_data = {"uuid": nonexistent_uuid, "position": [30, 40]}
 
-    with pytest.raises(ValueError, match="Location with uuid nonexistent not found"):
-        mongodb_db_update_location(db, "nonexistent", location_data, Location)
+    with pytest.raises(
+        LocationNotFoundError, match=f"Location with uuid '{nonexistent_uuid}' not found"
+    ):
+        mongodb_db_update_location(db, nonexistent_uuid, location_data, Location)
 
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
@@ -1184,9 +1200,12 @@ def test_mongodb_db_delete_location_not_found(mock_client):
     mock_db.locations.delete_one.return_value = mock_result
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
+    nonexistent_uuid = "750e8400-e29b-41d4-a716-446655440000"
 
-    with pytest.raises(ValueError, match="Location with uuid nonexistent not found"):
-        mongodb_db_delete_location(db, "nonexistent")
+    with pytest.raises(
+        LocationNotFoundError, match=f"Location with uuid '{nonexistent_uuid}' not found"
+    ):
+        mongodb_db_delete_location(db, nonexistent_uuid)
 
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
@@ -1208,12 +1227,15 @@ def test_mongodb_db_add_suggestion(mock_client):
 def test_mongodb_db_add_duplicate_suggestion(mock_client):
     mock_db = mock.Mock()
     mock_client.return_value.__getitem__.return_value = mock_db
-    mock_db.suggestions.find_one.return_value = {"uuid": "s1"}
+    s1_uuid = "950e8400-e29b-41d4-a716-446655440000"
+    mock_db.suggestions.find_one.return_value = {"uuid": s1_uuid}
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
-    suggestion_data = {"uuid": "s1", "content": "test"}
+    suggestion_data = {"uuid": s1_uuid, "content": "test"}
 
-    with pytest.raises(ValueError, match="Suggestion with uuid s1 already exists"):
+    with pytest.raises(
+        AlreadyExistsError, match=f"Suggestion with uuid '{s1_uuid}' already exists"
+    ):
         mongodb_db_add_suggestion(db, suggestion_data)
 
 
@@ -1691,8 +1713,9 @@ def test_mongodb_db_update_report_not_found(mock_client):
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
 
-    with pytest.raises(ValueError, match="Report with uuid nonexistent not found"):
-        mongodb_db_update_report(db, "nonexistent", status="closed")
+    report_uuid = "550e8400-e29b-41d4-a716-446655440004"
+    with pytest.raises(ReportNotFoundError, match=f"Report with uuid '{report_uuid}' not found"):
+        mongodb_db_update_report(db, report_uuid, status="closed")
 
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
@@ -1730,8 +1753,9 @@ def test_mongodb_db_delete_report_not_found(mock_client):
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
 
-    with pytest.raises(ValueError, match="Report with uuid nonexistent not found"):
-        mongodb_db_delete_report(db, "nonexistent")
+    report_uuid = "550e8400-e29b-41d4-a716-446655440005"
+    with pytest.raises(ReportNotFoundError, match=f"Report with uuid '{report_uuid}' not found"):
+        mongodb_db_delete_report(db, report_uuid)
 
 
 def test_json_file_db_get_locations_paginated(tmp_path):
@@ -1903,7 +1927,7 @@ def test_parse_pagination_params_edge_cases():
 
     parse_params = getattr(db_module, "__parse_pagination_params")
 
-    # Test ValueError/IndexError/TypeError for page parameter (lines 17-18)
+    # Test ValueError/IndexError/TypeError for page parameter
     page, per_page, _, _ = parse_params({"page": ["invalid"]})
     assert page == 1
 
@@ -1913,11 +1937,11 @@ def test_parse_pagination_params_edge_cases():
     page, per_page, _, _ = parse_params({"page": [None]})
     assert page == 1
 
-    # Test per_page = "all" (line 22)
+    # Test per_page = "all"
     page, per_page, _, _ = parse_params({"per_page": ["all"]})
     assert per_page is None
 
-    # Test ValueError/TypeError for per_page parameter (lines 26-27)
+    # Test ValueError/TypeError for per_page parameter
     page, per_page, _, _ = parse_params({"per_page": ["invalid"]})
     assert per_page == 20
 
@@ -1931,7 +1955,7 @@ def test_build_pagination_response_per_page_none():
 
     build_response = getattr(db_module, "__build_pagination_response")
 
-    # Test when per_page is None (lines 40-41)
+    # Test when per_page is None
     result = build_response(["item1", "item2"], 2, 1, None)
     pagination = result["pagination"]
     assert pagination["total_pages"] == 1
@@ -1945,7 +1969,7 @@ def test_json_db_get_locations_paginated():
     db = Json(data)
     Location = create_location_model([])
 
-    # Test with sorting by name (lines 325-334)
+    # Test with sorting by name
     query = {"page": ["1"], "per_page": ["10"], "sort_by": ["name"], "sort_order": ["desc"]}
     result = json_db_get_locations_paginated(db, query, Location)
 
@@ -1953,12 +1977,12 @@ def test_json_db_get_locations_paginated():
     assert "pagination" in result
     assert len(result["items"]) == 2
 
-    # Test without per_page (line 344)
+    # Test without per_page
     query = {"page": ["1"], "sort_by": ["name"]}
     result = json_db_get_locations_paginated(db, query, Location)
     assert len(result["items"]) == 2
 
-    # Test with hasattr check for model_dump (line 350)
+    # Test with hasattr check for model_dump
     assert all("uuid" in item for item in result["items"])
 
 
@@ -1974,7 +1998,7 @@ def test_json_db_get_suggestions_paginated():
     }
     db = Json(suggestions_data)
 
-    # Test with status filtering and sorting (lines 673-702)
+    # Test with status filtering and sorting
     query = {
         "page": ["1"],
         "per_page": ["2"],
@@ -2007,7 +2031,7 @@ def test_json_db_get_reports_paginated():
     }
     db = Json(reports_data)
 
-    # Test with status and priority filtering, sorting (lines 969-1002)
+    # Test with status and priority filtering, sorting
     query = {
         "page": ["1"],
         "per_page": ["2"],
@@ -2034,14 +2058,14 @@ def test_json_db_get_reports_paginated():
 def test_google_json_db_sorting_edge_cases():
     from goodmap.db import google_json_db_get_locations_paginated
 
-    # Test sorting when item has no 'name' attribute (lines 427, 433)
+    # Test sorting when item has no 'name' attribute
     with mock.patch("platzky.db.google_json_db.Client") as mock_client:
         mock_blob = mock_client.return_value.bucket.return_value.blob.return_value
         mock_blob.download_as_text.return_value = data_json
         db = GoogleJsonDb("bucket", "file.json")
         Location = create_location_model([])
 
-        # Test sort by non-existent field (line 474)
+        # Test sort by non-existent field
         query = {
             "page": ["1"],
             "per_page": ["2"],
@@ -2061,7 +2085,7 @@ def test_mongodb_sorting_edge_cases():
         mongodb_db_get_suggestions_paginated,
     )
 
-    # Test MongoDB sorting functionality (lines 782-783, 1058, 1100-1101)
+    # Test MongoDB sorting functionality
     with mock.patch("platzky.db.mongodb_db.MongoClient") as mock_client:
         mock_db = mock.Mock()
         mock_client.return_value.__getitem__.return_value = mock_db
@@ -2111,7 +2135,7 @@ def test_google_json_db_pagination_no_per_page():
         db = GoogleJsonDb("bucket", "file.json")
         Location = create_location_model([])
 
-        # Test without per_page (line 344)
+        # Test without per_page
         query = {"page": ["1"]}  # No per_page specified
         result = google_json_db_get_locations_paginated(db, query, Location)
         assert len(result["items"]) == 2
@@ -2137,16 +2161,16 @@ def test_json_db_pagination_no_per_page():
 def test_json_file_pagination_no_hasattr():
     from goodmap.db import json_file_db_get_locations_paginated
 
-    # Mock to return raw dict data instead of Location objects (line 427, 433)
+    # Mock to return raw dict data instead of Location objects
     with mock.patch("builtins.open", mock.mock_open(read_data=data_json)):
         db = JsonFile("/fake/path/file.json")
 
-        # Test get_sort_key when item has name attribute (line 427)
+        # Test get_sort_key when item has name attribute
         query = {"page": ["1"], "per_page": ["10"], "sort_by": ["name"], "sort_order": ["asc"]}
         result = json_file_db_get_locations_paginated(db, query, create_location_model([]))
         assert "items" in result
 
-        # Test get_sort_key when sort_by is not 'name' (line 433)
+        # Test get_sort_key when sort_by is not 'name'
         query = {"page": ["1"], "per_page": ["10"], "sort_by": ["uuid"], "sort_order": ["asc"]}
         result = json_file_db_get_locations_paginated(db, query, create_location_model([]))
         assert "items" in result
@@ -2176,7 +2200,7 @@ def test_mongodb_suggestions_pagination_sorting():
 
         db = MongoDB("mongodb://localhost:27017", "test_db")
 
-        # Test ascending sort (line 1058)
+        # Test ascending sort
         query = {"sort_by": ["status"], "sort_order": ["asc"]}
         mongodb_db_get_suggestions_paginated(db, query)
 
@@ -2367,17 +2391,17 @@ def test_pagination_helper_error_handling():
     """Test error handling in PaginationHelper.create_paginated_response"""
     from goodmap.db import PaginationHelper
 
-    # Test invalid page parameter (lines 150-151)
+    # Test invalid page parameter
     query = {"page": ["invalid"]}
     result = PaginationHelper.create_paginated_response([], query)
     assert result["pagination"]["page"] == 1  # Should default to 1
 
-    # Test invalid per_page parameter (lines 159-160)
+    # Test invalid per_page parameter
     query = {"per_page": ["invalid"]}
     result = PaginationHelper.create_paginated_response([], query)
     assert result["pagination"]["per_page"] == 20  # Should default to 20
 
-    # Test custom filter extraction (lines 176-177)
+    # Test custom filter extraction
     def custom_extract(query):
         return {"custom_field": query.get("custom", ["default"])[0]}
 
@@ -2385,36 +2409,3 @@ def test_pagination_helper_error_handling():
     items = [{"name": "test", "custom_field": "test_value"}]
     result = PaginationHelper.create_paginated_response(items, query, custom_extract)
     assert len(result["items"]) == 1  # Custom filter should pass the item
-
-
-def test_error_helper_methods():
-    """Test ErrorHelper methods for full coverage"""
-    import pytest
-
-    from goodmap.db import ErrorHelper
-
-    # Test raise_not_found_error (line 240)
-    with pytest.raises(ValueError, match="location with uuid test-uuid not found"):
-        ErrorHelper.raise_not_found_error("location", "test-uuid")
-
-    # Test find_item_by_uuid with dict items (lines 260-271)
-    items = [{"uuid": "uuid1", "name": "item1"}, {"uuid": "uuid2", "name": "item2"}]
-    found_item = ErrorHelper.find_item_by_uuid(items, "uuid1", "location")
-    assert found_item is not None
-    assert found_item["name"] == "item1"
-
-    # Test find_item_by_uuid when item not found (lines 260-271)
-    with pytest.raises(ValueError, match="location with uuid nonexistent not found"):
-        ErrorHelper.find_item_by_uuid(items, "nonexistent", "location")
-
-    # Test find_item_by_uuid with object items (lines 260-271)
-    class TestItem:
-        def __init__(self, uuid: str, name: str):
-            self.uuid = uuid
-            self.name = name
-
-    obj_items = [TestItem("uuid1", "item1"), TestItem("uuid2", "item2")]
-    found_obj = ErrorHelper.find_item_by_uuid(obj_items, "uuid1", "location")
-    assert found_obj is not None
-    assert isinstance(found_obj, TestItem)
-    assert found_obj.name == "item1"

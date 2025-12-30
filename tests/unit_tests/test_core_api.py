@@ -534,7 +534,7 @@ def test_admin_put_suggestion_invalid_status(test_app):
         headers={"X-CSRFToken": csrf_token},
     )
     assert response.status_code == 400
-    assert "Invalid status: bad" in response.json["message"]
+    assert "Invalid status" in response.json["message"]
 
 
 def test_admin_put_suggestion_not_found(test_app):
@@ -622,7 +622,7 @@ def test_admin_put_report_invalid_status(test_app):
         headers={"X-CSRFToken": csrf_token},
     )
     assert response.status_code == 400
-    assert "Invalid status: bad" in response.json["message"]
+    assert "Invalid status" in response.json["message"]
 
 
 def test_admin_put_report_invalid_priority(test_app):
@@ -636,7 +636,7 @@ def test_admin_put_report_invalid_priority(test_app):
         headers={"X-CSRFToken": csrf_token},
     )
     assert response.status_code == 400
-    assert "Invalid priority: bad" in response.json["message"]
+    assert "Invalid priority" in response.json["message"]
 
 
 def test_admin_put_report_not_found(test_app):
@@ -791,7 +791,7 @@ def test_get_or_none_with_valid_dict():
 
 
 def test_get_or_none_with_non_dict():
-    """Test get_or_none returns None when encountering non-dict (line 21)"""
+    """Test get_or_none returns None when encountering non-dict"""
     data = {"a": "not_a_dict"}
     result = get_or_none(data, "a", "b")
     assert result is None
@@ -807,7 +807,7 @@ def test_get_or_none_with_missing_key():
 @mock.patch("goodmap.core_api.gettext", fake_translation)
 @mock.patch("flask_babel.gettext", fake_translation)
 def test_suggest_new_location_with_invalid_location_data_value_error(test_app):
-    """Test ValueError handling in suggest location (lines 137-138)"""
+    """Test ValueError handling in suggest location"""
     csrf_token = get_csrf_token(test_app)
     # Send invalid location data that will trigger ValueError
     response = test_app.post(
@@ -852,7 +852,7 @@ def test_report_location_with_invalid_data_format(test_app):
 @mock.patch("goodmap.core_api.gettext", fake_translation)
 @mock.patch("flask_babel.gettext", fake_translation)
 def test_categories_endpoint_with_categories_help():
-    """Test categories endpoint with categories_help feature (lines 219-225)"""
+    """Test categories endpoint with categories_help feature"""
     config_data = get_test_config_data()
     config_data["FEATURE_FLAGS"] = {"CATEGORIES_HELP": True}
     # Add categories_help to test data
@@ -873,7 +873,7 @@ def test_categories_endpoint_with_categories_help():
 @mock.patch("goodmap.core_api.gettext", fake_translation)
 @mock.patch("flask_babel.gettext", fake_translation)
 def test_category_data_endpoint_with_categories_options_help():
-    """Test category data endpoint with categories_options_help (lines 244-249)"""
+    """Test category data endpoint with categories_options_help"""
     config_data = get_test_config_data()
     config_data["FEATURE_FLAGS"] = {"CATEGORIES_HELP": True}
     # Add categories_options_help to test data
@@ -944,7 +944,7 @@ def test_admin_put_report_with_invalid_json(test_app):
 @mock.patch("goodmap.core_api.gettext", fake_translation)
 @mock.patch("flask_babel.gettext", fake_translation)
 def test_report_location_with_exception_during_notification(test_app):
-    """Test exception handling during notification in report location (lines 166-168)"""
+    """Test exception handling during notification in report location"""
     # This test relies on the actual app behavior - when notification fails
     csrf_token = get_csrf_token(test_app)
 
@@ -994,7 +994,7 @@ def test_category_data_endpoint_with_none_categories_options_help():
 
 
 def test_admin_post_location_with_database_exception(test_app):
-    """Test exception handling in admin post location (lines 292-293)"""
+    """Test exception handling in admin post location"""
     csrf_token = get_csrf_token(test_app)
 
     # Try to create a location with data that might cause database issues
@@ -1018,7 +1018,7 @@ def test_admin_post_location_with_database_exception(test_app):
 
 
 def test_admin_put_location_with_database_exception(test_app):
-    """Test exception handling in admin put location (lines 309-310)"""
+    """Test exception handling in admin put location"""
     csrf_token = get_csrf_token(test_app)
 
     # Try to update a location that might cause database issues
@@ -1040,7 +1040,7 @@ def test_admin_put_location_with_database_exception(test_app):
 
 
 def test_admin_delete_location_with_database_exception(test_app):
-    """Test exception handling in admin delete location (lines 321-322)"""
+    """Test exception handling in admin delete location"""
     csrf_token = get_csrf_token(test_app)
 
     # Try to delete a location that might cause database issues
@@ -1053,7 +1053,7 @@ def test_admin_delete_location_with_database_exception(test_app):
 
 
 def test_admin_suggestion_already_processed_check(test_app):
-    """Test suggestion already processed check (lines 351-352)"""
+    """Test suggestion already processed check"""
     csrf_token = get_csrf_token(test_app)
 
     # First create a suggestion by using the suggest endpoint
@@ -1084,7 +1084,7 @@ def test_admin_suggestion_already_processed_check(test_app):
 
 
 def test_admin_suggestion_value_error_handling(test_app):
-    """Test ValueError handling in admin suggestion (lines 357-358)"""
+    """Test ValueError handling in admin suggestion"""
     csrf_token = get_csrf_token(test_app)
 
     # Try to update suggestion with problematic data
@@ -1099,7 +1099,7 @@ def test_admin_suggestion_value_error_handling(test_app):
 
 
 def test_admin_report_database_update(test_app):
-    """Test database update in admin reports (line 392)"""
+    """Test database update in admin reports"""
     csrf_token = get_csrf_token(test_app)
 
     # Try to update a report (tests the database.update_report call)
@@ -1114,7 +1114,7 @@ def test_admin_report_database_update(test_app):
 
 
 def test_admin_report_value_error_handling(test_app):
-    """Test ValueError handling in admin reports (lines 393-395)"""
+    """Test ValueError handling in admin reports"""
     csrf_token = get_csrf_token(test_app)
 
     # Try to update report with invalid data that causes ValueError
@@ -1132,7 +1132,7 @@ def test_admin_report_value_error_handling(test_app):
 @mock.patch("goodmap.core_api.gettext", fake_translation)
 @mock.patch("flask_babel.gettext", fake_translation)
 def test_suggest_new_location_notification_exception(test_app):
-    """Test exception handling during notification in suggest location (lines 139-140)"""
+    """Test exception handling during notification in suggest location"""
     csrf_token = get_csrf_token(test_app)
 
     response = test_app.post(
@@ -1155,7 +1155,7 @@ def test_suggest_new_location_notification_exception(test_app):
 @mock.patch("goodmap.core_api.gettext", fake_translation)
 @mock.patch("flask_babel.gettext", fake_translation)
 def test_report_location_notification_exception(test_app):
-    """Test exception handling during notification in report location (lines 166-168)"""
+    """Test exception handling during notification in report location"""
     csrf_token = get_csrf_token(test_app)
     response = test_app.post(
         "/api/report-location",
@@ -1168,7 +1168,7 @@ def test_report_location_notification_exception(test_app):
 
 
 def test_admin_post_location_database_exception(test_app):
-    """Test database exception handling in admin post location (lines 292-293)"""
+    """Test database exception handling in admin post location"""
     csrf_token = get_csrf_token(test_app)
     response = test_app.post(
         "/api/admin/locations",
@@ -1180,7 +1180,7 @@ def test_admin_post_location_database_exception(test_app):
 
 
 def test_admin_put_location_database_exception(test_app):
-    """Test database exception handling in admin put location (lines 309-310)"""
+    """Test database exception handling in admin put location"""
     csrf_token = get_csrf_token(test_app)
     response = test_app.put(
         "/api/admin/locations/nonexistent-id",
@@ -1192,7 +1192,7 @@ def test_admin_put_location_database_exception(test_app):
 
 
 def test_admin_delete_location_database_exception(test_app):
-    """Test database exception handling in admin delete location (lines 321-322)"""
+    """Test database exception handling in admin delete location"""
     csrf_token = get_csrf_token(test_app)
     response = test_app.delete(
         "/api/admin/locations/nonexistent-id",
@@ -1202,7 +1202,7 @@ def test_admin_delete_location_database_exception(test_app):
 
 
 def test_admin_suggestion_database_exception(test_app):
-    """Test database exception handling in admin suggestion endpoints (lines 357-358)"""
+    """Test database exception handling in admin suggestion endpoints"""
     csrf_token = get_csrf_token(test_app)
     response = test_app.put(
         "/api/admin/suggestions/nonexistent-id",
@@ -1214,7 +1214,7 @@ def test_admin_suggestion_database_exception(test_app):
 
 
 def test_admin_report_database_exceptions(test_app):
-    """Test database exception handling in admin report endpoints (lines 394-395)"""
+    """Test database exception handling in admin report endpoints"""
     csrf_token = get_csrf_token(test_app)
     response = test_app.put(
         "/api/admin/reports/test-id",
@@ -1227,7 +1227,7 @@ def test_admin_report_database_exceptions(test_app):
 
 # Tests to restore coverage for specific exception scenarios
 def test_suggest_location_notification_exception_coverage(test_app):
-    """Test successful suggest location with CSRF token (lines 139-140)"""
+    """Test successful suggest location with CSRF token"""
     csrf_token = get_csrf_token(test_app)
     response = test_app.post(
         "/api/suggest-new-point",
@@ -1250,7 +1250,7 @@ def test_suggest_location_notification_exception_coverage(test_app):
 @mock.patch("goodmap.core_api.gettext", fake_translation)
 @mock.patch("flask_babel.gettext", fake_translation)
 def test_report_location_notification_exception_coverage(test_app):
-    """Test successful report location with CSRF token (lines 166-168)"""
+    """Test successful report location with CSRF token"""
     csrf_token = get_csrf_token(test_app)
     response = test_app.post(
         "/api/report-location",
@@ -1266,10 +1266,7 @@ def test_report_location_notification_exception_coverage(test_app):
 @mock.patch("goodmap.core_api.gettext", fake_translation)
 @mock.patch("flask_babel.gettext", fake_translation)
 def test_admin_database_exceptions_coverage(test_app):
-    """Test database exceptions in admin endpoints.
-
-    Lines: 292-293, 309-310, 321-322, 351-359, 392, 394-395
-    """
+    """Test database exceptions in admin endpoints."""
 
     # Get CSRF token from the test app
     csrf_token = get_csrf_token(test_app)
@@ -1277,9 +1274,8 @@ def test_admin_database_exceptions_coverage(test_app):
     # Mock the database methods to raise exceptions
     db = test_app.application.db
 
-    # For locations: two add_location calls (lines 289, 355), first fails, second succeeds
+    # Test POST location exception
     with mock.patch.object(db, "add_location", side_effect=[Exception("Database error"), None]):
-        # Test POST location exception (lines 292-293)
         response = test_app.post(
             "/api/admin/locations",
             data=json.dumps(
@@ -1293,9 +1289,9 @@ def test_admin_database_exceptions_coverage(test_app):
             content_type="application/json",
             headers={"X-CSRFToken": csrf_token},
         )
-        assert response.status_code == 400
+        assert response.status_code == 500
 
-    # Test PUT location exception (lines 309-310)
+    # Test PUT location exception
     with mock.patch.object(db, "update_location", side_effect=Exception("Update error")):
         response = test_app.put(
             "/api/admin/locations/test-id",
@@ -1310,19 +1306,31 @@ def test_admin_database_exceptions_coverage(test_app):
             content_type="application/json",
             headers={"X-CSRFToken": csrf_token},
         )
-        assert response.status_code == 400
+        assert response.status_code == 500
 
-    # Test DELETE location exception (lines 321-322)
+    # Test DELETE location exception
     with mock.patch.object(db, "delete_location", side_effect=Exception("Delete error")):
         response = test_app.delete(
             "/api/admin/locations/test-id", headers={"X-CSRFToken": csrf_token}
         )
-        assert response.status_code == 400
+        assert response.status_code == 500
 
-    # Test suggestion update exception (lines 351-359)
+    # Test suggestion update exception
     with (
-        mock.patch.object(db, "get_suggestion", return_value={"status": "pending", "name": "test"}),
-        mock.patch.object(db, "update_suggestion", side_effect=ValueError("Suggestion error")),
+        mock.patch.object(
+            db,
+            "get_suggestion",
+            return_value={
+                "uuid": "test-uuid",
+                "status": "pending",
+                "name": "test",
+                "position": [50, 50],
+                "test_category": ["test"],
+                "type_of_place": "test",
+            },
+        ),
+        mock.patch.object(db, "add_location", return_value=None),
+        mock.patch.object(db, "update_suggestion", side_effect=Exception("Suggestion error")),
     ):
         response = test_app.put(
             "/api/admin/suggestions/test-id",
@@ -1330,9 +1338,9 @@ def test_admin_database_exceptions_coverage(test_app):
             content_type="application/json",
             headers={"X-CSRFToken": csrf_token},
         )
-        assert response.status_code == 400
+        assert response.status_code == 500
 
-    # Test successful report update (line 392)
+    # Test successful report update
     with (
         mock.patch.object(
             db, "get_report", return_value={"status": "pending", "priority": "medium"}
@@ -1347,7 +1355,7 @@ def test_admin_database_exceptions_coverage(test_app):
         )
         assert response.status_code == 200
 
-    # Test report update exception (lines 394-395)
+    # Test report update exception
     with (
         mock.patch.object(
             db, "get_report", return_value={"status": "pending", "priority": "medium"}
@@ -1360,13 +1368,13 @@ def test_admin_database_exceptions_coverage(test_app):
             content_type="application/json",
             headers={"X-CSRFToken": csrf_token},
         )
-        assert response.status_code == 400
+        assert response.status_code == 500
 
 
 @mock.patch("goodmap.core_api.gettext", fake_translation)
 @mock.patch("flask_babel.gettext", fake_translation)
 def test_admin_suggestion_processing_coverage(test_app):
-    """Test suggestion processing success and already processed scenarios (lines 352, 359)"""
+    """Test suggestion processing success and already processed scenarios"""
     # Add real suggestions to the database instead of mocking
     test_app.application.db.data["suggestions"] = [
         {"uuid": "test-id", "status": "accepted", "name": "test"},  # Already processed
@@ -1375,7 +1383,7 @@ def test_admin_suggestion_processing_coverage(test_app):
 
     csrf_token = get_csrf_token(test_app)
 
-    # Test suggestion already processed (line 352)
+    # Test suggestion already processed
     response = test_app.put(
         "/api/admin/suggestions/test-id",
         data=json.dumps({"status": "rejected"}),
@@ -1386,7 +1394,7 @@ def test_admin_suggestion_processing_coverage(test_app):
     data = response.get_json()
     assert "Suggestion already processed" in data["message"]
 
-    # Test successful suggestion processing (line 359)
+    # Test successful suggestion processing
     response = test_app.put(
         "/api/admin/suggestions/test-id2",
         data=json.dumps({"status": "rejected"}),
@@ -1555,3 +1563,149 @@ def test_get_locations_from_request_helper(test_app):
             assert isinstance(locations[0], dict)
             assert "uuid" in locations[0]
             assert "position" in locations[0]
+
+
+def test_admin_suggestion_processing_location_validation_error(test_app):
+    """Test LocationValidationError when accepting suggestion with invalid data"""
+    csrf_token = get_csrf_token(test_app)
+    db = test_app.application.db
+
+    # Create a suggestion with invalid data (position out of valid range)
+    # We'll manually add it to the database to bypass initial validation
+    invalid_suggestion = {
+        "uuid": "invalid-suggestion-uuid",
+        "name": "Invalid Suggestion",
+        "type_of_place": "test",
+        "test_category": ["test"],
+        "position": [200, 200],  # Invalid coordinates (out of range)
+        "status": "pending",
+    }
+    db.data["suggestions"].append(invalid_suggestion)
+
+    # Try to accept the invalid suggestion
+    response = test_app.put(
+        "/api/admin/suggestions/invalid-suggestion-uuid",
+        data=json.dumps({"status": "accepted"}),
+        content_type="application/json",
+        headers={"X-CSRFToken": csrf_token},
+    )
+    assert response.status_code == 400
+    assert "Invalid location data" in response.json["message"]
+
+
+def test_admin_suggestion_processing_duplicate_location_uuid(test_app):
+    """Test LocationAlreadyExistsError when accepting suggestion with duplicate UUID"""
+    csrf_token = get_csrf_token(test_app)
+
+    # First, create a location with a specific UUID via admin endpoint
+    # (admin endpoint auto-generates UUID, so we need to use the database directly)
+    existing_location = {
+        "uuid": "duplicate-uuid-123",
+        "name": "Existing Location",
+        "position": [50, 50],
+        "test_category": ["test"],
+        "type_of_place": "test",
+    }
+    db = test_app.application.db
+    db.data["data"].append(existing_location)
+
+    # Create a suggestion with the same UUID
+    suggestion = {
+        "uuid": "duplicate-uuid-123",
+        "name": "Suggested Location",
+        "type_of_place": "test",
+        "test_category": ["test"],
+        "position": [60, 60],
+        "status": "pending",
+    }
+    db.data["suggestions"].append(suggestion)
+
+    # Try to accept the suggestion - should fail because UUID already exists
+    response = test_app.put(
+        "/api/admin/suggestions/duplicate-uuid-123",
+        data=json.dumps({"status": "accepted"}),
+        content_type="application/json",
+        headers={"X-CSRFToken": csrf_token},
+    )
+    assert response.status_code == 409
+    assert "Location already exists" in response.json["message"]
+
+
+def test_admin_report_update_not_found_error(test_app):
+    """Test 404 error when updating non-existent report"""
+    csrf_token = get_csrf_token(test_app)
+
+    # Try to update a report that doesn't exist
+    response = test_app.put(
+        "/api/admin/reports/nonexistent-report-id",
+        data=json.dumps({"status": "resolved"}),
+        content_type="application/json",
+        headers={"X-CSRFToken": csrf_token},
+    )
+    # Should return 404 for non-existent report (caught by get_report check)
+    assert response.status_code == 404
+    assert "Report not found" in response.json["message"]
+
+
+def test_admin_report_update_race_condition(test_app):
+    """Test ReportNotFoundError handler for race condition scenario"""
+    from goodmap.exceptions import ReportNotFoundError
+
+    csrf_token = get_csrf_token(test_app)
+    db = test_app.application.db
+
+    # Simulate race condition: report exists during get_report but fails during update_report
+    with (
+        mock.patch.object(
+            db, "get_report", return_value={"uuid": "race-uuid", "status": "pending"}
+        ),
+        mock.patch.object(db, "update_report", side_effect=ReportNotFoundError("race-uuid")),
+    ):
+        response = test_app.put(
+            "/api/admin/reports/race-uuid",
+            data=json.dumps({"status": "resolved"}),
+            content_type="application/json",
+            headers={"X-CSRFToken": csrf_token},
+        )
+        assert response.status_code == 404
+        assert "Report not found" in response.json["message"]
+
+
+def test_suggest_location_unexpected_error(test_app):
+    """Test generic Exception handler in suggest endpoint"""
+    csrf_token = get_csrf_token(test_app)
+    db = test_app.application.db
+
+    # Simulate unexpected database error during suggestion submission
+    with mock.patch.object(db, "add_suggestion", side_effect=Exception("Database failure")):
+        response = test_app.post(
+            "/api/suggest-new-point",
+            data=json.dumps(
+                {
+                    "name": "Test",
+                    "position": [50, 50],
+                    "test_category": ["test"],
+                    "type_of_place": "test",
+                }
+            ),
+            content_type="application/json",
+            headers={"X-CSRFToken": csrf_token},
+        )
+        assert response.status_code == 500
+        assert "An error occurred while processing your suggestion" in response.json["message"]
+
+
+def test_report_location_unexpected_error(test_app):
+    """Test generic Exception handler in report endpoint"""
+    csrf_token = get_csrf_token(test_app)
+    db = test_app.application.db
+
+    # Simulate unexpected error during report submission
+    with mock.patch.object(db, "add_report", side_effect=Exception("Database failure")):
+        response = test_app.post(
+            "/api/report-location",
+            data=json.dumps({"id": "test-id", "description": "Test report"}),
+            content_type="application/json",
+            headers={"X-CSRFToken": csrf_token},
+        )
+        assert response.status_code == 500
