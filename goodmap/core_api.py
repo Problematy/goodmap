@@ -326,9 +326,6 @@ def core_pages(
                     extra={"uuid": e.uuid, "errors": e.validation_errors},
                 )
                 return make_response(jsonify({"message": "Invalid location data"}), 400)
-            except LocationAlreadyExistsError as e:
-                logger.warning("Attempted to create duplicate location", extra={"uuid": e.uuid})
-                return make_response(jsonify({"message": "Location already exists"}), 409)
             except Exception:
                 logger.error("Error creating location", exc_info=True)
                 return make_response(jsonify({"message": "An internal error occurred"}), 500)
