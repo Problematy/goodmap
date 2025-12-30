@@ -5,10 +5,9 @@ on:
         branches:
             - main
 
+# default: least privileged permissions across all jobs
 permissions:
-    contents: write
-    issues: write
-    pull-requests: write
+    contents: read
     id-token: write
 
 jobs:
@@ -17,12 +16,25 @@ jobs:
         environment:
             name: npmjs
 
+        permissions:
+            contents: write
+            issues: write
+            pull-requests: write
+            id-token: write
+
         steps:
+            - name: Generate bot app token
+              id: generate_token
+              uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf
+              with:
+                  app-id: ${{ secrets.MY_RELEASER_ID }}
+                  private-key: ${{ secrets.MY_RELEASER_PRIVATE_KEY }}
+
             - name: Checkout
               uses: actions/checkout@v4
               with:
                   fetch-depth: 0
-                  persist-credentials: false
+                  token: ${{ steps.generate_token.outputs.token }}
 
             - name: Set up Node.js
               uses: actions/setup-node@v4
@@ -38,5 +50,5 @@ jobs:
 
             - name: Run semantic-release
               env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
               run: npx semantic-release
