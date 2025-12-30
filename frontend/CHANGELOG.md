@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/Problematy/goodmap-frontend/compare/1.0.1...1.0.2) (2025-12-30)
+
+
+### Bug Fixes
+
+* added registry-url back ([#128](https://github.com/Problematy/goodmap-frontend/issues/128)) ([9e9cb56](https://github.com/Problematy/goodmap-frontend/commit/9e9cb5651cc72e1b3735a88de6cbcc13d3cd8791))
+
 ## [1.0.1](https://github.com/Problematy/goodmap-frontend/compare/v1.0.0...1.0.1) (2025-12-30)
 
 
