@@ -5,32 +5,32 @@ from goodmap.exceptions import LocationValidationError
 
 
 def test_proper_creation():
-    Location = create_location_model(obligatory_fields=[("used_obligatory_field", str)])
-    Location(uuid="1", used_obligatory_field="test-name", position=(50, 50))
+    location_model = create_location_model(obligatory_fields=[("used_obligatory_field", str)])
+    location_model(uuid="1", used_obligatory_field="test-name", position=(50, 50))
 
 
 def test_missing_field_creation():
-    Location = create_location_model(obligatory_fields=[("not_used_obligatory_field", str)])
+    location_model = create_location_model(obligatory_fields=[("not_used_obligatory_field", str)])
     with pytest.raises(LocationValidationError):
-        Location(uuid="1", position=(50, 50))
+        location_model(uuid="1", position=(50, 50))
 
 
 def test_latitude_out_of_scope():
-    Location = create_location_model(obligatory_fields=[])
+    location_model = create_location_model(obligatory_fields=[])
     with pytest.raises(LocationValidationError):
-        Location(uuid="1", position=(150, 50))
+        location_model(uuid="1", position=(150, 50))
 
 
 def test_longitude_out_of_scope():
-    Location = create_location_model(obligatory_fields=[])
+    location_model = create_location_model(obligatory_fields=[])
     with pytest.raises(LocationValidationError):
-        Location(uuid="one", position=(50, 350))
+        location_model(uuid="one", position=(50, 350))
 
 
 def test_missing_uuid_field():
     """Test that LocationBase requires uuid field"""
-    Location = create_location_model(obligatory_fields=[])
+    location_model = create_location_model(obligatory_fields=[])
     with pytest.raises(LocationValidationError) as exc_info:
-        Location(position=(50, 50))
+        location_model(position=(50, 50))
     # Check that the error message mentions the uuid field requirement
     assert "uuid" in str(exc_info.value).lower() or "uuid" in repr(exc_info.value)
