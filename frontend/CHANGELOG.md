@@ -1,3 +1,6 @@
+# 0.4.7
+- fix: version number fixed
+
 # 0.4.6
 - Feature: Suggesting new points button
 
