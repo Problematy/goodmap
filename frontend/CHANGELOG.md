@@ -1,3 +1,4 @@
+# 0.4.6
 - Feature: Suggesting new points button
 
 # 0.4.4
