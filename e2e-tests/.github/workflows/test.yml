@@ -21,7 +21,4 @@ jobs:
     with:
       goodmap-version: 'main'
       goodmap-frontend-version: 'main'
-      calling-repo: 'goodmap-e2e-tests'
-      e2e-tests-path: '.'
-      goodmap-path: 'goodmap'
-      goodmap-frontend-path: 'goodmap-frontend'
+      e2e-tests-version: ${{ github.sha }}

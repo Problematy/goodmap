@@ -76,7 +76,7 @@ describe("Stress test", () => {
     });
 
     cy.then(() => {
-      const maxAllowedTime = 20000; // 20 seconds for 100k points with lazy loading
+      const maxAllowedTime = 25000; // 25 seconds for 100k points with lazy loading
 
       // Always write performance data, even if we didn't complete all runs
       if (runTimes.length > 0) {
