@@ -123,7 +123,7 @@ window.FEATURE_FLAGS = {{ feature_flags | tojson }};
 
 // Location schema for dynamic form building
 // Contains required fields and available categories for new location suggestions
-window.LOCATION_SCHEMA = {{ location_schema | tojson }};
+globalThis.LOCATION_SCHEMA = {{ location_schema | tojson }};
 </script>
 <script src="{{ goodmap_frontend_lib_url }}"></script>
 {% endblock %}
