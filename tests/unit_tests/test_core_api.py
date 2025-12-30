@@ -75,9 +75,11 @@ def get_test_config_data() -> dict[str, Any]:
 
 
 def get_csrf_token(test_client):
-    """Helper function to get CSRF token from the test client."""
-    csrf_response = test_client.get("/api/generate-csrf-token")
-    return csrf_response.json["csrf_token"]
+    """Helper function to get CSRF token from the test client.
+
+    Returns None in tests since CSRF is disabled for testing.
+    """
+    return None
 
 
 @pytest.fixture
@@ -87,6 +89,8 @@ def test_app():
     config_data["FEATURE_FLAGS"] = feature_flags
     config = GoodmapConfig.model_validate(config_data)
     app = create_app_from_config(config)
+    # Disable CSRF protection for tests
+    app.config['WTF_CSRF_ENABLED'] = False
     return app.test_client()
 
 
@@ -105,8 +109,6 @@ def test_app_without_helpers():
     return app.test_client()
 
 
-@mock.patch("goodmap.core_api.gettext", fake_translation)
-@mock.patch("flask_babel.gettext", fake_translation)
 def test_reporting_location_is_sending_message_with_name_and_position(test_app):
     # Get CSRF token first
     csrf_token = get_csrf_token(test_app)
@@ -197,14 +199,6 @@ def test_getting_all_category_data_old_way(test_app_without_helpers):
     response = test_app_without_helpers.get("/api/category/test-category")
     assert response.status_code == 200
     assert response.json == [["test", "test-translated"], ["test2", "test2-translated"]]
-
-
-def test_getting_token(test_app):
-    response = test_app.get("/api/generate-csrf-token")
-    assert response.status_code == 200
-    assert "csrf_token" in response.json
-    assert isinstance(response.json["csrf_token"], str)
-    assert len(response.json["csrf_token"]) > 0
 
 
 def test_suggest_new_location_with_valid_data(test_app):

@@ -297,12 +297,6 @@ def core_pages(
                     }
                 )
 
-    @core_api.route("/generate-csrf-token")
-    class CsrfToken(Resource):
-        def get(self):
-            csrf_token = csrf_generator()
-            return {"csrf_token": csrf_token}
-
     @core_api.route("/admin/locations")
     class AdminManageLocations(Resource):
         def get(self):
