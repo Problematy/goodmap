@@ -1593,6 +1593,44 @@ def test_admin_suggestion_processing_location_validation_error(test_app):
     assert "Invalid location data" in response.json["message"]
 
 
+def test_admin_suggestion_processing_duplicate_location_uuid(test_app):
+    """Test LocationAlreadyExistsError when accepting suggestion with duplicate UUID"""
+    csrf_token = get_csrf_token(test_app)
+
+    # First, create a location with a specific UUID via admin endpoint
+    # (admin endpoint auto-generates UUID, so we need to use the database directly)
+    existing_location = {
+        "uuid": "duplicate-uuid-123",
+        "name": "Existing Location",
+        "position": [50, 50],
+        "test_category": ["test"],
+        "type_of_place": "test",
+    }
+    db = test_app.application.db
+    db.data["data"].append(existing_location)
+
+    # Create a suggestion with the same UUID
+    suggestion = {
+        "uuid": "duplicate-uuid-123",
+        "name": "Suggested Location",
+        "type_of_place": "test",
+        "test_category": ["test"],
+        "position": [60, 60],
+        "status": "pending",
+    }
+    db.data["suggestions"].append(suggestion)
+
+    # Try to accept the suggestion - should fail because UUID already exists
+    response = test_app.put(
+        "/api/admin/suggestions/duplicate-uuid-123",
+        data=json.dumps({"status": "accepted"}),
+        content_type="application/json",
+        headers={"X-CSRFToken": csrf_token},
+    )
+    assert response.status_code == 409
+    assert "Location already exists" in response.json["message"]
+
+
 def test_admin_report_update_not_found_error(test_app):
     """Test 404 error when updating non-existent report"""
     csrf_token = get_csrf_token(test_app)
@@ -1607,3 +1645,67 @@ def test_admin_report_update_not_found_error(test_app):
     # Should return 404 for non-existent report (caught by get_report check)
     assert response.status_code == 404
     assert "Report not found" in response.json["message"]
+
+
+def test_admin_report_update_race_condition(test_app):
+    """Test ReportNotFoundError handler for race condition scenario"""
+    from goodmap.exceptions import ReportNotFoundError
+
+    csrf_token = get_csrf_token(test_app)
+    db = test_app.application.db
+
+    # Simulate race condition: report exists during get_report but fails during update_report
+    with (
+        mock.patch.object(
+            db, "get_report", return_value={"uuid": "race-uuid", "status": "pending"}
+        ),
+        mock.patch.object(db, "update_report", side_effect=ReportNotFoundError("race-uuid")),
+    ):
+        response = test_app.put(
+            "/api/admin/reports/race-uuid",
+            data=json.dumps({"status": "resolved"}),
+            content_type="application/json",
+            headers={"X-CSRFToken": csrf_token},
+        )
+        assert response.status_code == 404
+        assert "Report not found" in response.json["message"]
+
+
+def test_suggest_location_unexpected_error(test_app):
+    """Test generic Exception handler in suggest endpoint"""
+    csrf_token = get_csrf_token(test_app)
+    db = test_app.application.db
+
+    # Simulate unexpected database error during suggestion submission
+    with mock.patch.object(db, "add_suggestion", side_effect=Exception("Database failure")):
+        response = test_app.post(
+            "/api/suggest-new-point",
+            data=json.dumps(
+                {
+                    "name": "Test",
+                    "position": [50, 50],
+                    "test_category": ["test"],
+                    "type_of_place": "test",
+                }
+            ),
+            content_type="application/json",
+            headers={"X-CSRFToken": csrf_token},
+        )
+        assert response.status_code == 500
+        assert "An error occurred while processing your suggestion" in response.json["message"]
+
+
+def test_report_location_unexpected_error(test_app):
+    """Test generic Exception handler in report endpoint"""
+    csrf_token = get_csrf_token(test_app)
+    db = test_app.application.db
+
+    # Simulate unexpected error during report submission
+    with mock.patch.object(db, "add_report", side_effect=Exception("Database failure")):
+        response = test_app.post(
+            "/api/report-location",
+            data=json.dumps({"id": "test-id", "description": "Test report"}),
+            content_type="application/json",
+            headers={"X-CSRFToken": csrf_token},
+        )
+        assert response.status_code == 500
