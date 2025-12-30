@@ -13,6 +13,9 @@ import {
     FormControl,
     Snackbar,
     IconButton,
+    Checkbox,
+    ListItemText,
+    OutlinedInput,
 } from '@mui/material';
 
 import AddAPhotoIcon from '@mui/icons-material/AddAPhoto';
@@ -22,16 +25,46 @@ import Control from 'react-leaflet-custom-control';
 import axios from 'axios';
 import { buttonStyle } from '../../../styles/buttonStyle';
 import { useEffect } from 'react';
+import { getCsrfToken } from '../../../utils/csrf';
 
 /**
  * Button component that allows users to suggest new map points/locations.
- * Opens a dialog form for users to submit their current position, a photo, and select an organization.
+ * Opens a dialog form with dynamically generated fields based on window.LOCATION_SCHEMA.
+ * The form includes the user's position, optional photo upload, and fields for all
+ * obligatory location attributes defined in the backend schema.
  * Requires user's geolocation permission to function properly.
  *
  * @returns {React.ReactElement} Button with dialog form for suggesting new points
  */
 export const SuggestNewPointButton = () => {
     const [userPosition, setUserPosition] = useState({ lat: null, lng: null });
+    const [showNewPointBox, setShowNewPointSuggestionBox] = useState(false);
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
+    const [photo, setPhoto] = useState(null);
+    const [photoURL, setPhotoURL] = useState(null);
+
+    // Read location schema from global object
+    const locationSchema = globalThis.LOCATION_SCHEMA || { obligatory_fields: [], categories: {} };
+
+    // Initialize dynamic form fields based on schema
+    const initializeFormFields = () => {
+        const fields = {};
+        locationSchema.obligatory_fields.forEach(([fieldName, fieldType]) => {
+            // Skip uuid - it's generated on backend
+            if (fieldName === 'uuid') {
+                return;
+            }
+            if (fieldType === 'list') {
+                fields[fieldName] = [];
+            } else {
+                fields[fieldName] = '';
+            }
+        });
+        return fields;
+    };
+
+    const [formFields, setFormFields] = useState(initializeFormFields);
 
     useEffect(() => {
         if (navigator.geolocation) {
@@ -52,13 +85,6 @@ export const SuggestNewPointButton = () => {
             setSnackbarOpen(true);
         }
     }, []);
-
-    const [showNewPointBox, setShowNewPointSuggestionBox] = useState(false);
-    const [snackbarOpen, setSnackbarOpen] = useState(false);
-    const [snackbarMessage, setSnackbarMessage] = useState('');
-    const [photo, setPhoto] = useState(null);
-    const [photoURL, setPhotoURL] = useState(null);
-    const [organization, setOrganization] = useState('');
 
     const handleNewPointButton = () => {
         if (!navigator.geolocation) {
@@ -107,6 +133,9 @@ export const SuggestNewPointButton = () => {
 
     const handlePhotoUpload = event => {
         const file = event.target.files[0];
+        if (!file) {
+            return;
+        }
         const fileSizeMB = file.size / 1024 / 1024;
         if (fileSizeMB > 5) {
             setSnackbarMessage(
@@ -119,36 +148,146 @@ export const SuggestNewPointButton = () => {
         setPhotoURL(URL.createObjectURL(file));
     };
 
-    const handleOrganizationChange = event => {
-        setOrganization(event.target.value);
+    const handleFieldChange = fieldName => event => {
+        setFormFields({ ...formFields, [fieldName]: event.target.value });
     };
 
     const handleConfirmNewPoint = async event => {
         event.preventDefault();
-        setShowNewPointSuggestionBox(false);
+
+        // Validate user position is available
+        if (userPosition.lat === null || userPosition.lng === null) {
+            setSnackbarMessage(
+                'Location not available. Please enable location services and try again.',
+            );
+            setSnackbarOpen(true);
+            return;
+        }
+
+        // Validate required fields are filled
+        const emptyFields = [];
+        locationSchema.obligatory_fields.forEach(([fieldName, fieldType]) => {
+            if (fieldName === 'uuid') return; // Skip uuid - generated on backend
+
+            const value = formFields[fieldName];
+            const isEmpty =
+                fieldType === 'list' ? !value || value.length === 0 : !value || value.trim() === '';
+
+            if (isEmpty) {
+                emptyFields.push(fieldName);
+            }
+        });
+
+        if (emptyFields.length > 0) {
+            setSnackbarMessage(`Please fill in required fields: ${emptyFields.join(', ')}`);
+            setSnackbarOpen(true);
+            return;
+        }
 
         const formData = new FormData();
-        formData.append('position', JSON.stringify(userPosition));
-        formData.append('photo', photo);
-        formData.append('organization', organization);
+        // Convert position from {lat, lng} to [lat, lng] array format
+        formData.append('position', JSON.stringify([userPosition.lat, userPosition.lng]));
+        if (photo) {
+            formData.append('photo', photo);
+        }
+
+        // Add all dynamic form fields
+        Object.entries(formFields).forEach(([fieldName, fieldValue]) => {
+            if (Array.isArray(fieldValue)) {
+                formData.append(fieldName, JSON.stringify(fieldValue));
+            } else {
+                formData.append(fieldName, fieldValue);
+            }
+        });
 
         try {
+            const csrfToken = await getCsrfToken();
             await axios.post('/api/suggest-new-point', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
+                    'X-CSRFToken': csrfToken,
                 },
             });
+            setSnackbarMessage('Location suggested successfully!');
+            setSnackbarOpen(true);
+
+            // Reset form after successful submission
+            setFormFields(initializeFormFields());
+            setPhoto(null);
+            setPhotoURL(null);
+
+            // Close dialog only after successful submission
+            setShowNewPointSuggestionBox(false);
         } catch (error) {
             console.error('Error suggesting new point:', error);
+            setSnackbarMessage('Error suggesting location. Please try again.');
+            setSnackbarOpen(true);
+            // Dialog stays open on error so user can retry
         }
     };
 
-    // TODO - fetch organizations from the backend
-    const organizations = [
-        { id: 'org-1', name: 'ORG 1' },
-        { id: 'org-2', name: 'ORG 2' },
-        { id: 'org-3', name: 'ORG 3' },
-    ];
+    // Render form field based on field type and whether it's a category
+    const renderFormField = (fieldName, fieldType) => {
+        const isCategory = fieldName in locationSchema.categories;
+        const categoryOptions = isCategory ? locationSchema.categories[fieldName] : [];
+
+        if (fieldType === 'list' && isCategory) {
+            // Multi-select for list categories
+            return (
+                <FormControl fullWidth margin="dense" key={fieldName}>
+                    <InputLabel id={`${fieldName}-label`}>{fieldName}</InputLabel>
+                    <Select
+                        labelId={`${fieldName}-label`}
+                        multiple
+                        value={formFields[fieldName] || []}
+                        onChange={handleFieldChange(fieldName)}
+                        input={<OutlinedInput label={fieldName} />}
+                        renderValue={selected => selected.join(', ')}
+                        data-testid={`${fieldName}-select`}
+                    >
+                        {categoryOptions.map(option => (
+                            <MenuItem key={option} value={option}>
+                                <Checkbox checked={formFields[fieldName].includes(option)} />
+                                <ListItemText primary={option} />
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+            );
+        } else if (isCategory) {
+            // Single select for category fields
+            return (
+                <FormControl fullWidth margin="dense" key={fieldName}>
+                    <InputLabel id={`${fieldName}-label`}>{fieldName}</InputLabel>
+                    <Select
+                        labelId={`${fieldName}-label`}
+                        value={formFields[fieldName] || ''}
+                        onChange={handleFieldChange(fieldName)}
+                        data-testid={`${fieldName}-select`}
+                    >
+                        {categoryOptions.map(option => (
+                            <MenuItem key={option} value={option}>
+                                {option}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+            );
+        } else {
+            // Text field for non-category fields
+            return (
+                <TextField
+                    key={fieldName}
+                    label={fieldName}
+                    value={formFields[fieldName] || ''}
+                    onChange={handleFieldChange(fieldName)}
+                    fullWidth
+                    margin="dense"
+                    data-testid={`${fieldName}-input`}
+                />
+            );
+        }
+    };
 
     return (
         <>
@@ -193,21 +332,11 @@ export const SuggestNewPointButton = () => {
                                 style={{ width: '100%', height: 'auto' }}
                             />
                         )}
-                        <FormControl fullWidth margin="dense">
-                            <InputLabel id="organization-label">Organization</InputLabel>
-                            <Select
-                                labelId="organization-label"
-                                value={organization}
-                                onChange={handleOrganizationChange}
-                                data-testid="organization-select"
-                            >
-                                {organizations.map(org => (
-                                    <MenuItem key={org.id} value={org.id}>
-                                        {org.name}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
+
+                        {/* Dynamically render form fields based on schema */}
+                        {locationSchema.obligatory_fields
+                            .filter(([fieldName]) => fieldName !== 'uuid')
+                            .map(([fieldName, fieldType]) => renderFormField(fieldName, fieldType))}
                     </DialogContent>
                     <DialogActions>
                         <Button type="submit" variant="contained" color="primary">

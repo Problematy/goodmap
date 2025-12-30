@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
+import { getCsrfToken } from '../../utils/csrf';
 
 /**
  * Styled form component with flexbox column layout.
@@ -72,14 +73,9 @@ export const ReportProblemForm = ({ placeId }) => {
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [responseMessage, setResponseMessage] = useState('');
 
-    const fetchCsrfToken = async () => {
-        const response = await axios.get('/api/generate-csrf-token');
-        return response.data.csrf_token;
-    };
-
     const handleSubmit = async event => {
         event.preventDefault();
-        const csrfToken = await fetchCsrfToken();
+        const csrfToken = await getCsrfToken();
 
         const response = await axios.post(
             '/api/report-location',

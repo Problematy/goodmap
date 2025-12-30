@@ -5,17 +5,28 @@ import { ReportProblemForm } from '../../src/components/MarkerPopup/ReportProble
 jest.mock('axios');
 const axios = require('axios');
 
-axios.get.mockResolvedValue({ data: { csrf_token: 'test-csrf-token' } }); // eslint-disable-line camelcase
 axios.post.mockResolvedValue({ data: { success: true } });
+
+// Mock CSRF token meta tag
+beforeEach(() => {
+    const metaTag = document.createElement('meta');
+    metaTag.setAttribute('name', 'csrf-token');
+    metaTag.setAttribute('content', 'test-csrf-token');
+    document.head.appendChild(metaTag);
+});
+
+afterEach(() => {
+    const metaTag = document.querySelector('meta[name="csrf-token"]');
+    if (metaTag) {
+        metaTag.remove();
+    }
+});
 
 describe('ReportProblemForm', () => {
     it('submits the form with selected problem type', () => {
         const { getByText, getByLabelText } = render(<ReportProblemForm placeId="test-id" />);
         const select = getByLabelText(/Problem:/i);
         fireEvent.change(select, { target: { value: 'broken' } });
-
-        axios.get.mockResolvedValue({ data: { csrf_token: 'test-csrf-token' } }); // eslint-disable-line camelcase
-        axios.post.mockResolvedValue({ data: { success: true } });
 
         fireEvent.click(getByText(/Submit/i));
 
