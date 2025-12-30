@@ -105,7 +105,27 @@ def core_pages(
         def post(self):
             """Suggest new location"""
             try:
-                suggested_location = request.get_json()
+                # Handle both multipart/form-data (with file uploads) and JSON
+                if request.content_type and 'multipart/form-data' in request.content_type:
+                    # Parse form data dynamically
+                    import json as json_lib
+                    suggested_location = {}
+
+                    for key in request.form:
+                        value = request.form[key]
+                        # Try to parse as JSON for complex types (arrays, objects, position)
+                        try:
+                            suggested_location[key] = json_lib.loads(value)
+                        except (json_lib.JSONDecodeError, ValueError):
+                            # If not JSON, use as-is (simple string values)
+                            suggested_location[key] = value
+
+                    # TODO: Handle photo file upload from request.files['photo']
+                    # For now, we just ignore it as the backend doesn't store photos yet
+                else:
+                    # Parse JSON data
+                    suggested_location = request.get_json()
+
                 suggested_location.update({"uuid": str(uuid.uuid4())})
                 location = location_model.model_validate(suggested_location)
                 database.add_suggestion(location.model_dump())
@@ -115,7 +135,7 @@ def core_pages(
                 )
                 notifier_function(message)
             except BadRequest:
-                logger.warning("Invalid JSON in suggest endpoint")
+                logger.warning("Invalid request data in suggest endpoint")
                 return make_response(jsonify({"message": ERROR_INVALID_REQUEST_DATA}), 400)
             except LocationValidationError as e:
                 logger.warning(

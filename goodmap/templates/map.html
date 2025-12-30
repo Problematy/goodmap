@@ -120,6 +120,10 @@ window.USE_LAZY_LOADING = {{ feature_flags.USE_LAZY_LOADING | default(false) | t
 window.USE_SERVER_SIDE_CLUSTERING = {{ feature_flags.USE_SERVER_SIDE_CLUSTERING | default(false) | tojson }};
 window.SHOW_ACCESSIBILITY_TABLE = {{ feature_flags.SHOW_ACCESSIBILITY_TABLE | default(false) | tojson }};
 window.FEATURE_FLAGS = {{ feature_flags | tojson }};
+
+// Location schema for dynamic form building
+// Contains required fields and available categories for new location suggestions
+window.LOCATION_SCHEMA = {{ location_schema | tojson }};
 </script>
 <script src="{{ goodmap_frontend_lib_url }}"></script>
 {% endblock %}
