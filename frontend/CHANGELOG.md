@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/Problematy/goodmap-frontend/compare/v1.0.0...1.0.1) (2025-12-30)
+
+
+### Bug Fixes
+
+* tests are called before release ([#127](https://github.com/Problematy/goodmap-frontend/issues/127)) ([77e053a](https://github.com/Problematy/goodmap-frontend/commit/77e053a9dc2c37bc976866197b1d17b596b3597d))
+
 # 1.0.0 (2025-12-30)
 
 
