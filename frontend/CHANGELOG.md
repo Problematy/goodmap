@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/Problematy/goodmap-frontend/compare/1.0.2...1.0.3) (2025-12-31)
+
+
+### Bug Fixes
+
+* split release to use two steps to semantic release ([#129](https://github.com/Problematy/goodmap-frontend/issues/129)) ([c5447d7](https://github.com/Problematy/goodmap-frontend/commit/c5447d79ab39513ba4be8c7300704fb241dff871))
+
 ## [1.0.2](https://github.com/Problematy/goodmap-frontend/compare/1.0.1...1.0.2) (2025-12-30)
 
 
