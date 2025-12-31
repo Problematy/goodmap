@@ -184,6 +184,13 @@ def test_version_endpoint_returns_version(mock_returning_version, test_app):
     assert response.json == {"backend": "0.1.2"}
 
 
+def test_csrf_token_endpoint_returns_token(test_app):
+    """Test that the CSRF token endpoint returns a token"""
+    response = test_app.get("/api/generate-csrf-token")
+    assert response.status_code == 200
+    assert "csrf_token" in response.json
+
+
 @mock.patch("goodmap.core_api.gettext", fake_translation)
 def test_getting_all_category_data(test_app):
     response = test_app.get("/api/category/test-category")
@@ -227,23 +234,19 @@ def test_suggest_new_location_with_multipart_form_data(test_app):
     """Test suggesting a location with multipart/form-data (for file uploads)"""
     csrf_token = get_csrf_token(test_app)
 
-    # Need to include all required fields like the JSON test
+    # Include all required fields with proper serialization for complex types
     response = test_app.post(
         "/api/suggest-new-point",
         data={
             "position": json.dumps([50, 50]),
             "name": "Test Organization",
             "type_of_place": "type",
-            "organization": "org-1",
-            # Note: test_category is a list, but form data can't easily send arrays
-            # For now, focusing on basic fields that work with form data
+            "test_category": json.dumps(["test"]),  # Serialize list as JSON
         },
         content_type="multipart/form-data",
         headers={"X-CSRFToken": csrf_token},
     )
-    # This might fail if test_category is required
-    # The frontend will need to serialize arrays properly
-    assert response.status_code in [200, 400]  # Accept either for now
+    assert response.status_code == 200
 
 
 def test_suggest_new_location_without_required_fields(test_app):

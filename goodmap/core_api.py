@@ -2,6 +2,7 @@ import importlib.metadata
 import logging
 import uuid
 
+import deprecation
 import numpy
 import pysupercluster
 from flask import Blueprint, jsonify, make_response, request
@@ -106,7 +107,7 @@ def core_pages(
             """Suggest new location"""
             try:
                 # Handle both multipart/form-data (with file uploads) and JSON
-                if request.content_type and "multipart/form-data" in request.content_type:
+                if request.content_type and request.content_type.startswith("multipart/form-data"):
                     # Parse form data dynamically
                     import json as json_lib
 
@@ -264,6 +265,23 @@ def core_pages(
             """Shows backend version"""
             version_info = {"backend": importlib.metadata.version("goodmap")}
             return jsonify(version_info)
+
+    @core_api.route("/generate-csrf-token")
+    class CsrfToken(Resource):
+        @deprecation.deprecated(
+            deprecated_in="1.1.8",
+            details="CSRF protection has been removed from the application. "
+            "This endpoint is maintained only for backward compatibility.",
+        )
+        def get(self):
+            """
+            Generate CSRF token (DEPRECATED)
+
+            This endpoint is deprecated and maintained only for backward compatibility.
+            CSRF protection has been removed from the application.
+            """
+            csrf_token = csrf_generator()
+            return {"csrf_token": csrf_token}
 
     @core_api.route("/categories")
     class Categories(Resource):
