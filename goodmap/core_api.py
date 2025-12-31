@@ -118,7 +118,7 @@ def core_pages(
                         # Try to parse as JSON for complex types (arrays, objects, position)
                         try:
                             suggested_location[key] = json_lib.loads(value)
-                        except (json_lib.JSONDecodeError, ValueError):
+                        except ValueError:  # JSONDecodeError inherits from ValueError
                             # If not JSON, use as-is (simple string values)
                             suggested_location[key] = value
 
