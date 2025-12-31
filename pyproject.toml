@@ -116,23 +116,6 @@ tag_format = "{version}"
 [tool.semantic_release.changelog]
 exclude_commit_patterns = []
 
-[tool.semantic_release.changelog.default_templates]
-changelog_file = "CHANGELOG.md"
-
-[tool.semantic_release.changelog.environment]
-block_start_string = "{%"
-block_end_string = "%}"
-variable_start_string = "{{"
-variable_end_string = "}}"
-comment_start_string = "{#"
-comment_end_string = "#}"
-trim_blocks = false
-lstrip_blocks = false
-newline_sequence = "\n"
-keep_trailing_newline = false
-extensions = []
-autoescape = true
-
 [tool.semantic_release.branches.main]
 match = "main"
 prerelease = false
