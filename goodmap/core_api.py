@@ -270,15 +270,15 @@ def core_pages(
     class CsrfToken(Resource):
         @deprecation.deprecated(
             deprecated_in="1.1.8",
-            details="CSRF protection has been removed from the application. "
-            "This endpoint is maintained only for backward compatibility.",
+            details="This endpoint for explicit CSRF token generation is deprecated. "
+            "CSRF protection remains active in the application.",
         )
         def get(self):
             """
             Generate CSRF token (DEPRECATED)
 
             This endpoint is deprecated and maintained only for backward compatibility.
-            CSRF protection has been removed from the application.
+            CSRF protection remains active in the application.
             """
             csrf_token = csrf_generator()
             return {"csrf_token": csrf_token}
