@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "goodmap"
-version = "1.1.13"
+version = "1.1.14"
 description = "Map engine to serve all the people :)"
 authors = ["Krzysztof Kolodzinski <krzysztof.kolodzinski@problematy.pl>"]
 readme = "README.md"
@@ -114,8 +114,12 @@ commit_message = "chore(release): {version} [skip ci]"
 tag_format = "{version}"
 
 [tool.semantic_release.changelog]
-changelog_file = "CHANGELOG.md"
 exclude_commit_patterns = []
+
+[tool.semantic_release.changelog.default_templates]
+changelog_file = "CHANGELOG.md"
+output_format = "md"
+mask_initial_release = true
 
 [tool.semantic_release.branches.main]
 match = "main"
