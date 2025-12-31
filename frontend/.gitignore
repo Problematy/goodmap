@@ -6,3 +6,9 @@ coverage
 # IDE-specific directories
 .vscode
 .idea
+
+# Backup files
+*.orig
+
+# Webpack cache
+.webpack-cache

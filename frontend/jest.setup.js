@@ -1,4 +1,4 @@
-import { TextEncoder, TextDecoder } from 'util';
+import { TextEncoder, TextDecoder } from 'node:util';
 import failOnConsole from 'jest-fail-on-console'
 
 failOnConsole()

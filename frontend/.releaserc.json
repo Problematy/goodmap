@@ -22,7 +22,7 @@
                     },
                     {
                         "breaking": true,
-                        "release": "minor"
+                        "release": "major"
                     }
                 ]
             }

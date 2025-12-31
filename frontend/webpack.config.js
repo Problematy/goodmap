@@ -1,3 +1,4 @@
+const path = require('node:path');
 const webpack = require('webpack');
 const TerserPlugin = require('terser-webpack-plugin');
 
@@ -6,6 +7,13 @@ module.exports = (env, argv) => {
     const runOnAllInterfaces = env && env.serve === 'network';
 
     return {
+        cache: {
+            type: 'filesystem',
+            cacheDirectory: path.resolve(__dirname, '.webpack-cache'),
+            buildDependencies: {
+                config: [__filename],
+            },
+        },
         devtool: 'source-map',
         entry: './src/index.js',
         output: {

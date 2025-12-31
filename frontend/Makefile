@@ -1,4 +1,4 @@
-.PHONY: help install build dev-build watch unit-tests coverage lint lint-fix serve serve-network clean all
+.PHONY: help install install-ci build dev-build watch unit-tests coverage lint lint-fix serve serve-network clean all
 
 help: ## Show this help message
 	@echo 'Usage: make [target]'
@@ -8,6 +8,9 @@ help: ## Show this help message
 
 install: ## Install dependencies
 	npm install
+
+install-ci: ## Install dependencies (CI-optimized)
+	npm ci
 
 build: ## Build production version
 	npm run build
