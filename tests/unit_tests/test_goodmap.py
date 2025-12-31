@@ -67,3 +67,77 @@ def test_use_lazy_loading_branch(mock_get_location_obligatory_fields):
 
     app = goodmap.create_app_from_config(config)
     mock_get_location_obligatory_fields.assert_called_once_with(app.db)
+
+
+def test_index_route_returns_location_schema():
+    """Test that the index route (/) returns successfully with location_schema"""
+    config = GoodmapConfig(
+        APP_NAME="test_app",
+        SECRET_KEY="test_secret",
+        USE_WWW=False,
+        BLOG_PREFIX="/blog",
+        DB=JsonDbConfig(
+            DATA={
+                "site_content": {"pages": []},
+                "categories": {
+                    "accessibility": ["wheelchair", "elevator"],
+                    "amenities": ["wifi", "parking"],
+                },
+            },
+            TYPE="json",
+        ),
+    )
+    app = goodmap.create_app_from_config(config)
+    # CSRF protection must be disabled in test environment to allow API testing
+    # This is safe because tests run in isolation, not in production
+    app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
+    client = app.test_client()
+
+    response = client.get("/")
+    assert response.status_code == 200
+
+    # Verify location_schema is present in the response
+    response_text = response.data.decode("utf-8")
+    assert "LOCATION_SCHEMA" in response_text
+    assert "obligatory_fields" in response_text
+    assert "categories" in response_text
+    assert "accessibility" in response_text
+    assert "amenities" in response_text
+
+
+def test_index_route_location_schema_with_lazy_loading():
+    """Test that location_schema includes obligatory_fields when USE_LAZY_LOADING is enabled"""
+    config = GoodmapConfig(
+        APP_NAME="test_app",
+        SECRET_KEY="test_secret",
+        USE_WWW=False,
+        BLOG_PREFIX="/blog",
+        DB=JsonDbConfig(
+            DATA={
+                "site_content": {"pages": []},
+                "categories": {"test_category": ["option1"]},
+                "location_obligatory_fields": [
+                    ("name", "str"),
+                    ("position", "list[float]"),
+                    ("test_category", "list[str]"),
+                ],
+            },
+            TYPE="json",
+        ),
+        FEATURE_FLAGS={"USE_LAZY_LOADING": True},
+    )
+    app = goodmap.create_app_from_config(config)
+    # CSRF protection must be disabled in test environment to allow API testing
+    # This is safe because tests run in isolation, not in production
+    app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
+    client = app.test_client()
+
+    response = client.get("/")
+    assert response.status_code == 200
+
+    # Verify location_schema includes obligatory_fields
+    response_text = response.data.decode("utf-8")
+    assert "LOCATION_SCHEMA" in response_text
+    assert "name" in response_text
+    assert "position" in response_text
+    assert "test_category" in response_text

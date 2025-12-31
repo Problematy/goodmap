@@ -4,22 +4,44 @@ on:
   pull_request:
     branches:
       - main
+    paths-ignore:
+      - '**.md'
+      - '**.rst'
+      - 'docs/**'
+      - 'LICENSE'
+      - '.gitignore'
+      - 'CHANGELOG.md'
+      - 'examples/**/*.json'
   workflow_call:
 
-permissions:
-  contents: 'read'
+# Cancel outdated workflow runs when new commits are pushed to the PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  backend-test:
+  lint:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: 'true'  # TODO remove this line after the submodules are removed
     - name: Set up Python 3.10
       uses: actions/setup-python@v5
       with:
         python-version: "3.10"
+        cache: 'pip'
+    - name: Cache Poetry virtualenv
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/pypoetry/virtualenvs
+          ~/.cache/pip
+        key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-poetry-
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -27,8 +49,34 @@ jobs:
         poetry install
     - name: Run linters
       run: make lint-check
-    - name: Run tests without coverage
-      run: make unit-tests-no-coverage
+
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: 'true'  # TODO remove this line after the submodules are removed
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
+        cache: 'pip'
+    - name: Cache Poetry virtualenv
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/pypoetry/virtualenvs
+          ~/.cache/pip
+        key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-poetry-
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install poetry==2.0.1
+        poetry install
     - name: Run tests with coverage
       run: make coverage
     - name: Coveralls
@@ -38,15 +86,12 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
 
   e2e-tests:
-    needs: backend-test
-    uses: problematy/goodmap-e2e-tests/.github/workflows/e2e-tests.yml@572c78cf1da91526c9f1139c7cc741f034f52ff6
+    needs: [lint, test]
     permissions:
       contents: read
       actions: read
+      pull-requests: write
+    uses: problematy/goodmap-e2e-tests/.github/workflows/e2e-tests.yml@b2987f23cc7f4eaa38413f70ed5def242ea0c016
     with:
-      calling-repo: 'goodmap'
-      goodmap-version: 'main'
+      goodmap-version: ${{ github.sha }}
       goodmap-frontend-version: 'main'
-      goodmap-path: '.'
-      e2e-tests-path: 'goodmap-e2e-tests'
-

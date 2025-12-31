@@ -53,10 +53,21 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
 
     @goodmap.route("/")
     def index():
+        # Prepare location schema for frontend dynamic forms
+        # Convert categories dict_keys to a proper dict for JSON serialization
+        category_data = app.db.get_category_data()
+        categories = category_data.get("categories", {})
+
+        location_schema = {
+            "obligatory_fields": location_obligatory_fields,
+            "categories": categories,
+        }
+
         return render_template(
             "map.html",
             feature_flags=config.feature_flags,
             goodmap_frontend_lib_url=config.goodmap_frontend_lib_url,
+            location_schema=location_schema,
         )
 
     @goodmap.route("/goodmap-admin")

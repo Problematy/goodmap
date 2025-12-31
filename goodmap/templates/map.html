@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block head_meta %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
       integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
@@ -119,6 +120,10 @@ window.USE_LAZY_LOADING = {{ feature_flags.USE_LAZY_LOADING | default(false) | t
 window.USE_SERVER_SIDE_CLUSTERING = {{ feature_flags.USE_SERVER_SIDE_CLUSTERING | default(false) | tojson }};
 window.SHOW_ACCESSIBILITY_TABLE = {{ feature_flags.SHOW_ACCESSIBILITY_TABLE | default(false) | tojson }};
 window.FEATURE_FLAGS = {{ feature_flags | tojson }};
+
+// Location schema for dynamic form building
+// Contains required fields and available categories for new location suggestions
+globalThis.LOCATION_SCHEMA = {{ location_schema | tojson }};
 </script>
 <script src="{{ goodmap_frontend_lib_url }}"></script>
 {% endblock %}
