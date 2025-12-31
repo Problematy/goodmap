@@ -2,7 +2,7 @@
     "name": "@problematy/goodmap",
     "version": "1.0.2",
     "engines": {
-        "node": ">=22.0.0"
+        "node": ">=24.0.0"
     },
     "description": "Fronted scripts for map",
     "main": "dist/index.js",
