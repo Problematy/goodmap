@@ -47,13 +47,10 @@ coveralls = ">=3.3.1,<5.0.0"
 pyright = "^1.1.291"
 freezegun = "^1.2.2"
 black = "^24.8.0"
-ruff = "^0.4.4"
+ruff = ">=0.4.4,<0.15.0"
 platzky-redirections = "^0.1.0"
 python-semantic-release = "^10.4.1"
 interrogate = "^1.7.0"
-
-[tool.poetry.group.local.dependencies]
-platzky = {path = "vendor/platzky", develop = true}
 
 [build-system]
 requires = ["poetry-core>=1.0.0", "numpy"]
@@ -77,10 +74,6 @@ reportUntypedClassDecorator = false
 reportUnusedClass = false
 reportUntypedBaseClass = false
 
-exclude = [
-    "**/vendor/**",
-]
-
 [tool.black]
 line-length = 100
 target-version = ["py310"]
@@ -98,7 +91,6 @@ lint.select = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "--ignore=vendor"
 markers = [
     "skip_coverage: skip coverage for this test"
 ]

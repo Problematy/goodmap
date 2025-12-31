@@ -1,4 +1,4 @@
-from typing import Any, Type
+from typing import Any, Type, cast
 
 from pydantic import (
     BaseModel,
@@ -58,11 +58,7 @@ def create_location_model(obligatory_fields: list[tuple[str, Type[Any]]]) -> Typ
 
     return create_model(
         "Location",
-        __config__=None,
-        __doc__=None,
-        __module__="Location",
-        __validators__=None,
         __base__=LocationBase,
-        __cls_kwargs__=None,
-        **fields,
+        __module__="goodmap.data_models.location",
+        **cast(dict[str, Any], fields),
     )
