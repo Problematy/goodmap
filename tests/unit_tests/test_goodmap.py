@@ -88,7 +88,9 @@ def test_index_route_returns_location_schema():
         ),
     )
     app = goodmap.create_app_from_config(config)
-    app.config["WTF_CSRF_ENABLED"] = False
+    # CSRF protection must be disabled in test environment to allow API testing
+    # This is safe because tests run in isolation, not in production
+    app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
     client = app.test_client()
 
     response = client.get("/")
@@ -125,7 +127,9 @@ def test_index_route_location_schema_with_lazy_loading():
         FEATURE_FLAGS={"USE_LAZY_LOADING": True},
     )
     app = goodmap.create_app_from_config(config)
-    app.config["WTF_CSRF_ENABLED"] = False
+    # CSRF protection must be disabled in test environment to allow API testing
+    # This is safe because tests run in isolation, not in production
+    app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
     client = app.test_client()
 
     response = client.get("/")

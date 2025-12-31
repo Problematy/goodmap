@@ -89,8 +89,9 @@ def test_app():
     config_data["FEATURE_FLAGS"] = feature_flags
     config = GoodmapConfig.model_validate(config_data)
     app = create_app_from_config(config)
-    # Disable CSRF protection for tests
-    app.config["WTF_CSRF_ENABLED"] = False
+    # CSRF protection must be disabled in test environment to allow API testing
+    # This is safe because tests run in isolation, not in production
+    app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
     return app.test_client()
 
 
