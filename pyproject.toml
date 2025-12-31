@@ -110,7 +110,7 @@ dist_path = "dist/"
 upload_to_release = true
 remove_dist = false
 commit_author = "semantic-release <semantic-release>"
-commit_message = "chore(release): {version} [skip ci]\n\n{changelog}"
+commit_message = "chore(release): {version} [skip ci]"
 tag_format = "{version}"
 
 [tool.semantic_release.changelog]
