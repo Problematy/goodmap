@@ -16,6 +16,7 @@ jobs:
     permissions:
       contents: read
       actions: read  # Required for nested e2e-tests workflow
+      pull-requests: write  # Required for e2e-tests to post PR comments
 
   release:
     runs-on: ubuntu-latest
