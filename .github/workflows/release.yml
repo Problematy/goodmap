@@ -74,6 +74,25 @@ jobs:
           git_committer_email: "semantic-release@users.noreply.github.com"
           build: false
 
+      - name: Debug | Check if CHANGELOG.md exists and show git status
+        if: steps.release.outputs.released == 'true'
+        run: |
+          echo "=== Checking CHANGELOG.md ==="
+          if [ -f CHANGELOG.md ]; then
+            echo "✅ CHANGELOG.md exists"
+            echo "File size: $(wc -c < CHANGELOG.md) bytes"
+            echo "Last 20 lines:"
+            tail -20 CHANGELOG.md
+          else
+            echo "❌ CHANGELOG.md does NOT exist"
+          fi
+          echo ""
+          echo "=== Git Status ==="
+          git status
+          echo ""
+          echo "=== Git Log (last commit) ==="
+          git log -1 --stat
+
       - name: Build package
         if: steps.release.outputs.released == 'true'
         run: poetry build
