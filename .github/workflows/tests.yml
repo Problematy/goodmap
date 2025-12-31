@@ -12,7 +12,17 @@ on:
       - '.gitignore'
       - 'CHANGELOG.md'
       - 'examples/**/*.json'
-  workflow_call:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - '**.rst'
+      - 'docs/**'
+      - 'LICENSE'
+      - '.gitignore'
+      - 'CHANGELOG.md'
+      - 'examples/**/*.json'
 
 # Cancel outdated workflow runs when new commits are pushed to the PR
 concurrency:

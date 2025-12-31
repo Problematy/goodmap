@@ -11,16 +11,10 @@ permissions:
   id-token: write
 
 jobs:
-  tests:
-    uses: ./.github/workflows/tests.yml
-    permissions:
-      contents: read
-      actions: read  # Required for nested e2e-tests workflow
-      pull-requests: write  # Required for e2e-tests to post PR comments
-
+  # Tests run automatically on push to main via tests.yml
+  # Branch protection rules ensure tests pass before this workflow runs
   release:
     runs-on: ubuntu-latest
-    needs: tests
     outputs:
       released: ${{ steps.release.outputs.released }}
       tag: ${{ steps.release.outputs.tag }}
