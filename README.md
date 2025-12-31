@@ -101,3 +101,4 @@ You can find examples of working configuration and database in `examples/` direc
 - `mongo_e2e_test_config.yml` - MongoDB configuration example
 
 
+# final test
