@@ -1,3 +1,5 @@
+"""Pydantic models for location data validation and schema generation."""
+
 from typing import Any, Type, cast
 
 from pydantic import (
@@ -13,12 +15,20 @@ from goodmap.exceptions import LocationValidationError
 
 
 class LocationBase(BaseModel, extra="allow"):
+    """Base model for location data with position validation and error enrichment.
+
+    Attributes:
+        position: Tuple of (latitude, longitude) coordinates
+        uuid: Unique identifier for the location
+    """
+
     position: tuple[float, float]
     uuid: str
 
     @field_validator("position")
     @classmethod
     def position_must_be_valid(cls, v):
+        """Validate that latitude and longitude are within valid ranges."""
         if v[0] < -90 or v[0] > 90:
             raise ValueError("latitude must be in range -90 to 90")
         if v[1] < -180 or v[1] > 180:
@@ -44,6 +54,11 @@ class LocationBase(BaseModel, extra="allow"):
             raise LocationValidationError(e, uuid=uuid) from e
 
     def basic_info(self):
+        """Get basic location information summary.
+
+        Returns:
+            dict: Dictionary with uuid, position, and remark flag
+        """
         return {
             "uuid": self.uuid,
             "position": self.position,
@@ -52,6 +67,14 @@ class LocationBase(BaseModel, extra="allow"):
 
 
 def create_location_model(obligatory_fields: list[tuple[str, Type[Any]]]) -> Type[BaseModel]:
+    """Dynamically create a Location model with additional required fields.
+
+    Args:
+        obligatory_fields: List of (field_name, field_type) tuples for required fields
+
+    Returns:
+        Type[BaseModel]: A Location model class extending LocationBase with additional fields
+    """
     fields = {
         field_name: (field_type, Field(...)) for (field_name, field_type) in obligatory_fields
     }
