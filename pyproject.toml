@@ -114,6 +114,7 @@ commit_message = "chore(release): {version} [skip ci]"
 tag_format = "{version}"
 
 [tool.semantic_release.changelog]
+changelog_file = "CHANGELOG.md"
 exclude_commit_patterns = []
 
 [tool.semantic_release.branches.main]
