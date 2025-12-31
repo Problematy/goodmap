@@ -1,3 +1,10 @@
+## [1.0.4](https://github.com/Problematy/goodmap-frontend/compare/1.0.3...1.0.4) (2025-12-31)
+
+
+### Bug Fixes
+
+* added repository to package.json ([81d299e](https://github.com/Problematy/goodmap-frontend/commit/81d299e116fb64bf7ecff94c84a8706d26b10a7e))
+
 ## [1.0.3](https://github.com/Problematy/goodmap-frontend/compare/1.0.2...1.0.3) (2025-12-31)
 
 
