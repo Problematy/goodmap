@@ -35,7 +35,7 @@ jobs:
     permissions:
       contents: read
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         submodules: 'true'  # TODO remove this line after the submodules are removed
     - name: Set up Python 3.10
@@ -65,7 +65,7 @@ jobs:
     permissions:
       contents: read
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         submodules: 'true'  # TODO remove this line after the submodules are removed
     - name: Set up Python 3.10

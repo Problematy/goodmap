@@ -37,7 +37,7 @@ jobs:
           private-key: ${{ secrets.MY_RELEASER_PRIVATE_KEY }}
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: true
           token: ${{ steps.generate_token.outputs.token }}
