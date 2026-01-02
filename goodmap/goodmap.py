@@ -1,4 +1,4 @@
-"""Goodmap Flask application factory and configuration."""
+"""Goodmap engine with location management and admin interface."""
 
 import os
 
