@@ -1,3 +1,5 @@
+"""Goodmap Flask application factory and configuration."""
+
 import os
 
 from flask import Blueprint, redirect, render_template, session
@@ -13,16 +15,44 @@ from goodmap.db import extend_db_with_goodmap_queries, get_location_obligatory_f
 
 
 def create_app(config_path: str) -> platzky.Engine:
+    """Create Goodmap application from YAML configuration file.
+
+    Args:
+        config_path: Path to YAML configuration file
+
+    Returns:
+        platzky.Engine: Configured Flask application
+    """
     config = GoodmapConfig.parse_yaml(config_path)
     return create_app_from_config(config)
 
 
 # TODO Checking if there is a feature flag secition should be part of configs logic not client app
 def is_feature_enabled(config: GoodmapConfig, feature: str) -> bool:
+    """Check if a feature flag is enabled in the configuration.
+
+    Args:
+        config: Goodmap configuration object
+        feature: Name of the feature flag to check
+
+    Returns:
+        bool: True if feature is enabled, False otherwise
+    """
     return config.feature_flags.get(feature, False) if config.feature_flags else False
 
 
 def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
+    """Create and configure Goodmap application from config object.
+
+    Sets up location models, database queries, CSRF protection, API blueprints,
+    and admin interface based on the provided configuration.
+
+    Args:
+        config: Goodmap configuration object
+
+    Returns:
+        platzky.Engine: Fully configured Flask application with Goodmap features
+    """
     directory = os.path.dirname(os.path.realpath(__file__))
 
     locale_dir = os.path.join(directory, "locale")
@@ -53,6 +83,14 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
 
     @goodmap.route("/")
     def index():
+        """Render main map interface with location schema.
+
+        Prepares and passes location schema including obligatory fields and
+        categories to the frontend for dynamic form generation.
+
+        Returns:
+            Rendered map.html template with feature flags and location schema
+        """
         # Prepare location schema for frontend dynamic forms
         # Convert categories dict_keys to a proper dict for JSON serialization
         category_data = app.db.get_category_data()
@@ -72,6 +110,14 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
 
     @goodmap.route("/goodmap-admin")
     def admin():
+        """Render admin interface for managing map data.
+
+        Requires user to be logged in (redirects to /admin if not).
+        Provides admin panel for managing locations, suggestions, and reports.
+
+        Returns:
+            Rendered goodmap-admin.html template or redirect to login
+        """
         user = session.get("user", None)
         if not user:
             return redirect("/admin")
