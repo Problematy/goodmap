@@ -5,12 +5,12 @@ from goodmap.exceptions import LocationValidationError
 
 
 def test_proper_creation():
-    location_model = create_location_model(obligatory_fields=[("used_obligatory_field", str)])
+    location_model = create_location_model(obligatory_fields=[("used_obligatory_field", "str")])
     location_model(uuid="1", used_obligatory_field="test-name", position=(50, 50))
 
 
 def test_missing_field_creation():
-    location_model = create_location_model(obligatory_fields=[("not_used_obligatory_field", str)])
+    location_model = create_location_model(obligatory_fields=[("not_used_obligatory_field", "str")])
     with pytest.raises(LocationValidationError):
         location_model(uuid="1", position=(50, 50))
 

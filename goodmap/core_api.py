@@ -88,8 +88,9 @@ def schema_to_restx_field(field_schema):
             # List with enum-constrained items
             inner_field = fields.String(enum=list_enum)
         else:
-            # Regular list
-            inner_field = type_map.get(items_type, fields.String)
+            # Regular list - instantiate the field class
+            field_class = type_map.get(items_type, fields.String)
+            inner_field = field_class()
 
         return fields.List(inner_field, required=False, description=description)
 

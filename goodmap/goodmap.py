@@ -11,7 +11,11 @@ from platzky.models import CmsModule
 from goodmap.config import GoodmapConfig
 from goodmap.core_api import core_pages
 from goodmap.data_models.location import create_location_model
-from goodmap.db import extend_db_with_goodmap_queries, get_category_data, get_location_obligatory_fields
+from goodmap.db import (
+    extend_db_with_goodmap_queries,
+    get_category_data,
+    get_location_obligatory_fields,
+)
 
 
 def create_app(config_path: str) -> platzky.Engine:
@@ -73,6 +77,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         location_obligatory_fields = []
         categories = {}
 
+    app.location_obligatory_fields = location_obligatory_fields  # type: ignore[attr-defined]
     location_model = create_location_model(location_obligatory_fields, categories)
 
     app.db = extend_db_with_goodmap_queries(app.db, location_model)
@@ -111,13 +116,11 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
 
         # Filter out uuid and position from properties for frontend form
         form_fields = {
-            name: spec
-            for name, spec in properties.items()
-            if name not in ("uuid", "position")
+            name: spec for name, spec in properties.items() if name not in ("uuid", "position")
         }
 
         location_schema = {
-            "obligatory_fields": location_obligatory_fields,  # Backward compatibility
+            "obligatory_fields": app.location_obligatory_fields,  # type: ignore[attr-defined]  # Backward compatibility
             "categories": categories,  # Backward compatibility
             "fields": form_fields,  # New: full field specifications from Pydantic schema
         }

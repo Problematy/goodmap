@@ -1,6 +1,6 @@
 """Pydantic models for location data validation and schema generation."""
 
-from typing import Annotated, Any, Type, cast
+from typing import Any, Type, cast
 
 from pydantic import (
     BaseModel,
@@ -67,7 +67,7 @@ class LocationBase(BaseModel, extra="allow"):
 
 
 def create_location_model(
-    obligatory_fields: list[tuple[str, str]], categories: dict[str, list[str]] = None
+    obligatory_fields: list[tuple[str, str]], categories: dict[str, list[str]] | None = None
 ) -> Type[BaseModel]:
     """Dynamically create a Location model with additional required fields.
 
@@ -85,12 +85,19 @@ def create_location_model(
     validators = {}
 
     # Map type strings to Python types
-    type_mapping = {"str": str, "list": list, "int": int, "float": float, "bool": bool, "dict": dict}
+    type_mapping = {
+        "str": str,
+        "list": list,
+        "int": int,
+        "float": float,
+        "bool": bool,
+        "dict": dict,
+    }
 
     for field_name, field_type_str in obligatory_fields:
         # Determine base type from string
-        is_list = isinstance(field_type_str, str) and field_type_str.startswith("list")
-        base_type = list if is_list else type_mapping.get(field_type_str, str) if isinstance(field_type_str, str) else field_type_str
+        is_list = field_type_str.startswith("list")
+        base_type = list if is_list else type_mapping.get(field_type_str, str)
 
         # Get category constraints if available
         allowed_values = categories.get(field_name)
@@ -101,8 +108,13 @@ def create_location_model(
             if is_list:
                 fields[field_name] = (
                     list[str],
-                    Field(..., description=description, json_schema_extra={"enum_items": allowed_values}),
+                    Field(
+                        ...,
+                        description=description,
+                        json_schema_extra=cast(Any, {"enum_items": allowed_values}),
+                    ),
                 )
+
                 # Create validator for list items
                 def make_list_validator(allowed):
                     def validator(cls, v):
@@ -110,21 +122,34 @@ def create_location_model(
                             if item not in allowed:
                                 raise ValueError(f"must be one of {allowed}, got '{item}'")
                         return v
+
                     return validator
-                validators[field_name] = pydantic_field_validator(field_name)(make_list_validator(allowed_values))
+
+                validators[field_name] = pydantic_field_validator(field_name)(
+                    make_list_validator(allowed_values)
+                )
             else:
                 fields[field_name] = (
                     str,
-                    Field(..., description=description, json_schema_extra={"enum": allowed_values}),
+                    Field(
+                        ...,
+                        description=description,
+                        json_schema_extra=cast(Any, {"enum": allowed_values}),
+                    ),
                 )
+
                 # Create validator for string value
                 def make_str_validator(allowed):
                     def validator(cls, v):
                         if v not in allowed:
                             raise ValueError(f"must be one of {allowed}, got '{v}'")
                         return v
+
                     return validator
-                validators[field_name] = pydantic_field_validator(field_name)(make_str_validator(allowed_values))
+
+                validators[field_name] = pydantic_field_validator(field_name)(
+                    make_str_validator(allowed_values)
+                )
         else:
             # No categories, use the base type
             fields[field_name] = (base_type, Field(...))
