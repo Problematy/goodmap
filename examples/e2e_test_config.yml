@@ -21,5 +21,7 @@ FEATURE_FLAGS:
   SHOW_ACCESSIBILITY_TABLE: True
   FAKE_LOGIN: False
   CATEGORIES_HELP: True
+  SHOW_SEARCH_BAR: True
+  SHOW_SUGGEST_NEW_POINT_BUTTON: True
 
-GOODMAP_FRONTEND_LIB_URL: "https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.4.4"
+GOODMAP_FRONTEND_LIB_URL: "https://cdn.jsdelivr.net/npm/@problematy/goodmap@1.0.4"

@@ -11,7 +11,7 @@ from platzky.models import CmsModule
 from goodmap.config import GoodmapConfig
 from goodmap.core_api import core_pages
 from goodmap.data_models.location import create_location_model
-from goodmap.db import extend_db_with_goodmap_queries, get_location_obligatory_fields
+from goodmap.db import extend_db_with_goodmap_queries, get_category_data, get_location_obligatory_fields
 
 
 def create_app(config_path: str) -> platzky.Engine:
@@ -61,10 +61,19 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
 
     if is_feature_enabled(config, "USE_LAZY_LOADING"):
         location_obligatory_fields = get_location_obligatory_fields(app.db)
+        # Call the category data function directly for the db type
+        category_data_func = get_category_data(app.db)
+        try:
+            category_data = category_data_func(app.db)
+            categories = category_data.get("categories", {})
+        except (KeyError, AttributeError):
+            # Handle case where categories don't exist in the data
+            categories = {}
     else:
         location_obligatory_fields = []
+        categories = {}
 
-    location_model = create_location_model(location_obligatory_fields)
+    location_model = create_location_model(location_obligatory_fields, categories)
 
     app.db = extend_db_with_goodmap_queries(app.db, location_model)
 
@@ -92,13 +101,25 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
             Rendered map.html template with feature flags and location schema
         """
         # Prepare location schema for frontend dynamic forms
-        # Convert categories dict_keys to a proper dict for JSON serialization
+        # Include full schema from Pydantic model for better type information
         category_data = app.db.get_category_data()
         categories = category_data.get("categories", {})
 
+        # Get full JSON schema from Pydantic model
+        model_json_schema = location_model.model_json_schema()
+        properties = model_json_schema.get("properties", {})
+
+        # Filter out uuid and position from properties for frontend form
+        form_fields = {
+            name: spec
+            for name, spec in properties.items()
+            if name not in ("uuid", "position")
+        }
+
         location_schema = {
-            "obligatory_fields": location_obligatory_fields,
-            "categories": categories,
+            "obligatory_fields": location_obligatory_fields,  # Backward compatibility
+            "categories": categories,  # Backward compatibility
+            "fields": form_fields,  # New: full field specifications from Pydantic schema
         }
 
         return render_template(

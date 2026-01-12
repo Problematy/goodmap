@@ -50,6 +50,58 @@ def get_or_none(data, *keys):
     return data
 
 
+def schema_to_restx_field(field_schema):
+    """Convert a Pydantic JSON schema field to Flask-RESTX field type.
+
+    Automatically extracts enum constraints from the schema metadata added by
+    the location model's category validators.
+
+    Args:
+        field_schema: Field schema dict from Pydantic model_json_schema()
+
+    Returns:
+        Flask-RESTX field instance with proper types and enum constraints
+    """
+    field_type = field_schema.get("type")
+    description = field_schema.get("description")
+    enum_values = field_schema.get("enum")  # Direct enum for string fields
+    enum_items = field_schema.get("enum_items")  # Enum for list items (our custom metadata)
+
+    # Type mapping for basic types
+    type_map = {
+        "string": fields.String,
+        "integer": fields.Integer,
+        "number": fields.Float,
+        "boolean": fields.Boolean,
+        "object": fields.Raw,
+    }
+
+    # Handle array/list types
+    if field_type == "array":
+        items_schema = field_schema.get("items", {})
+        items_type = items_schema.get("type", "string")
+
+        # Check for enum constraints (either in items or at field level)
+        list_enum = items_schema.get("enum") or enum_items
+
+        if list_enum:
+            # List with enum-constrained items
+            inner_field = fields.String(enum=list_enum)
+        else:
+            # Regular list
+            inner_field = type_map.get(items_type, fields.String)
+
+        return fields.List(inner_field, required=False, description=description)
+
+    # Handle primitives with enum constraints
+    if enum_values:
+        return fields.String(enum=enum_values, required=False, description=description)
+
+    # Handle basic types without enum
+    field_class = type_map.get(field_type, fields.Raw)
+    return field_class(required=False, description=description)
+
+
 def get_locations_from_request(database, request_args, as_basic_info=False):
     """
     Shared helper to fetch locations from database based on request arguments.
@@ -90,14 +142,33 @@ def core_pages(
         },
     )
 
-    # TODO get this from Location pydantic model
+    # Build suggestion model directly from Pydantic model's JSON schema
+    model_schema = location_model.model_json_schema()
+    schema_properties = model_schema.get("properties", {})
+
+    suggested_location_fields = {}
+
+    for field_name, field_schema in schema_properties.items():
+        # Skip uuid (generated server-side)
+        if field_name == "uuid":
+            continue
+
+        # Special handling for position field with clear description
+        if field_name == "position":
+            suggested_location_fields["position"] = fields.List(
+                fields.Float,
+                required=True,
+                description="Location coordinates as [latitude, longitude]. "
+                "Latitude must be between -90 and 90, longitude between -180 and 180.",
+                example=[51.1095, 17.0525],
+            )
+        else:
+            # All other fields: convert from Pydantic schema to Flask-RESTX
+            suggested_location_fields[field_name] = schema_to_restx_field(field_schema)
+
     suggested_location_model = core_api.model(
         "LocationSuggestion",
-        {
-            "name": fields.String(required=False, description="Organization name"),
-            "position": fields.String(required=True, description="Location of the suggestion"),
-            "photo": fields.String(required=False, description="Photo of the location"),
-        },
+        suggested_location_fields,
     )
 
     @core_api.route("/suggest-new-point")
@@ -105,12 +176,12 @@ def core_pages(
         @core_api.expect(suggested_location_model)
         def post(self):
             """Suggest new location"""
+            import json as json_lib
+
             try:
                 # Handle both multipart/form-data (with file uploads) and JSON
                 if request.content_type and request.content_type.startswith("multipart/form-data"):
                     # Parse form data dynamically
-                    import json as json_lib
-
                     suggested_location = {}
 
                     for key in request.form:
@@ -132,8 +203,8 @@ def core_pages(
                 location = location_model.model_validate(suggested_location)
                 database.add_suggestion(location.model_dump())
                 message = (
-                    f"A new location has been suggested under uuid: '{location.uuid}' "
-                    f"at position: {location.position}"
+                    f"A new location has been suggested with details:"
+                    f"\n{json_lib.dumps(suggested_location, indent=2)}"
                 )
                 notifier_function(message)
             except BadRequest:
