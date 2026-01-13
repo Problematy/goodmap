@@ -35,7 +35,7 @@ def safe_json_loads(
     Args:
         json_string: JSON string to parse
         max_depth: Maximum nesting depth allowed (default: 10)
-        max_size: Maximum string size in bytes (default: 1MB)
+        max_size: Maximum string size in bytes (default: 50KB)
 
     Returns:
         Parsed JSON object
@@ -64,7 +64,13 @@ def safe_json_loads(
         parsed = json.loads(json_string)
     except json.JSONDecodeError as e:
         # Re-raise with original error message
-        raise ValueError(f"Invalid JSON: {e}")
+        raise ValueError(f"Invalid JSON: {e}") from e
+    except RecursionError as e:
+        # Handle extreme nesting that causes RecursionError during parsing
+        raise JSONDepthError(
+            f"JSON nesting is too deep and caused a recursion error during parsing. "
+            f"Maximum allowed depth is {max_depth}"
+        ) from e
 
     # Depth check after parsing
     _check_depth(parsed, max_depth, current_depth=0)

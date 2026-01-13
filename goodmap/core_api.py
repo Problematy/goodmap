@@ -164,6 +164,9 @@ def core_pages(
             else:
                 # Parse JSON data
                 suggested_location = request.get_json()
+                if suggested_location is None:
+                    logger.warning("Empty or invalid JSON in suggest endpoint")
+                    return make_response(jsonify({"message": ERROR_INVALID_REQUEST_DATA}), 400)
 
             suggested_location.update({"uuid": str(uuid.uuid4())})
             location = location_model.model_validate(suggested_location)
@@ -290,19 +293,23 @@ def core_pages(
             return make_response(jsonify({"message": "An error occurred during clustering"}), 500)
 
     @core_api_blueprint.route("/location/<location_id>", methods=["GET"])
-    @spec.validate()
+    @spec.validate(resp=Response(HTTP_404=ErrorResponse))
     def get_location(location_id):
         """Get detailed information for a single location.
 
         Returns full location data including all custom fields,
         formatted for display in the location details view.
         """
-        location = database.get_location(location_id)
-        visible_data = database.get_visible_data()
-        meta_data = database.get_meta_data()
+        try:
+            location = database.get_location(location_id)
+            visible_data = database.get_visible_data()
+            meta_data = database.get_meta_data()
 
-        formatted_data = prepare_pin(location.model_dump(), visible_data, meta_data)
-        return jsonify(formatted_data)
+            formatted_data = prepare_pin(location.model_dump(), visible_data, meta_data)
+            return jsonify(formatted_data)
+        except LocationNotFoundError as e:
+            logger.info("Location not found", extra={"uuid": e.uuid})
+            return make_response(jsonify({"message": "Location not found"}), 404)
 
     @core_api_blueprint.route("/version", methods=["GET"])
     @spec.validate(resp=Response(HTTP_200=VersionResponse))
@@ -345,7 +352,7 @@ def core_pages(
             return jsonify(categories)
         else:
             category_data = database.get_category_data()
-            categories_help = category_data["categories_help"]
+            categories_help = category_data.get("categories_help")
             proper_categories_help = []
             if categories_help is not None:
                 for option in categories_help:
@@ -415,6 +422,9 @@ def core_pages(
         adds it to the database.
         """
         location_data = request.get_json()
+        if location_data is None:
+            logger.warning("Empty or invalid JSON in admin create location endpoint")
+            return make_response(jsonify({"message": ERROR_INVALID_REQUEST_DATA}), 400)
         try:
             location_data.update({"uuid": str(uuid.uuid4())})
             location = location_model.model_validate(location_data)
@@ -439,6 +449,9 @@ def core_pages(
         Returns 404 if location not found.
         """
         location_data = request.get_json()
+        if location_data is None:
+            logger.warning("Empty or invalid JSON in admin update location endpoint")
+            return make_response(jsonify({"message": ERROR_INVALID_REQUEST_DATA}), 400)
         try:
             location_data.update({"uuid": location_id})
             location = location_model.model_validate(location_data)
@@ -499,6 +512,9 @@ def core_pages(
         """
         try:
             data = request.get_json()
+            if data is None:
+                logger.warning("Empty or invalid JSON in update suggestion status endpoint")
+                return make_response(jsonify({"message": ERROR_INVALID_REQUEST_DATA}), 400)
             status = data.get("status")
             if status not in ("accepted", "rejected"):
                 return make_response(jsonify({"message": "Invalid status"}), 400)

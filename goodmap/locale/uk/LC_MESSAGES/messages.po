@@ -46,9 +46,8 @@ msgstr ""
 
 #: goodmap/templates/goodmap-admin.html:28
 #: goodmap/templates/goodmap-admin.html:41
-#, fuzzy
 msgid "Locations"
-msgstr "Завантаження"
+msgstr "Локації"
 
 #: goodmap/templates/goodmap-admin.html:31
 #: goodmap/templates/goodmap-admin.html:101
@@ -133,9 +132,8 @@ msgid "Filter by Priority"
 msgstr ""
 
 #: goodmap/templates/goodmap-admin.html:139
-#, fuzzy
 msgid "Location ID"
-msgstr "Місцезнаходження повідомлено"
+msgstr "ID локації"
 
 #: goodmap/templates/goodmap-admin.html:140
 msgid "Description"
