@@ -109,7 +109,7 @@ def core_pages(
     )
 
     @core_api_blueprint.route("/suggest-new-point", methods=["POST"])
-    @spec.validate(resp=Response(HTTP_200=SuccessResponse, HTTP_400=ErrorResponse))  # type: ignore[misc]
+    @spec.validate(resp=Response(HTTP_200=SuccessResponse, HTTP_400=ErrorResponse))
     def suggest_new_point():
         """Suggest new location for review.
 
@@ -160,11 +160,11 @@ def core_pages(
             suggested_location.update({"uuid": str(uuid.uuid4())})
             location = location_model.model_validate(suggested_location)
             database.add_suggestion(location.model_dump())
-            message = (
-                f"A new location has been suggested with details:"
-                f"\n{json_lib.dumps(suggested_location, indent=2)}"
+            message = gettext("A new location has been suggested with details")
+            notifier_message = (
+                f"{message}: {json_lib.dumps(suggested_location, indent=2)}"
             )
-            notifier_function(message)
+            notifier_function(notifier_message)
         except BadRequest:
             logger.warning("Invalid request data in suggest endpoint")
             return make_response(jsonify({"message": ERROR_INVALID_REQUEST_DATA}), 400)

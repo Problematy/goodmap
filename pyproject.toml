@@ -71,6 +71,7 @@ reportUnknownParameterType = false
 reportUnusedFunction = false
 reportUnnecessaryTypeIgnoreComment = true
 reportUntypedClassDecorator = false
+reportUntypedFunctionDecorator = false
 reportUnusedClass = false
 reportUntypedBaseClass = false
 
