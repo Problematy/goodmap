@@ -1,7 +1,7 @@
 """Pydantic models for location data validation and schema generation."""
 
 import warnings
-from typing import Any, Type, Union, cast, overload
+from typing import Any, Sequence, Type, Union, cast, overload
 
 from pydantic import (
     BaseModel,
@@ -69,7 +69,7 @@ class LocationBase(BaseModel, extra="allow"):
 
 @overload
 def create_location_model(
-    obligatory_fields: list[tuple[str, str]], categories: dict[str, list[str]] | None = None
+    obligatory_fields: Sequence[tuple[str, str]], categories: dict[str, list[str]] | None = None
 ) -> Type[BaseModel]:
     """Create location model with string type names (recommended)."""
     ...
@@ -77,14 +77,15 @@ def create_location_model(
 
 @overload
 def create_location_model(
-    obligatory_fields: list[tuple[str, Type[Any]]], categories: dict[str, list[str]] | None = None
+    obligatory_fields: Sequence[tuple[str, Type[Any]]],
+    categories: dict[str, list[str]] | None = None,
 ) -> Type[BaseModel]:
     """Create location model with Python type objects (deprecated)."""
     ...
 
 
 def create_location_model(
-    obligatory_fields: list[tuple[str, Union[str, Type[Any]]]],
+    obligatory_fields: Sequence[tuple[str, Union[str, Type[Any]]]],
     categories: dict[str, list[str]] | None = None,
 ) -> Type[BaseModel]:
     """Dynamically create a Location model with additional required fields.

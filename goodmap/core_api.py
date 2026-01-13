@@ -161,9 +161,7 @@ def core_pages(
             location = location_model.model_validate(suggested_location)
             database.add_suggestion(location.model_dump())
             message = gettext("A new location has been suggested with details")
-            notifier_message = (
-                f"{message}: {json_lib.dumps(suggested_location, indent=2)}"
-            )
+            notifier_message = f"{message}: {json_lib.dumps(suggested_location, indent=2)}"
             notifier_function(notifier_message)
         except BadRequest:
             logger.warning("Invalid request data in suggest endpoint")

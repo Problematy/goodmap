@@ -47,9 +47,10 @@ def test_create_location_model_backward_compatibility():
         assert len(w) == 0  # No warnings
 
     location1 = model_str(uuid="1", name="test", position=(50, 50))
-    assert location1.name == "test"
-    assert location1.uuid == "1"
-    assert location1.position == (50, 50)
+    location1_data = location1.model_dump()
+    assert location1_data["name"] == "test"
+    assert location1_data["uuid"] == "1"
+    assert location1_data["position"] == (50, 50)
 
     # Old style: Python types (should warn but still work)
     with warnings.catch_warnings(record=True) as w:
@@ -61,9 +62,10 @@ def test_create_location_model_backward_compatibility():
         assert "type objects" in str(w[0].message).lower()
 
     location2 = model_type(uuid="2", name="test2", position=(60, 60))
-    assert location2.name == "test2"
-    assert location2.uuid == "2"
-    assert location2.position == (60, 60)
+    location2_data = location2.model_dump()
+    assert location2_data["name"] == "test2"
+    assert location2_data["uuid"] == "2"
+    assert location2_data["position"] == (60, 60)
 
     # Both should produce equivalent models
     assert set(model_str.model_fields.keys()) == set(model_type.model_fields.keys())
@@ -78,7 +80,8 @@ def test_create_location_model_backward_compat_with_list():
         assert len(w) == 0
 
     location1 = model_str(uuid="1", tags=["a", "b"], position=(50, 50))
-    assert location1.tags == ["a", "b"]
+    location1_data = location1.model_dump()
+    assert location1_data["tags"] == ["a", "b"]
 
     # Type object for list (deprecated)
     with warnings.catch_warnings(record=True) as w:
@@ -88,4 +91,5 @@ def test_create_location_model_backward_compat_with_list():
         assert issubclass(w[0].category, DeprecationWarning)
 
     location2 = model_type(uuid="2", tags=["x", "y"], position=(60, 60))
-    assert location2.tags == ["x", "y"]
+    location2_data = location2.model_dump()
+    assert location2_data["tags"] == ["x", "y"]
