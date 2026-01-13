@@ -94,14 +94,15 @@ def core_pages(
     core_api_blueprint = Blueprint("api", __name__, url_prefix="/api")
 
     # Initialize Spectree for API documentation and validation
+    # Use simple naming strategy without hashes for cleaner schema names
     spec = SpecTree(
         "flask",
         title="Goodmap API",
         version="0.1",
         path="doc",
         annotations=True,
+        naming_strategy=lambda model: model.__name__,  # Use clean model names without hash
     )
-    spec.register(core_api_blueprint)
 
     @core_api_blueprint.route("/suggest-new-point", methods=["POST"])
     @spec.validate(resp=Response(HTTP_200=SuccessResponse, HTTP_400=ErrorResponse))
@@ -563,5 +564,15 @@ def core_pages(
             logger.error("Error updating report", exc_info=True)
             return make_response(jsonify({"message": ERROR_INTERNAL_ERROR}), 500)
         return jsonify(database.get_report(report_id))
+
+    # Register Spectree with blueprint after all routes are defined
+    spec.register(core_api_blueprint)
+
+    # Add redirect from /doc to /doc/swagger/ for convenience
+    @core_api_blueprint.route("/doc")
+    def api_doc_redirect():
+        """Redirect /api/doc to Swagger UI."""
+        from flask import redirect
+        return redirect("/api/doc/swagger/")
 
     return core_api_blueprint
