@@ -3099,18 +3099,18 @@ files = [
 
 [[package]]
 name = "spectree"
-version = "1.5.8"
+version = "2.0.1"
 description = "Generate OpenAPI document and validate request & response with Python annotations."
 optional = false
-python-versions = ">=3.9"
+python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "spectree-1.5.8-py3-none-any.whl", hash = "sha256:5740547426556fe7964aecc9f9bede85e03fa8e3a78d85919387da57c0a54503"},
-    {file = "spectree-1.5.8.tar.gz", hash = "sha256:3c1e23dbb5bdd22a7eaf14879e7812483e88e0d2d6090b749ff985f053f73cdf"},
+    {file = "spectree-2.0.1-py3-none-any.whl", hash = "sha256:fd30dadca93afdd82573d886365ae27f0b3eea4ed43a9daf6f6616483520b673"},
+    {file = "spectree-2.0.1.tar.gz", hash = "sha256:280dd6beb10a9c5f023254650d3d8f4494077d556f7de92c1fbebd1203efe39c"},
 ]
 
 [package.dependencies]
-pydantic = ">=1.2,<3"
+pydantic = ">=2.11,<3"
 
 [package.extras]
 falcon = ["falcon (>=3)"]
@@ -3809,4 +3809,4 @@ docs = ["myst-parser", "sphinx", "sphinx-rtd-theme", "tomli"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "d6fdea21c85afed009d016435c2f7932f877230f25aa17064acafba8433b6479"
+content-hash = "0ea4ef6c82fe614c90eff4d4b91f403e94c7bdf403c97ff0aba7c52431825dc5"
