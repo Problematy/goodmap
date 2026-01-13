@@ -169,14 +169,16 @@ class TestSafeJsonLoads:
         result = safe_json_loads(nested_array, max_depth=MAX_JSON_DEPTH_LOCATION)
         assert result == [["inner", "array"]]
 
-        # Valid with depth=2: object with array value (depth 0: object, depth 1: array, depth 2: items)
+        # Valid with depth=2: object with array value
+        # (depth 0: object, depth 1: array, depth 2: items)
         object_with_array = '{"tags": ["a", "b"]}'
         result = safe_json_loads(object_with_array, max_depth=MAX_JSON_DEPTH_LOCATION)
         assert result == {"tags": ["a", "b"]}
 
     def test_location_depth_limit_invalid(self):
         """Test that overly nested data is rejected with MAX_JSON_DEPTH_LOCATION=2."""
-        # Invalid: triple-nested array (depth 0: array, depth 1: array, depth 2: array, depth 3: items)
+        # Invalid: triple-nested array
+        # (depth 0: array, depth 1: array, depth 2: array, depth 3: items)
         triple_nested = '[[["too", "deep"]]]'
         with pytest.raises(JSONDepthError, match="nesting depth"):
             safe_json_loads(triple_nested, max_depth=MAX_JSON_DEPTH_LOCATION)
