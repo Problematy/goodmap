@@ -394,6 +394,25 @@ def test_suggest_new_location_with_null_json(test_app):
     assert response.json["message"] == "Invalid request data"
 
 
+def test_suggest_new_location_with_list_item_too_long(test_app):
+    """Test suggest endpoint rejects list items exceeding max length (100 chars)."""
+    csrf_token = get_csrf_token(test_app)
+    long_item = "x" * 101  # Exceeds _MAX_LIST_ITEM_LENGTH of 100
+    response = test_app.post(
+        "/api/suggest-new-point",
+        data=json.dumps({
+            "name": "Test Location",
+            "position": [50.5, 19.5],
+            "type_of_place": "test-place",
+            "test_category": [long_item],
+        }),
+        content_type="application/json",
+        headers={"X-CSRFToken": csrf_token},
+    )
+    assert response.status_code == 400
+    assert response.json["message"] == "Invalid location data"
+
+
 def test_suggest_new_location_with_invalid_data(test_app):
     csrf_token = get_csrf_token(test_app)
     response = test_app.post(
@@ -404,6 +423,29 @@ def test_suggest_new_location_with_invalid_data(test_app):
     )
     assert response.status_code == 400
     # Should return error for invalid data
+
+
+def test_suggest_location_dos_protection_json_body_deeply_nested(test_app):
+    """Test that JSON body rejects deeply nested data (covers lines 176-180)."""
+    csrf_token = get_csrf_token(test_app)
+    deeply_nested = '{"a":{"b":{"c":"d"}}}'  # Exceeds MAX_JSON_DEPTH_LOCATION=2
+    response = test_app.post(
+        "/api/suggest-new-point",
+        data=deeply_nested,
+        content_type="application/json",
+        headers={"X-CSRFToken": csrf_token},
+    )
+    assert response.status_code == 400
+    data = response.get_json()
+    error_msg = data.get("error", "").lower()
+    assert "too complex" in data["message"].lower() or "nesting depth" in error_msg
+
+
+def test_api_doc_redirect(test_app):
+    """Test that /api/doc redirects to swagger UI."""
+    response = test_app.get("/api/doc")
+    assert response.status_code == 302
+    assert "/api/doc/swagger/" in response.headers["Location"]
 
 
 def test_suggest_new_location_with_error_during_sending_notification(test_app):
@@ -506,6 +548,32 @@ def test_admin_post_location_invalid_data(test_app):
     )
     assert response.status_code == 400
     assert "Invalid location data" in response.json["message"]
+
+
+def test_admin_post_location_null_json_body(test_app):
+    """Test admin create location with null JSON body."""
+    csrf_token = get_csrf_token(test_app)
+    response = test_app.post(
+        "/api/admin/locations",
+        data="null",
+        content_type="application/json",
+        headers={"X-CSRFToken": csrf_token},
+    )
+    assert response.status_code == 400
+    assert response.json["message"] == "Invalid request data"
+
+
+def test_admin_put_location_null_json_body(test_app):
+    """Test admin update location with null JSON body."""
+    csrf_token = get_csrf_token(test_app)
+    response = test_app.put(
+        "/api/admin/locations/some-uuid",
+        data="null",
+        content_type="application/json",
+        headers={"X-CSRFToken": csrf_token},
+    )
+    assert response.status_code == 400
+    assert response.json["message"] == "Invalid request data"
 
 
 @mock.patch("goodmap.core_api.uuid.uuid4")
