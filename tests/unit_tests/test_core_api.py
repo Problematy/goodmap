@@ -279,11 +279,11 @@ def test_suggest_location_dos_protection_deeply_nested(test_app):
 
 
 def test_suggest_location_dos_protection_array_in_array(test_app):
-    """Test that nested arrays are rejected (exceeds MAX_JSON_DEPTH_LOCATION=1)."""
+    """Test that deeply nested arrays are rejected (exceeds MAX_JSON_DEPTH_LOCATION=2)."""
     csrf_token = get_csrf_token(test_app)
 
-    # Array containing arrays - should be rejected
-    nested_array = '[["inner", "array"]]'
+    # Triple-nested array - depth 3 exceeds MAX_JSON_DEPTH_LOCATION=2
+    nested_array = '[[["deeply", "nested"]]]'
 
     response = test_app.post(
         "/api/suggest-new-point",
@@ -1498,7 +1498,7 @@ def test_admin_suggestion_processing_coverage(test_app):
         content_type="application/json",
         headers={"X-CSRFToken": csrf_token},
     )
-    assert response.status_code == 400
+    assert response.status_code == 409
     data = response.get_json()
     assert "Suggestion already processed" in data["message"]
 
