@@ -130,8 +130,9 @@ def test_reporting_returns_error_when_wrong_json(test_app):
     data = {"name": "location-id", "position": 50}
     headers = {"Content-Type": "application/json", "X-CSRFToken": csrf_token}
     response = test_app.post("/api/report-location", data=json.dumps(data), headers=headers)
-    assert response.status_code == 400
-    assert "Error" in response.json["message"]
+    # Spectree returns 422 for validation errors with a list of error details
+    assert response.status_code == 422
+    assert isinstance(response.json, list)  # Spectree returns list of validation errors
 
 
 @mock.patch("goodmap.core_api.gettext", fake_translation)
@@ -605,8 +606,9 @@ def test_admin_put_suggestion_invalid_status(test_app):
         content_type="application/json",
         headers={"X-CSRFToken": csrf_token},
     )
-    assert response.status_code == 400
-    assert "Invalid status" in response.json["message"]
+    # Spectree returns 422 for Pydantic validation errors with a list of error details
+    assert response.status_code == 422
+    assert isinstance(response.json, list)  # Spectree returns list of validation errors
 
 
 def test_admin_put_suggestion_not_found(test_app):
@@ -680,7 +682,8 @@ def test_admin_put_suggestion_value_error(test_app):
         content_type="application/json",
         headers={"X-CSRFToken": csrf_token},
     )
-    assert response.status_code == 400
+    # Spectree returns 422 for Pydantic validation errors
+    assert response.status_code == 422
 
 
 def test_admin_put_report_invalid_status(test_app):
@@ -693,8 +696,9 @@ def test_admin_put_report_invalid_status(test_app):
         content_type="application/json",
         headers={"X-CSRFToken": csrf_token},
     )
-    assert response.status_code == 400
-    assert "Invalid status" in response.json["message"]
+    # Spectree returns 422 for Pydantic validation errors with a list of error details
+    assert response.status_code == 422
+    assert isinstance(response.json, list)  # Spectree returns list of validation errors
 
 
 def test_admin_put_report_invalid_priority(test_app):
@@ -707,8 +711,9 @@ def test_admin_put_report_invalid_priority(test_app):
         content_type="application/json",
         headers={"X-CSRFToken": csrf_token},
     )
-    assert response.status_code == 400
-    assert "Invalid priority" in response.json["message"]
+    # Spectree returns 422 for Pydantic validation errors with a list of error details
+    assert response.status_code == 422
+    assert isinstance(response.json, list)  # Spectree returns list of validation errors
 
 
 def test_admin_put_report_not_found(test_app):
@@ -752,7 +757,8 @@ def test_admin_put_report_value_error(test_app):
         content_type="application/json",
         headers={"X-CSRFToken": csrf_token},
     )
-    assert response.status_code == 400
+    # Spectree returns 422 for Pydantic validation errors
+    assert response.status_code == 422
 
 
 def test_admin_get_locations_pagination(test_app):
@@ -918,7 +924,8 @@ def test_report_location_with_invalid_data_format(test_app):
         content_type="application/json",
         headers={"X-CSRFToken": csrf_token},
     )
-    assert response.status_code == 400
+    # Spectree returns 422 for validation errors (empty dict parsed from invalid JSON)
+    assert response.status_code == 422
 
 
 @mock.patch("goodmap.core_api.gettext", fake_translation)
