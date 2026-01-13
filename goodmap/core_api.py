@@ -219,12 +219,6 @@ def core_pages(
         except BadRequest:
             logger.warning("Invalid JSON in report location endpoint")
             return make_response(jsonify({"message": ERROR_INVALID_REQUEST_DATA}), 400)
-        except KeyError as e:
-            logger.warning(
-                "Missing required field in report location", extra={"missing_field": str(e)}
-            )
-            error_message = gettext("Error reporting location")
-            return make_response(jsonify({"message": error_message}), 400)
         except Exception:
             logger.error("Error in report location endpoint", exc_info=True)
             error_message = gettext("Error sending notification")

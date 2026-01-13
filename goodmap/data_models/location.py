@@ -70,7 +70,7 @@ class LocationBase(BaseModel, extra="allow"):
 @overload
 def create_location_model(
     obligatory_fields: Sequence[tuple[str, str]],
-    categories: dict[str, list[str]] | None = None,
+    categories: dict[str, list[str]] | None = ...,
 ) -> Type[BaseModel]:
     """Create location model with string type names (recommended)."""
     ...
@@ -79,7 +79,7 @@ def create_location_model(
 @overload
 def create_location_model(
     obligatory_fields: Sequence[tuple[str, Type[Any]]],
-    categories: dict[str, list[str]] | None = None,
+    categories: dict[str, list[str]] | None = ...,
 ) -> Type[BaseModel]:
     """Create location model with Python type objects (deprecated)."""
     ...
