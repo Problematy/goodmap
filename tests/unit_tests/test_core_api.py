@@ -400,12 +400,14 @@ def test_suggest_new_location_with_list_item_too_long(test_app):
     long_item = "x" * 101  # Exceeds _MAX_LIST_ITEM_LENGTH of 100
     response = test_app.post(
         "/api/suggest-new-point",
-        data=json.dumps({
-            "name": "Test Location",
-            "position": [50.5, 19.5],
-            "type_of_place": "test-place",
-            "test_category": [long_item],
-        }),
+        data=json.dumps(
+            {
+                "name": "Test Location",
+                "position": [50.5, 19.5],
+                "type_of_place": "test-place",
+                "test_category": [long_item],
+            }
+        ),
         content_type="application/json",
         headers={"X-CSRFToken": csrf_token},
     )
