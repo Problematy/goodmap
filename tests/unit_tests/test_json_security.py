@@ -1,12 +1,11 @@
 """Tests for JSON security utilities."""
+
 from unittest.mock import patch
 
 import pytest
 
 from goodmap.json_security import (
-    MAX_ARRAY_ITEMS,
     MAX_JSON_DEPTH,
-    MAX_OBJECT_KEYS,
     MAX_STRING_LENGTH,
     JSONDepthError,
     JSONSizeError,
@@ -37,7 +36,7 @@ class TestSafeJsonLoads:
         """Test that deeply nested JSON raises JSONDepthError."""
         # Create JSON nested beyond MAX_JSON_DEPTH
         # Build nested like {"a":{"a":{"a":...}}}
-        deeply_nested = '{"a":' * (MAX_JSON_DEPTH + 2) + '1' + '}' * (MAX_JSON_DEPTH + 2)
+        deeply_nested = '{"a":' * (MAX_JSON_DEPTH + 2) + "1" + "}" * (MAX_JSON_DEPTH + 2)
         with pytest.raises(JSONDepthError, match="nesting depth"):
             safe_json_loads(deeply_nested)
 

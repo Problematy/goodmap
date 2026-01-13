@@ -12,14 +12,13 @@ from spectree import Response, SpecTree
 from werkzeug.exceptions import BadRequest
 
 from goodmap.api_models import (
-    ClusteringParams,
     CSRFTokenResponse,
     ErrorResponse,
     LocationReportRequest,
     LocationReportResponse,
     ReportUpdateRequest,
-    SuggestionStatusRequest,
     SuccessResponse,
+    SuggestionStatusRequest,
     VersionResponse,
 )
 from goodmap.clustering import (
@@ -95,17 +94,22 @@ def core_pages(
 
     # Initialize Spectree for API documentation and validation
     # Use simple naming strategy without hashes for cleaner schema names
+    from typing import Any, Type
+
+    def _clean_model_name(model: Type[Any]) -> str:
+        return model.__name__
+
     spec = SpecTree(
         "flask",
         title="Goodmap API",
         version="0.1",
         path="doc",
         annotations=True,
-        naming_strategy=lambda model: model.__name__,  # Use clean model names without hash
+        naming_strategy=_clean_model_name,  # Use clean model names without hash
     )
 
     @core_api_blueprint.route("/suggest-new-point", methods=["POST"])
-    @spec.validate(resp=Response(HTTP_200=SuccessResponse, HTTP_400=ErrorResponse))
+    @spec.validate(resp=Response(HTTP_200=SuccessResponse, HTTP_400=ErrorResponse))  # type: ignore[misc]
     def suggest_new_point():
         """Suggest new location for review.
 
@@ -133,10 +137,14 @@ def core_pages(
                             extra={"field": key, "value_size": len(value)},
                         )
                         return make_response(
-                            jsonify({
-                                "message": "Invalid request: JSON payload too complex or too large",
-                                "error": str(e),
-                            }),
+                            jsonify(
+                                {
+                                    "message": (
+                                        "Invalid request: JSON payload too complex or too large"
+                                    ),
+                                    "error": str(e),
+                                }
+                            ),
                             400,
                         )
                     except ValueError:  # JSONDecodeError inherits from ValueError
@@ -273,9 +281,7 @@ def core_pages(
             return make_response(jsonify({"message": "Invalid parameters provided"}), 400)
         except Exception as e:
             logger.error("Clustering operation failed: %s", e, exc_info=True)
-            return make_response(
-                jsonify({"message": "An error occurred during clustering"}), 500
-            )
+            return make_response(jsonify({"message": "An error occurred during clustering"}), 500)
 
     @core_api_blueprint.route("/location/<location_id>", methods=["GET"])
     @spec.validate()
@@ -337,9 +343,7 @@ def core_pages(
             proper_categories_help = []
             if categories_help is not None:
                 for option in categories_help:
-                    proper_categories_help.append(
-                        {option: gettext(f"categories_help_{option}")}
-                    )
+                    proper_categories_help.append({option: gettext(f"categories_help_{option}")})
 
         return jsonify({"categories": categories, "categories_help": proper_categories_help})
 
@@ -573,6 +577,7 @@ def core_pages(
     def api_doc_redirect():
         """Redirect /api/doc to Swagger UI."""
         from flask import redirect
+
         return redirect("/api/doc/swagger/")
 
     return core_api_blueprint

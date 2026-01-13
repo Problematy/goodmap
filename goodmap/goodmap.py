@@ -13,7 +13,6 @@ from goodmap.core_api import core_pages
 from goodmap.data_models.location import create_location_model
 from goodmap.db import (
     extend_db_with_goodmap_queries,
-    get_category_data,
     get_location_obligatory_fields,
 )
 

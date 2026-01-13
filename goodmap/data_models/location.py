@@ -168,7 +168,9 @@ def create_location_model(
                             if item not in allowed:
                                 raise ValueError(f"must be one of {allowed}, got '{item}'")
                             if len(item) > 100:
-                                raise ValueError(f"list item too long (max 100 chars), got {len(item)}")
+                                raise ValueError(
+                                    f"list item too long (max 100 chars), got {len(item)}"
+                                )
                         return v
 
                     return validator
@@ -212,14 +214,17 @@ def create_location_model(
                     def validator(cls, v):
                         for item in v:
                             if isinstance(item, str) and len(item) > 100:
-                                raise ValueError(f"list item too long (max 100 chars), got {len(item)}")
+                                raise ValueError(
+                                    f"list item too long (max 100 chars), got {len(item)}"
+                                )
                         return v
+
                     return validator
 
                 validators[field_name] = pydantic_field_validator(field_name)(
                     make_list_length_validator()
                 )
-            elif base_type == str:
+            elif base_type is str:
                 fields[field_name] = (
                     base_type,
                     Field(..., max_length=200),  # Max 200 chars for string fields

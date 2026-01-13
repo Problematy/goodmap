@@ -4,7 +4,8 @@ This module defines request and response models for the Goodmap REST API.
 These models are used by Spectree for automatic OpenAPI schema generation
 and request/response validation.
 """
-from typing import Any, Literal
+
+from typing import Literal
 
 from pydantic import BaseModel, Field
 

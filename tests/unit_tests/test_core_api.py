@@ -256,7 +256,7 @@ def test_suggest_location_dos_protection_deeply_nested(test_app):
     csrf_token = get_csrf_token(test_app)
 
     # Create deeply nested JSON (12 levels deep, exceeds MAX_JSON_DEPTH=10)
-    deeply_nested = '{"a":' * 12 + '1' + '}' * 12
+    deeply_nested = '{"a":' * 12 + "1" + "}" * 12
 
     response = test_app.post(
         "/api/suggest-new-point",
@@ -272,7 +272,9 @@ def test_suggest_location_dos_protection_deeply_nested(test_app):
 
     assert response.status_code == 400
     data = response.get_json()
-    assert "too complex" in data["message"].lower() or "nesting depth" in data.get("error", "").lower()
+    assert (
+        "too complex" in data["message"].lower() or "nesting depth" in data.get("error", "").lower()
+    )
 
 
 def test_suggest_location_dos_protection_large_payload(test_app):
