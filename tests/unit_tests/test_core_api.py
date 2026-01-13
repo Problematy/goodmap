@@ -250,6 +250,57 @@ def test_suggest_new_location_with_multipart_form_data(test_app):
     assert response.status_code == 200
 
 
+def test_suggest_location_dos_protection_deeply_nested(test_app):
+    """Test that suggest-new-point endpoint rejects deeply nested JSON in form data."""
+    csrf_token = get_csrf_token(test_app)
+
+    # Create deeply nested JSON (12 levels deep, exceeds MAX_JSON_DEPTH=10)
+    deeply_nested = '{"a":' * 12 + '1' + '}' * 12
+
+    response = test_app.post(
+        "/api/suggest-new-point",
+        data={
+            "name": "Test",
+            "position": deeply_nested,  # Malicious nested JSON
+            "test_category": json.dumps(["test"]),
+            "type_of_place": "test-place",
+        },
+        content_type="multipart/form-data",
+        headers={"X-CSRFToken": csrf_token},
+    )
+
+    assert response.status_code == 400
+    data = response.get_json()
+    assert "too complex" in data["message"].lower() or "nesting depth" in data.get("error", "").lower()
+
+
+def test_suggest_location_dos_protection_large_payload(test_app):
+    """Test that suggest-new-point endpoint rejects oversized payloads."""
+    csrf_token = get_csrf_token(test_app)
+
+    # Test with a moderately large JSON that will trigger safe_json_loads
+    # Use 55KB JSON (exceeds MAX_JSON_SIZE=50KB but under MAX_CONTENT_LENGTH=100KB)
+    # This tests that safe_json_loads catches oversized individual fields
+    large_json_field = '["' + "x" * (55 * 1024) + '"]'
+
+    response = test_app.post(
+        "/api/suggest-new-point",
+        data={
+            "name": "Test",
+            "position": large_json_field,  # Large JSON field
+            "test_category": json.dumps(["test"]),
+            "type_of_place": "test-place",
+        },
+        content_type="multipart/form-data",
+        headers={"X-CSRFToken": csrf_token},
+    )
+
+    # Our safe_json_loads should catch this and return 400
+    assert response.status_code == 400
+    data = response.get_json()
+    assert "too large" in data["message"].lower() or "payload size" in data.get("error", "").lower()
+
+
 def test_suggest_new_location_without_required_fields(test_app):
     csrf_token = get_csrf_token(test_app)
     response = test_app.post(

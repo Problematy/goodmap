@@ -1,6 +1,7 @@
 """Pydantic models for location data validation and schema generation."""
 
-from typing import Any, Type, cast
+import warnings
+from typing import Any, Type, Union, cast, overload
 
 from pydantic import (
     BaseModel,
@@ -23,7 +24,7 @@ class LocationBase(BaseModel, extra="allow"):
     """
 
     position: tuple[float, float]
-    uuid: str
+    uuid: str = Field(..., max_length=100)  # UUID is 36 chars, allow some flexibility
 
     @field_validator("position")
     @classmethod
@@ -66,17 +67,46 @@ class LocationBase(BaseModel, extra="allow"):
         }
 
 
+@overload
 def create_location_model(
     obligatory_fields: list[tuple[str, str]], categories: dict[str, list[str]] | None = None
 ) -> Type[BaseModel]:
+    """Create location model with string type names (recommended)."""
+    ...
+
+
+@overload
+def create_location_model(
+    obligatory_fields: list[tuple[str, Type[Any]]], categories: dict[str, list[str]] | None = None
+) -> Type[BaseModel]:
+    """Create location model with Python type objects (deprecated)."""
+    ...
+
+
+def create_location_model(
+    obligatory_fields: list[tuple[str, Union[str, Type[Any]]]],
+    categories: dict[str, list[str]] | None = None,
+) -> Type[BaseModel]:
     """Dynamically create a Location model with additional required fields.
 
+    Supports both string type names (recommended) and Python type objects (deprecated).
+
     Args:
-        obligatory_fields: List of (field_name, field_type) tuples for required fields
+        obligatory_fields: List of (field_name, field_type) tuples for required fields.
+                          field_type can be either:
+                          - String type name: "str", "list", "int", "float", "bool", "dict"
+                          - Python type object: str, list, int, etc. (deprecated)
         categories: Optional dict mapping field names to allowed values (enums)
 
     Returns:
         Type[BaseModel]: A Location model class extending LocationBase with additional fields
+
+    Examples:
+        >>> # Recommended: String type names
+        >>> model = create_location_model([("name", "str"), ("tags", "list")])
+
+        >>> # Deprecated: Python type objects (supported for backward compatibility)
+        >>> model = create_location_model([("name", str), ("tags", list)])
     """
     from pydantic import field_validator as pydantic_field_validator
 
@@ -94,7 +124,22 @@ def create_location_model(
         "dict": dict,
     }
 
-    for field_name, field_type_str in obligatory_fields:
+    for field_name, field_type_input in obligatory_fields:
+        # Backward compatibility: Convert Python type objects to strings
+        if isinstance(field_type_input, type):
+            warnings.warn(
+                f"Passing Python type objects to create_location_model is deprecated. "
+                f"Use string type names instead: '{field_type_input.__name__}' "
+                f"instead of {field_type_input}. "
+                f"Support for type objects will be removed in version 2.0.0.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            # Convert type to string name
+            field_type_str = field_type_input.__name__
+        else:
+            field_type_str = field_type_input
+
         # Determine base type from string
         is_list = field_type_str.startswith("list")
         base_type = list if is_list else type_mapping.get(field_type_str, str)
@@ -111,6 +156,7 @@ def create_location_model(
                     Field(
                         ...,
                         description=description,
+                        max_length=20,  # Max 20 items in list
                         json_schema_extra=cast(Any, {"enum_items": allowed_values}),
                     ),
                 )
@@ -121,6 +167,8 @@ def create_location_model(
                         for item in v:
                             if item not in allowed:
                                 raise ValueError(f"must be one of {allowed}, got '{item}'")
+                            if len(item) > 100:
+                                raise ValueError(f"list item too long (max 100 chars), got {len(item)}")
                         return v
 
                     return validator
@@ -134,6 +182,7 @@ def create_location_model(
                     Field(
                         ...,
                         description=description,
+                        max_length=200,  # Max 200 chars for string fields
                         json_schema_extra=cast(Any, {"enum": allowed_values}),
                     ),
                 )
@@ -151,8 +200,32 @@ def create_location_model(
                     make_str_validator(allowed_values)
                 )
         else:
-            # No categories, use the base type
-            fields[field_name] = (base_type, Field(...))
+            # No categories, use the base type with size constraints
+            if is_list:
+                fields[field_name] = (
+                    base_type,
+                    Field(..., max_length=20),  # Max 20 items in list
+                )
+
+                # Add validator for list item length
+                def make_list_length_validator():
+                    def validator(cls, v):
+                        for item in v:
+                            if isinstance(item, str) and len(item) > 100:
+                                raise ValueError(f"list item too long (max 100 chars), got {len(item)}")
+                        return v
+                    return validator
+
+                validators[field_name] = pydantic_field_validator(field_name)(
+                    make_list_length_validator()
+                )
+            elif base_type == str:
+                fields[field_name] = (
+                    base_type,
+                    Field(..., max_length=200),  # Max 200 chars for string fields
+                )
+            else:
+                fields[field_name] = (base_type, Field(...))
 
     # Create model with validators
     model = create_model(

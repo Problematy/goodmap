@@ -25,3 +25,4 @@ FEATURE_FLAGS:
   SHOW_SUGGEST_NEW_POINT_BUTTON: True
 
 GOODMAP_FRONTEND_LIB_URL: "https://cdn.jsdelivr.net/npm/@problematy/goodmap@1.0.4"
+

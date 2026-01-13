@@ -15,6 +15,7 @@ from goodmap.clustering import (
     map_clustering_data_to_proper_lazy_loading_object,
     match_clusters_uuids,
 )
+from goodmap.json_security import JSONDepthError, JSONSizeError, safe_json_loads
 from goodmap.exceptions import (
     LocationAlreadyExistsError,
     LocationNotFoundError,
@@ -189,7 +190,21 @@ def core_pages(
                         value = request.form[key]
                         # Try to parse as JSON for complex types (arrays, objects, position)
                         try:
-                            suggested_location[key] = json_lib.loads(value)
+                            # SECURITY: Use safe_json_loads with depth/size limits
+                            suggested_location[key] = safe_json_loads(value)
+                        except (JSONDepthError, JSONSizeError) as e:
+                            # Log security event and return 400
+                            logger.warning(
+                                f"JSON parsing blocked for security: {e}",
+                                extra={"field": key, "value_size": len(value)},
+                            )
+                            return make_response(
+                                jsonify({
+                                    "message": "Invalid request: JSON payload too complex or too large",
+                                    "error": str(e),
+                                }),
+                                400,
+                            )
                         except ValueError:  # JSONDecodeError inherits from ValueError
                             # If not JSON, use as-is (simple string values)
                             suggested_location[key] = value

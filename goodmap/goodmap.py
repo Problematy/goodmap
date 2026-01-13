@@ -63,24 +63,37 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
     config.translation_directories.append(locale_dir)
     app = platzky.create_app_from_config(config)
 
+    # SECURITY: Set maximum request body size to 100KB (prevents memory exhaustion)
+    # This protects against large file uploads and JSON payloads
+    # Based on calculation: ~6.5KB max legitimate payload + multipart overhead
+    if "MAX_CONTENT_LENGTH" not in app.config:
+        app.config["MAX_CONTENT_LENGTH"] = 100 * 1024  # 100KB
+
     if is_feature_enabled(config, "USE_LAZY_LOADING"):
         location_obligatory_fields = get_location_obligatory_fields(app.db)
-        # Call the category data function directly for the db type
-        category_data_func = get_category_data(app.db)
+        # Extend db with goodmap queries first so we can use the bound method
+        location_model = create_location_model(location_obligatory_fields, {})
+        app.db = extend_db_with_goodmap_queries(app.db, location_model)
+
+        # Use the extended db method directly (already bound by extend_db_with_goodmap_queries)
         try:
-            category_data = category_data_func(app.db)
+            category_data = app.db.get_category_data()
             categories = category_data.get("categories", {})
         except (KeyError, AttributeError):
             # Handle case where categories don't exist in the data
             categories = {}
+
+        # Recreate location model with categories if we got them
+        if categories:
+            location_model = create_location_model(location_obligatory_fields, categories)
+            app.db = extend_db_with_goodmap_queries(app.db, location_model)
     else:
         location_obligatory_fields = []
         categories = {}
+        location_model = create_location_model(location_obligatory_fields, categories)
+        app.db = extend_db_with_goodmap_queries(app.db, location_model)
 
     app.location_obligatory_fields = location_obligatory_fields  # type: ignore[attr-defined]
-    location_model = create_location_model(location_obligatory_fields, categories)
-
-    app.db = extend_db_with_goodmap_queries(app.db, location_model)
 
     CSRFProtect(app)
 
