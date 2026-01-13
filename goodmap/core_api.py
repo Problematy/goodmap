@@ -32,7 +32,12 @@ from goodmap.exceptions import (
     ReportNotFoundError,
 )
 from goodmap.formatter import prepare_pin
-from goodmap.json_security import JSONDepthError, JSONSizeError, safe_json_loads
+from goodmap.json_security import (
+    MAX_JSON_DEPTH_LOCATION,
+    JSONDepthError,
+    JSONSizeError,
+    safe_json_loads,
+)
 
 # SuperCluster configuration constants
 MIN_ZOOM = 0
@@ -128,8 +133,11 @@ def core_pages(
                     value = request.form[key]
                     # Try to parse as JSON for complex types (arrays, objects, position)
                     try:
-                        # SECURITY: Use safe_json_loads with depth/size limits
-                        suggested_location[key] = safe_json_loads(value)
+                        # SECURITY: Use safe_json_loads with strict depth limit
+                        # MAX_JSON_DEPTH_LOCATION=1: arrays/objects of primitives only
+                        suggested_location[key] = safe_json_loads(
+                            value, max_depth=MAX_JSON_DEPTH_LOCATION
+                        )
                     except (JSONDepthError, JSONSizeError) as e:
                         # Log security event and return 400
                         logger.warning(

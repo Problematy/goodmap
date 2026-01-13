@@ -6,6 +6,7 @@ import pytest
 
 from goodmap.json_security import (
     MAX_JSON_DEPTH,
+    MAX_JSON_DEPTH_LOCATION,
     MAX_STRING_LENGTH,
     JSONDepthError,
     JSONSizeError,
@@ -140,3 +141,47 @@ class TestSafeJsonLoads:
         json_str = '{"bool": true, "int": 42, "float": 3.14, "negative": -10}'
         result = safe_json_loads(json_str)
         assert result == {"bool": True, "int": 42, "float": 3.14, "negative": -10}
+
+    def test_location_depth_limit_valid(self):
+        """Test that valid location data passes with MAX_JSON_DEPTH_LOCATION=1."""
+        # Valid: array of primitives (depth 0: array, depth 1: items)
+        position = "[50.5, 19.5]"
+        result = safe_json_loads(position, max_depth=MAX_JSON_DEPTH_LOCATION)
+        assert result == [50.5, 19.5]
+
+        # Valid: array of strings (depth 0: array, depth 1: strings)
+        categories = '["category1", "category2"]'
+        result = safe_json_loads(categories, max_depth=MAX_JSON_DEPTH_LOCATION)
+        assert result == ["category1", "category2"]
+
+        # Valid: simple string (depth 0: string)
+        name = '"Test Location"'
+        result = safe_json_loads(name, max_depth=MAX_JSON_DEPTH_LOCATION)
+        assert result == "Test Location"
+
+        # Valid: simple object with primitive values (depth 0: object, depth 1: values)
+        simple_obj = '{"name": "test", "value": 42}'
+        result = safe_json_loads(simple_obj, max_depth=MAX_JSON_DEPTH_LOCATION)
+        assert result == {"name": "test", "value": 42}
+
+    def test_location_depth_limit_invalid(self):
+        """Test that overly nested data is rejected with MAX_JSON_DEPTH_LOCATION=1."""
+        # Invalid: array of arrays (depth 0: array, depth 1: inner array, depth 2: items)
+        nested_array = '[["inner", "array"]]'
+        with pytest.raises(JSONDepthError, match="nesting depth"):
+            safe_json_loads(nested_array, max_depth=MAX_JSON_DEPTH_LOCATION)
+
+        # Invalid: array of objects (depth 0: array, depth 1: object, depth 2: values)
+        array_of_objects = '[{"key": "value"}]'
+        with pytest.raises(JSONDepthError, match="nesting depth"):
+            safe_json_loads(array_of_objects, max_depth=MAX_JSON_DEPTH_LOCATION)
+
+        # Invalid: deeply nested object (depth 0, 1, 2, 3 = too deep)
+        deep_object = '{"a": {"b": {"c": 1}}}'
+        with pytest.raises(JSONDepthError, match="nesting depth"):
+            safe_json_loads(deep_object, max_depth=MAX_JSON_DEPTH_LOCATION)
+
+        # Invalid: object with array value (depth 0: object, depth 1: array, depth 2: items)
+        object_with_array = '{"tags": ["a", "b"]}'
+        with pytest.raises(JSONDepthError, match="nesting depth"):
+            safe_json_loads(object_with_array, max_depth=MAX_JSON_DEPTH_LOCATION)

@@ -255,14 +255,41 @@ def test_suggest_location_dos_protection_deeply_nested(test_app):
     """Test that suggest-new-point endpoint rejects deeply nested JSON in form data."""
     csrf_token = get_csrf_token(test_app)
 
-    # Create deeply nested JSON (12 levels deep, exceeds MAX_JSON_DEPTH=10)
-    deeply_nested = '{"a":' * 12 + "1" + "}" * 12
+    # Create deeply nested JSON (exceeds MAX_JSON_DEPTH_LOCATION=1)
+    # Location data should only allow primitives and arrays/objects of primitives
+    deeply_nested = '{"a":{"b":"c"}}'  # Nested object, exceeds depth limit
 
     response = test_app.post(
         "/api/suggest-new-point",
         data={
             "name": "Test",
             "position": deeply_nested,  # Malicious nested JSON
+            "test_category": json.dumps(["test"]),
+            "type_of_place": "test-place",
+        },
+        content_type="multipart/form-data",
+        headers={"X-CSRFToken": csrf_token},
+    )
+
+    assert response.status_code == 400
+    data = response.get_json()
+    assert (
+        "too complex" in data["message"].lower() or "nesting depth" in data.get("error", "").lower()
+    )
+
+
+def test_suggest_location_dos_protection_array_in_array(test_app):
+    """Test that nested arrays are rejected (exceeds MAX_JSON_DEPTH_LOCATION=1)."""
+    csrf_token = get_csrf_token(test_app)
+
+    # Array containing arrays - should be rejected
+    nested_array = '[["inner", "array"]]'
+
+    response = test_app.post(
+        "/api/suggest-new-point",
+        data={
+            "name": "Test",
+            "position": nested_array,  # Invalid nested array
             "test_category": json.dumps(["test"]),
             "type_of_place": "test-place",
         },
