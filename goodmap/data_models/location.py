@@ -1,7 +1,7 @@
 """Pydantic models for location data validation and schema generation."""
 
 import warnings
-from typing import Annotated, Any, Type, cast, overload
+from typing import Annotated, Any, Callable, Type, cast, overload
 
 from pydantic import (
     AfterValidator,
@@ -29,11 +29,12 @@ class LocationBase(BaseModel, extra="allow"):
 
     @field_validator("position")
     @classmethod
-    def position_must_be_valid(cls, v):
+    def position_must_be_valid(cls, v: tuple[float, float]) -> tuple[float, float]:
         """Validate that latitude and longitude are within valid ranges."""
-        if v[0] < -90 or v[0] > 90:
+        lat, lon = v
+        if lat < -90 or lat > 90:
             raise ValueError("latitude must be in range -90 to 90")
-        if v[1] < -180 or v[1] > 180:
+        if lon < -180 or lon > 180:
             raise ValueError("longitude must be in range -180 to 180")
         return v
 
@@ -55,17 +56,144 @@ class LocationBase(BaseModel, extra="allow"):
             uuid = data.get("uuid") if isinstance(data, dict) else None
             raise LocationValidationError(e, uuid=uuid) from e
 
-    def basic_info(self):
-        """Get basic location information summary.
-
-        Returns:
-            dict: Dictionary with uuid, position, and remark flag
-        """
+    def basic_info(self) -> dict[str, Any]:
+        """Get basic location information summary."""
         return {
             "uuid": self.uuid,
             "position": self.position,
             "remark": bool(getattr(self, "remark", False)),
         }
+
+
+# Map type strings to Python types
+_TYPE_MAPPING = {
+    "str": str,
+    "list": list,
+    "int": int,
+    "float": float,
+    "bool": bool,
+    "dict": dict,
+}
+
+
+_MAX_LIST_ITEM_LENGTH = 100
+
+
+def _validate_list_item_length(item: Any) -> None:
+    """Raise ValueError if string item exceeds max length."""
+    if isinstance(item, str) and len(item) > _MAX_LIST_ITEM_LENGTH:
+        raise ValueError(f"list item too long (max {_MAX_LIST_ITEM_LENGTH} chars), got {len(item)}")
+
+
+def _make_enum_validator(allowed: list[str]) -> Callable[[str], str]:
+    """Create a validator that checks value is in allowed list."""
+
+    def validate(v: str) -> str:
+        if v not in allowed:
+            raise ValueError(f"must be one of {allowed}, got '{v}'")
+        return v
+
+    return validate
+
+
+def _make_list_enum_validator(allowed: list[str]) -> Callable[[list[Any]], list[Any]]:
+    """Create a validator that checks all list items are in allowed list and within length."""
+
+    def validate(v: list[Any]) -> list[Any]:
+        for item in v:
+            if item not in allowed:
+                raise ValueError(f"must be one of {allowed}, got '{item}'")
+            _validate_list_item_length(item)
+        return v
+
+    return validate
+
+
+def _make_list_length_validator() -> Callable[[list[Any]], list[Any]]:
+    """Create a validator that checks list item lengths."""
+
+    def validate(v: list[Any]) -> list[Any]:
+        for item in v:
+            _validate_list_item_length(item)
+        return v
+
+    return validate
+
+
+def _normalize_field_type(field_type_input: str | Type[Any]) -> str:
+    """Convert field type input to string, emitting deprecation warning for type objects."""
+    if isinstance(field_type_input, type):
+        warnings.warn(
+            f"Passing Python type objects to create_location_model is deprecated. "
+            f"Use string type names instead: '{field_type_input.__name__}' "
+            f"instead of {field_type_input}. "
+            f"Support for type objects will be removed in version 2.0.0.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+        return field_type_input.__name__
+    return field_type_input
+
+
+def _create_list_field_with_enum(allowed_values: list[str]) -> tuple[Any, Any]:
+    """Create a list field definition with enum validation."""
+    description = f"Allowed values: {', '.join(allowed_values)}"
+    field_type = Annotated[list[str], AfterValidator(_make_list_enum_validator(allowed_values))]
+    return (
+        field_type,
+        Field(
+            ...,
+            description=description,
+            max_length=20,
+            json_schema_extra=cast(Any, {"enum_items": allowed_values}),
+        ),
+    )
+
+
+def _create_str_field_with_enum(allowed_values: list[str]) -> tuple[Any, Any]:
+    """Create a string field definition with enum validation."""
+    description = f"Allowed values: {', '.join(allowed_values)}"
+    field_type = Annotated[str, AfterValidator(_make_enum_validator(allowed_values))]
+    return (
+        field_type,
+        Field(
+            ...,
+            description=description,
+            max_length=200,
+            json_schema_extra=cast(Any, {"enum": allowed_values}),
+        ),
+    )
+
+
+def _create_list_field_without_enum() -> tuple[Any, Any]:
+    """Create a list field definition without enum validation."""
+    field_type = Annotated[list[Any], AfterValidator(_make_list_length_validator())]
+    return (field_type, Field(..., max_length=20))
+
+
+def _create_simple_field(base_type: Type[Any]) -> tuple[Any, Any]:
+    """Create a simple field definition for non-list types."""
+    if base_type is str:
+        return (base_type, Field(..., max_length=200))
+    return (base_type, Field(...))
+
+
+def _build_field_definition(
+    field_type_str: str, allowed_values: list[str] | None
+) -> tuple[Any, Any]:
+    """Build a complete field definition based on type and constraints."""
+    is_list = field_type_str.startswith("list")
+
+    if allowed_values:
+        if is_list:
+            return _create_list_field_with_enum(allowed_values)
+        return _create_str_field_with_enum(allowed_values)
+
+    if is_list:
+        return _create_list_field_without_enum()
+
+    base_type = _TYPE_MAPPING.get(field_type_str, str)
+    return _create_simple_field(base_type)
 
 
 @overload
@@ -114,123 +242,14 @@ def create_location_model(
     categories = categories or {}
     fields: dict[str, Any] = {}
 
-    # Map type strings to Python types
-    type_mapping = {
-        "str": str,
-        "list": list,
-        "int": int,
-        "float": float,
-        "bool": bool,
-        "dict": dict,
-    }
-
-    # Helper function to create validators using Annotated + AfterValidator (Pydantic v2 pattern)
-    def make_enum_validator(allowed: list[str]):
-        """Create a validator that checks value is in allowed list."""
-
-        def validate(v: str) -> str:
-            if v not in allowed:
-                raise ValueError(f"must be one of {allowed}, got '{v}'")
-            return v
-
-        return validate
-
-    def make_list_enum_validator(allowed: list[str]):
-        """Create a validator that checks all list items are in allowed list."""
-
-        def validate(v: list[Any]) -> list[Any]:
-            for item in v:
-                if item not in allowed:
-                    raise ValueError(f"must be one of {allowed}, got '{item}'")
-                if isinstance(item, str) and len(item) > 100:
-                    raise ValueError(f"list item too long (max 100 chars), got {len(item)}")
-            return v
-
-        return validate
-
-    def make_list_length_validator():
-        """Create a validator that checks list item lengths."""
-
-        def validate(v: list[Any]) -> list[Any]:
-            for item in v:
-                if isinstance(item, str) and len(item) > 100:
-                    raise ValueError(f"list item too long (max 100 chars), got {len(item)}")
-            return v
-
-        return validate
-
     for field_name, field_type_input in obligatory_fields:
-        # Backward compatibility: Convert Python type objects to strings
-        if isinstance(field_type_input, type):
-            warnings.warn(
-                f"Passing Python type objects to create_location_model is deprecated. "
-                f"Use string type names instead: '{field_type_input.__name__}' "
-                f"instead of {field_type_input}. "
-                f"Support for type objects will be removed in version 2.0.0.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            # Convert type to string name
-            field_type_str = field_type_input.__name__
-        else:
-            field_type_str = field_type_input
-
-        # Determine base type from string
-        is_list = field_type_str.startswith("list")
-        base_type = list if is_list else type_mapping.get(field_type_str, str)
-
-        # Get category constraints if available
+        field_type_str = _normalize_field_type(field_type_input)
         allowed_values = categories.get(field_name)
-        description = f"Allowed values: {', '.join(allowed_values)}" if allowed_values else None
+        fields[field_name] = _build_field_definition(field_type_str, allowed_values)
 
-        if allowed_values:
-            # Add field with category metadata and validation via Annotated + AfterValidator
-            if is_list:
-                field_type = Annotated[
-                    list[str], AfterValidator(make_list_enum_validator(allowed_values))
-                ]
-                fields[field_name] = (
-                    field_type,
-                    Field(
-                        ...,
-                        description=description,
-                        max_length=20,  # Max 20 items in list
-                        json_schema_extra=cast(Any, {"enum_items": allowed_values}),
-                    ),
-                )
-            else:
-                field_type = Annotated[str, AfterValidator(make_enum_validator(allowed_values))]
-                fields[field_name] = (
-                    field_type,
-                    Field(
-                        ...,
-                        description=description,
-                        max_length=200,  # Max 200 chars for string fields
-                        json_schema_extra=cast(Any, {"enum": allowed_values}),
-                    ),
-                )
-        else:
-            # No categories, use the base type with size constraints
-            if is_list:
-                field_type = Annotated[list[Any], AfterValidator(make_list_length_validator())]
-                fields[field_name] = (
-                    field_type,
-                    Field(..., max_length=20),  # Max 20 items in list
-                )
-            elif base_type is str:
-                fields[field_name] = (
-                    base_type,
-                    Field(..., max_length=200),  # Max 200 chars for string fields
-                )
-            else:
-                fields[field_name] = (base_type, Field(...))
-
-    # Create model (validators are now embedded in field types via Annotated)
-    model = create_model(
+    return create_model(
         "Location",
         __base__=LocationBase,
         __module__="goodmap.data_models.location",
         **fields,
     )
-
-    return model

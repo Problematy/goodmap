@@ -49,6 +49,7 @@ CLUSTER_EXTENT = 512
 ERROR_INVALID_REQUEST_DATA = "Invalid request data"
 ERROR_INVALID_LOCATION_DATA = "Invalid location data"
 ERROR_INTERNAL_ERROR = "An internal error occurred"
+ERROR_LOCATION_NOT_FOUND = "Location not found"
 
 logger = logging.getLogger(__name__)
 
@@ -328,8 +329,8 @@ def core_pages(
             formatted_data = prepare_pin(location.model_dump(), visible_data, meta_data)
             return jsonify(formatted_data)
         except LocationNotFoundError as e:
-            logger.info("Location not found", extra={"uuid": e.uuid})
-            return make_response(jsonify({"message": "Location not found"}), 404)
+            logger.info(ERROR_LOCATION_NOT_FOUND, extra={"uuid": e.uuid})
+            return make_response(jsonify({"message": ERROR_LOCATION_NOT_FOUND}), 404)
 
     @core_api_blueprint.route("/version", methods=["GET"])
     @spec.validate(resp=Response(HTTP_200=VersionResponse))
@@ -484,7 +485,7 @@ def core_pages(
             return make_response(jsonify({"message": ERROR_INVALID_LOCATION_DATA}), 400)
         except LocationNotFoundError as e:
             logger.info("Location not found for update", extra={"uuid": e.uuid})
-            return make_response(jsonify({"message": "Location not found"}), 404)
+            return make_response(jsonify({"message": ERROR_LOCATION_NOT_FOUND}), 404)
         except Exception:
             logger.error("Error updating location", exc_info=True)
             return make_response(jsonify({"message": ERROR_INTERNAL_ERROR}), 500)
@@ -502,7 +503,7 @@ def core_pages(
             database.delete_location(location_id)
         except LocationNotFoundError as e:
             logger.info("Location not found for deletion", extra={"uuid": e.uuid})
-            return make_response(jsonify({"message": "Location not found"}), 404)
+            return make_response(jsonify({"message": ERROR_LOCATION_NOT_FOUND}), 404)
         except Exception:
             logger.error("Error deleting location", exc_info=True)
             return make_response(jsonify({"message": ERROR_INTERNAL_ERROR}), 500)

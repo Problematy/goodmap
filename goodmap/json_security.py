@@ -91,7 +91,7 @@ def _check_depth(obj: Any, max_depth: int, current_depth: int) -> None:
     """
     if current_depth > max_depth:
         raise JSONDepthError(
-            f"JSON nesting depth ({current_depth}) exceeds maximum " f"allowed depth ({max_depth})"
+            f"JSON nesting depth ({current_depth}) exceeds maximum allowed depth ({max_depth})"
         )
 
     if isinstance(obj, dict):
@@ -104,6 +104,5 @@ def _check_depth(obj: Any, max_depth: int, current_depth: int) -> None:
             raise JSONDepthError(f"Array has {len(obj)} items, exceeding maximum {MAX_ARRAY_ITEMS}")
         for item in obj:
             _check_depth(item, max_depth, current_depth + 1)
-    elif isinstance(obj, str):
-        if len(obj) > MAX_STRING_LENGTH:
-            raise JSONDepthError(f"String length {len(obj)} exceeds maximum {MAX_STRING_LENGTH}")
+    elif isinstance(obj, str) and len(obj) > MAX_STRING_LENGTH:
+        raise JSONDepthError(f"String length {len(obj)} exceeds maximum {MAX_STRING_LENGTH}")
