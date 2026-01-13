@@ -441,6 +441,13 @@ def test_suggest_location_dos_protection_json_body_deeply_nested(test_app):
     assert "too complex" in data["message"].lower() or "nesting depth" in error_msg
 
 
+def test_get_location_not_found(test_app):
+    """Test that getting non-existent location returns 404."""
+    response = test_app.get("/api/location/non-existent-uuid")
+    assert response.status_code == 404
+    assert response.json["message"] == "Location not found"
+
+
 def test_api_doc_redirect(test_app):
     """Test that /api/doc redirects to swagger UI."""
     response = test_app.get("/api/doc")

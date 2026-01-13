@@ -201,9 +201,6 @@ def core_pages(
             message = gettext("A new location has been suggested with details")
             notifier_message = f"{message}: {json_lib.dumps(suggested_location, indent=2)}"
             notifier_function(notifier_message)
-        except BadRequest:
-            logger.warning("Invalid request data in suggest endpoint")
-            return make_response(jsonify({"message": ERROR_INVALID_REQUEST_DATA}), 400)
         except LocationValidationError as e:
             logger.warning(
                 "Location validation failed in suggest endpoint",
@@ -243,9 +240,6 @@ def core_pages(
                 f"with problem: {location_report['description']}"
             )
             notifier_function(message)
-        except BadRequest:
-            logger.warning("Invalid JSON in report location endpoint")
-            return make_response(jsonify({"message": ERROR_INVALID_REQUEST_DATA}), 400)
         except Exception:
             logger.error("Error in report location endpoint", exc_info=True)
             error_message = gettext("Error sending notification")
@@ -321,16 +315,16 @@ def core_pages(
         Returns full location data including all custom fields,
         formatted for display in the location details view.
         """
-        try:
-            location = database.get_location(location_id)
-            visible_data = database.get_visible_data()
-            meta_data = database.get_meta_data()
-
-            formatted_data = prepare_pin(location.model_dump(), visible_data, meta_data)
-            return jsonify(formatted_data)
-        except LocationNotFoundError as e:
-            logger.info(ERROR_LOCATION_NOT_FOUND, extra={"uuid": e.uuid})
+        location = database.get_location(location_id)
+        if location is None:
+            logger.info(ERROR_LOCATION_NOT_FOUND, extra={"uuid": location_id})
             return make_response(jsonify({"message": ERROR_LOCATION_NOT_FOUND}), 404)
+
+        visible_data = database.get_visible_data()
+        meta_data = database.get_meta_data()
+
+        formatted_data = prepare_pin(location.model_dump(), visible_data, meta_data)
+        return jsonify(formatted_data)
 
     @core_api_blueprint.route("/version", methods=["GET"])
     @spec.validate(resp=Response(HTTP_200=VersionResponse))
@@ -533,12 +527,7 @@ def core_pages(
         """
         try:
             data = request.get_json()
-            if data is None:
-                logger.warning("Empty or invalid JSON in update suggestion status endpoint")
-                return make_response(jsonify({"message": ERROR_INVALID_REQUEST_DATA}), 400)
-            status = data.get("status")
-            if status not in ("accepted", "rejected"):
-                return make_response(jsonify({"message": "Invalid status"}), 400)
+            status = data["status"]  # Validated by Spectree
             suggestion = database.get_suggestion(suggestion_id)
             if not suggestion:
                 return make_response(jsonify({"message": "Suggestion not found"}), 404)
