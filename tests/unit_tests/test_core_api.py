@@ -355,6 +355,45 @@ def test_suggest_new_location_with_empty_data(test_app):
     # Should return error for invalid data
 
 
+def test_suggest_new_location_with_empty_body(test_app):
+    """Test suggest endpoint with completely empty body (no data at all)."""
+    csrf_token = get_csrf_token(test_app)
+    response = test_app.post(
+        "/api/suggest-new-point",
+        data="",
+        content_type="application/json",
+        headers={"X-CSRFToken": csrf_token},
+    )
+    assert response.status_code == 400
+    assert response.json["message"] == "Invalid request data"
+
+
+def test_suggest_new_location_with_malformed_json(test_app):
+    """Test suggest endpoint with malformed JSON (parsing error)."""
+    csrf_token = get_csrf_token(test_app)
+    response = test_app.post(
+        "/api/suggest-new-point",
+        data="{invalid json",
+        content_type="application/json",
+        headers={"X-CSRFToken": csrf_token},
+    )
+    assert response.status_code == 400
+    assert response.json["message"] == "Invalid request data"
+
+
+def test_suggest_new_location_with_null_json(test_app):
+    """Test suggest endpoint with JSON null value."""
+    csrf_token = get_csrf_token(test_app)
+    response = test_app.post(
+        "/api/suggest-new-point",
+        data="null",
+        content_type="application/json",
+        headers={"X-CSRFToken": csrf_token},
+    )
+    assert response.status_code == 400
+    assert response.json["message"] == "Invalid request data"
+
+
 def test_suggest_new_location_with_invalid_data(test_app):
     csrf_token = get_csrf_token(test_app)
     response = test_app.post(
