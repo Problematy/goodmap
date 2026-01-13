@@ -5,8 +5,8 @@ from typing import Any
 
 # Security constants
 MAX_JSON_DEPTH = 10  # Default max depth for general JSON parsing
-# Strict limit for location data: primitives and arrays/objects of primitives (depth 0-1)
-MAX_JSON_DEPTH_LOCATION = 1
+# Strict limit for location data: primitives and arrays/objects of primitives (depth 0-2)
+MAX_JSON_DEPTH_LOCATION = 2
 MAX_JSON_SIZE = 50 * 1024  # 50KB in bytes (reasonable for individual form fields)
 MAX_STRING_LENGTH = 1_000  # 1000 chars per string
 MAX_ARRAY_ITEMS = 100  # 100 items per array

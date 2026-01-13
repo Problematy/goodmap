@@ -255,9 +255,9 @@ def test_suggest_location_dos_protection_deeply_nested(test_app):
     """Test that suggest-new-point endpoint rejects deeply nested JSON in form data."""
     csrf_token = get_csrf_token(test_app)
 
-    # Create deeply nested JSON (exceeds MAX_JSON_DEPTH_LOCATION=1)
+    # Create deeply nested JSON (exceeds MAX_JSON_DEPTH_LOCATION=2)
     # Location data should only allow primitives and arrays/objects of primitives
-    deeply_nested = '{"a":{"b":"c"}}'  # Nested object, exceeds depth limit
+    deeply_nested = '{"a":{"b":{"c":"d"}}}'  # Triple nested object, exceeds depth limit
 
     response = test_app.post(
         "/api/suggest-new-point",

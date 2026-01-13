@@ -162,10 +162,36 @@ def core_pages(
                 # TODO: Handle photo file upload from request.files['photo']
                 # For now, we just ignore it as the backend doesn't store photos yet
             else:
-                # Parse JSON data
-                suggested_location = request.get_json()
+                # Parse JSON data with security checks (depth/size protection)
+                raw_data = request.get_data(as_text=True)
+                if not raw_data:
+                    logger.warning("Empty JSON body in suggest endpoint")
+                    return make_response(jsonify({"message": ERROR_INVALID_REQUEST_DATA}), 400)
+                try:
+                    suggested_location = safe_json_loads(
+                        raw_data, max_depth=MAX_JSON_DEPTH_LOCATION
+                    )
+                except (JSONDepthError, JSONSizeError) as e:
+                    logger.warning(
+                        f"JSON parsing blocked for security: {e}",
+                        extra={"value_size": len(raw_data)},
+                    )
+                    return make_response(
+                        jsonify(
+                            {
+                                "message": (
+                                    "Invalid request: JSON payload too complex or too large"
+                                ),
+                                "error": str(e),
+                            }
+                        ),
+                        400,
+                    )
+                except ValueError:
+                    logger.warning("Invalid JSON in suggest endpoint")
+                    return make_response(jsonify({"message": ERROR_INVALID_REQUEST_DATA}), 400)
                 if suggested_location is None:
-                    logger.warning("Empty or invalid JSON in suggest endpoint")
+                    logger.warning("Null JSON value in suggest endpoint")
                     return make_response(jsonify({"message": ERROR_INVALID_REQUEST_DATA}), 400)
 
             suggested_location.update({"uuid": str(uuid.uuid4())})
@@ -516,7 +542,7 @@ def core_pages(
             if not suggestion:
                 return make_response(jsonify({"message": "Suggestion not found"}), 404)
             if suggestion.get("status") != "pending":
-                return make_response(jsonify({"message": "Suggestion already processed"}), 400)
+                return make_response(jsonify({"message": "Suggestion already processed"}), 409)
             if status == "accepted":
                 suggestion_data = {k: v for k, v in suggestion.items() if k != "status"}
                 database.add_location(suggestion_data)
