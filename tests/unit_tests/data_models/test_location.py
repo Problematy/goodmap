@@ -93,3 +93,33 @@ def test_create_location_model_backward_compat_with_list():
     location2 = model_type(uuid="2", tags=["x", "y"], position=(60, 60))
     location2_data = location2.model_dump()
     assert location2_data["tags"] == ["x", "y"]
+
+
+def test_category_validation_rejects_invalid_string_value():
+    """Test that category validators reject invalid string values."""
+    location_model = create_location_model(
+        obligatory_fields=[("status", "str")],
+        categories={"status": ["active", "inactive"]},
+    )
+    # Valid value should work
+    loc = location_model(uuid="1", status="active", position=(50, 50))
+    assert loc.status == "active"
+
+    # Invalid value should be rejected
+    with pytest.raises(LocationValidationError):
+        location_model(uuid="2", status="invalid_status", position=(50, 50))
+
+
+def test_category_validation_rejects_invalid_list_item():
+    """Test that category validators reject invalid list item values."""
+    location_model = create_location_model(
+        obligatory_fields=[("tags", "list")],
+        categories={"tags": ["red", "green", "blue"]},
+    )
+    # Valid values should work
+    loc = location_model(uuid="1", tags=["red", "green"], position=(50, 50))
+    assert loc.tags == ["red", "green"]
+
+    # Invalid list item should be rejected
+    with pytest.raises(LocationValidationError):
+        location_model(uuid="2", tags=["red", "yellow"], position=(50, 50))

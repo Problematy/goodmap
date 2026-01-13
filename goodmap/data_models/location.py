@@ -1,9 +1,10 @@
 """Pydantic models for location data validation and schema generation."""
 
 import warnings
-from typing import Any, Sequence, Type, Union, cast, overload
+from typing import Annotated, Any, Type, cast, overload
 
 from pydantic import (
+    AfterValidator,
     BaseModel,
     Field,
     ValidationError,
@@ -69,7 +70,7 @@ class LocationBase(BaseModel, extra="allow"):
 
 @overload
 def create_location_model(
-    obligatory_fields: Sequence[tuple[str, str]],
+    obligatory_fields: list[tuple[str, str]],
     categories: dict[str, list[str]] | None = ...,
 ) -> Type[BaseModel]:
     """Create location model with string type names (recommended)."""
@@ -78,7 +79,7 @@ def create_location_model(
 
 @overload
 def create_location_model(
-    obligatory_fields: Sequence[tuple[str, Type[Any]]],
+    obligatory_fields: list[tuple[str, Type[Any]]],
     categories: dict[str, list[str]] | None = ...,
 ) -> Type[BaseModel]:
     """Create location model with Python type objects (deprecated)."""
@@ -86,7 +87,7 @@ def create_location_model(
 
 
 def create_location_model(
-    obligatory_fields: Sequence[tuple[str, Union[str, Type[Any]]]],
+    obligatory_fields: list[tuple[str, str]] | list[tuple[str, Type[Any]]],
     categories: dict[str, list[str]] | None = None,
 ) -> Type[BaseModel]:
     """Dynamically create a Location model with additional required fields.
@@ -110,11 +111,8 @@ def create_location_model(
         >>> # Deprecated: Python type objects (supported for backward compatibility)
         >>> model = create_location_model([("name", str), ("tags", list)])
     """
-    from pydantic import field_validator as pydantic_field_validator
-
     categories = categories or {}
-    fields = {}
-    validators = {}
+    fields: dict[str, Any] = {}
 
     # Map type strings to Python types
     type_mapping = {
@@ -125,6 +123,41 @@ def create_location_model(
         "bool": bool,
         "dict": dict,
     }
+
+    # Helper function to create validators using Annotated + AfterValidator (Pydantic v2 pattern)
+    def make_enum_validator(allowed: list[str]):
+        """Create a validator that checks value is in allowed list."""
+
+        def validate(v: str) -> str:
+            if v not in allowed:
+                raise ValueError(f"must be one of {allowed}, got '{v}'")
+            return v
+
+        return validate
+
+    def make_list_enum_validator(allowed: list[str]):
+        """Create a validator that checks all list items are in allowed list."""
+
+        def validate(v: list[Any]) -> list[Any]:
+            for item in v:
+                if item not in allowed:
+                    raise ValueError(f"must be one of {allowed}, got '{item}'")
+                if isinstance(item, str) and len(item) > 100:
+                    raise ValueError(f"list item too long (max 100 chars), got {len(item)}")
+            return v
+
+        return validate
+
+    def make_list_length_validator():
+        """Create a validator that checks list item lengths."""
+
+        def validate(v: list[Any]) -> list[Any]:
+            for item in v:
+                if isinstance(item, str) and len(item) > 100:
+                    raise ValueError(f"list item too long (max 100 chars), got {len(item)}")
+            return v
+
+        return validate
 
     for field_name, field_type_input in obligatory_fields:
         # Backward compatibility: Convert Python type objects to strings
@@ -151,10 +184,13 @@ def create_location_model(
         description = f"Allowed values: {', '.join(allowed_values)}" if allowed_values else None
 
         if allowed_values:
-            # Add field with category metadata
+            # Add field with category metadata and validation via Annotated + AfterValidator
             if is_list:
+                field_type = Annotated[
+                    list[str], AfterValidator(make_list_enum_validator(allowed_values))
+                ]
                 fields[field_name] = (
-                    list[str],
+                    field_type,
                     Field(
                         ...,
                         description=description,
@@ -162,27 +198,10 @@ def create_location_model(
                         json_schema_extra=cast(Any, {"enum_items": allowed_values}),
                     ),
                 )
-
-                # Create validator for list items
-                def make_list_validator(allowed):
-                    def validator(cls, v):
-                        for item in v:
-                            if item not in allowed:
-                                raise ValueError(f"must be one of {allowed}, got '{item}'")
-                            if len(item) > 100:
-                                raise ValueError(
-                                    f"list item too long (max 100 chars), got {len(item)}"
-                                )
-                        return v
-
-                    return validator
-
-                validators[field_name] = pydantic_field_validator(field_name)(
-                    make_list_validator(allowed_values)
-                )
             else:
+                field_type = Annotated[str, AfterValidator(make_enum_validator(allowed_values))]
                 fields[field_name] = (
-                    str,
+                    field_type,
                     Field(
                         ...,
                         description=description,
@@ -190,41 +209,13 @@ def create_location_model(
                         json_schema_extra=cast(Any, {"enum": allowed_values}),
                     ),
                 )
-
-                # Create validator for string value
-                def make_str_validator(allowed):
-                    def validator(cls, v):
-                        if v not in allowed:
-                            raise ValueError(f"must be one of {allowed}, got '{v}'")
-                        return v
-
-                    return validator
-
-                validators[field_name] = pydantic_field_validator(field_name)(
-                    make_str_validator(allowed_values)
-                )
         else:
             # No categories, use the base type with size constraints
             if is_list:
+                field_type = Annotated[list[Any], AfterValidator(make_list_length_validator())]
                 fields[field_name] = (
-                    base_type,
+                    field_type,
                     Field(..., max_length=20),  # Max 20 items in list
-                )
-
-                # Add validator for list item length
-                def make_list_length_validator():
-                    def validator(cls, v):
-                        for item in v:
-                            if isinstance(item, str) and len(item) > 100:
-                                raise ValueError(
-                                    f"list item too long (max 100 chars), got {len(item)}"
-                                )
-                        return v
-
-                    return validator
-
-                validators[field_name] = pydantic_field_validator(field_name)(
-                    make_list_length_validator()
                 )
             elif base_type is str:
                 fields[field_name] = (
@@ -234,13 +225,12 @@ def create_location_model(
             else:
                 fields[field_name] = (base_type, Field(...))
 
-    # Create model with validators
+    # Create model (validators are now embedded in field types via Annotated)
     model = create_model(
         "Location",
         __base__=LocationBase,
         __module__="goodmap.data_models.location",
-        __validators__=validators,
-        **cast(dict[str, Any], fields),
+        **fields,
     )
 
     return model

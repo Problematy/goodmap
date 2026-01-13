@@ -564,12 +564,6 @@ def core_pages(
             data = request.get_json()
             status = data.get("status")
             priority = data.get("priority")
-            valid_status = ("resolved", "rejected")
-            valid_priority = ("critical", "high", "medium", "low")
-            if status and status not in valid_status:
-                return make_response(jsonify({"message": "Invalid status"}), 400)
-            if priority and priority not in valid_priority:
-                return make_response(jsonify({"message": "Invalid priority"}), 400)
             report = database.get_report(report_id)
             if not report:
                 return make_response(jsonify({"message": "Report not found"}), 404)
