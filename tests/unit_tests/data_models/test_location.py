@@ -103,7 +103,7 @@ def test_category_validation_rejects_invalid_string_value():
     )
     # Valid value should work
     loc = location_model(uuid="1", status="active", position=(50, 50))
-    assert loc.status == "active"
+    assert getattr(loc, "status") == "active"
 
     # Invalid value should be rejected
     with pytest.raises(LocationValidationError):
@@ -118,7 +118,7 @@ def test_category_validation_rejects_invalid_list_item():
     )
     # Valid values should work
     loc = location_model(uuid="1", tags=["red", "green"], position=(50, 50))
-    assert loc.tags == ["red", "green"]
+    assert getattr(loc, "tags") == ["red", "green"]
 
     # Invalid list item should be rejected
     with pytest.raises(LocationValidationError):
