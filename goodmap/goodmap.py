@@ -8,6 +8,7 @@ from platzky import platzky
 from platzky.config import languages_dict
 from platzky.models import CmsModule
 
+from goodmap.admin_api import admin_pages
 from goodmap.config import GoodmapConfig
 from goodmap.core_api import core_pages
 from goodmap.data_models.location import create_location_model
@@ -105,6 +106,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         feature_flags=config.feature_flags,
     )
     app.register_blueprint(cp)
+
     goodmap = Blueprint("goodmap", __name__, url_prefix="/", template_folder="templates")
 
     @goodmap.route("/")
@@ -152,10 +154,14 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
 
         Requires user to be logged in (redirects to /admin if not).
         Provides admin panel for managing locations, suggestions, and reports.
+        Only available when ENABLE_ADMIN_PANEL feature flag is enabled.
 
         Returns:
             Rendered goodmap-admin.html template or redirect to login
         """
+        if not is_feature_enabled(config, "ENABLE_ADMIN_PANEL"):
+            return redirect("/")
+
         user = session.get("user", None)
         if not user:
             return redirect("/admin")
@@ -171,14 +177,19 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         )
 
     app.register_blueprint(goodmap)
-    goodmap_cms_modules = CmsModule.model_validate(
-        {
-            "name": "Map admin panel",
-            "description": "Admin panel for managing map data",
-            "slug": "goodmap-admin",
-            "template": "goodmap-admin.html",
-        }
-    )
-    app.add_cms_module(goodmap_cms_modules)
+
+    if is_feature_enabled(config, "ENABLE_ADMIN_PANEL"):
+        admin_bp = admin_pages(app.db, location_model)
+        app.register_blueprint(admin_bp)
+
+        goodmap_cms_modules = CmsModule.model_validate(
+            {
+                "name": "Map admin panel",
+                "description": "Admin panel for managing map data",
+                "slug": "goodmap-admin",
+                "template": "goodmap-admin.html",
+            }
+        )
+        app.add_cms_module(goodmap_cms_modules)
 
     return app
