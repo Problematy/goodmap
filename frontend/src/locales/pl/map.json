@@ -3,6 +3,7 @@
     "title": "Nazwa",
     "centerButtonAriaLabel": "Ikona celu lokalizacji, używana do określenia lokalizacji na mapie.",
     "ReportIssueButton": "zgłoś problem",
+    "reportProblemLabel": "Jaki jest problem?",
     "reportChooseOption": "Wybierz opcję",
     "reportNotHere": "punktu nie ma w tym miejscu",
     "reportOverload": "przepełniony",

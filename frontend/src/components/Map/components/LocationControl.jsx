@@ -116,9 +116,18 @@ const LocationControl = ({ setUserPosition: setUserPositionProp }) => {
             <Control prepend position="bottomright">
                 <Button
                     onClick={handleFlyToLocationClick}
-                    style={buttonStyle}
                     variant="contained"
                     aria-label={t('centerButtonAriaLabel')}
+                    sx={{
+                        ...buttonStyle,
+                        '&:hover': {
+                            backgroundColor: '#1a3d4a',
+                            transform: 'scale(1.05)',
+                        },
+                        '&:active': {
+                            transform: 'scale(0.95)',
+                        },
+                    }}
                 >
                     <MyLocationIcon style={{ color: 'white', fontSize: 24 }} />
                 </Button>

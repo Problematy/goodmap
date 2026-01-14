@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@mui/material';
+import ViewListIcon from '@mui/icons-material/ViewList';
 import styled from 'styled-components';
 
 /**
@@ -27,9 +28,12 @@ const ListView = ({ onClick }) => {
                 onClick={handleOnClick}
                 style={{
                     backgroundColor: globalThis.SECONDARY_COLOR || '#0066CC',
+                    borderRadius: '8px',
+                    padding: '10px 16px',
                 }}
                 variant="contained"
             >
+                <ViewListIcon style={{ marginRight: 8, fontSize: 20 }} />
                 {t('listView')}
             </Button>
         </Wrapper>

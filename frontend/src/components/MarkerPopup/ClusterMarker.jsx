@@ -63,7 +63,7 @@ const ClusterMarkerIcon = ({ cluster }) => {
 
 /**
  * Styled container for the cluster marker icon.
- * Creates a circular blue container with centered white text.
+ * Creates a circular green gradient container with centered white text.
  */
 const ClusterMarkerContainer = styled.div`
     width: 30px;
@@ -71,9 +71,18 @@ const ClusterMarkerContainer = styled.div`
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: #007bff;
+    background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
     color: white;
     border-radius: 50%;
+    border: 3px solid white;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    font-weight: 700;
+    font-size: 12px;
+    transition: transform 0.2s ease;
+
+    &:hover {
+        transform: scale(1.1);
+    }
 `;
 
 ClusterMarkerIcon.propTypes = {

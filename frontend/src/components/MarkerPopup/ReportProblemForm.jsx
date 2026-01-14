@@ -11,7 +11,11 @@ import { getCsrfToken } from '../../utils/csrf';
 const Form = styled.form`
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
+    padding: 12px 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    margin: 10px 15px;
 `;
 
 /**
@@ -20,40 +24,91 @@ const Form = styled.form`
 const Label = styled.label`
     display: flex;
     flex-direction: column;
-    font-size: 1rem;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #555;
 `;
 
 /**
  * Styled select dropdown component.
  */
 const Select = styled.select`
-    padding: 5px;
-    font-size: 1rem;
+    padding: 10px 12px;
+    font-size: 13px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background-color: white;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+
+    &:hover {
+        border-color: #aaa;
+    }
+
+    &:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+    }
 `;
 
 /**
  * Styled text input component.
  */
 const Input = styled.input`
-    padding: 5px;
-    font-size: 1rem;
+    padding: 10px 12px;
+    font-size: 13px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+
+    &:hover {
+        border-color: #aaa;
+    }
+
+    &:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+    }
 `;
 
 /**
  * Styled submit button component with hover effect.
  */
 const SubmitButton = styled.input`
-    padding: 10px;
-    background-color: #007bff;
+    padding: 10px 16px;
+    background-color: #d32f2f;
     color: white;
     border: none;
-    border-radius: 5px;
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 1rem;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background-color 0.2s, transform 0.1s;
 
     &:hover {
-        background-color: #0056b3;
+        background-color: #b71c1c;
     }
+
+    &:active {
+        transform: scale(0.98);
+    }
+`;
+
+/**
+ * Styled success message component.
+ */
+const SuccessMessage = styled.div`
+    padding: 12px 15px;
+    background-color: #e8f5e9;
+    border: 1px solid #a5d6a7;
+    border-radius: 8px;
+    color: #2e7d32;
+    font-size: 13px;
+    margin: 10px 15px;
+    text-align: center;
 `;
 
 /**
@@ -96,15 +151,15 @@ export const ReportProblemForm = ({ placeId }) => {
     };
 
     if (isSubmitted) {
-        return <p>{responseMessage}</p>;
+        return <SuccessMessage>{responseMessage}</SuccessMessage>;
     }
 
     return (
         <Form onSubmit={handleSubmit}>
             <Label>
-                Problem:
+                {t('reportProblemLabel')}
                 <Select value={problemType} onChange={e => setProblemType(e.target.value)}>
-                    <option value="">--{t('reportChooseOption')}--</option>
+                    <option value="">{t('reportChooseOption')}</option>
                     <option value="notHere">{t('reportNotHere')}</option>
                     <option value="overload">{t('reportOverload')}</option>
                     <option value="broken">{t('reportBroken')}</option>

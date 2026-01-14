@@ -3,6 +3,7 @@
     "title": "Title",
     "centerButtonAriaLabel": "Location target icon, used to determine your location on the map",
     "ReportIssueButton": "report a problem",
+    "reportProblemLabel": "What's the problem?",
     "reportChooseOption": "Please choose an option",
     "reportNotHere": "this point is not here",
     "reportOverload": "it's overloaded",

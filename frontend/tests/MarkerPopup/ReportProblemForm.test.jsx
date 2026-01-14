@@ -25,7 +25,7 @@ afterEach(() => {
 describe('ReportProblemForm', () => {
     it('submits the form with selected problem type', () => {
         const { getByText, getByLabelText } = render(<ReportProblemForm placeId="test-id" />);
-        const select = getByLabelText(/Problem:/i);
+        const select = getByLabelText(/What's the problem\?/i);
         fireEvent.change(select, { target: { value: 'broken' } });
 
         fireEvent.click(getByText(/Submit/i));
@@ -46,7 +46,7 @@ describe('ReportProblemForm', () => {
 
     it('submits the form with custom problem description', () => {
         const { getByText, getByLabelText } = render(<ReportProblemForm placeId="test-id" />);
-        const select = getByLabelText(/Problem:/i);
+        const select = getByLabelText(/What's the problem\?/i);
         fireEvent.change(select, { target: { value: 'other' } });
         const input = getByLabelText(/Please describe:/i);
         fireEvent.change(input, { target: { value: 'Custom problem' } });
@@ -69,7 +69,7 @@ describe('ReportProblemForm', () => {
     it('does not render submit button when no problem type is selected', () => {
         const { queryByText, getByLabelText } = render(<ReportProblemForm placeId="test-id" />);
 
-        const select = getByLabelText(/Problem:/i);
+        const select = getByLabelText(/What's the problem\?/i);
         expect(select.value).toBe('');
 
         const submitButton = queryByText(/Submit/i);

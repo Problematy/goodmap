@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import ExploreIcon from '@mui/icons-material/Explore';
+import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined';
 import { useTranslation } from 'react-i18next';
 import { isMobile } from 'react-device-detect';
 import { buttonStyleSmall } from '../../styles/buttonStyle';
@@ -124,12 +125,27 @@ const LocationDetails = ({ place }) => {
     return (
         <div className="place-data m-0">
             <div style={{ width: '100%', justifyContent: 'center', display: 'flex' }}>
-                <p className="point-title m-0" style={{ fontSize: 14, fontWeight: 'bold' }}>
-                    <b>{place.title}</b>
+                <p
+                    className="point-title m-0"
+                    style={{
+                        fontSize: 16,
+                        fontWeight: 600,
+                        color: '#1a1a1a',
+                        marginBottom: '2px',
+                    }}
+                >
+                    {place.title}
                 </p>
             </div>
             <div style={{ width: '100%', justifyContent: 'center', display: 'flex' }}>
-                <p className="point-subtitle mt-0 mb-2" style={{ fontSize: 10 }}>
+                <p
+                    className="point-subtitle mt-0 mb-2"
+                    style={{
+                        fontSize: 12,
+                        color: '#666',
+                        textTransform: 'capitalize',
+                    }}
+                >
                     {place.subtitle}
                 </p>
             </div>
@@ -137,13 +153,11 @@ const LocationDetails = ({ place }) => {
             <div
                 style={{
                     display: 'grid',
-                    gridTemplateColumns: '100px 1fr',
-                    columnGap: '10px',
-                    rowGap: '10px',
-                    margin: '5px 5px',
-                    marginLeft: '10px',
-                    marginRight: '10px',
-                    alignItems: 'start',
+                    gridTemplateColumns: 'auto 1fr',
+                    columnGap: '12px',
+                    rowGap: '8px',
+                    margin: '10px 15px',
+                    alignItems: 'baseline',
                     fontSize: 12,
                 }}
             >
@@ -182,6 +196,14 @@ const LocationDetails = ({ place }) => {
     );
 };
 
+LocationDetails.propTypes = {
+    place: PropTypes.shape({
+        title: PropTypes.string.isRequired,
+        subtitle: PropTypes.string,
+        data: PropTypes.arrayOf(PropTypes.array).isRequired,
+    }).isRequired,
+};
+
 /**
  * Main component that wraps location details with additional features.
  * Includes location details, optional navigation button (mobile only), and report problem form.
@@ -218,18 +240,33 @@ export const LocationDetailsBox = ({ place }) => {
                 {isMobile && <NavigateMeButton place={place} />}
             </div>
 
-            <p
+            <button
+                type="button"
                 onClick={toggleForm}
                 style={{
                     cursor: 'pointer',
-                    textAlign: 'right',
-                    color: 'red',
-                    marginTop: '5px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'flex-end',
+                    gap: '4px',
+                    color: '#888',
+                    fontSize: '11px',
+                    marginTop: '8px',
                     marginBottom: '5px',
+                    transition: 'color 0.2s',
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    width: '100%',
                 }}
+                onMouseOver={e => (e.currentTarget.style.color = '#d32f2f')}
+                onFocus={e => (e.currentTarget.style.color = '#d32f2f')}
+                onMouseOut={e => (e.currentTarget.style.color = '#888')}
+                onBlur={e => (e.currentTarget.style.color = '#888')}
             >
-                {t('ReportIssueButton')}
-            </p>
+                <ReportProblemOutlinedIcon style={{ fontSize: 14 }} />
+                <span>{t('ReportIssueButton')}</span>
+            </button>
             {showForm && <ReportProblemForm placeId={place.metadata.uuid} />}
         </React.Fragment>
     );

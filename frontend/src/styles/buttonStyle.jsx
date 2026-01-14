@@ -45,9 +45,20 @@ export const buttonStyleSmall = {
 };
 
 export const zoomButtonStyle = {
-    ...mapButton,
-    width: '100px',
-    minWidth: '100px',
-    borderRadius: '10%',
-    fontSize: '30px',
+    ...commonStyle,
+    width: '40px',
+    height: '40px',
+    minWidth: '40px',
+    fontSize: '22px',
+    fontWeight: 'bold',
+};
+
+export const zoomInButtonStyle = {
+    ...zoomButtonStyle,
+    borderRadius: '8px 8px 0 0',
+};
+
+export const zoomOutButtonStyle = {
+    ...zoomButtonStyle,
+    borderRadius: '0 0 8px 8px',
 };
