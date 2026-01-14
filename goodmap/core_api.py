@@ -598,12 +598,19 @@ def core_pages(
     # Register Spectree with blueprint after all routes are defined
     spec.register(core_api_blueprint)
 
-    # Add redirect from /doc to /doc/swagger/ for convenience
     @core_api_blueprint.route("/doc")
-    def api_doc_redirect():
-        """Redirect /api/doc to Swagger UI."""
-        from flask import redirect
-
-        return redirect("/api/doc/swagger/")
+    def api_doc_index():
+        """Return links to available API documentation formats."""
+        html = """<!DOCTYPE html>
+<html><head><title>API Documentation</title></head>
+<body>
+<h1>API Documentation</h1>
+<ul>
+<li><a href="/api/doc/swagger/">Swagger UI</a></li>
+<li><a href="/api/doc/redoc/">ReDoc</a></li>
+<li><a href="/api/doc/openapi.json">OpenAPI JSON</a></li>
+</ul>
+</body></html>"""
+        return html, 200, {"Content-Type": "text/html"}
 
     return core_api_blueprint

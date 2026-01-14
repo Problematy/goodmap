@@ -138,10 +138,13 @@ def test_csrf_token_endpoint_returns_token(test_app):
     assert "csrf_token" in response.json
 
 
-def test_api_doc_redirect(test_app):
+def test_api_doc_index(test_app):
     response = test_app.get("/api/doc")
-    assert response.status_code == 302
-    assert "/api/doc/swagger/" in response.headers["Location"]
+    assert response.status_code == 200
+    assert response.content_type == "text/html"
+    assert b"/api/doc/swagger/" in response.data
+    assert b"/api/doc/redoc/" in response.data
+    assert b"/api/doc/openapi.json" in response.data
 
 
 # --- Categories endpoint tests ---
