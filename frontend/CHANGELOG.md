@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/Problematy/goodmap-frontend/compare/1.0.4...1.1.0) (2026-01-14)
+
+
+### Features
+
+* prettier ux - problem reporting, popups and zoom buttons ([#139](https://github.com/Problematy/goodmap-frontend/issues/139)) ([9844b16](https://github.com/Problematy/goodmap-frontend/commit/9844b165ec1e212127b2cd46714a60554f27932d))
+
 ## [1.0.4](https://github.com/Problematy/goodmap-frontend/compare/1.0.3...1.0.4) (2025-12-31)
 
 
