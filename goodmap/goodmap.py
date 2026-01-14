@@ -8,6 +8,7 @@ from platzky import platzky
 from platzky.config import languages_dict
 from platzky.models import CmsModule
 
+from goodmap.admin_api import admin_pages
 from goodmap.config import GoodmapConfig
 from goodmap.core_api import core_pages
 from goodmap.data_models.location import create_location_model
@@ -105,6 +106,10 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         feature_flags=config.feature_flags,
     )
     app.register_blueprint(cp)
+
+    admin_bp = admin_pages(app.db, location_model)
+    app.register_blueprint(admin_bp)
+
     goodmap = Blueprint("goodmap", __name__, url_prefix="/", template_folder="templates")
 
     @goodmap.route("/")
