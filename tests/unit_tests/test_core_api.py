@@ -191,6 +191,7 @@ def test_categories_endpoint_with_categories_help():
     response = test_app.get("/api/categories")
     assert response.status_code == 200
     data = response.json
+    assert data is not None
     assert "categories_help" in data
     assert len(data["categories_help"]) == 2
     assert data["categories_help"][0] == {"option1": "categories_help_option1-translated"}
@@ -206,6 +207,7 @@ def test_category_data_endpoint_with_categories_options_help():
     response = test_app.get("/api/category/test-category")
     assert response.status_code == 200
     data = response.json
+    assert data is not None
     assert "categories_options_help" in data
     assert len(data["categories_options_help"]) == 2
     assert data["categories_options_help"][0] == {
@@ -219,7 +221,9 @@ def test_categories_endpoint_with_none_categories_help():
     )
     response = test_app.get("/api/categories")
     assert response.status_code == 200
-    assert response.json["categories_help"] == []
+    data = response.json
+    assert data is not None
+    assert data["categories_help"] == []
 
 
 def test_category_data_endpoint_with_none_categories_options_help():
@@ -231,7 +235,9 @@ def test_category_data_endpoint_with_none_categories_options_help():
     test_client = app.test_client()
     response = test_client.get("/api/category/test-category")
     assert response.status_code == 200
-    assert response.json["categories_options_help"] == []
+    data = response.json
+    assert data is not None
+    assert data["categories_options_help"] == []
 
 
 # --- Locations endpoint tests ---
