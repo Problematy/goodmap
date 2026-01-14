@@ -55,6 +55,7 @@ def _create_location_handler(database, location_model):
     if location_data is None:
         logger.warning("Empty or invalid JSON in admin create location endpoint")
         return make_response(jsonify({"message": ERROR_INVALID_REQUEST_DATA}), 400)
+    # TODO: Catch pydantic.ValidationError separately to return 400 instead of 500
     try:
         location_data.update({"uuid": str(uuid.uuid4())})
         location = location_model.model_validate(location_data)
@@ -73,6 +74,7 @@ def _update_location_handler(database, location_model, location_id):
     if location_data is None:
         logger.warning("Empty or invalid JSON in admin update location endpoint")
         return make_response(jsonify({"message": ERROR_INVALID_REQUEST_DATA}), 400)
+    # TODO: Catch pydantic.ValidationError separately to return 400 instead of 500
     try:
         location_data.update({"uuid": location_id})
         location = location_model.model_validate(location_data)
