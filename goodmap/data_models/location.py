@@ -25,7 +25,7 @@ class LocationBase(BaseModel, extra="allow"):
     """
 
     position: tuple[float, float]
-    uuid: str = Field(..., max_length=100)  # UUID is 36 chars, allow some flexibility
+    uuid: str = Field(..., max_length=100)
 
     @field_validator("position")
     @classmethod
