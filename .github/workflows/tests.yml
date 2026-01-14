@@ -36,8 +36,6 @@ jobs:
       contents: read
     steps:
     - uses: actions/checkout@v6
-      with:
-        submodules: 'true'  # TODO remove this line after the submodules are removed
     - name: Set up Python 3.10
       uses: actions/setup-python@v6
       with:
@@ -66,8 +64,6 @@ jobs:
       contents: read
     steps:
     - uses: actions/checkout@v6
-      with:
-        submodules: 'true'  # TODO remove this line after the submodules are removed
     - name: Set up Python 3.10
       uses: actions/setup-python@v6
       with:
