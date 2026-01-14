@@ -3,17 +3,20 @@
 import warnings
 from typing import Annotated, Any, Callable, Type, cast, overload
 
+from annotated_types import Ge, Le
 from pydantic import (
     AfterValidator,
     BaseModel,
     Field,
     ValidationError,
     create_model,
-    field_validator,
     model_validator,
 )
 
 from goodmap.exceptions import LocationValidationError
+
+Latitude = Annotated[float, Ge(-90), Le(90)]
+Longitude = Annotated[float, Ge(-180), Le(180)]
 
 
 class LocationBase(BaseModel, extra="allow"):
@@ -22,21 +25,12 @@ class LocationBase(BaseModel, extra="allow"):
     Attributes:
         position: Tuple of (latitude, longitude) coordinates
         uuid: Unique identifier for the location
+        remark: Optional remark text for the location
     """
 
-    position: tuple[float, float]
-    uuid: str = Field(..., max_length=100)
-
-    @field_validator("position")
-    @classmethod
-    def position_must_be_valid(cls, v: tuple[float, float]) -> tuple[float, float]:
-        """Validate that latitude and longitude are within valid ranges."""
-        lat, lon = v
-        if lat < -90 or lat > 90:
-            raise ValueError("latitude must be in range -90 to 90")
-        if lon < -180 or lon > 180:
-            raise ValueError("longitude must be in range -180 to 180")
-        return v
+    position: tuple[Latitude, Longitude]
+    uuid: str = Field(..., max_length=100)  # TODO make this UUID and deprecate string
+    remark: str | None = None
 
     @model_validator(mode="before")
     @classmethod
@@ -58,11 +52,9 @@ class LocationBase(BaseModel, extra="allow"):
 
     def basic_info(self) -> dict[str, Any]:
         """Get basic location information summary."""
-        return {
-            "uuid": self.uuid,
-            "position": self.position,
-            "remark": bool(getattr(self, "remark", False)),
-        }
+        data = self.model_dump(include={"uuid", "position"})
+        data["remark"] = bool(self.remark)
+        return data
 
 
 # Map type strings to Python types
