@@ -1,7 +1,7 @@
 """Pydantic models for location data validation and schema generation."""
 
 import warnings
-from typing import Annotated, Any, Callable, Type, cast, overload
+from typing import Annotated, Any, Type, cast
 
 from annotated_types import Ge, Le
 from pydantic import (
@@ -57,8 +57,7 @@ class LocationBase(BaseModel, extra="allow"):
         return data
 
 
-# Map type strings to Python types
-_TYPE_MAPPING = {
+_TYPE_MAPPING: dict[str, type] = {
     "str": str,
     "list": list,
     "int": int,
@@ -67,46 +66,31 @@ _TYPE_MAPPING = {
     "dict": dict,
 }
 
-
 _MAX_LIST_ITEM_LENGTH = 100
 
 
-def _validate_list_item_length(item: Any) -> None:
-    """Raise ValueError if string item exceeds max length."""
-    if isinstance(item, str) and len(item) > _MAX_LIST_ITEM_LENGTH:
-        raise ValueError(f"list item too long (max {_MAX_LIST_ITEM_LENGTH} chars), got {len(item)}")
+def _make_list_validator(allowed: list[str] | None):
+    """Create a validator for list items with optional enum constraint."""
+
+    def validate(v: list[Any]) -> list[Any]:
+        for item in v:
+            if allowed is not None and item not in allowed:
+                raise ValueError(f"must be one of {allowed}, got '{item}'")
+            if isinstance(item, str) and len(item) > _MAX_LIST_ITEM_LENGTH:
+                raise ValueError(
+                    f"list item too long (max {_MAX_LIST_ITEM_LENGTH} chars), got {len(item)}"
+                )
+        return v
+
+    return validate
 
 
-def _make_enum_validator(allowed: list[str]) -> Callable[[str], str]:
-    """Create a validator that checks value is in allowed list."""
+def _make_str_validator(allowed: list[str]):
+    """Create a validator that checks string value is in allowed list."""
 
     def validate(v: str) -> str:
         if v not in allowed:
             raise ValueError(f"must be one of {allowed}, got '{v}'")
-        return v
-
-    return validate
-
-
-def _make_list_enum_validator(allowed: list[str]) -> Callable[[list[Any]], list[Any]]:
-    """Create a validator that checks all list items are in allowed list and within length."""
-
-    def validate(v: list[Any]) -> list[Any]:
-        for item in v:
-            if item not in allowed:
-                raise ValueError(f"must be one of {allowed}, got '{item}'")
-            _validate_list_item_length(item)
-        return v
-
-    return validate
-
-
-def _make_list_length_validator() -> Callable[[list[Any]], list[Any]]:
-    """Create a validator that checks list item lengths."""
-
-    def validate(v: list[Any]) -> list[Any]:
-        for item in v:
-            _validate_list_item_length(item)
         return v
 
     return validate
@@ -127,83 +111,42 @@ def _normalize_field_type(field_type_input: str | Type[Any]) -> str:
     return field_type_input
 
 
-def _create_list_field_with_enum(allowed_values: list[str]) -> tuple[Any, Any]:
-    """Create a list field definition with enum validation."""
-    description = f"Allowed values: {', '.join(allowed_values)}"
-    field_type = Annotated[list[str], AfterValidator(_make_list_enum_validator(allowed_values))]
-    return (
-        field_type,
-        Field(
-            ...,
-            description=description,
-            max_length=20,
-            json_schema_extra=cast(Any, {"enum_items": allowed_values}),
-        ),
-    )
-
-
-def _create_str_field_with_enum(allowed_values: list[str]) -> tuple[Any, Any]:
-    """Create a string field definition with enum validation."""
-    description = f"Allowed values: {', '.join(allowed_values)}"
-    field_type = Annotated[str, AfterValidator(_make_enum_validator(allowed_values))]
-    return (
-        field_type,
-        Field(
-            ...,
-            description=description,
-            max_length=200,
-            json_schema_extra=cast(Any, {"enum": allowed_values}),
-        ),
-    )
-
-
-def _create_list_field_without_enum() -> tuple[Any, Any]:
-    """Create a list field definition without enum validation."""
-    field_type = Annotated[list[Any], AfterValidator(_make_list_length_validator())]
-    return (field_type, Field(..., max_length=20))
-
-
-def _create_simple_field(base_type: Type[Any]) -> tuple[Any, Any]:
-    """Create a simple field definition for non-list types."""
-    if base_type is str:
-        return (base_type, Field(..., max_length=200))
-    return (base_type, Field(...))
-
-
 def _build_field_definition(
     field_type_str: str, allowed_values: list[str] | None
 ) -> tuple[Any, Any]:
     """Build a complete field definition based on type and constraints."""
     is_list = field_type_str.startswith("list")
 
-    if allowed_values:
-        if is_list:
-            return _create_list_field_with_enum(allowed_values)
-        return _create_str_field_with_enum(allowed_values)
-
     if is_list:
-        return _create_list_field_without_enum()
+        field_type = Annotated[list[Any], AfterValidator(_make_list_validator(allowed_values))]
+        if allowed_values:
+            return (
+                field_type,
+                Field(
+                    ...,
+                    description=f"Allowed values: {', '.join(allowed_values)}",
+                    max_length=20,
+                    json_schema_extra=cast(Any, {"enum_items": allowed_values}),
+                ),
+            )
+        return (field_type, Field(..., max_length=20))
+
+    if allowed_values:
+        field_type = Annotated[str, AfterValidator(_make_str_validator(allowed_values))]
+        return (
+            field_type,
+            Field(
+                ...,
+                description=f"Allowed values: {', '.join(allowed_values)}",
+                max_length=200,
+                json_schema_extra=cast(Any, {"enum": allowed_values}),
+            ),
+        )
 
     base_type = _TYPE_MAPPING.get(field_type_str, str)
-    return _create_simple_field(base_type)
-
-
-@overload
-def create_location_model(
-    obligatory_fields: list[tuple[str, str]],
-    categories: dict[str, list[str]] | None = ...,
-) -> Type[BaseModel]:
-    """Create location model with string type names (recommended)."""
-    ...
-
-
-@overload
-def create_location_model(
-    obligatory_fields: list[tuple[str, Type[Any]]],
-    categories: dict[str, list[str]] | None = ...,
-) -> Type[BaseModel]:
-    """Create location model with Python type objects (deprecated)."""
-    ...
+    if base_type is str:
+        return (base_type, Field(..., max_length=200))
+    return (base_type, Field(...))
 
 
 def create_location_model(
@@ -222,7 +165,7 @@ def create_location_model(
         categories: Optional dict mapping field names to allowed values (enums)
 
     Returns:
-        Type[BaseModel]: A Location model class extending LocationBase with additional fields
+        A Location model class extending LocationBase with additional fields
 
     Examples:
         >>> # Recommended: String type names
