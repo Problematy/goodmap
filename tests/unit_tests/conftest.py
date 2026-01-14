@@ -85,7 +85,7 @@ def create_test_app(feature_flags=None, db_overrides=None):
     """Create a test app with optional feature flags and db overrides."""
     config_data = get_test_config_data()
     if feature_flags is None:
-        feature_flags = {"CATEGORIES_HELP": True, "USE_LAZY_LOADING": True}
+        feature_flags = {"CATEGORIES_HELP": True, "USE_LAZY_LOADING": True, "ENABLE_ADMIN_PANEL": True}
     config_data["FEATURE_FLAGS"] = feature_flags
     if db_overrides:
         config_data["DB"]["DATA"].update(db_overrides)
