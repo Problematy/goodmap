@@ -65,12 +65,6 @@ def safe_json_loads(
     except json.JSONDecodeError as e:
         # Re-raise with original error message
         raise ValueError(f"Invalid JSON: {e}") from e
-    except RecursionError as e:
-        # Handle extreme nesting that causes RecursionError during parsing
-        raise JSONDepthError(
-            f"JSON nesting is too deep and caused a recursion error during parsing. "
-            f"Maximum allowed depth is {max_depth}"
-        ) from e
 
     # Depth check after parsing
     _check_depth(parsed, max_depth, current_depth=0)
