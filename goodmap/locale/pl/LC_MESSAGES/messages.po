@@ -19,15 +19,204 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
 
-#: goodmap/core_api.py:73
+#: goodmap/core_api.py:163
+msgid "A new location has been suggested with details"
+msgstr "Nowy punkt został zasugerowany z następującymi szczegółami"
+
+#: goodmap/core_api.py:217
+#, fuzzy
+msgid "Error reporting location"
+msgstr "Błąd wysyłania powiadomienia"
+
+#: goodmap/core_api.py:221
 msgid "Error sending notification"
 msgstr "Błąd wysyłania powiadomienia"
 
-#: goodmap/core_api.py:75
+#: goodmap/core_api.py:223
 msgid "Location reported"
 msgstr "Lokalizacja zgłoszona"
 
-#: goodmap/templates/map.html:38
+#: goodmap/templates/goodmap-admin.html:20
+msgid "Goodmap Admin Panel"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:24
+msgid "Admin Panel"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:28
+#: goodmap/templates/goodmap-admin.html:41
+msgid "Locations"
+msgstr "Lokalizacje"
+
+#: goodmap/templates/goodmap-admin.html:31
+#: goodmap/templates/goodmap-admin.html:101
+msgid "Suggestions"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:34
+#: goodmap/templates/goodmap-admin.html:125
+msgid "Reports"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:43
+#: goodmap/templates/goodmap-admin.html:260
+msgid "Add Location"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:46
+msgid "Filter by Type"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:50
+msgid "Filter by Accessibility"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:57
+#: goodmap/templates/goodmap-admin.html:111
+#: goodmap/templates/goodmap-admin.html:138
+msgid "UUID"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:58
+#: goodmap/templates/goodmap-admin.html:75
+#: goodmap/templates/goodmap-admin.html:112
+msgid "Name"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:59
+#: goodmap/templates/goodmap-admin.html:79
+#: goodmap/templates/goodmap-admin.html:113
+msgid "Position"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:60
+#: goodmap/templates/goodmap-admin.html:88
+msgid "Accessible By"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:61
+#: goodmap/templates/goodmap-admin.html:84
+msgid "Type"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:62
+#: goodmap/templates/goodmap-admin.html:115
+msgid "Actions"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:91
+msgid "Save"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:92
+msgid "Cancel"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:93
+msgid "Delete"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:103
+#: goodmap/templates/goodmap-admin.html:127
+msgid "Filter by Status"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:114
+#: goodmap/templates/goodmap-admin.html:141
+msgid "Status"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:131
+msgid "Filter by Priority"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:139
+msgid "Location ID"
+msgstr "ID lokalizacji"
+
+#: goodmap/templates/goodmap-admin.html:140
+msgid "Description"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:142
+msgid "Priority"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:260
+msgid "Edit Location"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:349
+#, fuzzy
+msgid "Error deleting location"
+msgstr "Błąd wysyłania powiadomienia"
+
+#: goodmap/templates/goodmap-admin.html:384
+msgid "Edit"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:406
+#: goodmap/templates/goodmap-admin.html:538
+#: goodmap/templates/goodmap-admin.html:679
+msgid "Previous"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:411
+#: goodmap/templates/goodmap-admin.html:543
+#: goodmap/templates/goodmap-admin.html:684
+msgid "Next"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:419
+#: goodmap/templates/goodmap-admin.html:551
+#: goodmap/templates/goodmap-admin.html:692
+msgid "Items per page:"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:422
+#: goodmap/templates/goodmap-admin.html:554
+#: goodmap/templates/goodmap-admin.html:695
+msgid "All"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:508
+msgid "Accept"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:509
+msgid "Reject"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:639
+msgid "pending"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:640
+msgid "resolved"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:641
+msgid "rejected"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:646
+msgid "critical"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:647
+msgid "high"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:648
+msgid "medium"
+msgstr ""
+
+#: goodmap/templates/goodmap-admin.html:649
+msgid "low"
+msgstr ""
+
+#: goodmap/templates/map.html:39
 msgid "Loading"
 msgstr "Ładowanie"
 
