@@ -30,13 +30,15 @@ describe('Popup Tests on Mobile', () => {
                 cy.wrap(rightmostMarker).click();
             });
 
-            cy.get('.MuiDialogContent-root')
+            // TODO: Remove .MuiDialogContent-root selector after goodmap-frontend unifies popup behavior
+            cy.get('.MuiDialogContent-root, .leaflet-popup-content')
                 .should('exist')
                 .within(() => {
                     verifyPopupContent(expectedPlaceZwierzyniecka);
                     verifyProblemForm();
                 });
-            cy.get('.MuiIconButton-root').should('exist').click();
+            // TODO: Remove .MuiIconButton-root selector after goodmap-frontend unifies popup behavior
+            cy.get('.MuiIconButton-root, .leaflet-popup-close-button').should('exist').click();
         });
     });
 });

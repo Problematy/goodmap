@@ -52,20 +52,24 @@ export function verifyProblemForm() {
                 .within(() => {
                     cy.get('option').then(options => {
                         const optionValues = [...options].map(option => option.textContent.trim());
+                        // Check that all problem type options exist (placeholder format may vary)
                         expect(optionValues).to.include.members([
-                            '--Please choose an option--',
                             'this point is not here',
                             "it's overloaded",
                             "it's broken",
                             'other',
                         ]);
+                        // TODO: Remove after goodmap-frontend unifies - placeholder should just be 'Please choose an option'
+                        expect(optionValues.some(v => v.includes('Please choose an option'))).to.be.true;
                     });
                 });
 
             cy.get('select').select('other');
-            cy.get('input[name="problem"]').should('exist');
-            cy.get('input[name="problem"]').type('Custom issue description');
-            cy.get('input[type="submit"]').should('exist').click();
+            // TODO: Remove input[name="problem"] after goodmap-frontend unifies - new version uses input with label
+            cy.get('input[name="problem"], input[type="text"]').first().should('exist');
+            cy.get('input[name="problem"], input[type="text"]').first().type('Custom issue description');
+            // TODO: Remove input[type="submit"] after goodmap-frontend unifies - new version uses button
+            cy.get('input[type="submit"], button:contains("Submit")').first().should('exist').click();
         });
 
     cy.wait('@reportLocation').then(interception => {
@@ -76,6 +80,7 @@ export function verifyProblemForm() {
         expect(interception.response.body.message).to.equal('Location reported');
     });
 
-    cy.contains('p', 'Location reported').should('exist');
+    // TODO: Remove after goodmap-frontend unifies - message container changed from p to div
+    cy.contains('Location reported').should('exist');
     cy.get('form').should('not.exist');
 }
