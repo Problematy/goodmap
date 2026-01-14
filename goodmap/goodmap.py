@@ -92,7 +92,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         location_model = create_location_model(location_obligatory_fields, categories)
         app.db = extend_db_with_goodmap_queries(app.db, location_model)
 
-    app.location_obligatory_fields = location_obligatory_fields  # type: ignore[attr-defined]
+    app.extensions["goodmap"] = {"location_obligatory_fields": location_obligatory_fields}
 
     CSRFProtect(app)
 
@@ -131,10 +131,10 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
             name: spec for name, spec in properties.items() if name not in ("uuid", "position")
         }
 
-        location_schema = {
-            "obligatory_fields": app.location_obligatory_fields,  # type: ignore[attr-defined]  # Backward compatibility
+        location_schema = {  #TODO remove bacward compability - derpecation
+            "obligatory_fields": app.extensions["goodmap"]["location_obligatory_fields"],  # Backward compatibility
             "categories": categories,  # Backward compatibility
-            "fields": form_fields,  # New: full field specifications from Pydantic schema
+            "fields": form_fields,
         }
 
         return render_template(
