@@ -586,6 +586,23 @@ def test_admin_put_location_invalid_json(test_app):
     assert response.status_code == 400
 
 
+def test_admin_put_location_not_found(test_app):
+    """Test LocationNotFoundError handler when updating non-existent location."""
+    from goodmap.exceptions import LocationNotFoundError
+
+    db = test_app.application.db
+    valid_location = {
+        "name": "Test",
+        "position": [50, 50],
+        "test_category": ["test"],
+        "type_of_place": "test",
+    }
+    with mock.patch.object(db, "update_location", side_effect=LocationNotFoundError("nonexistent")):
+        response = api_put(test_app, "/api/admin/locations/nonexistent", valid_location)
+        assert response.status_code == 404
+        assert "not found" in response.json["message"].lower()
+
+
 def test_admin_delete_location_success(test_app):
     # Create a location first
     create_data = {

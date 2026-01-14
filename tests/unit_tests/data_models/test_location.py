@@ -123,3 +123,12 @@ def test_category_validation_rejects_invalid_list_item():
     # Invalid list item should be rejected
     with pytest.raises(LocationValidationError):
         location_model(uuid="2", tags=["red", "yellow"], position=(50, 50))
+
+
+def test_create_location_model_with_int_field():
+    """Test that non-str simple fields (like int) are created without max_length."""
+    location_model = create_location_model(obligatory_fields=[("capacity", "int")])
+    location = location_model(uuid="1", capacity=100, position=(50, 50))
+    location_data = location.model_dump()
+    assert location_data["capacity"] == 100
+    assert location_data["uuid"] == "1"
