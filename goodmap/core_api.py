@@ -67,25 +67,20 @@ def get_or_none(data, *keys):
     return data
 
 
-def get_locations_from_request(database, request_args, as_basic_info=False):
+def get_locations_from_request(database, request_args):
     """
     Shared helper to fetch locations from database based on request arguments.
 
     Args:
         database: Database instance
         request_args: Request arguments (flask.request.args)
-        as_basic_info: If True, returns list of basic_info dicts, otherwise returns Location objects
 
     Returns:
-        List of locations (either as objects or basic_info dicts)
+        List of locations as basic_info dicts
     """
     query_params = request_args.to_dict(flat=False)
     all_locations = database.get_locations(query_params)
-
-    if as_basic_info:
-        return [x.basic_info() for x in all_locations]
-
-    return all_locations
+    return [x.basic_info() for x in all_locations]
 
 
 def core_pages(
@@ -254,7 +249,7 @@ def core_pages(
         Returns locations filtered by query parameters,
         showing only uuid, position, and remark flag.
         """
-        locations = get_locations_from_request(database, request.args, as_basic_info=True)
+        locations = get_locations_from_request(database, request.args)
         return jsonify(locations)
 
     @core_api_blueprint.route("/locations-clustered", methods=["GET"])
@@ -276,7 +271,7 @@ def core_pages(
                     400,
                 )
 
-            points = get_locations_from_request(database, request.args, as_basic_info=True)
+            points = get_locations_from_request(database, request.args)
             if not points:
                 return jsonify([])
 

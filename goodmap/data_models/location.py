@@ -50,6 +50,11 @@ class LocationBase(BaseModel, extra="allow"):
             uuid = data.get("uuid") if isinstance(data, dict) else None
             raise LocationValidationError(e, uuid=uuid) from e
 
+    def model_dump(self, **kwargs) -> dict[str, Any]:
+        """Serialize model, excluding None values by default for backward compatibility."""
+        kwargs.setdefault("exclude_none", True)
+        return super().model_dump(**kwargs)
+
     def basic_info(self) -> dict[str, Any]:
         """Get basic location information summary."""
         data = self.model_dump(include={"uuid", "position"})

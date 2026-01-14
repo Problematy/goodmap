@@ -487,6 +487,24 @@ def test_admin_post_location_success(mock_uuid4, test_app):
     assert isinstance(resp_json["uuid"], str)
 
 
+@mock.patch("uuid.uuid4")
+def test_admin_post_location_without_remark_excludes_remark_from_response(mock_uuid4, test_app):
+    from uuid import UUID
+
+    mock_uuid4.return_value = UUID("00000000-0000-0000-0000-000000000002")
+    data = {
+        "uuid": None,
+        "name": "NoRemarkLocation",
+        "type_of_place": "Type",
+        "test_category": ["cat"],
+        "position": [10.0, 20.0],
+    }
+    response = api_post(test_app, "/api/admin/locations", data)
+    assert response.status_code == 200
+    resp_json = response.json
+    assert "remark" not in resp_json, "remark should not be in response when not provided"
+
+
 @pytest.mark.parametrize(
     "data,expected_message",
     [
@@ -1001,18 +1019,7 @@ def test_get_locations_from_request_helper(test_app):
     mock_request_args = MockArgs()
 
     with test_app.application.app_context():
-        # as_basic_info=False returns Location objects
-        locations = get_locations_from_request(
-            test_app.application.db, mock_request_args, as_basic_info=False
-        )
-        assert isinstance(locations, list)
-        if locations:
-            assert hasattr(locations[0], "basic_info")
-
-        # as_basic_info=True returns dicts
-        locations = get_locations_from_request(
-            test_app.application.db, mock_request_args, as_basic_info=True
-        )
+        locations = get_locations_from_request(test_app.application.db, mock_request_args)
         assert isinstance(locations, list)
         if locations:
             assert isinstance(locations[0], dict)
