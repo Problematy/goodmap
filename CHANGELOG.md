@@ -2,6 +2,41 @@
 
 <!-- version list -->
 
+## v1.2.0 (2026-01-14)
+
+### Chores
+
+- Add docstrings to core data processing and validation functions
+  ([#306](https://github.com/Problematy/goodmap/pull/306),
+  [`27968e7`](https://github.com/Problematy/goodmap/commit/27968e7d8dc1643b8a5c3da151e364a7033ddca1))
+
+- Added more docs ([#301](https://github.com/Problematy/goodmap/pull/301),
+  [`21409d2`](https://github.com/Problematy/goodmap/commit/21409d2efceda1dbb0810169f4df2cfbcde038b9))
+
+- Removed extra permissions ([#307](https://github.com/Problematy/goodmap/pull/307),
+  [`0c8af05`](https://github.com/Problematy/goodmap/commit/0c8af05b062c2ca5ed70d25d08910d82cae0781f))
+
+- **ci**: Bump actions/cache from 4 to 5 ([#305](https://github.com/Problematy/goodmap/pull/305),
+  [`f42cc11`](https://github.com/Problematy/goodmap/commit/f42cc113cf2f76529f4b6e3b09886fe07b432a2f))
+
+- **ci**: Bump actions/checkout from 4 to 6 ([#304](https://github.com/Problematy/goodmap/pull/304),
+  [`3a274c6`](https://github.com/Problematy/goodmap/commit/3a274c6b82cc2183feaedbd544a255c3235da7bf))
+
+- **ci**: Bump actions/setup-python from 5 to 6
+  ([#303](https://github.com/Problematy/goodmap/pull/303),
+  [`a1cffa1`](https://github.com/Problematy/goodmap/commit/a1cffa12cb2070bc5e8e7696328458b3640ba5e6))
+
+- **deps)(deps-dev**: Bump coverage from 6.5.0 to 7.13.1
+  ([#302](https://github.com/Problematy/goodmap/pull/302),
+  [`d07c981`](https://github.com/Problematy/goodmap/commit/d07c981ac2cd05a9912a45f2b3c664e27499986c))
+
+### Features
+
+- Better model handling when suggesting new point and migrate API from RESTX to Spectree
+  ([#309](https://github.com/Problematy/goodmap/pull/309),
+  [`612054c`](https://github.com/Problematy/goodmap/commit/612054c24a52b97d498f31e9f40b0f1a0229041a))
+
+
 ## v1.1.14 (2025-12-31)
 
 ### Bug Fixes
