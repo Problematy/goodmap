@@ -131,8 +131,10 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
             name: spec for name, spec in properties.items() if name not in ("uuid", "position")
         }
 
-        location_schema = {  #TODO remove bacward compability - derpecation
-            "obligatory_fields": app.extensions["goodmap"]["location_obligatory_fields"],  # Backward compatibility
+        location_schema = {  # TODO remove bacward compability - derpecation
+            "obligatory_fields": app.extensions["goodmap"][
+                "location_obligatory_fields"
+            ],  # Backward compatibility
             "categories": categories,  # Backward compatibility
             "fields": form_fields,
         }
