@@ -4,14 +4,13 @@ This repository contains end-to-end testing infrastructure for the Goodmap appli
 
 ## Project Overview
 
-This test suite verifies the functionality of the Goodmap application through Cypress-based end-to-end tests. It sets up a complete testing environment with:
+This test suite verifies the functionality of the Goodmap application through Playwright-based end-to-end tests written in Python. It sets up a complete testing environment with:
 
 - Backend (Flask-based Goodmap application)
 - Frontend (Goodmap frontend application)
 
 ## Prerequisites
 
-- Node.js and npm
 - Python 3.10+
 - Poetry (Python dependency management)
 
@@ -21,7 +20,7 @@ The test environment uses several configuration files:
 
 - `e2e_test_config.yml`: Main configuration for the test instance
 - `e2e_test_data.json`: Test data for the test suite
-- `cypress.config.js`: Cypress testing framework configuration
+- `pyproject.toml`: Python dependencies and pytest configuration
 
 ## Getting Started
 

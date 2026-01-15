@@ -1,26 +1,32 @@
+# Include .env file if it exists (for GOODMAP_PATH, etc.)
+-include .env
+
 CONFIG_PATH ?= e2e_test_config.yml
 GOODMAP_PATH ?= .
-CYPRESS_SPEC ?= cypress/e2e/**/*.cy.js
+PYTEST_SPEC ?= tests/
 
 lint-fix:
-	npm run lint-fix
-	npm run prettier-fix
+	poetry run ruff check --fix tests/
+	poetry run black tests/
 
 lint-check:
-	npm run lint
-	npm run prettier
+	poetry run ruff check tests/
+	poetry run black --check tests/
 
-cypress-run:
-	node_modules/cypress/bin/cypress run --browser chromium --spec "$(CYPRESS_SPEC)"
+pytest-run:
+	poetry run pytest $(PYTEST_SPEC) -v
+
+setup-test-data:
+	cp e2e_test_data_template.json e2e_test_data.json
 
 e2e-tests:
-	$(MAKE) cypress-run CYPRESS_SPEC="cypress/e2e/basic-test/*.cy.js"
+	$(MAKE) pytest-run PYTEST_SPEC="tests/basic"
 
 e2e-stress-tests-generate-data:
-	python cypress/support/generate_stress_test_data.py
+	python scripts/generate_stress_test_data.py
 
 e2e-stress-tests:
-	$(MAKE) cypress-run CYPRESS_SPEC="cypress/e2e/stress-test/*"
+	$(MAKE) pytest-run PYTEST_SPEC="tests/stress"
 
 run-e2e-env:
 	poetry --project '$(GOODMAP_PATH)' run flask --app "goodmap.goodmap:create_app(config_path='$(CONFIG_PATH)')" --debug run

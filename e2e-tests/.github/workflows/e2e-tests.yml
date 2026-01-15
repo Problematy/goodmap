@@ -2,10 +2,12 @@ on:
   workflow_call:
     inputs:
       goodmap-version:
-        required: true
+        required: false
+        default: main
         type: string
       goodmap-frontend-version:
-        required: true
+        required: false
+        default: main
         type: string
       e2e-tests-version:
         required: false
@@ -64,7 +66,9 @@ jobs:
 
     - name: Install e2e dependencies
       working-directory: e2e-tests
-      run: npm install
+      run: |
+        poetry install
+        poetry run playwright install chromium --with-deps
 
     - name: Start frontend server
       working-directory: goodmap-frontend
@@ -74,6 +78,10 @@ jobs:
         echo $FRONTEND_PID > /tmp/frontend.pid
         disown $FRONTEND_PID
         sleep 3
+
+    - name: Setup test data
+      working-directory: e2e-tests
+      run: make setup-test-data
 
     - name: Start backend for e2e tests
       working-directory: e2e-tests
@@ -149,7 +157,7 @@ jobs:
     - name: Add stress test results to summary
       if: always()
       run: |
-        PERF_FILE="${{ github.workspace }}/e2e-tests/cypress/results/stress-test-perf.json"
+        PERF_FILE="${{ github.workspace }}/e2e-tests/test-results/stress-test-perf.json"
         SCRIPT_PATH="${{ github.workspace }}/e2e-tests/.github/scripts/generate-perf-summary.js"
 
         echo "Checking for script at: $SCRIPT_PATH"
@@ -171,8 +179,8 @@ jobs:
     - name: Copy performance data to temp
       if: always()
       run: |
-        if [ -f "e2e-tests/cypress/results/stress-test-perf.json" ]; then
-          cp "e2e-tests/cypress/results/stress-test-perf.json" /tmp/stress-test-perf.json
+        if [ -f "e2e-tests/test-results/stress-test-perf.json" ]; then
+          cp "e2e-tests/test-results/stress-test-perf.json" /tmp/stress-test-perf.json
           echo "Copied performance data to /tmp/stress-test-perf.json"
         else
           echo "No performance data found"

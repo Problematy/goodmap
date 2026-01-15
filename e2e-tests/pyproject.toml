@@ -1,0 +1,44 @@
+[tool.poetry]
+name = "goodmap-e2e-tests"
+version = "1.0.0"
+description = "End-to-end tests for Goodmap application using Playwright"
+authors = []
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.4"
+pytest-playwright = "^0.6.2"
+playwright = "^1.49.1"
+pytest-xdist = "^3.6.1"  # For parallel test execution
+ruff = "^0.8.4"  # Linting and formatting
+black = "^24.10.0"  # Code formatting
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+# Playwright-specific settings
+base_url = "http://localhost:5000"
+# Browser/headed/slowmo should be passed via CLI: --browser=chromium --headed --slowmo=100
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+select = ["E", "F", "W", "I", "N", "UP", "B", "A", "C4", "PT"]
+ignore = []
+
+[tool.ruff.per-file-ignores]
+"tests/**" = ["F811"]  # Allow fixture redefinitions
+
+[tool.black]
+line-length = 100
+target-version = ['py310']
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
