@@ -32,6 +32,11 @@ class TestPopupOnMobile:
         # Navigate to the page (device emulation already configured by mobile_page fixture)
         mobile_page.goto(BASE_URL, wait_until="domcontentloaded")
 
+        # Remove webpack overlay if it exists (flaky on CI)
+        mobile_page.evaluate(
+            "() => document.getElementById('webpack-dev-server-client-overlay')?.remove()"
+        )
+
         # Click first marker to expand cluster
         first_marker = mobile_page.locator(".leaflet-marker-icon").first
         first_marker.click()
