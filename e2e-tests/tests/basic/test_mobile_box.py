@@ -32,14 +32,10 @@ class TestPopupOnMobile:
         # Navigate to the page (device emulation already configured by mobile_page fixture)
         mobile_page.goto(BASE_URL, wait_until="domcontentloaded")
 
-        # Remove webpack overlay if it exists (flaky on CI)
-        mobile_page.evaluate(
-            "() => document.getElementById('webpack-dev-server-client-overlay')?.remove()"
-        )
-
         # Click first marker to expand cluster
+        # Use JavaScript click to bypass webpack overlay that may intercept clicks on CI
         first_marker = mobile_page.locator(".leaflet-marker-icon").first
-        first_marker.click()
+        first_marker.evaluate("el => el.click()")
 
         # Wait for markers to appear (should be 2 after expansion)
         markers = mobile_page.locator(".leaflet-marker-icon")
@@ -85,7 +81,8 @@ class TestPopupOnMobile:
             '.MuiIconButton-root[aria-label="close"], .leaflet-popup-close-button'
         )
         expect(close_button).to_be_visible()
-        close_button.click()
+        # Use JavaScript click to bypass any overlay issues on CI
+        close_button.evaluate("el => el.click()")
 
         # Verify dialog is closed
         expect(dialog_content).not_to_be_visible()
