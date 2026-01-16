@@ -4,10 +4,6 @@ Location Buttons Tests
 Tests the location-dependent buttons (LocationControl, SuggestNewPointButton, ListView)
 tooltip behavior and disabled state when geolocation is not granted.
 Also tests that geolocation permission is requested on page load.
-
-NOTE: Many tests in this file require frontend features (tooltips, disabled button styling)
-that are only available in the prettier branch. These are marked with pytest.mark.skip
-until the frontend changes are merged to main.
 """
 
 import pytest
@@ -15,50 +11,18 @@ from playwright.sync_api import Page, expect
 
 from tests.conftest import ALL_MOBILE_DEVICES, BASE_URL
 
-# Skip marker for tests requiring new frontend features
-REQUIRES_NEW_FRONTEND = pytest.mark.skip(
-    reason="Requires frontend features from prettier branch (tooltips, disabled styling)"
-)
-
 
 class TestGeolocationRequestOnPageLoad:
     """Test suite verifying geolocation behavior on page load"""
 
-    def test_geolocation_behavior_on_page_load(self, page: Page):
+    def test_page_loads_with_location_button_visible(self, page: Page):
         """
-        Verify consistent geolocation behavior on page load.
-
-        Supports both frontend versions:
-        - OLD: Auto-requests geolocation on load (intrusive but functional)
-        - NEW: Only requests if permission already granted (privacy-friendly)
-
-        This test passes with either behavior - it just logs which one was detected.
+        Verify that the page loads correctly and the location button is visible.
+        The new frontend only requests geolocation if permission is already granted.
         """
-        # Intercept geolocation API calls
-        page.add_init_script(
-            """
-            window.__geolocationRequested = false;
-            const originalGetCurrentPosition = navigator.geolocation.getCurrentPosition;
-            navigator.geolocation.getCurrentPosition = function(success, error, options) {
-                window.__geolocationRequested = true;
-                return originalGetCurrentPosition.call(
-                    navigator.geolocation, success, error, options
-                );
-            };
-        """
-        )
-
-        # Navigate to page
         page.goto(BASE_URL, wait_until="domcontentloaded")
 
-        # Wait for any async initialization
-        page.wait_for_timeout(1500)
-
-        # Check which behavior is present
-        geolocation_requested = page.evaluate("() => window.__geolocationRequested")
-
-        # Verify the page loaded correctly regardless of geolocation behavior
-        # The location button should always be visible
+        # The location button should be visible
         location_button = page.locator('[aria-label*="Location target"]')
         expect(location_button).to_be_visible(timeout=5000)
 
@@ -77,7 +41,6 @@ class TestGeolocationRequestOnPageLoad:
         expect(location_button).to_have_css("opacity", "1", timeout=5000)
         expect(location_button).to_have_css("filter", "none")
 
-    @REQUIRES_NEW_FRONTEND
     def test_buttons_show_disabled_when_permission_denied_on_load(self, browser, webpack_script):
         """
         Verify that when geolocation permission is denied/not granted,
@@ -169,9 +132,8 @@ class TestLocationButtonsDesktop:
         expect(list_view_button).to_have_css("filter", "none")
 
 
-@REQUIRES_NEW_FRONTEND
 class TestLocationButtonsDesktopDisabledState:
-    """Test suite for location buttons disabled state on desktop (requires new frontend)"""
+    """Test suite for location buttons disabled state on desktop"""
 
     def test_location_button_shows_disabled_tooltip_on_hover(self, page: Page):
         """
@@ -244,7 +206,6 @@ class TestLocationButtonsDesktopDisabledState:
         expect(list_view_button).to_have_css("filter", "grayscale(1)")
 
 
-@REQUIRES_NEW_FRONTEND
 class TestLocationButtonsMobile:
     """Test suite for location buttons on mobile devices"""
 
@@ -266,41 +227,7 @@ class TestLocationButtonsMobile:
         expect(tooltip).to_contain_text("Location services are disabled")
 
     @pytest.mark.parametrize("device_name", ALL_MOBILE_DEVICES)
-    def test_location_button_shows_tooltip_on_tap(self, mobile_page: Page, device_name: str):
-        """
-        Verify location button shows tooltip immediately on tap
-        when geolocation is not granted (mobile).
-        """
-        mobile_page.goto(BASE_URL, wait_until="domcontentloaded")
-
-        # Tap the location button
-        location_button = mobile_page.locator('[aria-label*="Location target"]')
-        location_button.click()
-
-        # Check tooltip appears with disabled message
-        tooltip = mobile_page.locator('[role="tooltip"]')
-        expect(tooltip).to_be_visible()
-        expect(tooltip).to_contain_text("Location services are disabled")
-
-    @pytest.mark.parametrize("device_name", ALL_MOBILE_DEVICES)
-    def test_suggest_button_shows_tooltip_on_tap(self, mobile_page: Page, device_name: str):
-        """
-        Verify suggest button shows tooltip immediately on tap
-        when geolocation is not granted (mobile).
-        """
-        mobile_page.goto(BASE_URL, wait_until="domcontentloaded")
-
-        # Tap the suggest button
-        suggest_button = mobile_page.locator('[data-testid="suggest-new-point"]')
-        suggest_button.click()
-
-        # Check tooltip appears with disabled message
-        tooltip = mobile_page.locator('[role="tooltip"]')
-        expect(tooltip).to_be_visible()
-        expect(tooltip).to_contain_text("Location services are disabled")
-
-    @pytest.mark.parametrize("device_name", ALL_MOBILE_DEVICES)
-    def test_all_buttons_consistent_tooltip_on_tap(self, mobile_page: Page, device_name: str):
+    def test_all_buttons_show_tooltip_on_tap(self, mobile_page: Page, device_name: str):
         """
         Verify all three location buttons show tooltips consistently on tap (mobile).
         Tests that enterTouchDelay=0 is working for all buttons.

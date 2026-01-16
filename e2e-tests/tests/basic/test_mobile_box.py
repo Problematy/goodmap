@@ -65,8 +65,7 @@ class TestPopupOnMobile:
         )
 
         # On mobile, popup appears as Material-UI Dialog (bottom sheet)
-        # TODO: Remove .MuiDialogContent-root selector after goodmap-frontend unifies popup behavior
-        dialog_content = mobile_page.locator(".MuiDialogContent-root, .leaflet-popup-content")
+        dialog_content = mobile_page.locator(".MuiDialogContent-root")
         expect(dialog_content).to_be_visible(timeout=5000)
 
         # Verify popup content
@@ -76,10 +75,7 @@ class TestPopupOnMobile:
         verify_problem_form(mobile_page)
 
         # Close the dialog using MUI IconButton
-        # TODO: Remove .MuiIconButton-root selector after goodmap-frontend unifies popup behavior
-        close_button = mobile_page.locator(
-            '.MuiIconButton-root[aria-label="close"], .leaflet-popup-close-button'
-        )
+        close_button = mobile_page.locator('.MuiIconButton-root[aria-label="close"]')
         expect(close_button).to_be_visible()
         # Use JavaScript click to bypass any overlay issues on CI
         close_button.evaluate("el => el.click()")

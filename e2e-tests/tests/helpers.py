@@ -70,9 +70,7 @@ def verify_popup_content(page: Page, expected_content: dict[str, Any]) -> None:
     Scopes assertions to .leaflet-popup-content or .MuiDialogContent-root
     to avoid false positives from other elements on the page.
 
-    Uses flexible selectors that work with multiple frontend versions:
-    - Tries CSS class selectors first (.point-title, .point-subtitle)
-    - Falls back to text-based matching for cross-version compatibility
+    Uses semantic element selectors (h3 for title, p for subtitle) for the new frontend.
 
     Args:
         page: Playwright page object
@@ -93,34 +91,20 @@ def verify_popup_content(page: Page, expected_content: dict[str, Any]) -> None:
     # Scope to popup container
     popup = page.locator(".leaflet-popup-content, .MuiDialogContent-root")
 
-    # Verify title - try CSS class first, fall back to text matching
-    title_by_class = popup.locator(".point-title")
-    if title_by_class.count() > 0:
-        expect(title_by_class).to_have_text(expected_content["title"])
-    else:
-        # Fall back to finding title by exact text match
-        expect(popup.get_by_text(expected_content["title"], exact=True)).to_be_visible()
+    # Verify title (h3 element in new frontend)
+    title = popup.locator("h3")
+    expect(title).to_have_text(expected_content["title"])
 
-    # Verify subtitle - try CSS class first, fall back to text matching
-    subtitle_by_class = popup.locator(".point-subtitle")
-    if subtitle_by_class.count() > 0:
-        expect(subtitle_by_class).to_have_text(expected_content["subtitle"])
-    else:
-        # Fall back to finding subtitle by text match (use .first as text may appear multiple times)
-        expect(popup.get_by_text(expected_content["subtitle"], exact=True).first).to_be_visible()
+    # Verify subtitle (p element after title in new frontend)
+    subtitle = popup.locator("p").first
+    expect(subtitle).to_have_text(expected_content["subtitle"])
 
     # Verify categories
     # Note: We only check that category labels are visible
     # The values may appear in multiple places (subtitle + category value)
     # so we check for their presence at least once
-    # Category labels may use underscores (old) or spaces (new frontend)
     for category, value in expected_content["categories"]:
-        # Try underscore version first, then space version
-        category_with_space = category.replace("_", " ")
-        category_label = popup.locator(f"text={category}").or_(
-            popup.locator(f"text={category_with_space}")
-        )
-        expect(category_label.first).to_be_visible()
+        expect(popup.get_by_text(category).first).to_be_visible()
         # Check that the value appears at least once in the popup
         expect(popup.get_by_text(value).first).to_be_visible()
 
@@ -170,7 +154,6 @@ def verify_problem_form(page: Page) -> None:
     for expected_option in expected_options:
         assert expected_option in options_text, f"Option '{expected_option}' not found in dropdown"
 
-    # TODO: Remove after goodmap-frontend unifies - placeholder format may vary
     assert any(
         "Please choose an option" in opt for opt in options_text
     ), "Placeholder option not found in dropdown"
@@ -184,15 +167,13 @@ def verify_problem_form(page: Page) -> None:
         dropdown.select_option("other")
 
         # Fill in custom problem description
-        # TODO: Remove input[name="problem"] after frontend unifies - new version uses label
-        problem_input = form.locator('input[name="problem"], input[type="text"]').first
+        problem_input = form.locator('input[type="text"]').first
         expect(problem_input).to_be_visible()
         problem_input.fill("Custom issue description")
 
         # Submit the form
-        # TODO: Remove input[type="submit"] after goodmap-frontend unifies - new version uses button
         # Use JavaScript click to bypass webpack overlay that may intercept clicks on CI
-        submit_button = form.locator('input[type="submit"], button:has-text("Submit")').first
+        submit_button = form.locator('input[type="submit"]').first
         expect(submit_button).to_be_visible()
         submit_button.evaluate("el => el.click()")
 
@@ -206,7 +187,6 @@ def verify_problem_form(page: Page) -> None:
     ), f"Expected message 'Location reported', got {response_body.get('message')}"
 
     # Verify success message appears and form disappears
-    # TODO: Remove comment after goodmap-frontend unifies - message container changed from p to div
     success_message = popup.get_by_text("Location reported")
     expect(success_message).to_be_visible()
     expect(form).not_to_be_visible()
