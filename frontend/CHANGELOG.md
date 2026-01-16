@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/Problematy/goodmap-frontend/compare/1.1.0...1.2.0) (2026-01-16)
+
+
+### Features
+
+* implement location-aware context and component modernization ([6bfbe6e](https://github.com/Problematy/goodmap-frontend/commit/6bfbe6ebd0b5a5757303ae1347e454a0fa40f8a5))
+
 # [1.1.0](https://github.com/Problematy/goodmap-frontend/compare/1.0.4...1.1.0) (2026-01-14)
 
 
