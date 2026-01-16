@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import PropTypes from 'prop-types';
+import React from 'react';
 import { Marker, Circle, useMap } from 'react-leaflet';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import ReactDOMServer from 'react-dom/server';
 import L from 'leaflet';
-import { Snackbar, Button } from '@mui/material';
+import { Button, Tooltip } from '@mui/material';
 import Control from 'react-leaflet-custom-control';
 import { useTranslation } from 'react-i18next';
-import { buttonStyle } from '../../../styles/buttonStyle';
+import { buttonStyle, getLocationAwareStyles } from '../../../styles/buttonStyle';
+import { useLocation } from '../context/LocationContext';
 
 /**
  * Creates a custom Leaflet icon for displaying the user's location marker.
@@ -30,18 +30,14 @@ const createLocationIcon = () => {
 
 /**
  * Location control component that displays and manages the user's current location on the map.
- * Automatically requests geolocation on mount and displays a marker with accuracy circle.
+ * Uses shared location context so all location-dependent buttons stay in sync.
  * Provides a button to re-center the map on the user's location.
- * Shows a snackbar notification if location services are denied or unavailable.
  *
- * @param {Object} props - Component props
- * @param {Function} props.setUserPosition - Callback function to update user position in parent component
- * @returns {React.ReactElement} Location markers and control button, or null if no position available
+ * @returns {React.ReactElement} Location markers and control button
  */
-const LocationControl = ({ setUserPosition: setUserPositionProp }) => {
+const LocationControl = () => {
     const { t } = useTranslation();
-    const [userPosition, setUserPosition] = useState(null);
-    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const { locationGranted, userPosition, requestGeolocation } = useLocation();
     const map = useMap();
 
     const flyToLocation = (location, mapInstance) => {
@@ -49,59 +45,13 @@ const LocationControl = ({ setUserPosition: setUserPositionProp }) => {
         mapInstance.flyTo(location, zoomLevel);
     };
 
-    const handleLocationFound = useCallback(
-        e => {
-            const position = { ...e.latlng, accuracy: e.accuracy };
-            setUserPosition(position);
-            setUserPositionProp(position);
-        },
-        [setUserPositionProp],
-    );
-
-    const handleLocationError = useCallback(
-        e => {
-            if (e.code === 1) {
-                // User denied Geolocation
-                setSnackbarOpen(true);
-                setUserPosition(null);
-            }
-        },
-        [map],
-    );
-
-    const handleSnackbarClose = (event, reason) => {
-        if (reason === 'clickaway') {
-            return;
-        }
-        setSnackbarOpen(false);
-    };
-
     const handleFlyToLocationClick = () => {
         if (userPosition) {
             flyToLocation(userPosition, map);
+        } else {
+            requestGeolocation(position => flyToLocation(position, map));
         }
     };
-
-    useEffect(() => {
-        if ('geolocation' in navigator) {
-            navigator.geolocation.getCurrentPosition(
-                position => {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    const accuracy = position.coords.accuracy;
-                    // Ensure accuracy is a valid number, default to 50 meters if not
-                    const validAccuracy =
-                        !Number.isNaN(Number(accuracy)) && accuracy != null ? Number(accuracy) : 50;
-                    handleLocationFound({ latlng: { lat, lng }, accuracy: validAccuracy });
-                },
-                () => {
-                    handleLocationError({ code: 1 });
-                },
-            );
-        } else {
-            handleLocationError({ code: 1 });
-        }
-    }, [handleLocationFound, handleLocationError]);
 
     const { lat, lng } = userPosition || {};
 
@@ -114,37 +64,30 @@ const LocationControl = ({ setUserPosition: setUserPositionProp }) => {
                 </>
             )}
             <Control prepend position="bottomright">
-                <Button
-                    onClick={handleFlyToLocationClick}
-                    variant="contained"
-                    aria-label={t('centerButtonAriaLabel')}
-                    sx={{
-                        ...buttonStyle,
-                        '&:hover': {
-                            backgroundColor: '#1a3d4a',
-                            transform: 'scale(1.05)',
-                        },
-                        '&:active': {
-                            transform: 'scale(0.95)',
-                        },
-                    }}
+                <Tooltip
+                    title={
+                        locationGranted ? t('centerOnMyLocation') : t('locationServicesDisabled')
+                    }
+                    placement="left"
+                    arrow
+                    enterTouchDelay={0}
+                    leaveTouchDelay={1500}
                 >
-                    <MyLocationIcon style={{ color: 'white', fontSize: 24 }} />
-                </Button>
-
-                <Snackbar
-                    open={snackbarOpen}
-                    autoHideDuration={4000}
-                    onClose={handleSnackbarClose}
-                    message={t('locationServicesDisabled')}
-                />
+                    <Button
+                        onClick={handleFlyToLocationClick}
+                        variant="contained"
+                        aria-label={t('centerButtonAriaLabel')}
+                        sx={{
+                            ...buttonStyle,
+                            ...getLocationAwareStyles(locationGranted),
+                        }}
+                    >
+                        <MyLocationIcon style={{ color: 'white', fontSize: 24 }} />
+                    </Button>
+                </Tooltip>
             </Control>
         </>
     );
-};
-
-LocationControl.propTypes = {
-    setUserPosition: PropTypes.func.isRequired,
 };
 
 export { LocationControl };

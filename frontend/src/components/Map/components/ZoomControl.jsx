@@ -27,17 +27,17 @@ export const CustomZoomControl = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <Button
                     onClick={handleZoomIn}
-                    style={zoomInButtonStyle}
                     variant="contained"
                     aria-label="Zoom in"
+                    sx={zoomInButtonStyle}
                 >
                     +
                 </Button>
                 <Button
                     onClick={handleZoomOut}
-                    style={zoomOutButtonStyle}
                     variant="contained"
                     aria-label="Zoom out"
+                    sx={zoomOutButtonStyle}
                 >
                     −
                 </Button>

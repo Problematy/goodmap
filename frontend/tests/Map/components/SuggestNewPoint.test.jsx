@@ -3,6 +3,7 @@ import '@testing-library/jest-dom';
 import React from 'react';
 import axios from 'axios';
 import { SuggestNewPointButton } from '../../../src/components/Map/components/SuggestNewPointButton';
+import { LocationProvider } from '../../../src/components/Map/context/LocationContext';
 import {
     mockGeolocationSuccess,
     mockGeolocationError,
@@ -16,6 +17,10 @@ import {
     fillTextField,
 } from '../../utils/dialogHelpers';
 import { ERROR_MESSAGES, FILE_SIZES, SIMPLE_SCHEMA, FULL_SCHEMA } from '../../utils/testConstants';
+
+const renderWithProvider = component => {
+    return render(<LocationProvider>{component}</LocationProvider>);
+};
 
 jest.mock('axios');
 
@@ -51,32 +56,48 @@ const mockUploadingFileWithSizeInMB = sizeInMB => {
 };
 
 describe('SuggestNewPointButton', () => {
-    it('displays error message when geolocation is not supported', async () => {
+    it('shows disabled state when geolocation is not supported', async () => {
         mockGeolocationUnsupported();
 
-        render(<SuggestNewPointButton />);
-        clickSuggestButton();
+        renderWithProvider(<SuggestNewPointButton />);
 
+        // Button should show disabled state via aria-label tooltip
         await waitFor(() => {
-            expect(screen.getByText(ERROR_MESSAGES.LOCATION_SERVICES)).toBeInTheDocument();
+            const button = screen.getByTestId('suggest-new-point');
+            expect(button).toHaveAttribute(
+                'aria-label',
+                'Location services are disabled. Please enable them to use this feature.',
+            );
         });
+
+        // Clicking should not open dialog when geolocation is unsupported
+        clickSuggestButton();
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 
-    it('displays error message when location services are not enabled', async () => {
+    it('shows disabled state when location services are not enabled', async () => {
         mockGeolocationError();
 
-        render(<SuggestNewPointButton />);
-        clickSuggestButton();
+        renderWithProvider(<SuggestNewPointButton />);
 
+        // Button should show disabled state via aria-label tooltip
         await waitFor(() => {
-            expect(screen.getByText(ERROR_MESSAGES.LOCATION_SERVICES)).toBeInTheDocument();
+            const button = screen.getByTestId('suggest-new-point');
+            expect(button).toHaveAttribute(
+                'aria-label',
+                'Location services are disabled. Please enable them to use this feature.',
+            );
         });
+
+        // Clicking should not open dialog when geolocation fails
+        clickSuggestButton();
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 
     it('opens new point suggestion box when location services are enabled', async () => {
         mockGeolocationSuccess();
 
-        render(<SuggestNewPointButton />);
+        renderWithProvider(<SuggestNewPointButton />);
         clickSuggestButton();
 
         await waitFor(() => {
@@ -87,7 +108,7 @@ describe('SuggestNewPointButton', () => {
     it('displays error message when selected file is too large', async () => {
         mockGeolocationSuccess();
 
-        render(<SuggestNewPointButton />);
+        renderWithProvider(<SuggestNewPointButton />);
         URL.createObjectURL = jest.fn(() => 'blob:http://test-url/');
         clickSuggestButton();
 
@@ -105,7 +126,7 @@ describe('SuggestNewPointButton', () => {
     it('handles file dialog cancellation without crashing', async () => {
         mockGeolocationSuccess();
 
-        render(<SuggestNewPointButton />);
+        renderWithProvider(<SuggestNewPointButton />);
         await openDialog();
 
         const fileInput = screen.getByTestId('photo-of-point');
@@ -121,7 +142,7 @@ describe('SuggestNewPointButton', () => {
         axios.post.mockResolvedValue({});
         mockGeolocationWithNullPosition();
 
-        render(<SuggestNewPointButton />);
+        renderWithProvider(<SuggestNewPointButton />);
         await openDialog();
 
         submitForm();
@@ -137,7 +158,7 @@ describe('SuggestNewPointButton', () => {
         axios.post.mockResolvedValue({});
         mockGeolocationSuccess();
 
-        render(<SuggestNewPointButton />);
+        renderWithProvider(<SuggestNewPointButton />);
         await openDialog();
 
         submitForm();
@@ -156,7 +177,7 @@ describe('SuggestNewPointButton', () => {
         mockGeolocationSuccess();
         globalThis.LOCATION_SCHEMA = SIMPLE_SCHEMA;
 
-        render(<SuggestNewPointButton />);
+        renderWithProvider(<SuggestNewPointButton />);
         await openDialog();
 
         fillTextField(/name/i, 'Test Location');
@@ -180,7 +201,7 @@ describe('SuggestNewPointButton', () => {
         mockGeolocationSuccess();
         globalThis.LOCATION_SCHEMA = SIMPLE_SCHEMA;
 
-        render(<SuggestNewPointButton />);
+        renderWithProvider(<SuggestNewPointButton />);
         await openDialog();
 
         fillTextField(/name/i, 'Test Location');

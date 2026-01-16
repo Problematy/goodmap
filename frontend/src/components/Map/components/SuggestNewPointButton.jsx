@@ -16,6 +16,7 @@ import {
     Checkbox,
     ListItemText,
     OutlinedInput,
+    Tooltip,
 } from '@mui/material';
 
 import AddAPhotoIcon from '@mui/icons-material/AddAPhoto';
@@ -23,9 +24,10 @@ import AddIcon from '@mui/icons-material/Add';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import Control from 'react-leaflet-custom-control';
 import axios from 'axios';
-import { buttonStyle } from '../../../styles/buttonStyle';
-import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { buttonStyle, getLocationAwareStyles } from '../../../styles/buttonStyle';
 import { getCsrfToken } from '../../../utils/csrf';
+import { useLocation } from '../context/LocationContext';
 
 /**
  * Button component that allows users to suggest new map points/locations.
@@ -37,7 +39,8 @@ import { getCsrfToken } from '../../../utils/csrf';
  * @returns {React.ReactElement} Button with dialog form for suggesting new points
  */
 export const SuggestNewPointButton = () => {
-    const [userPosition, setUserPosition] = useState({ lat: null, lng: null });
+    const { t } = useTranslation();
+    const { locationGranted, userPosition, requestGeolocation } = useLocation();
     const [showNewPointBox, setShowNewPointSuggestionBox] = useState(false);
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
@@ -66,57 +69,15 @@ export const SuggestNewPointButton = () => {
 
     const [formFields, setFormFields] = useState(initializeFormFields);
 
-    useEffect(() => {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                position => {
-                    setUserPosition({
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude,
-                    });
-                },
-                () => {
-                    setSnackbarMessage('Please enable location services to suggest a new point.');
-                    setSnackbarOpen(true);
-                },
-            );
-        } else {
-            setSnackbarMessage('Geolocation is not supported by this browser.');
-            setSnackbarOpen(true);
-        }
-    }, []);
-
     const handleNewPointButton = () => {
-        if (!navigator.geolocation) {
-            setSnackbarMessage('Please enable location services to suggest a new point.');
-            setSnackbarOpen(true);
-            return;
-        }
-
-        navigator.geolocation.getCurrentPosition(
-            () => setShowNewPointSuggestionBox(true),
-            () => {
-                setSnackbarMessage('Please enable location services to suggest a new point.');
-                setSnackbarOpen(true);
-            },
-        );
+        requestGeolocation(() => setShowNewPointSuggestionBox(true));
     };
 
     const handleLocateMe = () => {
-        if (!navigator.geolocation) {
-            setSnackbarMessage('Please enable location services to suggest a new point.');
+        requestGeolocation(null, () => {
+            setSnackbarMessage(t('locationServicesDisabled'));
             setSnackbarOpen(true);
-            return;
-        }
-
-        navigator.geolocation.getCurrentPosition(
-            position =>
-                setUserPosition({ lat: position.coords.latitude, lng: position.coords.longitude }),
-            () => {
-                setSnackbarMessage('Please enable location services to suggest a new point.');
-                setSnackbarOpen(true);
-            },
-        );
+        });
     };
 
     const handleCloseNewPointBox = () => {
@@ -156,7 +117,7 @@ export const SuggestNewPointButton = () => {
         event.preventDefault();
 
         // Validate user position is available
-        if (userPosition.lat === null || userPosition.lng === null) {
+        if (!userPosition || userPosition.lat === null || userPosition.lng === null) {
             setSnackbarMessage(
                 'Location not available. Please enable location services and try again.',
             );
@@ -291,14 +252,25 @@ export const SuggestNewPointButton = () => {
 
     return (
         <>
-            <Button
-                onClick={handleNewPointButton}
-                style={buttonStyle}
-                variant="contained"
-                data-testid="suggest-new-point"
+            <Tooltip
+                title={locationGranted ? t('suggestNewPoint') : t('locationServicesDisabled')}
+                placement="left"
+                arrow
+                enterTouchDelay={0}
+                leaveTouchDelay={1500}
             >
-                <AddIcon style={{ color: 'white', fontSize: 24 }} />
-            </Button>
+                <Button
+                    onClick={handleNewPointButton}
+                    variant="contained"
+                    data-testid="suggest-new-point"
+                    sx={{
+                        ...buttonStyle,
+                        ...getLocationAwareStyles(locationGranted),
+                    }}
+                >
+                    <AddIcon style={{ color: 'white', fontSize: 24 }} />
+                </Button>
+            </Tooltip>
 
             <Dialog open={showNewPointBox} onClose={handleCloseNewPointBox}>
                 <DialogTitle>Suggest a New Point</DialogTitle>
@@ -307,7 +279,9 @@ export const SuggestNewPointButton = () => {
                         <Box display="flex" alignItems="center" gap={2}>
                             <TextField
                                 label="Your Position"
-                                value={`${userPosition.lat}, ${userPosition.lng}`}
+                                value={
+                                    userPosition ? `${userPosition.lat}, ${userPosition.lng}` : ''
+                                }
                                 disabled
                                 fullWidth
                                 margin="dense"

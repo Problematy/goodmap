@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import styled from 'styled-components';
 import ExploreIcon from '@mui/icons-material/Explore';
 import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +9,55 @@ import { getContentAsString, mapCustomTypeToReactComponent } from './mapCustomTy
 import { ReportProblemForm } from './ReportProblemForm';
 
 import React, { useState } from 'react';
+
+const PopupContainer = styled.div`
+    padding: 8px 4px;
+    min-width: 280px;
+`;
+
+const PopupHeader = styled.div`
+    text-align: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eee;
+`;
+
+const PopupTitle = styled.h3`
+    font-size: 18px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0 0 4px 0;
+`;
+
+const PopupSubtitle = styled.p`
+    font-size: 13px;
+    color: #666;
+    margin: 0;
+    text-transform: capitalize;
+`;
+
+const DetailsGrid = styled.div`
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 8px 16px;
+    margin: 0 8px 16px 8px;
+    font-size: 13px;
+`;
+
+const DetailLabel = styled.span`
+    color: #666;
+    text-transform: capitalize;
+`;
+
+const DetailValue = styled.span`
+    color: #1a1a1a;
+    font-weight: 500;
+    word-break: break-word;
+`;
+
+const CTAContainer = styled.div`
+    margin: 8px;
+`;
 
 /**
  * Checks if a value is a custom object type (not an array or null).
@@ -29,11 +79,7 @@ const LocationDetailsValue = ({ valueToDisplay }) => {
     const value = isCustomValue(valueToDisplay)
         ? mapCustomTypeToReactComponent(valueToDisplay)
         : valueToDisplay;
-    return (
-        <p className="m-0">
-            {isCustomValue(valueToDisplay) ? value : <b>{getContentAsString(value)}</b>}
-        </p>
-    );
+    return <span>{isCustomValue(valueToDisplay) ? value : getContentAsString(value)}</span>;
 };
 
 LocationDetailsValue.propTypes = {
@@ -123,76 +169,31 @@ const LocationDetails = ({ place }) => {
     const CTACategories = place.data.filter(([category]) => category === 'CTA');
 
     return (
-        <div className="place-data m-0">
-            <div style={{ width: '100%', justifyContent: 'center', display: 'flex' }}>
-                <p
-                    className="point-title m-0"
-                    style={{
-                        fontSize: 16,
-                        fontWeight: 600,
-                        color: '#1a1a1a',
-                        marginBottom: '2px',
-                    }}
-                >
-                    {place.title}
-                </p>
-            </div>
-            <div style={{ width: '100%', justifyContent: 'center', display: 'flex' }}>
-                <p
-                    className="point-subtitle mt-0 mb-2"
-                    style={{
-                        fontSize: 12,
-                        color: '#666',
-                        textTransform: 'capitalize',
-                    }}
-                >
-                    {place.subtitle}
-                </p>
-            </div>
+        <PopupContainer>
+            <PopupHeader>
+                <PopupTitle>{place.title}</PopupTitle>
+                {place.subtitle && <PopupSubtitle>{place.subtitle}</PopupSubtitle>}
+            </PopupHeader>
 
-            <div
-                style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'auto 1fr',
-                    columnGap: '12px',
-                    rowGap: '8px',
-                    margin: '10px 15px',
-                    alignItems: 'baseline',
-                    fontSize: 12,
-                }}
-            >
+            <DetailsGrid>
                 {categoriesWithSubcategories.map(([category, value]) => (
                     <React.Fragment key={category}>
-                        <p key={`${category}-label`} className="m-0">
-                            {`${category}:`}
-                        </p>
-                        <div
-                            key={`${category}-value`}
-                            style={{
-                                overflowWrap: 'break-word',
-                                wordBreak: 'break-word',
-                                maxWidth: '100%',
-                            }}
-                        >
+                        <DetailLabel>{category}</DetailLabel>
+                        <DetailValue>
                             <LocationDetailsValue valueToDisplay={value} />
-                        </div>
+                        </DetailValue>
                     </React.Fragment>
                 ))}
-            </div>
-            <div
-                style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    marginRight: 25,
-                    marginLeft: 25,
-                    marginTop: 10,
-                }}
-            >
-                {CTACategories.map(([_category, value]) => (
-                    <LocationDetailsValue key={value} valueToDisplay={value} />
-                ))}
-            </div>
-        </div>
+            </DetailsGrid>
+
+            {CTACategories.length > 0 && (
+                <CTAContainer>
+                    {CTACategories.map(([_category, value]) => (
+                        <LocationDetailsValue key={JSON.stringify(value)} valueToDisplay={value} />
+                    ))}
+                </CTAContainer>
+            )}
+        </PopupContainer>
     );
 };
 

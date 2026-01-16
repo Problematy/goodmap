@@ -64,25 +64,29 @@ describe('Creates good filter_form box', () => {
         expect(form).not.toBeNull();
 
         const shoesLabel = form.querySelector('label[for="shoes"]');
-        const { queryByAltText } = within(shoesLabel);
-        expect(queryByAltText(/help-Kozaki też/i)).toBeInTheDocument();
+        const { queryByLabelText } = within(shoesLabel);
+        // FiltersTooltip now uses aria-label="Help: {text}" on the icon wrapper
+        expect(queryByLabelText(/Help: Kozaki też/i)).toBeInTheDocument();
     });
 
     it('should not display category option help when not specified', () => {
         const form = document.querySelector('form');
         expect(form).not.toBeNull();
 
-        const shoesLabel = form.querySelector('label[for="clothes"]');
-        const { queryByAltText } = within(shoesLabel);
-        expect(queryByAltText(/help-Kozaki też/i)).not.toBeInTheDocument();
+        const clothesLabel = form.querySelector('label[for="clothes"]');
+        const { queryByLabelText } = within(clothesLabel);
+        // FiltersTooltip now uses aria-label="Help: {text}" on the icon wrapper
+        expect(queryByLabelText(/Help: Kozaki też/i)).not.toBeInTheDocument();
     });
 
     it('should display category help when specified', () => {
         const form = document.querySelector('form');
         expect(form).not.toBeNull();
 
-        const shoesLabel = form.querySelector('#filter-label-types-typy');
-        const { queryByAltText } = within(shoesLabel);
-        expect(queryByAltText(/help-Inaczej rodzaje/i)).not.toBeInTheDocument();
+        // Category help tooltip is now in FilterHeader, not FilterTitle
+        // Look for it in the parent FilterHeader element
+        const filterHeader = form.querySelector('#filter-label-types-typy').parentElement;
+        const { queryByLabelText } = within(filterHeader);
+        expect(queryByLabelText(/Help: Inaczej rodzaje/i)).toBeInTheDocument();
     });
 });

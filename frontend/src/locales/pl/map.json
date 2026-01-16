@@ -2,6 +2,8 @@
     "search": "Szukaj",
     "title": "Nazwa",
     "centerButtonAriaLabel": "Ikona celu lokalizacji, używana do określenia lokalizacji na mapie.",
+    "centerOnMyLocation": "Wyśrodkuj na mojej lokalizacji",
+    "suggestNewPoint": "Zaproponuj nową lokalizację",
     "ReportIssueButton": "zgłoś problem",
     "reportProblemLabel": "Jaki jest problem?",
     "reportChooseOption": "Wybierz opcję",
@@ -16,5 +18,8 @@
     "navigateMeButton": "Prowadź mnie",
     "loading": "Ładowanie...",
     "loadLocationError": "Nie udało się załadować szczegółów lokalizacji",
-    "locationServicesDisabled": "Usługi lokalizacji są wyłączone. Włącz je, aby korzystać z tej funkcji."
+    "locationServicesDisabled": "Usługi lokalizacji są wyłączone. Włącz je, aby korzystać z tej funkcji.",
+    "locationBannerMessage": "Włącz lokalizację, aby zobaczyć pobliskie punkty i dodawać nowe.",
+    "locationBannerEnable": "Włącz",
+    "locationBannerDismiss": "Zamknij"
 }

@@ -1,47 +1,63 @@
-import React, { useMemo } from 'react';
-import { v4 as uuidv4 } from 'uuid';
+import React from 'react';
 import PropTypes from 'prop-types';
-import { Tooltip } from 'react-tooltip';
 import styled from 'styled-components';
-import help from '../../res/svg/help.svg';
+import { Tooltip } from '@mui/material';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+
+const IconWrapper = styled.span`
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    cursor: help;
+    color: rgba(255, 255, 255, 0.6);
+    transition: color 0.2s ease;
+
+    &:hover {
+        color: rgba(255, 255, 255, 0.9);
+    }
+`;
 
 /**
  * Tooltip component that displays helpful information for filter options.
- * Renders a help icon that shows explanatory text when hovered.
- * Uses a stable unique ID to link the anchor and tooltip elements throughout the component's lifetime.
+ * Uses Material-UI Tooltip with an info icon for better accessibility and mobile support.
  *
  * @param {Object} props - Component props
  * @param {string} props.text - The help text to display in the tooltip
- * @returns {React.ReactElement} Help icon with attached tooltip
+ * @returns {React.ReactElement} Info icon with attached MUI tooltip
  */
 const FiltersTooltip = ({ text }) => {
-    const id = useMemo(() => `anchor-${uuidv4()}`, []);
-
     return (
-        <>
-            <TooltipImage id={id} src={help} alt={`help-${text}`} />
-            <Tooltip
-                style={{ fontSize: 11, zIndex: 99999, maxWidth: '70%' }}
-                id={`tooltip-${id}`}
-                place="top"
-                anchorSelect={`#${id}`}
-            >
-                {text}
-            </Tooltip>
-        </>
+        <Tooltip
+            title={text}
+            placement="top"
+            arrow
+            enterTouchDelay={0}
+            leaveTouchDelay={3000}
+            slotProps={{
+                tooltip: {
+                    sx: {
+                        backgroundColor: 'rgba(50, 50, 50, 0.95)',
+                        fontSize: '12px',
+                        padding: '8px 12px',
+                        maxWidth: '250px',
+                        lineHeight: 1.4,
+                    },
+                },
+                arrow: {
+                    sx: {
+                        color: 'rgba(50, 50, 50, 0.95)',
+                    },
+                },
+            }}
+        >
+            <IconWrapper aria-label={`Help: ${text}`}>
+                <InfoOutlinedIcon sx={{ fontSize: 16 }} />
+            </IconWrapper>
+        </Tooltip>
     );
 };
-
-/**
- * Styled image component for the tooltip help icon.
- * Displays a 25x25px help icon with appropriate spacing.
- */
-const TooltipImage = styled.img`
-    width: 25px;
-    height: 25px;
-    margin-bottom: 5px;
-    margin-left: 5px;
-`;
 
 FiltersTooltip.propTypes = {
     text: PropTypes.string.isRequired,

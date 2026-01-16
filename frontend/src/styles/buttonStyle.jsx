@@ -1,5 +1,5 @@
 const commonStyle = {
-    backgroundColor: globalThis.SECONDARY_COLOR || '#0066CC',
+    backgroundColor: globalThis.SECONDARY_COLOR || 'black',
     color: 'white',
     textAlign: 'center',
     cursor: 'pointer',
@@ -51,6 +51,13 @@ export const zoomButtonStyle = {
     minWidth: '40px',
     fontSize: '22px',
     fontWeight: 'bold',
+    '&:hover': {
+        backgroundColor: '#1a3d4a',
+        transform: 'scale(1.05)',
+    },
+    '&:active': {
+        transform: 'scale(0.95)',
+    },
 };
 
 export const zoomInButtonStyle = {
@@ -62,3 +69,23 @@ export const zoomOutButtonStyle = {
     ...zoomButtonStyle,
     borderRadius: '0 0 8px 8px',
 };
+
+/**
+ * Returns button styles that change based on enabled/disabled state.
+ * Used for location-dependent buttons that need visual feedback.
+ *
+ * @param {boolean} enabled - Whether the button is in enabled state
+ * @return {Object} MUI sx styles object
+ */
+export const getLocationAwareStyles = enabled => ({
+    backgroundColor: enabled ? globalThis.SECONDARY_COLOR || 'black' : '#666',
+    opacity: enabled ? 1 : 0.6,
+    filter: enabled ? 'none' : 'grayscale(100%)',
+    '&:hover': {
+        backgroundColor: enabled ? '#1a3d4a' : '#666',
+        transform: enabled ? 'scale(1.05)' : 'none',
+    },
+    '&:active': {
+        transform: enabled ? 'scale(0.95)' : 'none',
+    },
+});

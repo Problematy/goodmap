@@ -2,6 +2,8 @@
     "search": "Search",
     "title": "Title",
     "centerButtonAriaLabel": "Location target icon, used to determine your location on the map",
+    "centerOnMyLocation": "Center on my location",
+    "suggestNewPoint": "Suggest a new location",
     "ReportIssueButton": "report a problem",
     "reportProblemLabel": "What's the problem?",
     "reportChooseOption": "Please choose an option",
@@ -16,5 +18,8 @@
     "navigateMeButton": "Navigate me",
     "loading": "Loading...",
     "loadLocationError": "Failed to load location details",
-    "locationServicesDisabled": "Location services are disabled. Please enable them to use this feature."
+    "locationServicesDisabled": "Location services are disabled. Please enable them to use this feature.",
+    "locationBannerMessage": "Enable location to see nearby points and suggest new ones.",
+    "locationBannerEnable": "Enable",
+    "locationBannerDismiss": "Dismiss"
 }
