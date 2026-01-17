@@ -218,8 +218,9 @@ class TestLocationButtonsMobile:
         mobile_page.goto(BASE_URL, wait_until="domcontentloaded")
 
         # Tap the list view button
+        # Use force=True to bypass webpack overlay that may intercept clicks on CI
         list_view_button = mobile_page.locator("#listViewButton")
-        list_view_button.click()
+        list_view_button.click(force=True)
 
         # Check tooltip appears with disabled message
         tooltip = mobile_page.locator('[role="tooltip"]')
@@ -242,8 +243,9 @@ class TestLocationButtonsMobile:
 
         for selector, _name in buttons:
             # Tap the button
+            # Use force=True to bypass webpack overlay that may intercept clicks on CI
             button = mobile_page.locator(selector)
-            button.click()
+            button.click(force=True)
 
             # Check tooltip appears
             tooltip = mobile_page.locator('[role="tooltip"]')
@@ -251,5 +253,5 @@ class TestLocationButtonsMobile:
             expect(tooltip).to_contain_text("Location services are disabled")
 
             # Click elsewhere to dismiss tooltip and wait for it to disappear
-            mobile_page.locator("body").click(position={"x": 10, "y": 10})
+            mobile_page.locator("body").click(position={"x": 10, "y": 10}, force=True)
             expect(tooltip).not_to_be_visible(timeout=2000)
