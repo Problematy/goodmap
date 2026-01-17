@@ -38,6 +38,9 @@ lint-fix: ## Auto-fix linting errors
 serve: ## Run development server on localhost
 	npm run serve:local
 
+serve-prod: ## Run prod server on localhost
+	npm run serve:prod
+
 serve-network: ## Run development server on network
 	npm run serve:network
 

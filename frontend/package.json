@@ -8,6 +8,7 @@
     "main": "dist/index.js",
     "scripts": {
         "serve:local": "webpack-dev-server --mode development --env serve=local",
+        "serve:prod": "webpack-dev-server --mode production --env serve=local",	
         "serve:network": "webpack-dev-server --mode development --env serve=network",
         "build": "webpack --mode production --progress --config webpack.config.js",
         "dev-build": "webpack --progress --mode development --config webpack.config.js",
