@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/Problematy/goodmap-frontend/compare/1.2.0...1.2.1) (2026-01-17)
+
+
+### Bug Fixes
+
+* allow to run production serve locally ([#141](https://github.com/Problematy/goodmap-frontend/issues/141)) ([18c2f9d](https://github.com/Problematy/goodmap-frontend/commit/18c2f9da35d9e4f4c35ce43fe73a132f1bd0f6ff))
+
 # [1.2.0](https://github.com/Problematy/goodmap-frontend/compare/1.1.0...1.2.0) (2026-01-16)
 
 
