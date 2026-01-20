@@ -25,16 +25,17 @@ logger = logging.getLogger(__name__)
 # ------------------------------------------------
 
 
-@lru_cache(maxsize=1)
-def _cached_read_json_file(file_path: str) -> str:
-    """Read and cache a JSON file's raw content.
+@lru_cache(maxsize=4)
+def _cached_read_json_file(file_path: str, mtime: float) -> str:
+    """Read and cache a JSON file's raw content, keyed by path and mtime.
 
-    Uses lru_cache to avoid repeated disk I/O for frequently accessed files.
-    Returns raw string (not dict) because lru_cache requires hashable,
-    immutable return values to prevent cache corruption from mutations.
+    Cache automatically invalidates when file is modified externally, since
+    mtime change produces a new cache key. Returns raw string (not dict)
+    because lru_cache requires hashable, immutable return values.
 
     Args:
         file_path: Absolute path to the JSON file.
+        mtime: File modification time (used as cache key for auto-invalidation).
 
     Returns:
         str: Raw file content. Caller must use json.loads() to parse.
@@ -44,7 +45,10 @@ def _cached_read_json_file(file_path: str) -> str:
 
 
 def _get_cached_json_data(file_path: str) -> dict[str, Any]:
-    """Get parsed JSON data from cache, reading from disk only on cache miss.
+    """Get parsed JSON data, auto-invalidating cache on external file changes.
+
+    Checks file mtime on each call (cheap stat syscall) to detect external
+    modifications. Full file read only occurs on cache miss.
 
     Args:
         file_path: Absolute path to the JSON file.
@@ -52,15 +56,16 @@ def _get_cached_json_data(file_path: str) -> dict[str, Any]:
     Returns:
         dict: Parsed JSON data. Note: caller should not mutate the result.
     """
-    raw_data = _cached_read_json_file(file_path)
+    mtime = os.path.getmtime(file_path)
+    raw_data = _cached_read_json_file(file_path, mtime)
     return json.loads(raw_data)
 
 
 def clear_cache():
     """Clear all JSON file caches.
 
-    Must be called after any file modification to prevent stale reads.
-    Automatically invoked by json_file_atomic_dump().
+    Automatically invoked by json_file_atomic_dump(). Also useful for testing
+    or forcing a refresh independent of mtime checks.
     """
     _cached_read_json_file.cache_clear()
     logger.debug("Database caches cleared")
