@@ -361,6 +361,22 @@ def core_pages(
 
         return jsonify({"categories": categories, "categories_help": proper_categories_help})
 
+    @core_api_blueprint.route("/categories-full", methods=["GET"])
+    @spec.validate()
+    def get_categories_full():
+        """Get all categories with their subcategory options in a single request.
+
+        Returns combined category data to reduce API calls for filter panel loading.
+        This endpoint eliminates the need for multiple sequential requests.
+        """
+        categories_data = database.get_category_data()
+        result = []
+        for key, options in categories_data["categories"].items():
+            result.append(
+                {"key": key, "name": gettext(key), "options": make_tuple_translation(options)}
+            )
+        return jsonify({"categories": result})
+
     @core_api_blueprint.route("/languages", methods=["GET"])
     @spec.validate()
     def get_languages():

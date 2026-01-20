@@ -49,7 +49,8 @@ def test_api_doc_index(test_app):
 
 
 @mock.patch("goodmap.core_api.gettext", fake_translation)
-def test_categories_endpoint_returns_categories(test_app):
+def test_categories_endpoints_return_expected_data(test_app):
+    # Test /api/categories endpoint
     response = test_app.get("/api/categories")
     assert response.status_code == 200
     assert response.json == {
@@ -57,16 +58,7 @@ def test_categories_endpoint_returns_categories(test_app):
         "categories_help": [{"test-category": "categories_help_test-category-translated"}],
     }
 
-
-@mock.patch("goodmap.core_api.gettext", fake_translation)
-def test_categories_endpoint_returns_categories_old_way(test_app_without_helpers):
-    response = test_app_without_helpers.get("/api/categories")
-    assert response.status_code == 200
-    assert response.json == [["test-category", "test-category-translated"]]
-
-
-@mock.patch("goodmap.core_api.gettext", fake_translation)
-def test_getting_all_category_data(test_app):
+    # Test /api/category/<category> endpoint
     response = test_app.get("/api/category/test-category")
     assert response.status_code == 200
     assert response.json == {
@@ -76,7 +68,13 @@ def test_getting_all_category_data(test_app):
 
 
 @mock.patch("goodmap.core_api.gettext", fake_translation)
-def test_getting_all_category_data_old_way(test_app_without_helpers):
+def test_categories_endpoints_old_format(test_app_without_helpers):
+    # Test /api/categories endpoint (old format)
+    response = test_app_without_helpers.get("/api/categories")
+    assert response.status_code == 200
+    assert response.json == [["test-category", "test-category-translated"]]
+
+    # Test /api/category/<category> endpoint (old format)
     response = test_app_without_helpers.get("/api/category/test-category")
     assert response.status_code == 200
     assert response.json == [["test", "test-translated"], ["test2", "test2-translated"]]
@@ -139,6 +137,55 @@ def test_category_data_endpoint_with_none_categories_options_help():
     data = response.json
     assert data is not None
     assert data["categories_options_help"] == []
+
+
+# --- Categories-full endpoint tests ---
+
+
+@mock.patch("goodmap.core_api.gettext", fake_translation)
+def test_categories_full_endpoint(test_app):
+    response = test_app.get("/api/categories-full")
+    assert response.status_code == 200
+    data = response.json
+
+    # Check structure
+    assert "categories" in data
+    assert isinstance(data["categories"], list)
+    assert len(data["categories"]) > 0
+
+    # Check required fields and translations
+    category = data["categories"][0]
+    assert "key" in category
+    assert "name" in category
+    assert "options" in category
+    assert category["key"] == "test-category"
+    assert category["name"] == "test-category-translated"
+
+    # Check options are translated tuples
+    assert isinstance(category["options"], list)
+    assert len(category["options"]) == 2
+    assert category["options"][0] == ["test", "test-translated"]
+    assert category["options"][1] == ["test2", "test2-translated"]
+
+
+@mock.patch("goodmap.core_api.gettext", fake_translation)
+def test_categories_full_endpoint_with_multiple_categories():
+    test_app = create_test_app(
+        db_overrides={
+            "categories": {
+                "category1": ["opt1", "opt2"],
+                "category2": ["opt3"],
+            }
+        }
+    )
+    response = test_app.get("/api/categories-full")
+    assert response.status_code == 200
+    data = response.json
+    assert data is not None
+    assert len(data["categories"]) == 2
+    keys = [cat["key"] for cat in data["categories"]]
+    assert "category1" in keys
+    assert "category2" in keys
 
 
 # --- Locations endpoint tests ---
