@@ -12,6 +12,7 @@ import AccessibilityTable from './components/AccessibilityTable';
 import SaveMapConfiguration from './components/SaveMapConfiguration';
 import { AppToaster } from '../common/AppToaster';
 import { Markers } from './components/Markers';
+import { MapLoadingOverlay } from './components/MapLoadingOverlay';
 import { LocationProvider, useLocation } from './context/LocationContext';
 
 /**
@@ -20,9 +21,14 @@ import { LocationProvider, useLocation } from './context/LocationContext';
 const MapComponentInner = () => {
     const { userPosition } = useLocation();
     const [isListViewOpen, setIsListViewOpen] = useState(false);
+    const [isMapLoading, setIsMapLoading] = useState(true);
 
     const handleListViewButtonClick = () => {
         setIsListViewOpen(true);
+    };
+
+    const handleMapLoadingChange = isLoading => {
+        setIsMapLoading(isLoading);
     };
 
     if (isListViewOpen) {
@@ -38,6 +44,7 @@ const MapComponentInner = () => {
         <div style={{ height: '100%', position: 'relative' }}>
             <AppToaster />
             <LocationPermissionBanner />
+            <MapLoadingOverlay isLoading={isMapLoading} />
             <MapContainer
                 center={mapConfig.initialMapCoordinates}
                 zoom={mapConfig.initialMapZoom}
@@ -56,7 +63,7 @@ const MapComponentInner = () => {
                         <SuggestNewPointButton />
                     </Control>
                 )}
-                <Markers />
+                <Markers onLoadingChange={handleMapLoadingChange} />
                 <LocationControl />
                 <CustomZoomControl position="topright" />
                 {globalThis.FEATURE_FLAGS?.SHOW_ACCESSIBILITY_TABLE && (

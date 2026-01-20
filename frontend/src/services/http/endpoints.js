@@ -4,6 +4,12 @@
 export const CATEGORIES = '/api/categories';
 
 /**
+ * API endpoint for fetching all categories with their subcategories in a single request.
+ * Eliminates the waterfall pattern of fetching categories then subcategories separately.
+ */
+export const CATEGORIES_FULL = '/api/categories-full';
+
+/**
  * API endpoint for fetching subcategories for a specific category.
  * Use with category name appended: /api/category/{categoryName}
  */

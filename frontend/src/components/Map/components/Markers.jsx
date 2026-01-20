@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import { useMap } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import { httpService } from '../../../services/http/httpService';
@@ -38,9 +39,11 @@ const getMarkers = locations => {
  * Changes the map cursor to 'progress' while markers are loading.
  * Re-fetches markers whenever the selected categories change.
  *
+ * @param {Object} props - Component props
+ * @param {Function} [props.onLoadingChange] - Callback fired when loading state changes
  * @returns {React.ReactElement|Array} MarkerClusterGroup containing location markers, or empty array while loading
  */
-export const Markers = () => {
+export const Markers = ({ onLoadingChange = null }) => {
     const { categories } = useCategories();
     const [markers, setMarkers] = useState([]);
     const [areMarkersLoaded, setAreMarkersLoaded] = useState(false);
@@ -96,5 +99,15 @@ export const Markers = () => {
         };
     }, [areMarkersLoaded, map]);
 
+    useEffect(() => {
+        if (onLoadingChange) {
+            onLoadingChange(!areMarkersLoaded);
+        }
+    }, [areMarkersLoaded, onLoadingChange]);
+
     return markers;
+};
+
+Markers.propTypes = {
+    onLoadingChange: PropTypes.func,
 };

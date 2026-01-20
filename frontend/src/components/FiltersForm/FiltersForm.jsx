@@ -1,8 +1,53 @@
 import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import { useCategories } from '../Categories/CategoriesContext';
 import { httpService } from '../../services/http/httpService';
 import FiltersTooltip from './FiltersTooltip';
+
+const shimmer = keyframes`
+    0% {
+        background-position: -200px 0;
+    }
+    100% {
+        background-position: 200px 0;
+    }
+`;
+
+const SkeletonBox = styled.div`
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.1) 25%,
+        rgba(255, 255, 255, 0.2) 50%,
+        rgba(255, 255, 255, 0.1) 75%
+    );
+    background-size: 200px 100%;
+    animation: ${shimmer} 1.5s infinite;
+    border-radius: 4px;
+`;
+
+const SkeletonTitle = styled(SkeletonBox)`
+    height: 16px;
+    width: 120px;
+    margin-bottom: 12px;
+`;
+
+const SkeletonOption = styled(SkeletonBox)`
+    height: 34px;
+    width: 100%;
+    margin: 4px 0;
+    border-radius: 8px;
+`;
+
+const SkeletonSection = styled.div`
+    margin-bottom: 20px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+
+    &:last-child {
+        margin-bottom: 0;
+        border-bottom: none;
+    }
+`;
 
 const FilterSection = styled.div`
     margin-bottom: 20px;
@@ -96,9 +141,26 @@ const TooltipWrapper = styled.span`
  *
  * @returns {React.ReactElement} Form element containing categorized filter checkboxes with optional tooltips
  */
+const LoadingSkeleton = () => (
+    <>
+        <SkeletonSection>
+            <SkeletonTitle />
+            <SkeletonOption />
+            <SkeletonOption />
+            <SkeletonOption />
+        </SkeletonSection>
+        <SkeletonSection>
+            <SkeletonTitle />
+            <SkeletonOption />
+            <SkeletonOption />
+        </SkeletonSection>
+    </>
+);
+
 export const FiltersForm = () => {
     const { setCategories } = useCategories();
     const [categoriesData, setCategoriesData] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     const handleCheckboxChange = event => {
         const { value, checked } = event.target;
@@ -125,8 +187,10 @@ export const FiltersForm = () => {
 
     useEffect(() => {
         const fetchCategories = async () => {
+            setIsLoading(true);
             const categoriesData = await httpService.getCategoriesData();
             setCategoriesData(categoriesData);
+            setIsLoading(false);
         };
         fetchCategories();
     }, []);
@@ -173,6 +237,14 @@ export const FiltersForm = () => {
             </FilterSection>
         );
     });
+
+    if (isLoading) {
+        return (
+            <form>
+                <LoadingSkeleton />
+            </form>
+        );
+    }
 
     return <form>{sections}</form>;
 };

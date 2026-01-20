@@ -1,5 +1,6 @@
 import {
     CATEGORIES,
+    CATEGORIES_FULL,
     CATEGORY,
     LANGUAGES,
     LOCATION,
@@ -56,37 +57,29 @@ export const httpService = {
         fetch(`${CATEGORY}/${category}`).then(response => response.json()),
 
     /**
-     * Fetches complete categories data including subcategories and optional help text.
-     * Combines categories with their respective subcategories and help information.
+     * Fetches complete categories data including subcategories in a single request.
+     * Uses the /api/categories-full endpoint to avoid waterfall requests.
      *
      * @returns {Promise<Array>} Promise resolving to array of category data tuples
      */
     getCategoriesData: async () => {
-        const categories = await httpService.getCategories();
-        const categories_ = globalThis.FEATURE_FLAGS?.CATEGORIES_HELP ? categories.categories : categories
+        const response = await fetch(CATEGORIES_FULL).then(res => res.json());
 
-        const subcategoriesPromises = categories_.map(([categoryName, _translation]) =>
-            httpService.getSubcategories(categoryName),
-        );
-        const subcategoriesResponse = Promise.all(subcategoriesPromises);
+        // Transform to expected format: [[key, name], options, help?, optionsHelp?]
+        return response.categories.map(category => {
+            const categoryTuple = [category.key, category.name];
+            const options = category.options;
 
-        const mainResponse = subcategoriesResponse.then(subcategories => {
             if (globalThis.FEATURE_FLAGS?.CATEGORIES_HELP) {
-                return categories_.map((subcategory, index) => [
-                    subcategory,
-                    subcategories[index].categories_options ?? null,
-                    categories.categories_help,
-                    subcategories[index].categories_options_help ?? null,
-                ])
-                } else {
-                    return categories_.map((subcategory, index) => [
-                        subcategory,
-                        subcategories[index] ?? null,
-                ])
+                return [
+                    categoryTuple,
+                    category.options_with_help ?? options,
+                    response.categories_help ?? [],
+                    category.options_help ?? [],
+                ];
             }
+            return [categoryTuple, options];
         });
-
-        return mainResponse;
     },
 
     /**
