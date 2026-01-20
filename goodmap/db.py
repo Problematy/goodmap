@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 # ------------------------------------------------
 
 
-@lru_cache(maxsize=32)
+@lru_cache(maxsize=1)
 def _cached_read_json_file(file_path: str) -> str:
     """Read and cache a JSON file's raw content.
 
@@ -108,6 +108,19 @@ def __build_pagination_response(items, total, page, per_page):
 
 
 def json_file_atomic_dump(data, file_path):
+    """Write JSON data to file atomically, preventing corruption on crash.
+
+    Uses write-to-temp-then-rename pattern to ensure the target file is never
+    left in a partial/corrupted state. If the process crashes mid-write, the
+    original file remains intact.
+
+    Args:
+        data: JSON-serializable data to write.
+        file_path: Destination file path.
+
+    Note:
+        Automatically clears the read cache via clear_cache() after write.
+    """
     dir_name = os.path.dirname(file_path)
     with tempfile.NamedTemporaryFile("w", dir=dir_name, delete=False) as temp_file:
         json.dump(data, temp_file)
