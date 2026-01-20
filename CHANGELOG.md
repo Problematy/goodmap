@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.3.1 (2026-01-20)
+
+### Bug Fixes
+
+- Categories-full endpoint now provides helpers
+  ([`0b548fc`](https://github.com/Problematy/goodmap/commit/0b548fcb3b9fbcb8a9283188f5d5288b76b96925))
+
+
 ## v1.3.0 (2026-01-20)
 
 ### Chores
