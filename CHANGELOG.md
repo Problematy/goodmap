@@ -2,6 +2,24 @@
 
 <!-- version list -->
 
+## v1.3.0 (2026-01-20)
+
+### Chores
+
+- Removed submodules from checkout (#123) ([#321](https://github.com/Problematy/goodmap/pull/321),
+  [`2e77b1d`](https://github.com/Problematy/goodmap/commit/2e77b1d19b20512cd4865df8d2d63b23efeccacc))
+
+### Features
+
+- Add /categories-full endpoint for combined category data
+  ([`564b97a`](https://github.com/Problematy/goodmap/commit/564b97ad95495a6bd46b9b4354a722ce9562632f))
+
+### Refactoring
+
+- Admin api extraction ([#317](https://github.com/Problematy/goodmap/pull/317),
+  [`2098e09`](https://github.com/Problematy/goodmap/commit/2098e09253c4073720f318ada14d6b2efdbce56d))
+
+
 ## v1.2.0 (2026-01-14)
 
 ### Chores
