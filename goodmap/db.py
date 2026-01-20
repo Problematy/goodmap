@@ -2,7 +2,7 @@ import json
 import logging
 import os
 import tempfile
-from functools import partial
+from functools import lru_cache, partial
 from typing import Any
 
 from goodmap.core import get_queried_data
@@ -18,6 +18,52 @@ logger = logging.getLogger(__name__)
 
 # TODO file is temporary solution to be compatible with old, static code,
 #  it should be replaced with dynamic solution
+
+
+# ------------------------------------------------
+# Caching utilities for database operations
+# ------------------------------------------------
+
+
+@lru_cache(maxsize=32)
+def _cached_read_json_file(file_path: str) -> str:
+    """Read and cache a JSON file's raw content.
+
+    Uses lru_cache to avoid repeated disk I/O for frequently accessed files.
+    Returns raw string (not dict) because lru_cache requires hashable,
+    immutable return values to prevent cache corruption from mutations.
+
+    Args:
+        file_path: Absolute path to the JSON file.
+
+    Returns:
+        str: Raw file content. Caller must use json.loads() to parse.
+    """
+    with open(file_path, "r") as file:
+        return file.read()
+
+
+def _get_cached_json_data(file_path: str) -> dict[str, Any]:
+    """Get parsed JSON data from cache, reading from disk only on cache miss.
+
+    Args:
+        file_path: Absolute path to the JSON file.
+
+    Returns:
+        dict: Parsed JSON data. Note: caller should not mutate the result.
+    """
+    raw_data = _cached_read_json_file(file_path)
+    return json.loads(raw_data)
+
+
+def clear_cache():
+    """Clear all JSON file caches.
+
+    Must be called after any file modification to prevent stale reads.
+    Automatically invoked by json_file_atomic_dump().
+    """
+    _cached_read_json_file.cache_clear()
+    logger.debug("Database caches cleared")
 
 
 def __parse_pagination_params(query):
@@ -68,6 +114,8 @@ def json_file_atomic_dump(data, file_path):
         temp_file.flush()
         os.fsync(temp_file.fileno())
     os.replace(temp_file.name, file_path)
+    # Clear cache after file write to ensure fresh data on next read
+    clear_cache()
 
 
 class PaginationHelper:
@@ -521,8 +569,9 @@ def json_db_get_categories(self):
 
 
 def json_file_db_get_categories(self):
-    with open(self.data_file_path, "r") as file:
-        return json.load(file)["map"]["categories"].keys()
+    """Retrieve category names from JSON file database (cached)."""
+    data = _get_cached_json_data(self.data_file_path)
+    return data["map"]["categories"].keys()
 
 
 def google_json_db_get_categories(self):
@@ -561,21 +610,29 @@ def json_db_get_category_data(self, category_type=None):
 
 
 def json_file_db_get_category_data(self, category_type=None):
-    with open(self.data_file_path, "r") as file:
-        data = json.load(file)["map"]
-        if category_type:
-            return {
-                "categories": {category_type: data["categories"].get(category_type, [])},
-                "categories_help": data.get("categories_help", []),
-                "categories_options_help": {
-                    category_type: data.get("categories_options_help", {}).get(category_type, [])
-                },
-            }
+    """Retrieve category data from JSON file database (cached).
+
+    Args:
+        category_type: If provided, return data for this category only.
+                       If None, return all categories.
+
+    Returns:
+        dict: Contains 'categories', 'categories_help', and 'categories_options_help'.
+    """
+    data = _get_cached_json_data(self.data_file_path)["map"]
+    if category_type:
         return {
-            "categories": data["categories"],
+            "categories": {category_type: data["categories"].get(category_type, [])},
             "categories_help": data.get("categories_help", []),
-            "categories_options_help": data.get("categories_options_help", {}),
+            "categories_options_help": {
+                category_type: data.get("categories_options_help", {}).get(category_type, [])
+            },
         }
+    return {
+        "categories": data["categories"],
+        "categories_help": data.get("categories_help", []),
+        "categories_options_help": data.get("categories_options_help", {}),
+    }
 
 
 def google_json_db_get_category_data(self, category_type=None):

@@ -141,6 +141,73 @@ def test_category_data_endpoint_with_none_categories_options_help():
     assert data["categories_options_help"] == []
 
 
+# --- Categories-full endpoint tests ---
+
+
+@mock.patch("goodmap.core_api.gettext", fake_translation)
+def test_categories_full_endpoint_returns_proper_structure(test_app):
+    response = test_app.get("/api/categories-full")
+    assert response.status_code == 200
+    data = response.json
+    assert "categories" in data
+    assert isinstance(data["categories"], list)
+
+
+@mock.patch("goodmap.core_api.gettext", fake_translation)
+def test_categories_full_endpoint_returns_categories_with_required_fields(test_app):
+    response = test_app.get("/api/categories-full")
+    assert response.status_code == 200
+    data = response.json
+    assert len(data["categories"]) > 0
+    category = data["categories"][0]
+    assert "key" in category
+    assert "name" in category
+    assert "options" in category
+
+
+@mock.patch("goodmap.core_api.gettext", fake_translation)
+def test_categories_full_endpoint_returns_translated_name(test_app):
+    response = test_app.get("/api/categories-full")
+    assert response.status_code == 200
+    data = response.json
+    category = data["categories"][0]
+    assert category["key"] == "test-category"
+    assert category["name"] == "test-category-translated"
+
+
+@mock.patch("goodmap.core_api.gettext", fake_translation)
+def test_categories_full_endpoint_returns_translated_options(test_app):
+    response = test_app.get("/api/categories-full")
+    assert response.status_code == 200
+    data = response.json
+    category = data["categories"][0]
+    # Options should be translated tuples (key, translated_name)
+    assert isinstance(category["options"], list)
+    assert len(category["options"]) == 2
+    assert category["options"][0] == ["test", "test-translated"]
+    assert category["options"][1] == ["test2", "test2-translated"]
+
+
+@mock.patch("goodmap.core_api.gettext", fake_translation)
+def test_categories_full_endpoint_with_multiple_categories():
+    test_app = create_test_app(
+        db_overrides={
+            "categories": {
+                "category1": ["opt1", "opt2"],
+                "category2": ["opt3"],
+            }
+        }
+    )
+    response = test_app.get("/api/categories-full")
+    assert response.status_code == 200
+    data = response.json
+    assert data is not None
+    assert len(data["categories"]) == 2
+    keys = [cat["key"] for cat in data["categories"]]
+    assert "category1" in keys
+    assert "category2" in keys
+
+
 # --- Locations endpoint tests ---
 
 
