@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/Problematy/goodmap-frontend/compare/1.2.1...1.3.0) (2026-01-20)
+
+
+### Features
+
+* use new categories endpoint ([#142](https://github.com/Problematy/goodmap-frontend/issues/142)) ([ec72055](https://github.com/Problematy/goodmap-frontend/commit/ec720550d7df242fb7067d358c551ddd1b83dd1a))
+
 ## [1.2.1](https://github.com/Problematy/goodmap-frontend/compare/1.2.0...1.2.1) (2026-01-17)
 
 
