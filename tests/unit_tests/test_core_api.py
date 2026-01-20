@@ -201,6 +201,7 @@ def test_categories_full_endpoint_with_categories_help():
     response = test_app.get("/api/categories-full")
     assert response.status_code == 200
     data = response.json
+    assert data is not None
 
     # Check categories_help at response level
     assert "categories_help" in data
@@ -213,9 +214,7 @@ def test_categories_full_endpoint_with_categories_help():
     category = data["categories"][0]
     assert "options_help" in category
     assert len(category["options_help"]) == 1
-    assert category["options_help"][0] == {
-        "opt1": "categories_options_help_opt1-translated"
-    }
+    assert category["options_help"][0] == {"opt1": "categories_options_help_opt1-translated"}
 
 
 @mock.patch("goodmap.core_api.gettext", fake_translation)
@@ -229,6 +228,7 @@ def test_categories_full_endpoint_without_categories_help():
     response = test_app.get("/api/categories-full")
     assert response.status_code == 200
     data = response.json
+    assert data is not None
 
     # When CATEGORIES_HELP is False, no help data should be included
     assert "categories_help" not in data
