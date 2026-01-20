@@ -77,7 +77,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
 
         # Use the extended db method directly (already bound by extend_db_with_goodmap_queries)
         try:
-            category_data = app.db.get_category_data()  # type: ignore[attr-defined]
+            category_data = app.db.get_category_data()
             categories = category_data.get("categories", {})
         except (KeyError, AttributeError):
             # Handle case where categories don't exist in the data
@@ -121,7 +121,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         """
         # Prepare location schema for frontend dynamic forms
         # Include full schema from Pydantic model for better type information
-        category_data = app.db.get_category_data()  # type: ignore[attr-defined]
+        category_data = app.db.get_category_data()
         categories = category_data.get("categories", {})
 
         # Get full JSON schema from Pydantic model

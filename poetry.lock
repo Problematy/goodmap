@@ -1965,14 +1965,14 @@ type = ["mypy (>=1.14.1)"]
 
 [[package]]
 name = "platzky"
-version = "1.0.1"
+version = "1.2.2"
 description = "Not only blog engine"
 optional = false
 python-versions = "<4.0,>=3.10"
 groups = ["main"]
 files = [
-    {file = "platzky-1.0.1-py3-none-any.whl", hash = "sha256:b21c0c58c1fd8c76b26957c75be95bbb496c3854d3cc4ff7a418d19884102ce2"},
-    {file = "platzky-1.0.1.tar.gz", hash = "sha256:a8cb275b5598e42b9723599911aef176a591644b6f85f443c26bb72c93314e98"},
+    {file = "platzky-1.2.2-py3-none-any.whl", hash = "sha256:b8d4ab25165ee9a0cdeb5682f5d54e0c44e71ab79ebc3ad4d90077db750bdadb"},
+    {file = "platzky-1.2.2.tar.gz", hash = "sha256:93d9e79d844705cd9634f66d863a2f874fe506319103485c9fc46adf6faeba13"},
 ]
 
 [package.dependencies]

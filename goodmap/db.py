@@ -2,7 +2,7 @@ import json
 import logging
 import os
 import tempfile
-from functools import lru_cache, partial
+from functools import partial
 from typing import Any
 
 from goodmap.core import get_queried_data
@@ -18,57 +18,6 @@ logger = logging.getLogger(__name__)
 
 # TODO file is temporary solution to be compatible with old, static code,
 #  it should be replaced with dynamic solution
-
-
-# ------------------------------------------------
-# Caching utilities for database operations
-# ------------------------------------------------
-
-
-@lru_cache(maxsize=4)
-def _cached_read_json_file(file_path: str, mtime: float) -> str:
-    """Read and cache a JSON file's raw content, keyed by path and mtime.
-
-    Cache automatically invalidates when file is modified externally, since
-    mtime change produces a new cache key. Returns raw string (not dict)
-    because lru_cache requires hashable, immutable return values.
-
-    Args:
-        file_path: Absolute path to the JSON file.
-        mtime: File modification time (used as cache key for auto-invalidation).
-
-    Returns:
-        str: Raw file content. Caller must use json.loads() to parse.
-    """
-    with open(file_path, "r") as file:
-        return file.read()
-
-
-def _get_cached_json_data(file_path: str) -> dict[str, Any]:
-    """Get parsed JSON data, auto-invalidating cache on external file changes.
-
-    Checks file mtime on each call (cheap stat syscall) to detect external
-    modifications. Full file read only occurs on cache miss.
-
-    Args:
-        file_path: Absolute path to the JSON file.
-
-    Returns:
-        dict: Parsed JSON data. Note: caller should not mutate the result.
-    """
-    mtime = os.path.getmtime(file_path)
-    raw_data = _cached_read_json_file(file_path, mtime)
-    return json.loads(raw_data)
-
-
-def clear_cache():
-    """Clear all JSON file caches.
-
-    Automatically invoked by json_file_atomic_dump(). Also useful for testing
-    or forcing a refresh independent of mtime checks.
-    """
-    _cached_read_json_file.cache_clear()
-    logger.debug("Database caches cleared")
 
 
 def __parse_pagination_params(query):
@@ -113,27 +62,12 @@ def __build_pagination_response(items, total, page, per_page):
 
 
 def json_file_atomic_dump(data, file_path):
-    """Write JSON data to file atomically, preventing corruption on crash.
-
-    Uses write-to-temp-then-rename pattern to ensure the target file is never
-    left in a partial/corrupted state. If the process crashes mid-write, the
-    original file remains intact.
-
-    Args:
-        data: JSON-serializable data to write.
-        file_path: Destination file path.
-
-    Note:
-        Automatically clears the read cache via clear_cache() after write.
-    """
     dir_name = os.path.dirname(file_path)
     with tempfile.NamedTemporaryFile("w", dir=dir_name, delete=False) as temp_file:
         json.dump(data, temp_file)
         temp_file.flush()
         os.fsync(temp_file.fileno())
     os.replace(temp_file.name, file_path)
-    # Clear cache after file write to ensure fresh data on next read
-    clear_cache()
 
 
 class PaginationHelper:
@@ -587,9 +521,8 @@ def json_db_get_categories(self):
 
 
 def json_file_db_get_categories(self):
-    """Retrieve category names from JSON file database (cached)."""
-    data = _get_cached_json_data(self.data_file_path)
-    return data["map"]["categories"].keys()
+    with open(self.data_file_path, "r") as file:
+        return json.load(file)["map"]["categories"].keys()
 
 
 def google_json_db_get_categories(self):
@@ -628,29 +561,21 @@ def json_db_get_category_data(self, category_type=None):
 
 
 def json_file_db_get_category_data(self, category_type=None):
-    """Retrieve category data from JSON file database (cached).
-
-    Args:
-        category_type: If provided, return data for this category only.
-                       If None, return all categories.
-
-    Returns:
-        dict: Contains 'categories', 'categories_help', and 'categories_options_help'.
-    """
-    data = _get_cached_json_data(self.data_file_path)["map"]
-    if category_type:
+    with open(self.data_file_path, "r") as file:
+        data = json.load(file)["map"]
+        if category_type:
+            return {
+                "categories": {category_type: data["categories"].get(category_type, [])},
+                "categories_help": data.get("categories_help", []),
+                "categories_options_help": {
+                    category_type: data.get("categories_options_help", {}).get(category_type, [])
+                },
+            }
         return {
-            "categories": {category_type: data["categories"].get(category_type, [])},
+            "categories": data["categories"],
             "categories_help": data.get("categories_help", []),
-            "categories_options_help": {
-                category_type: data.get("categories_options_help", {}).get(category_type, [])
-            },
+            "categories_options_help": data.get("categories_options_help", {}),
         }
-    return {
-        "categories": data["categories"],
-        "categories_help": data.get("categories_help", []),
-        "categories_options_help": data.get("categories_options_help", {}),
-    }
 
 
 def google_json_db_get_category_data(self, category_type=None):
