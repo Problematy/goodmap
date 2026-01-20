@@ -371,11 +371,37 @@ def core_pages(
         """
         categories_data = database.get_category_data()
         result = []
+
+        categories_options_help = categories_data.get("categories_options_help", {})
+
         for key, options in categories_data["categories"].items():
-            result.append(
-                {"key": key, "name": gettext(key), "options": make_tuple_translation(options)}
-            )
-        return jsonify({"categories": result})
+            category_entry = {
+                "key": key,
+                "name": gettext(key),
+                "options": make_tuple_translation(options),
+            }
+
+            if feature_flags.get("CATEGORIES_HELP", False):
+                option_help_list = categories_options_help.get(key, [])
+                proper_options_help = []
+                for option in option_help_list:
+                    proper_options_help.append(
+                        {option: gettext(f"categories_options_help_{option}")}
+                    )
+                category_entry["options_help"] = proper_options_help
+
+            result.append(category_entry)
+
+        response = {"categories": result}
+
+        if feature_flags.get("CATEGORIES_HELP", False):
+            categories_help = categories_data.get("categories_help", [])
+            proper_categories_help = []
+            for option in categories_help:
+                proper_categories_help.append({option: gettext(f"categories_help_{option}")})
+            response["categories_help"] = proper_categories_help
+
+        return jsonify(response)
 
     @core_api_blueprint.route("/languages", methods=["GET"])
     @spec.validate()

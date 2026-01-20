@@ -188,6 +188,54 @@ def test_categories_full_endpoint_with_multiple_categories():
     assert "category2" in keys
 
 
+@mock.patch("goodmap.core_api.gettext", fake_translation)
+def test_categories_full_endpoint_with_categories_help():
+    test_app = create_test_app(
+        feature_flags={"CATEGORIES_HELP": True},
+        db_overrides={
+            "categories": {"test-category": ["opt1", "opt2"]},
+            "categories_help": ["test-category"],
+            "categories_options_help": {"test-category": ["opt1"]},
+        },
+    )
+    response = test_app.get("/api/categories-full")
+    assert response.status_code == 200
+    data = response.json
+    assert data is not None
+
+    # Check categories_help at response level
+    assert "categories_help" in data
+    assert len(data["categories_help"]) == 1
+    assert data["categories_help"][0] == {
+        "test-category": "categories_help_test-category-translated"
+    }
+
+    # Check options_help at category level
+    category = data["categories"][0]
+    assert "options_help" in category
+    assert len(category["options_help"]) == 1
+    assert category["options_help"][0] == {"opt1": "categories_options_help_opt1-translated"}
+
+
+@mock.patch("goodmap.core_api.gettext", fake_translation)
+def test_categories_full_endpoint_without_categories_help():
+    test_app = create_test_app(
+        feature_flags={"CATEGORIES_HELP": False},
+        db_overrides={
+            "categories": {"test-category": ["opt1", "opt2"]},
+        },
+    )
+    response = test_app.get("/api/categories-full")
+    assert response.status_code == 200
+    data = response.json
+    assert data is not None
+
+    # When CATEGORIES_HELP is False, no help data should be included
+    assert "categories_help" not in data
+    category = data["categories"][0]
+    assert "options_help" not in category
+
+
 # --- Locations endpoint tests ---
 
 
