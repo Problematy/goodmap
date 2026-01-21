@@ -209,8 +209,8 @@ class TestLocationButtonsDesktopDisabledState:
 class TestLocationButtonsMobile:
     """Test suite for location buttons on mobile devices"""
 
-    @pytest.mark.parametrize("device_name", ALL_MOBILE_DEVICES)
-    def test_list_view_shows_tooltip_on_tap(self, mobile_page: Page, device_name: str):
+    @pytest.mark.parametrize("mobile_page", ALL_MOBILE_DEVICES, indirect=True)
+    def test_list_view_shows_tooltip_on_tap(self, mobile_page: Page):
         """
         Verify list view button shows tooltip immediately on tap
         when geolocation is not granted (mobile).
@@ -218,17 +218,17 @@ class TestLocationButtonsMobile:
         mobile_page.goto(BASE_URL, wait_until="domcontentloaded")
 
         # Tap the list view button
-        # Use force=True to bypass webpack overlay that may intercept clicks on CI
         list_view_button = mobile_page.locator("#listViewButton")
-        list_view_button.click(force=True)
+        list_view_button.wait_for(state="visible")
+        list_view_button.click()
 
         # Check tooltip appears with disabled message
         tooltip = mobile_page.locator('[role="tooltip"]')
         expect(tooltip).to_be_visible()
         expect(tooltip).to_contain_text("Location services are disabled")
 
-    @pytest.mark.parametrize("device_name", ALL_MOBILE_DEVICES)
-    def test_all_buttons_show_tooltip_on_tap(self, mobile_page: Page, device_name: str):
+    @pytest.mark.parametrize("mobile_page", ALL_MOBILE_DEVICES, indirect=True)
+    def test_all_buttons_show_tooltip_on_tap(self, mobile_page: Page):
         """
         Verify all three location buttons show tooltips consistently on tap (mobile).
         Tests that enterTouchDelay=0 is working for all buttons.
@@ -243,9 +243,9 @@ class TestLocationButtonsMobile:
 
         for selector, _name in buttons:
             # Tap the button
-            # Use force=True to bypass webpack overlay that may intercept clicks on CI
             button = mobile_page.locator(selector)
-            button.click(force=True)
+            button.wait_for(state="visible")
+            button.click()
 
             # Check tooltip appears
             tooltip = mobile_page.locator('[role="tooltip"]')
@@ -253,5 +253,5 @@ class TestLocationButtonsMobile:
             expect(tooltip).to_contain_text("Location services are disabled")
 
             # Click elsewhere to dismiss tooltip and wait for it to disappear
-            mobile_page.locator("body").click(position={"x": 10, "y": 10}, force=True)
+            mobile_page.locator("body").click(position={"x": 10, "y": 10})
             expect(tooltip).not_to_be_visible(timeout=2000)

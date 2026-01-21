@@ -24,4 +24,4 @@ FEATURE_FLAGS:
 
 
 #GOODMAP_FRONTEND_LIB_URL: "https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.4.4"
-GOODMAP_FRONTEND_LIB_URL: "http://localhost:8080/index.js"
+GOODMAP_FRONTEND_LIB_URL: "http://localhost:8080/index.min.js"

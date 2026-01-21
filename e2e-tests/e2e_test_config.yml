@@ -27,4 +27,4 @@ FEATURE_FLAGS:
   SHOW_SUGGEST_NEW_POINT_BUTTON: True
 
 
-GOODMAP_FRONTEND_LIB_URL: "http://localhost:8080/index.js"
+GOODMAP_FRONTEND_LIB_URL: "http://localhost:8080/index.min.js"

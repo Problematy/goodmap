@@ -73,7 +73,7 @@ jobs:
     - name: Start frontend server
       working-directory: goodmap-frontend
       run: |
-        make serve &
+        make serve-prod &
         FRONTEND_PID=$!
         echo $FRONTEND_PID > /tmp/frontend.pid
         disown $FRONTEND_PID
@@ -102,6 +102,15 @@ jobs:
       run: |
         set -o pipefail
         make e2e-tests | tee /tmp/e2e-tests-output.txt
+
+    - name: Upload test videos on failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-failure-videos
+        path: e2e-tests/test-results/**/*.webm
+        retention-days: 7
+        if-no-files-found: ignore
 
     - name: Stop backend for e2e tests
       if: always()

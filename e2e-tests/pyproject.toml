@@ -25,6 +25,8 @@ python_functions = "test_*"
 # Playwright-specific settings
 base_url = "http://localhost:5000"
 # Browser/headed/slowmo should be passed via CLI: --browser=chromium --headed --slowmo=100
+# Video recording: retain-on-failure keeps videos only for failed tests
+addopts = "--video=retain-on-failure --output=test-results"
 
 [tool.ruff]
 line-length = 100

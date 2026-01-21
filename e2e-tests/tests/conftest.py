@@ -19,7 +19,7 @@ import pytest
 from playwright.sync_api import BrowserContext, Page, Route
 
 # Constants
-WEBPACK_SCRIPT_URL = "http://localhost:8080/index.js"
+WEBPACK_SCRIPT_URL = "http://localhost:8080/index.min.js"
 CACHE_DIR = Path(".playwright-cache")
 CACHE_FILE = CACHE_DIR / "webpack-script.js"
 BASE_URL = "http://localhost:5000"
@@ -28,35 +28,6 @@ BASE_URL = "http://localhost:5000"
 MAP_LOAD_TIMEOUT = 5000
 MARKER_LOAD_TIMEOUT = 5000
 TABLE_LOAD_TIMEOUT = 5000
-
-# Script to remove webpack-dev-server overlay that can intercept clicks
-# Uses CSS (when head exists) + MutationObserver (aggressive removal)
-WEBPACK_OVERLAY_REMOVAL_SCRIPT = """
-// Inject CSS to hide overlay - append to head if exists, otherwise documentElement
-const style = document.createElement('style');
-style.textContent = `#webpack-dev-server-client-overlay {
-    display: none !important;
-    pointer-events: none !important;
-    visibility: hidden !important;
-}`;
-(document.head || document.documentElement).appendChild(style);
-
-// Aggressive MutationObserver - remove overlay immediately when it appears
-const observer = new MutationObserver((mutations) => {
-    for (const mutation of mutations) {
-        for (const node of mutation.addedNodes) {
-            if (node.id === 'webpack-dev-server-client-overlay') {
-                node.remove();
-                return;
-            }
-        }
-    }
-    // Also check if it already exists
-    const overlay = document.getElementById('webpack-dev-server-client-overlay');
-    if (overlay) overlay.remove();
-});
-observer.observe(document.documentElement, { childList: true, subtree: true });
-"""
 
 # Mobile device configurations for Playwright
 MOBILE_DEVICES = {
@@ -141,6 +112,17 @@ def pytest_configure(config):
         print(f"\nUsing cached webpack script from {CACHE_FILE}")
 
 
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):  # noqa: ARG001
+    """
+    Hook to store test result on the item for use in fixtures.
+    Used by mobile_page fixture to determine if video should be retained.
+    """
+    outcome = yield
+    rep = outcome.get_result()
+    setattr(item, f"rep_{rep.when}", rep)
+
+
 @pytest.fixture(scope="session")
 def webpack_script() -> str:
     """
@@ -183,9 +165,6 @@ def page(page: Page, webpack_script: str) -> Page:
     # Block HMR websocket and hot update requests
     page.route("**/ws", block_hmr_route)
     page.route("**/*.hot-update.*", block_hmr_route)
-
-    # Remove webpack-dev-server overlay that can intercept clicks
-    page.add_init_script(WEBPACK_OVERLAY_REMOVAL_SCRIPT)
 
     return page
 
@@ -235,25 +214,27 @@ def mobile_page(browser, webpack_script: str, request) -> Generator[Page, None, 
     This fixture creates a new browser context with the correct user agent,
     ensuring that react-device-detect properly identifies the device as mobile.
 
-    The device configuration is passed via parametrize with the 'device_name' parameter.
+    Supports two parametrization styles:
+    1. Indirect (preferred):
+        @pytest.mark.parametrize("mobile_page", ALL_MOBILE_DEVICES, indirect=True)
+        def test_mobile(mobile_page):
+            ...
 
-    Example:
+    2. Legacy (device_name parameter):
         @pytest.mark.parametrize("device_name", ALL_MOBILE_DEVICES)
         def test_mobile(mobile_page, device_name):
-            mobile_page.goto(BASE_URL)
-            # ... test mobile-specific behavior
+            ...
     """
-    # Get device_name from parametrize (safely handle missing callspec)
-    callspec = getattr(request.node, "callspec", None)
-    if callspec is None:
-        raise ValueError(
-            "mobile_page fixture requires @pytest.mark.parametrize with 'device_name' parameter"
-        )
-    device_name = callspec.params.get("device_name")
-    if not device_name:
-        raise ValueError(
-            "mobile_page fixture requires 'device_name' parameter from @pytest.mark.parametrize"
-        )
+    # Support both indirect parametrization and legacy device_name parameter
+    if hasattr(request, "param"):
+        device_name = request.param
+    else:
+        callspec = getattr(request.node, "callspec", None)
+        if callspec is None:
+            raise ValueError("mobile_page fixture requires parametrization")
+        device_name = callspec.params.get("device_name")
+        if not device_name:
+            raise ValueError("mobile_page fixture requires 'device_name' parameter")
 
     try:
         device_config = MOBILE_DEVICES[device_name]
@@ -262,11 +243,28 @@ def mobile_page(browser, webpack_script: str, request) -> Generator[Page, None, 
             f"Unknown device_name={device_name}. Expected one of: {list(MOBILE_DEVICES)}"
         ) from e
 
-    # Create a new context with mobile user agent and touch support
+    # Determine video recording settings from pytest config
+    video_option = request.config.getoption("--video", default="off")
+    record_video_dir = None
+    record_video_size = None
+    if video_option in ("on", "retain-on-failure"):
+        output_dir = request.config.getoption("--output", default="test-results")
+        # Create a unique directory for this test's video using nodeid to prevent collisions
+        nodeid = request.node.nodeid
+        safe_nodeid = (
+            nodeid.replace("::", "__").replace("/", "__").replace("[", "-").replace("]", "")
+        )
+        record_video_dir = str(Path(output_dir) / safe_nodeid)
+        # Set video size to match mobile viewport for clearer recordings
+        record_video_size = device_config["viewport"]
+
+    # Create a new context with mobile user agent, touch support, and optional video recording
     context = browser.new_context(
         viewport=device_config["viewport"],
         user_agent=device_config["user_agent"],
         has_touch=True,
+        record_video_dir=record_video_dir,
+        record_video_size=record_video_size,
     )
 
     # Create a page from this context
@@ -287,14 +285,29 @@ def mobile_page(browser, webpack_script: str, request) -> Generator[Page, None, 
     page.route("**/ws", block_hmr_route)
     page.route("**/*.hot-update.*", block_hmr_route)
 
-    # Remove webpack-dev-server overlay that can intercept clicks
-    page.add_init_script(WEBPACK_OVERLAY_REMOVAL_SCRIPT)
-
     yield page
+
+    # Get video path before closing (video is saved on close)
+    video = page.video
+    video_path = video.path() if video else None
 
     # Cleanup
     page.close()
     context.close()
+
+    # Handle retain-on-failure: delete video if test passed
+    if video_path and video_option == "retain-on-failure":
+        # Check if any test phase failed (setup, call, or teardown)
+        rep_setup = getattr(request.node, "rep_setup", None)
+        rep_call = getattr(request.node, "rep_call", None)
+        rep_teardown = getattr(request.node, "rep_teardown", None)
+        test_failed = any(rep and rep.failed for rep in (rep_setup, rep_call, rep_teardown))
+        if not test_failed and Path(video_path).exists():
+            Path(video_path).unlink()
+            # Remove empty directory
+            video_dir = Path(video_path).parent
+            if video_dir.exists() and not any(video_dir.iterdir()):
+                video_dir.rmdir()
 
 
 @pytest.fixture
