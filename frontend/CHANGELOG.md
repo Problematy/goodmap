@@ -1,3 +1,10 @@
+## [1.3.2](https://github.com/Problematy/goodmap-frontend/compare/1.3.1...1.3.2) (2026-01-21)
+
+
+### Bug Fixes
+
+* translations for suggestion box now is working ([#144](https://github.com/Problematy/goodmap-frontend/issues/144)) ([31e0c8d](https://github.com/Problematy/goodmap-frontend/commit/31e0c8dcb8c93b7540d0c521bf6467748f49d573))
+
 ## [1.3.1](https://github.com/Problematy/goodmap-frontend/compare/1.3.0...1.3.1) (2026-01-21)
 
 
