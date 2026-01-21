@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Button,
     Box,
@@ -28,6 +28,7 @@ import { useTranslation } from 'react-i18next';
 import { buttonStyle, getLocationAwareStyles } from '../../../styles/buttonStyle';
 import { getCsrfToken } from '../../../utils/csrf';
 import { useLocation } from '../context/LocationContext';
+import { httpService } from '../../../services/http/httpService';
 
 /**
  * Button component that allows users to suggest new map points/locations.
@@ -46,6 +47,48 @@ export const SuggestNewPointButton = () => {
     const [snackbarMessage, setSnackbarMessage] = useState('');
     const [photo, setPhoto] = useState(null);
     const [photoURL, setPhotoURL] = useState(null);
+    const [categoryTranslations, setCategoryTranslations] = useState({
+        fieldNames: {},
+        options: {},
+    });
+
+    // Fetch translated category data
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const categoriesData = await httpService.getCategoriesData();
+                const fieldNames = {};
+                const options = {};
+
+                categoriesData.forEach(categoryData => {
+                    const [categoryKey, categoryName] = categoryData[0];
+                    fieldNames[categoryKey] = categoryName;
+
+                    // Build options translation map
+                    // Options come as [[key, translation], ...] or [key, ...]
+                    const categoryOptions = categoryData[1];
+                    if (categoryOptions && categoryOptions.length > 0) {
+                        options[categoryKey] = {};
+                        categoryOptions.forEach(opt => {
+                            if (Array.isArray(opt)) {
+                                // [key, translation] format
+                                options[categoryKey][opt[0]] = opt[1];
+                            } else {
+                                // Just key, use as-is
+                                options[categoryKey][opt] = opt;
+                            }
+                        });
+                    }
+                });
+
+                setCategoryTranslations({ fieldNames, options });
+            } catch (error) {
+                console.error('Failed to fetch category translations:', error);
+            }
+        };
+
+        fetchCategories();
+    }, []);
 
     // Read location schema from global object
     const locationSchema = globalThis.LOCATION_SCHEMA || { obligatory_fields: [], categories: {} };
@@ -99,9 +142,7 @@ export const SuggestNewPointButton = () => {
         }
         const fileSizeMB = file.size / 1024 / 1024;
         if (fileSizeMB > 5) {
-            setSnackbarMessage(
-                'The selected file is too large. Please select a file smaller than 5MB.',
-            );
+            setSnackbarMessage(t('fileTooLarge'));
             setSnackbarOpen(true);
             return;
         }
@@ -118,9 +159,7 @@ export const SuggestNewPointButton = () => {
 
         // Validate user position is available
         if (!userPosition || userPosition.lat === null || userPosition.lng === null) {
-            setSnackbarMessage(
-                'Location not available. Please enable location services and try again.',
-            );
+            setSnackbarMessage(t('locationNotAvailable'));
             setSnackbarOpen(true);
             return;
         }
@@ -140,7 +179,7 @@ export const SuggestNewPointButton = () => {
         });
 
         if (emptyFields.length > 0) {
-            setSnackbarMessage(`Please fill in required fields: ${emptyFields.join(', ')}`);
+            setSnackbarMessage(t('fillRequiredFields', { fields: emptyFields.join(', ') }));
             setSnackbarOpen(true);
             return;
         }
@@ -169,7 +208,7 @@ export const SuggestNewPointButton = () => {
                     'X-CSRFToken': csrfToken,
                 },
             });
-            setSnackbarMessage('Location suggested successfully!');
+            setSnackbarMessage(t('locationSuggestedSuccess'));
             setSnackbarOpen(true);
 
             // Reset form after successful submission
@@ -181,35 +220,61 @@ export const SuggestNewPointButton = () => {
             setShowNewPointSuggestionBox(false);
         } catch (error) {
             console.error('Error suggesting new point:', error);
-            setSnackbarMessage('Error suggesting location. Please try again.');
+            setSnackbarMessage(t('locationSuggestedError'));
             setSnackbarOpen(true);
             // Dialog stays open on error so user can retry
         }
+    };
+
+    // Static field name translations (for non-category fields)
+    const staticFieldTranslations = {
+        name: t('fieldName'),
+    };
+
+    // Helper to get translated field label
+    const getFieldLabel = fieldName => {
+        // Check static translations first, then category translations, then fallback to raw name
+        return (
+            staticFieldTranslations[fieldName] ||
+            categoryTranslations.fieldNames[fieldName] ||
+            fieldName
+        );
+    };
+
+    // Helper to get translated option label
+    const getOptionLabel = (fieldName, optionKey) => {
+        return categoryTranslations.options[fieldName]?.[optionKey] || optionKey;
+    };
+
+    // Helper to get translated selected values for display
+    const getSelectedDisplay = (fieldName, selectedValues) => {
+        return selectedValues.map(val => getOptionLabel(fieldName, val)).join(', ');
     };
 
     // Render form field based on field type and whether it's a category
     const renderFormField = (fieldName, fieldType) => {
         const isCategory = fieldName in locationSchema.categories;
         const categoryOptions = isCategory ? locationSchema.categories[fieldName] : [];
+        const fieldLabel = getFieldLabel(fieldName);
 
         if (fieldType === 'list' && isCategory) {
             // Multi-select for list categories
             return (
                 <FormControl fullWidth margin="dense" key={fieldName}>
-                    <InputLabel id={`${fieldName}-label`}>{fieldName}</InputLabel>
+                    <InputLabel id={`${fieldName}-label`}>{fieldLabel}</InputLabel>
                     <Select
                         labelId={`${fieldName}-label`}
                         multiple
                         value={formFields[fieldName] || []}
                         onChange={handleFieldChange(fieldName)}
-                        input={<OutlinedInput label={fieldName} />}
-                        renderValue={selected => selected.join(', ')}
+                        input={<OutlinedInput label={fieldLabel} />}
+                        renderValue={selected => getSelectedDisplay(fieldName, selected)}
                         data-testid={`${fieldName}-select`}
                     >
                         {categoryOptions.map(option => (
                             <MenuItem key={option} value={option}>
                                 <Checkbox checked={formFields[fieldName].includes(option)} />
-                                <ListItemText primary={option} />
+                                <ListItemText primary={getOptionLabel(fieldName, option)} />
                             </MenuItem>
                         ))}
                     </Select>
@@ -219,7 +284,7 @@ export const SuggestNewPointButton = () => {
             // Single select for category fields
             return (
                 <FormControl fullWidth margin="dense" key={fieldName}>
-                    <InputLabel id={`${fieldName}-label`}>{fieldName}</InputLabel>
+                    <InputLabel id={`${fieldName}-label`}>{fieldLabel}</InputLabel>
                     <Select
                         labelId={`${fieldName}-label`}
                         value={formFields[fieldName] || ''}
@@ -228,7 +293,7 @@ export const SuggestNewPointButton = () => {
                     >
                         {categoryOptions.map(option => (
                             <MenuItem key={option} value={option}>
-                                {option}
+                                {getOptionLabel(fieldName, option)}
                             </MenuItem>
                         ))}
                     </Select>
@@ -239,7 +304,7 @@ export const SuggestNewPointButton = () => {
             return (
                 <TextField
                     key={fieldName}
-                    label={fieldName}
+                    label={fieldLabel}
                     value={formFields[fieldName] || ''}
                     onChange={handleFieldChange(fieldName)}
                     fullWidth
@@ -273,12 +338,12 @@ export const SuggestNewPointButton = () => {
             </Tooltip>
 
             <Dialog open={showNewPointBox} onClose={handleCloseNewPointBox}>
-                <DialogTitle>Suggest a New Point</DialogTitle>
+                <DialogTitle>{t('suggestNewPointDialogTitle')}</DialogTitle>
                 <form onSubmit={handleConfirmNewPoint}>
                     <DialogContent>
                         <Box display="flex" alignItems="center" gap={2}>
                             <TextField
-                                label="Your Position"
+                                label={t('yourPosition')}
                                 value={
                                     userPosition ? `${userPosition.lat}, ${userPosition.lng}` : ''
                                 }
@@ -314,14 +379,14 @@ export const SuggestNewPointButton = () => {
                     </DialogContent>
                     <DialogActions>
                         <Button type="submit" variant="contained" color="primary">
-                            Submit
+                            {t('submit')}
                         </Button>
                         <Button
                             onClick={handleCloseNewPointBox}
                             variant="outlined"
                             color="secondary"
                         >
-                            Cancel
+                            {t('cancel')}
                         </Button>
                     </DialogActions>
                 </form>

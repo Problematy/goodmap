@@ -54,7 +54,7 @@ jobs:
   e2e-tests:
     needs: test
 
-    uses: problematy/goodmap-e2e-tests/.github/workflows/e2e-tests.yml@91e881eb2dc7b0dee12f22adc9d2128e93443f5f
+    uses: problematy/goodmap-e2e-tests/.github/workflows/e2e-tests.yml@6bafe2bd7fa7a1be6e3dfe0d36a2ce36d4e46d5d
     with:
       goodmap-version: 'main'
       goodmap-frontend-version: ${{ github.sha }}

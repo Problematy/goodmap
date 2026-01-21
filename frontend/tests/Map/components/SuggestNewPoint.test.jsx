@@ -17,12 +17,18 @@ import {
     fillTextField,
 } from '../../utils/dialogHelpers';
 import { ERROR_MESSAGES, FILE_SIZES, SIMPLE_SCHEMA, FULL_SCHEMA } from '../../utils/testConstants';
+import { httpService } from '../../../src/services/http/httpService';
 
 const renderWithProvider = component => {
     return render(<LocationProvider>{component}</LocationProvider>);
 };
 
 jest.mock('axios');
+jest.mock('../../../src/services/http/httpService', () => ({
+    httpService: {
+        getCategoriesData: jest.fn(),
+    },
+}));
 
 // Mock CSRF token meta tag and location schema
 beforeEach(() => {
@@ -32,6 +38,25 @@ beforeEach(() => {
     document.head.appendChild(metaTag);
 
     globalThis.LOCATION_SCHEMA = FULL_SCHEMA;
+
+    // Mock categories data with translations matching FULL_SCHEMA structure
+    httpService.getCategoriesData.mockResolvedValue([
+        [
+            ['accessible_by', 'Accessible by'],
+            [
+                ['bikes', 'Bikes'],
+                ['cars', 'Cars'],
+                ['pedestrians', 'Pedestrians'],
+            ],
+        ],
+        [
+            ['type_of_place', 'Type of place'],
+            [
+                ['big bridge', 'Big bridge'],
+                ['small bridge', 'Small bridge'],
+            ],
+        ],
+    ]);
 });
 
 afterEach(() => {
