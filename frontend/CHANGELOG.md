@@ -1,3 +1,10 @@
+## [1.3.1](https://github.com/Problematy/goodmap-frontend/compare/1.3.0...1.3.1) (2026-01-21)
+
+
+### Bug Fixes
+
+* add no-client-overlay for prod server ([#143](https://github.com/Problematy/goodmap-frontend/issues/143)) ([78a9420](https://github.com/Problematy/goodmap-frontend/commit/78a9420ebe3d1bda99dba183d8f7551b5a329f5a))
+
 # [1.3.0](https://github.com/Problematy/goodmap-frontend/compare/1.2.1...1.3.0) (2026-01-20)
 
 
