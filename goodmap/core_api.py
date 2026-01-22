@@ -189,7 +189,8 @@ def core_pages(
             notifier_function(notifier_message)
         except LocationValidationError as e:
             logger.warning(
-                "Location validation failed in suggest endpoint",
+                "Location validation failed in suggest endpoint: %s",
+                e.validation_errors,
                 extra={"errors": e.validation_errors},
             )
             return make_response(jsonify({"message": ERROR_INVALID_LOCATION_DATA}), 400)

@@ -1,5 +1,6 @@
 """Goodmap engine with location management and admin interface."""
 
+import logging
 import os
 
 from flask import Blueprint, redirect, render_template, session
@@ -16,6 +17,8 @@ from goodmap.db import (
     extend_db_with_goodmap_queries,
     get_location_obligatory_fields,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def create_app(config_path: str) -> platzky.Engine:
@@ -63,6 +66,15 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
     config.translation_directories.append(locale_dir)
     app = platzky.create_app_from_config(config)
 
+    # Configure debug logging (FLASK_DEBUG is set by `flask --debug` before factory runs)
+    if os.environ.get("FLASK_DEBUG") == "1":
+        logging.getLogger("goodmap").setLevel(logging.DEBUG)
+        handler = logging.StreamHandler()
+        handler.setLevel(logging.DEBUG)
+        handler.setFormatter(logging.Formatter("%(name)s - %(levelname)s - %(message)s"))
+        logging.getLogger("goodmap").addHandler(handler)
+        logger.info("Goodmap debug logging enabled")
+
     # SECURITY: Set maximum request body size to 100KB (prevents memory exhaustion)
     # This protects against large file uploads and JSON payloads
     # Based on calculation: ~6.5KB max legitimate payload + multipart overhead
@@ -97,10 +109,28 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
 
     CSRFProtect(app)
 
+    # Wrap notifier with detailed logging for debugging
+    original_notify = app.notify
+
+    def debug_notify(message: str):
+        logger.debug("Notifier called with message: %s", message)
+        try:
+            result = original_notify(message)
+            logger.debug("Notifier succeeded, result type: %s", type(result).__name__)
+            return result
+        except Exception as e:
+            logger.error(
+                "Notifier failed: %s: %s",
+                type(e).__name__,
+                str(e),
+                exc_info=True,
+            )
+            raise
+
     cp = core_pages(
         app.db,
         languages_dict(config.languages),
-        app.notify,
+        debug_notify,
         generate_csrf,
         location_model,
         feature_flags=config.feature_flags,
