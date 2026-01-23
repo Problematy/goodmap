@@ -157,7 +157,7 @@ def core_pages(
                     photo_content = photo_file.read()
                     photo_mime = photo_file.content_type or "application/octet-stream"
 
-                    # Validate using JPEG-only Attachment class
+                    # Validate using configured Attachment class
                     try:
                         photo_attachment = photo_attachment_class(
                             photo_file.filename, photo_content, photo_mime
@@ -165,7 +165,7 @@ def core_pages(
                     except ValueError as e:
                         logger.warning("Rejected photo: %s", e)
                         return make_response(
-                            jsonify({"message": "Only JPEG images are allowed"}), 400
+                            jsonify({"message": str(e)}), 400
                         )
             else:
                 # Parse JSON data with security checks (depth/size protection)
