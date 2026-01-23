@@ -1,12 +1,10 @@
 import importlib.metadata
-import io
 import logging
 import uuid
 
 import deprecation
 import numpy
 import pysupercluster
-from PIL import Image
 from flask import Blueprint, jsonify, make_response, request
 from flask_babel import gettext
 from platzky.attachment import AttachmentProtocol
@@ -45,64 +43,7 @@ ERROR_INVALID_REQUEST_DATA = "Invalid request data"
 ERROR_INVALID_LOCATION_DATA = "Invalid location data"
 ERROR_LOCATION_NOT_FOUND = "Location not found"
 
-# Photo compression settings
-PHOTO_COMPRESSION_THRESHOLD = 2 * 1024 * 1024  # 2MB
-PHOTO_MAX_DIMENSION = 1920  # Max width or height
-PHOTO_JPEG_QUALITY = 85
-
 logger = logging.getLogger(__name__)
-
-
-def compress_photo(
-    content: bytes, mime_type: str, filename: str
-) -> tuple[bytes, str, str]:
-    """Compress photo if it exceeds size threshold.
-
-    Converts PNG to JPEG and resizes if needed to reduce file size.
-
-    Args:
-        content: Original image bytes
-        mime_type: Original MIME type
-        filename: Original filename
-
-    Returns:
-        Tuple of (compressed_content, new_mime_type, new_filename)
-    """
-    # Only compress if above threshold
-    if len(content) <= PHOTO_COMPRESSION_THRESHOLD:
-        return content, mime_type, filename
-
-    try:
-        img = Image.open(io.BytesIO(content))
-
-        # Convert RGBA/P to RGB for JPEG (no transparency support)
-        if img.mode in ("RGBA", "P"):
-            img = img.convert("RGB")
-
-        # Resize if larger than max dimension
-        if max(img.size) > PHOTO_MAX_DIMENSION:
-            img.thumbnail((PHOTO_MAX_DIMENSION, PHOTO_MAX_DIMENSION), Image.LANCZOS)
-
-        # Save as JPEG
-        output = io.BytesIO()
-        img.save(output, format="JPEG", quality=PHOTO_JPEG_QUALITY, optimize=True)
-        compressed = output.getvalue()
-
-        # Update filename extension
-        new_filename = filename.rsplit(".", 1)[0] + ".jpg"
-
-        logger.info(
-            "Compressed photo %s: %d bytes -> %d bytes",
-            filename,
-            len(content),
-            len(compressed),
-        )
-
-        return compressed, "image/jpeg", new_filename
-
-    except Exception as e:
-        logger.warning("Failed to compress photo %s: %s", filename, e)
-        return content, mime_type, filename
 
 
 def make_tuple_translation(keys_to_translate):
