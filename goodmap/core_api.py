@@ -1,12 +1,15 @@
 import importlib.metadata
+import io
 import logging
 import uuid
 
 import deprecation
 import numpy
 import pysupercluster
+from PIL import Image
 from flask import Blueprint, jsonify, make_response, request
 from flask_babel import gettext
+from platzky.attachment import AttachmentProtocol
 from platzky.config import LanguagesMapping
 from spectree import Response, SpecTree
 
@@ -42,7 +45,64 @@ ERROR_INVALID_REQUEST_DATA = "Invalid request data"
 ERROR_INVALID_LOCATION_DATA = "Invalid location data"
 ERROR_LOCATION_NOT_FOUND = "Location not found"
 
+# Photo compression settings
+PHOTO_COMPRESSION_THRESHOLD = 2 * 1024 * 1024  # 2MB
+PHOTO_MAX_DIMENSION = 1920  # Max width or height
+PHOTO_JPEG_QUALITY = 85
+
 logger = logging.getLogger(__name__)
+
+
+def compress_photo(
+    content: bytes, mime_type: str, filename: str
+) -> tuple[bytes, str, str]:
+    """Compress photo if it exceeds size threshold.
+
+    Converts PNG to JPEG and resizes if needed to reduce file size.
+
+    Args:
+        content: Original image bytes
+        mime_type: Original MIME type
+        filename: Original filename
+
+    Returns:
+        Tuple of (compressed_content, new_mime_type, new_filename)
+    """
+    # Only compress if above threshold
+    if len(content) <= PHOTO_COMPRESSION_THRESHOLD:
+        return content, mime_type, filename
+
+    try:
+        img = Image.open(io.BytesIO(content))
+
+        # Convert RGBA/P to RGB for JPEG (no transparency support)
+        if img.mode in ("RGBA", "P"):
+            img = img.convert("RGB")
+
+        # Resize if larger than max dimension
+        if max(img.size) > PHOTO_MAX_DIMENSION:
+            img.thumbnail((PHOTO_MAX_DIMENSION, PHOTO_MAX_DIMENSION), Image.LANCZOS)
+
+        # Save as JPEG
+        output = io.BytesIO()
+        img.save(output, format="JPEG", quality=PHOTO_JPEG_QUALITY, optimize=True)
+        compressed = output.getvalue()
+
+        # Update filename extension
+        new_filename = filename.rsplit(".", 1)[0] + ".jpg"
+
+        logger.info(
+            "Compressed photo %s: %d bytes -> %d bytes",
+            filename,
+            len(content),
+            len(compressed),
+        )
+
+        return compressed, "image/jpeg", new_filename
+
+    except Exception as e:
+        logger.warning("Failed to compress photo %s: %s", filename, e)
+        return content, mime_type, filename
 
 
 def make_tuple_translation(keys_to_translate):
@@ -80,6 +140,7 @@ def core_pages(
     notifier_function,
     csrf_generator,
     location_model,
+    photo_attachment_class: type[AttachmentProtocol],
     feature_flags={},
 ) -> Blueprint:
     core_api_blueprint = Blueprint("api", __name__, url_prefix="/api")
@@ -111,6 +172,9 @@ def core_pages(
         import json as json_lib
 
         try:
+            # Initialize photo attachment (only populated for multipart/form-data)
+            photo_attachment = None
+
             # Handle both multipart/form-data (with file uploads) and JSON
             if request.content_type and request.content_type.startswith("multipart/form-data"):
                 # Parse form data dynamically
@@ -146,8 +210,22 @@ def core_pages(
                         # If not JSON, use as-is (simple string values)
                         suggested_location[key] = value
 
-                # TODO: Handle photo file upload from request.files['photo']
-                # For now, we just ignore it as the backend doesn't store photos yet
+                # Extract and validate photo attachment if present
+                photo_file = request.files.get("photo")
+                if photo_file and photo_file.filename:
+                    photo_content = photo_file.read()
+                    photo_mime = photo_file.content_type or "application/octet-stream"
+
+                    # Validate using JPEG-only Attachment class
+                    try:
+                        photo_attachment = photo_attachment_class(
+                            photo_file.filename, photo_content, photo_mime
+                        )
+                    except ValueError as e:
+                        logger.warning("Rejected photo: %s", e)
+                        return make_response(
+                            jsonify({"message": "Only JPEG images are allowed"}), 400
+                        )
             else:
                 # Parse JSON data with security checks (depth/size protection)
                 raw_data = request.get_data(as_text=True)
@@ -186,7 +264,8 @@ def core_pages(
             database.add_suggestion(location.model_dump())
             message = gettext("A new location has been suggested with details")
             notifier_message = f"{message}: {json_lib.dumps(suggested_location, indent=2)}"
-            notifier_function(notifier_message)
+            attachments = [photo_attachment] if photo_attachment else None
+            notifier_function(notifier_message, attachments=attachments)
         except LocationValidationError as e:
             logger.warning(
                 "Location validation failed in suggest endpoint: %s",
