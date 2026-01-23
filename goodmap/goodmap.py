@@ -6,7 +6,7 @@ import os
 from flask import Blueprint, redirect, render_template, session
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from platzky import platzky
-from platzky.attachment import AttachmentProtocol, create_attachment_class
+from platzky.attachment import create_attachment_class
 from platzky.config import AttachmentConfig, languages_dict
 from platzky.models import CmsModule
 
@@ -119,33 +119,10 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
     )
     PhotoAttachment = create_attachment_class(photo_attachment_config)
 
-    # Wrap notifier with detailed logging for debugging
-    original_notify = app.notify
-
-    def debug_notify(message: str, attachments: list[AttachmentProtocol] | None = None):
-        logger.debug("Notifier called with message: %s", message)
-        if attachments:
-            logger.debug(
-                "Attachments: %s",
-                [(a.filename, len(a.content), a.mime_type) for a in attachments],
-            )
-        try:
-            result = original_notify(message, attachments=attachments)
-            logger.debug("Notifier succeeded, result type: %s", type(result).__name__)
-            return result
-        except Exception as e:
-            logger.error(
-                "Notifier failed: %s: %s",
-                type(e).__name__,
-                str(e),
-                exc_info=True,
-            )
-            raise
-
     cp = core_pages(
         app.db,
         languages_dict(config.languages),
-        debug_notify,
+        app.notify,
         generate_csrf,
         location_model,
         photo_attachment_class=PhotoAttachment,
