@@ -164,9 +164,7 @@ def core_pages(
                         )
                     except ValueError as e:
                         logger.warning("Rejected photo: %s", e)
-                        return make_response(
-                            jsonify({"message": str(e)}), 400
-                        )
+                        return make_response(jsonify({"message": str(e)}), 400)
             else:
                 # Parse JSON data with security checks (depth/size protection)
                 raw_data = request.get_data(as_text=True)
