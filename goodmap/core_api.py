@@ -88,17 +88,14 @@ def core_pages(
     core_api_blueprint = Blueprint("api", __name__, url_prefix="/api")
 
     # Build photo error message from config
-    allowed_ext = ", ".join(sorted(photo_attachment_config.allowed_extensions))
+    allowed_ext = ", ".join(sorted(photo_attachment_config.allowed_extensions or []))
     max_size_mb = photo_attachment_config.max_size / (1024 * 1024)
     error_invalid_photo = (
         f"Invalid photo. Allowed formats: {allowed_ext}. Max size: {max_size_mb:.0f}MB."
     )
 
     # Initialize Spectree for API documentation and validation
-    # Use simple naming strategy without hashes for cleaner schema names
-    from typing import Any, Type
-
-    def _clean_model_name(model: Type[Any]) -> str:
+    def _clean_model_name(model: type) -> str:
         return model.__name__
 
     spec = SpecTree(
@@ -176,9 +173,7 @@ def core_pages(
                             e,
                             extra={"photo_filename": photo_file.filename},
                         )
-                        return make_response(
-                            jsonify({"message": error_invalid_photo}), 400
-                        )
+                        return make_response(jsonify({"message": error_invalid_photo}), 400)
             else:
                 # Parse JSON data with security checks (depth/size protection)
                 raw_data = request.get_data(as_text=True)
