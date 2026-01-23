@@ -61,17 +61,6 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
     Returns:
         platzky.Engine: Fully configured Flask application with Goodmap features
     """
-    # Configure debug logging (FLASK_DEBUG is set by `flask --debug` before factory runs)
-    # Must be done before platzky.create_app_from_config to capture plugin init logs
-    if os.environ.get("FLASK_DEBUG") == "1":
-        handler = logging.StreamHandler()
-        handler.setLevel(logging.DEBUG)
-        handler.setFormatter(logging.Formatter("%(name)s - %(levelname)s - %(message)s"))
-        for logger_name in ("goodmap", "platzky"):
-            logging.getLogger(logger_name).setLevel(logging.DEBUG)
-            logging.getLogger(logger_name).addHandler(handler)
-        logger.info("Debug logging enabled")
-
     directory = os.path.dirname(os.path.realpath(__file__))
 
     locale_dir = os.path.join(directory, "locale")

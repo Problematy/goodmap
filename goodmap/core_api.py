@@ -208,6 +208,9 @@ def core_pages(
             attachments = [photo_attachment] if photo_attachment else None
             notifier_function(notifier_message, attachments=attachments)
         except LocationValidationError as e:
+            # NOTE: validation_errors includes input values. Currently safe (no PII in
+            # location model), but if PII fields are added, consider stripping 'input'
+            # from errors before logging: [{k: v for k, v in e.items() if k != 'input'} ...]
             logger.warning(
                 "Location validation failed in suggest endpoint: %s",
                 e.validation_errors,
