@@ -8,7 +8,7 @@ import pysupercluster
 from flask import Blueprint, jsonify, make_response, request
 from flask_babel import gettext
 from platzky.attachment import AttachmentProtocol
-from platzky.config import LanguagesMapping
+from platzky.config import AttachmentConfig, LanguagesMapping
 from spectree import Response, SpecTree
 
 from goodmap.api_models import (
@@ -82,9 +82,17 @@ def core_pages(
     csrf_generator,
     location_model,
     photo_attachment_class: type[AttachmentProtocol],
+    photo_attachment_config: AttachmentConfig,
     feature_flags={},
 ) -> Blueprint:
     core_api_blueprint = Blueprint("api", __name__, url_prefix="/api")
+
+    # Build photo error message from config
+    allowed_ext = ", ".join(sorted(photo_attachment_config.allowed_extensions))
+    max_size_mb = photo_attachment_config.max_size / (1024 * 1024)
+    error_invalid_photo = (
+        f"Invalid photo. Allowed formats: {allowed_ext}. Max size: {max_size_mb:.0f}MB."
+    )
 
     # Initialize Spectree for API documentation and validation
     # Use simple naming strategy without hashes for cleaner schema names
@@ -163,8 +171,14 @@ def core_pages(
                             photo_file.filename, photo_content, photo_mime
                         )
                     except ValueError as e:
-                        logger.warning("Rejected photo: %s", e)
-                        return make_response(jsonify({"message": str(e)}), 400)
+                        logger.warning(
+                            "Rejected photo: %s",
+                            e,
+                            extra={"photo_filename": photo_file.filename},
+                        )
+                        return make_response(
+                            jsonify({"message": error_invalid_photo}), 400
+                        )
             else:
                 # Parse JSON data with security checks (depth/size protection)
                 raw_data = request.get_data(as_text=True)

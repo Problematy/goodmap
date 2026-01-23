@@ -101,10 +101,13 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
 
     CSRFProtect(app)
 
-    # Create JPEG-only Attachment class for photo uploads
+    # Create Attachment class for photo uploads
+    # JPEG-only: universal browser/device support, good compression for location photos,
+    # no transparency needed. PNG/WebP can be added if user demand warrants it.
     photo_attachment_config = AttachmentConfig(
         allowed_mime_types=frozenset({"image/jpeg"}),
         allowed_extensions=frozenset({"jpg", "jpeg"}),
+        max_size=5 * 1024 * 1024,  # 5MB - reasonable for location photos
     )
     PhotoAttachment = create_attachment_class(photo_attachment_config)
 
@@ -115,6 +118,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         generate_csrf,
         location_model,
         photo_attachment_class=PhotoAttachment,
+        photo_attachment_config=photo_attachment_config,
         feature_flags=config.feature_flags,
     )
     app.register_blueprint(cp)
