@@ -1,3 +1,10 @@
+## [1.3.3](https://github.com/Problematy/goodmap-frontend/compare/1.3.2...1.3.3) (2026-01-24)
+
+
+### Bug Fixes
+
+* enhance geolocation request handling ([#145](https://github.com/Problematy/goodmap-frontend/issues/145)) ([8d7699a](https://github.com/Problematy/goodmap-frontend/commit/8d7699a942e081f7d68db5a49a103e30b163382c))
+
 ## [1.3.2](https://github.com/Problematy/goodmap-frontend/compare/1.3.1...1.3.2) (2026-01-21)
 
 
