@@ -1,0 +1,56 @@
+# Polish translations for E2E tests.
+# This file contains test-specific translations for the "Bridges in Wroclaw" test data.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: goodmap-e2e-tests\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-01-01 00:00+0000\n"
+"PO-Revision-Date: 2024-01-01 00:00+0000\n"
+"Language: pl\n"
+"Language-Team: pl <pl@example.com>\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+# Category names
+msgid "accessible_by"
+msgstr "dostępny dla"
+
+msgid "type_of_place"
+msgstr "typ miejsca"
+
+msgid "remark"
+msgstr "uwaga"
+
+# Category values - accessible_by
+msgid "bikes"
+msgstr "rowery"
+
+msgid "cars"
+msgstr "samochody"
+
+msgid "pedestrians"
+msgstr "piesi"
+
+# Category values - type_of_place
+msgid "big bridge"
+msgstr "duży most"
+
+msgid "small bridge"
+msgstr "mały most"
+
+# Help texts - category headers
+msgid "categories_help_accessible_by"
+msgstr "Kto może korzystać z tego mostu"
+
+# Help texts - category options
+msgid "categories_options_help_small bridge"
+msgstr "Mniejszy most dla pieszych lub rowerzystów"
+
+msgid "categories_options_help_cars"
+msgstr "Most umożliwia ruch samochodowy"
+
+msgid "categories_options_help_pedestrians"
+msgstr "Most umożliwia przejście pieszych"

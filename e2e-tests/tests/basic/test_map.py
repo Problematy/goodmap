@@ -25,9 +25,9 @@ class TestMap:
         checkboxes = page.get_by_role("checkbox")
         expect(checkboxes).to_have_count(5)
 
-        # Check that both category groups are present
-        expect(page.get_by_text("accessible_by")).to_be_visible()
-        expect(page.get_by_text("type_of_place")).to_be_visible()
+        # Check that both category groups are present (using translated names)
+        expect(page.get_by_text("accessible by")).to_be_visible()
+        expect(page.get_by_text("type of place")).to_be_visible()
 
     def test_should_not_have_scrollbars(self, page: Page):
         """Verify the page has no horizontal or vertical scrollbars"""

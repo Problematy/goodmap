@@ -18,6 +18,8 @@ pytest-run:
 
 setup-test-data:
 	cp e2e_test_data_template.json e2e_test_data.json
+	sed 's|__E2E_TESTS_DIR__|$(CURDIR)|g' e2e_test_config.template.yml > e2e_test_config.yml
+	$(MAKE) compile-translations
 
 e2e-tests:
 	$(MAKE) pytest-run PYTEST_SPEC="tests/basic"
@@ -30,4 +32,7 @@ e2e-stress-tests:
 
 run-e2e-env:
 	poetry --project '$(GOODMAP_PATH)' run flask --app "goodmap.goodmap:create_app(config_path='$(CONFIG_PATH)')" --debug run
+
+compile-translations:
+	poetry run pybabel compile -d translations
 

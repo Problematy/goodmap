@@ -16,6 +16,7 @@ playwright = "^1.49.1"
 pytest-xdist = "^3.6.1"  # For parallel test execution
 ruff = "^0.8.4"  # Linting and formatting
 black = "^24.10.0"  # Code formatting
+babel = "^2.17.0"  # For compiling translation files
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

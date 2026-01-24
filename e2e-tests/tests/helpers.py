@@ -13,12 +13,13 @@ from typing import Any
 from playwright.sync_api import ElementHandle, Page, expect
 
 # Test data for Zwierzyniecka location
+# Note: Category names are translated (e.g., "type_of_place" -> "type of place")
 EXPECTED_PLACE_ZWIERZYNIECKA = {
     "title": "Zwierzyniecka",
     "subtitle": "small bridge",
     "categories": [
-        ["type_of_place", "small bridge"],
-        ["accessible_by", "bikes, pedestrians"],
+        ["type of place", "small bridge"],
+        ["accessible by", "bikes, pedestrians"],
     ],
 }
 
@@ -84,7 +85,7 @@ def verify_popup_content(page: Page, expected_content: dict[str, Any]) -> None:
         verify_popup_content(page, {
             "title": "Bridge Name",
             "subtitle": "small bridge",
-            "categories": [["type_of_place", "small bridge"]],
+            "categories": [["type of place", "small bridge"]],
             "CTA": {"displayValue": "View on Map", "value": "https://..."}
         })
     """

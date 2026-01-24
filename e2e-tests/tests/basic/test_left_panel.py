@@ -344,14 +344,15 @@ class TestLeftPanelFilterHelpers:
         page.wait_for_selector("#filter-form", timeout=10000)
 
         # Find and hover over the help icon for small bridge
-        help_icon = page.get_by_label("Help: categories_options_help_small bridge")
+        # Note: The label uses translated text from categories_options_help_small bridge
+        help_icon = page.get_by_label("Help: A smaller pedestrian or bike bridge")
         expect(help_icon).to_be_visible()
         help_icon.hover()
 
-        # Verify tooltip appears
+        # Verify tooltip appears with translated help text
         tooltip = page.locator('[role="tooltip"]')
         expect(tooltip).to_be_visible()
-        expect(tooltip).to_contain_text("categories_options_help_small bridge")
+        expect(tooltip).to_contain_text("A smaller pedestrian or bike bridge")
 
 
 class TestLeftPanelScrollbar:

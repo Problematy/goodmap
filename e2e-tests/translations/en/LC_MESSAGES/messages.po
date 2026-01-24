@@ -1,0 +1,56 @@
+# English translations for E2E tests.
+# This file contains test-specific translations for the "Bridges in Wroclaw" test data.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: goodmap-e2e-tests\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-01-01 00:00+0000\n"
+"PO-Revision-Date: 2024-01-01 00:00+0000\n"
+"Language: en\n"
+"Language-Team: en <en@example.com>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+# Category names
+msgid "accessible_by"
+msgstr "accessible by"
+
+msgid "type_of_place"
+msgstr "type of place"
+
+msgid "remark"
+msgstr "remark"
+
+# Category values - accessible_by
+msgid "bikes"
+msgstr "bikes"
+
+msgid "cars"
+msgstr "cars"
+
+msgid "pedestrians"
+msgstr "pedestrians"
+
+# Category values - type_of_place
+msgid "big bridge"
+msgstr "big bridge"
+
+msgid "small bridge"
+msgstr "small bridge"
+
+# Help texts - category headers
+msgid "categories_help_accessible_by"
+msgstr "Who can use this bridge"
+
+# Help texts - category options
+msgid "categories_options_help_small bridge"
+msgstr "A smaller pedestrian or bike bridge"
+
+msgid "categories_options_help_cars"
+msgstr "Bridge allows car traffic"
+
+msgid "categories_options_help_pedestrians"
+msgstr "Bridge allows pedestrian access"
