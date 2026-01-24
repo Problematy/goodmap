@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.4.0 (2026-01-24)
+
+### Features
+
+- Implement photo uploads with file validation
+  ([#324](https://github.com/Problematy/goodmap/pull/324),
+  [`63c8fe7`](https://github.com/Problematy/goodmap/commit/63c8fe751768c610a36a131890d646df6d904cca))
+
+
 ## v1.3.1 (2026-01-20)
 
 ### Bug Fixes
