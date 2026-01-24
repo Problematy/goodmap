@@ -7,7 +7,8 @@ import numpy
 import pysupercluster
 from flask import Blueprint, jsonify, make_response, request
 from flask_babel import gettext
-from platzky.config import LanguagesMapping
+from platzky.attachment import AttachmentProtocol
+from platzky.config import AttachmentConfig, LanguagesMapping
 from spectree import Response, SpecTree
 
 from goodmap.api_models import (
@@ -80,15 +81,21 @@ def core_pages(
     notifier_function,
     csrf_generator,
     location_model,
+    photo_attachment_class: type[AttachmentProtocol],
+    photo_attachment_config: AttachmentConfig,
     feature_flags={},
 ) -> Blueprint:
     core_api_blueprint = Blueprint("api", __name__, url_prefix="/api")
 
-    # Initialize Spectree for API documentation and validation
-    # Use simple naming strategy without hashes for cleaner schema names
-    from typing import Any, Type
+    # Build photo error message from config
+    allowed_ext = ", ".join(sorted(photo_attachment_config.allowed_extensions or []))
+    max_size_mb = photo_attachment_config.max_size / (1024 * 1024)
+    error_invalid_photo = (
+        f"Invalid photo. Allowed formats: {allowed_ext}. Max size: {max_size_mb:.0f}MB."
+    )
 
-    def _clean_model_name(model: Type[Any]) -> str:
+    # Initialize Spectree for API documentation and validation
+    def _clean_model_name(model: type) -> str:
         return model.__name__
 
     spec = SpecTree(
@@ -111,6 +118,9 @@ def core_pages(
         import json as json_lib
 
         try:
+            # Initialize photo attachment (only populated for multipart/form-data)
+            photo_attachment = None
+
             # Handle both multipart/form-data (with file uploads) and JSON
             if request.content_type and request.content_type.startswith("multipart/form-data"):
                 # Parse form data dynamically
@@ -146,8 +156,24 @@ def core_pages(
                         # If not JSON, use as-is (simple string values)
                         suggested_location[key] = value
 
-                # TODO: Handle photo file upload from request.files['photo']
-                # For now, we just ignore it as the backend doesn't store photos yet
+                # Extract and validate photo attachment if present
+                photo_file = request.files.get("photo")
+                if photo_file and photo_file.filename:
+                    photo_content = photo_file.read()
+                    photo_mime = photo_file.content_type or "application/octet-stream"
+
+                    # Validate using configured Attachment class
+                    try:
+                        photo_attachment = photo_attachment_class(
+                            photo_file.filename, photo_content, photo_mime
+                        )
+                    except ValueError as e:
+                        logger.warning(
+                            "Rejected photo: %s",
+                            e,
+                            extra={"photo_filename": photo_file.filename},
+                        )
+                        return make_response(jsonify({"message": error_invalid_photo}), 400)
             else:
                 # Parse JSON data with security checks (depth/size protection)
                 raw_data = request.get_data(as_text=True)
@@ -186,10 +212,18 @@ def core_pages(
             database.add_suggestion(location.model_dump())
             message = gettext("A new location has been suggested with details")
             notifier_message = f"{message}: {json_lib.dumps(suggested_location, indent=2)}"
-            notifier_function(notifier_message)
+            attachments = [photo_attachment] if photo_attachment else None
+            notifier_function(notifier_message, attachments=attachments)
         except LocationValidationError as e:
+            # NOTE: validation_errors includes input values from the location model fields:
+            # - Core fields: position (lat/long), uuid, remark
+            # - Dynamic fields: categories and obligatory_fields configured per deployment
+            # These are geographic/categorical data, NOT PII (no email, phone, names of people).
+            # Safe to log for debugging. If PII fields are ever added to the location model,
+            # strip 'input' from validation_errors before logging.
             logger.warning(
-                "Location validation failed in suggest endpoint",
+                "Location validation failed in suggest endpoint: %s",
+                e.validation_errors,
                 extra={"errors": e.validation_errors},
             )
             return make_response(jsonify({"message": ERROR_INVALID_LOCATION_DATA}), 400)

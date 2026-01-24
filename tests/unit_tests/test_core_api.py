@@ -1,4 +1,5 @@
 import json
+from io import BytesIO
 from unittest import mock
 
 import pytest
@@ -348,6 +349,130 @@ def test_suggest_new_location_with_multipart_form_data(test_app):
         content_type="multipart/form-data",
     )
     assert response.status_code == 200
+
+
+# --- Photo upload tests ---
+
+# JPEG magic bytes header (enough for content-type detection)
+JPEG_HEADER = b"\xff\xd8\xff\xe0\x00\x10JFIF\x00"
+FAKE_JPEG_CONTENT = JPEG_HEADER + b"\x00" * 100  # Minimal valid-looking JPEG
+
+
+def test_suggest_location_with_valid_jpeg_photo(test_app):
+    """Valid JPEG photo upload should succeed."""
+    with mock.patch("platzky.attachment.core.validate_content_mime_type", return_value=None):
+        response = test_app.post(
+            "/api/suggest-new-point",
+            data={
+                "position": json.dumps([50, 50]),
+                "name": "Test Location",
+                "type_of_place": "test-place",
+                "test_category": json.dumps(["test"]),
+                "photo": (BytesIO(FAKE_JPEG_CONTENT), "photo.jpg"),
+            },
+            content_type="multipart/form-data",
+        )
+    assert response.status_code == 200
+    assert response.json == {"message": "Location suggested"}
+
+
+def test_suggest_location_rejects_png_photo(test_app):
+    """PNG photos should be rejected (only JPEG allowed)."""
+    response = test_app.post(
+        "/api/suggest-new-point",
+        data={
+            "position": json.dumps([50, 50]),
+            "name": "Test Location",
+            "type_of_place": "test-place",
+            "test_category": json.dumps(["test"]),
+            "photo": (BytesIO(b"fake png content"), "photo.png"),
+        },
+        content_type="multipart/form-data",
+    )
+    assert response.status_code == 400
+    assert "Invalid photo" in response.json["message"]
+    assert "jpeg" in response.json["message"].lower()
+
+
+def test_suggest_location_rejects_wrong_extension(test_app):
+    """File with disallowed extension should be rejected."""
+    response = test_app.post(
+        "/api/suggest-new-point",
+        data={
+            "position": json.dumps([50, 50]),
+            "name": "Test Location",
+            "type_of_place": "test-place",
+            "test_category": json.dumps(["test"]),
+            "photo": (BytesIO(FAKE_JPEG_CONTENT), "photo.gif"),
+        },
+        content_type="multipart/form-data",
+    )
+    assert response.status_code == 400
+    assert "Invalid photo" in response.json["message"]
+
+
+def test_suggest_location_rejects_oversized_photo(test_app):
+    """Photos over 5MB should be rejected."""
+    oversized_content = JPEG_HEADER + (b"\x00" * (5 * 1024 * 1024 + 1))
+
+    response = test_app.post(
+        "/api/suggest-new-point",
+        data={
+            "position": json.dumps([50, 50]),
+            "name": "Test Location",
+            "type_of_place": "test-place",
+            "test_category": json.dumps(["test"]),
+            "photo": (BytesIO(oversized_content), "photo.jpg"),
+        },
+        content_type="multipart/form-data",
+    )
+    assert response.status_code == 400
+    assert "Invalid photo" in response.json["message"]
+    assert "5MB" in response.json["message"]
+
+
+def test_suggest_location_rejects_fake_jpeg(test_app):
+    """Text file claiming to be JPEG should be rejected by content validation."""
+    fake_jpeg = b"This is not a JPEG file, just plain text"
+
+    response = test_app.post(
+        "/api/suggest-new-point",
+        data={
+            "position": json.dumps([50, 50]),
+            "name": "Test Location",
+            "type_of_place": "test-place",
+            "test_category": json.dumps(["test"]),
+            "photo": (BytesIO(fake_jpeg), "photo.jpg"),
+        },
+        content_type="multipart/form-data",
+    )
+    assert response.status_code == 400
+    assert "Invalid photo" in response.json["message"]
+
+
+def test_suggest_location_with_photo_stores_suggestion(test_app):
+    """Verify that location with photo is stored in database."""
+    db = test_app.application.db
+    initial_count = len(db.get_suggestions({}))
+
+    with mock.patch("platzky.attachment.core.validate_content_mime_type", return_value=None):
+        response = test_app.post(
+            "/api/suggest-new-point",
+            data={
+                "position": json.dumps([50, 50]),
+                "name": "Test Location With Photo",
+                "type_of_place": "test-place",
+                "test_category": json.dumps(["test"]),
+                "photo": (BytesIO(FAKE_JPEG_CONTENT), "photo.jpg"),
+            },
+            content_type="multipart/form-data",
+        )
+    assert response.status_code == 200
+
+    # Verify suggestion was stored
+    suggestions = db.get_suggestions({})
+    assert len(suggestions) == initial_count + 1
+    assert suggestions[-1]["name"] == "Test Location With Photo"
 
 
 @pytest.mark.parametrize(

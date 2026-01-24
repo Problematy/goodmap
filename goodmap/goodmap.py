@@ -1,11 +1,13 @@
 """Goodmap engine with location management and admin interface."""
 
+import logging
 import os
 
 from flask import Blueprint, redirect, render_template, session
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from platzky import platzky
-from platzky.config import languages_dict
+from platzky.attachment import create_attachment_class
+from platzky.config import AttachmentConfig, languages_dict
 from platzky.models import CmsModule
 
 from goodmap.admin_api import admin_pages
@@ -16,6 +18,8 @@ from goodmap.db import (
     extend_db_with_goodmap_queries,
     get_location_obligatory_fields,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def create_app(config_path: str) -> platzky.Engine:
@@ -97,12 +101,24 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
 
     CSRFProtect(app)
 
+    # Create Attachment class for photo uploads
+    # JPEG-only: universal browser/device support, good compression for location photos,
+    # no transparency needed. PNG/WebP can be added if user demand warrants it.
+    photo_attachment_config = AttachmentConfig(
+        allowed_mime_types=frozenset({"image/jpeg"}),
+        allowed_extensions=frozenset({"jpg", "jpeg"}),
+        max_size=5 * 1024 * 1024,  # 5MB - reasonable for location photos
+    )
+    PhotoAttachment = create_attachment_class(photo_attachment_config)
+
     cp = core_pages(
         app.db,
         languages_dict(config.languages),
         app.notify,
         generate_csrf,
         location_model,
+        photo_attachment_class=PhotoAttachment,
+        photo_attachment_config=photo_attachment_config,
         feature_flags=config.feature_flags,
     )
     app.register_blueprint(cp)

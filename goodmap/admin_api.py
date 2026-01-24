@@ -34,7 +34,9 @@ def _clean_model_name(model: Type[Any]) -> str:
 def _handle_location_validation_error(e: LocationValidationError):
     """Handle LocationValidationError and return appropriate response."""
     logger.warning(
-        "Location validation failed",
+        "Location validation failed - uuid: %s, errors: %s",
+        e.uuid,
+        e.validation_errors,
         extra={"uuid": e.uuid, "errors": e.validation_errors},
     )
     return make_response(jsonify({"message": ERROR_INVALID_LOCATION_DATA}), 400)
@@ -126,7 +128,9 @@ def _update_suggestion_handler(database, suggestion_id):
         database.update_suggestion(suggestion_id, status)
     except LocationValidationError as e:
         logger.warning(
-            "Location validation failed in suggestion",
+            "Location validation failed in suggestion - uuid: %s, errors: %s",
+            e.uuid,
+            e.validation_errors,
             extra={"uuid": e.uuid, "errors": e.validation_errors},
         )
         return make_response(jsonify({"message": ERROR_INVALID_LOCATION_DATA}), 400)

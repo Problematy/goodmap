@@ -1965,14 +1965,14 @@ type = ["mypy (>=1.14.1)"]
 
 [[package]]
 name = "platzky"
-version = "1.2.2"
+version = "1.3.0"
 description = "Not only blog engine"
 optional = false
 python-versions = "<4.0,>=3.10"
 groups = ["main"]
 files = [
-    {file = "platzky-1.2.2-py3-none-any.whl", hash = "sha256:b8d4ab25165ee9a0cdeb5682f5d54e0c44e71ab79ebc3ad4d90077db750bdadb"},
-    {file = "platzky-1.2.2.tar.gz", hash = "sha256:93d9e79d844705cd9634f66d863a2f874fe506319103485c9fc46adf6faeba13"},
+    {file = "platzky-1.3.0-py3-none-any.whl", hash = "sha256:28c96f2f6724d5d2c069c0bbbc1a33baa43b8ac1cfd4c588980e6c3b1188279a"},
+    {file = "platzky-1.3.0.tar.gz", hash = "sha256:fb0b01edf822f58e6587e4d4301860a8bb88b888963af45c28efa70edd9c0eb7"},
 ]
 
 [package.dependencies]
@@ -1985,6 +1985,7 @@ Flask-WTF = ">=1.2.1,<2.0.0"
 google-cloud-storage = ">=2.5.0,<3.0.0"
 gql = ">=3.4.0,<4.0.0"
 humanize = ">=4.9.0,<5.0.0"
+puremagic = ">=1.30,<2.0"
 pydantic = ">=2.7.1,<3.0.0"
 pygithub = ">=2.6.1,<3.0.0"
 pymongo = ">=4.7.0,<5.0.0"
@@ -2181,6 +2182,18 @@ files = [
     {file = "protobuf-6.32.1-cp39-cp39-win_amd64.whl", hash = "sha256:d0975d0b2f3e6957111aa3935d08a0eb7e006b1505d825f862a1fffc8348e122"},
     {file = "protobuf-6.32.1-py3-none-any.whl", hash = "sha256:2601b779fc7d32a866c6b4404f9d42a3f67c5b9f3f15b4db3cccabe06b95c346"},
     {file = "protobuf-6.32.1.tar.gz", hash = "sha256:ee2469e4a021474ab9baafea6cd070e5bf27c7d29433504ddea1a4ee5850f68d"},
+]
+
+[[package]]
+name = "puremagic"
+version = "1.30"
+description = "Pure python implementation of magic file detection"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "puremagic-1.30-py3-none-any.whl", hash = "sha256:5eeeb2dd86f335b9cfe8e205346612197af3500c6872dffebf26929f56e9d3c1"},
+    {file = "puremagic-1.30.tar.gz", hash = "sha256:f9ff7ac157d54e9cf3bff1addfd97233548e75e685282d84ae11e7ffee1614c9"},
 ]
 
 [[package]]
@@ -3809,4 +3822,4 @@ docs = ["myst-parser", "sphinx", "sphinx-rtd-theme", "tomli"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "0ea4ef6c82fe614c90eff4d4b91f403e94c7bdf403c97ff0aba7c52431825dc5"
+content-hash = "f6c41f92f7db5aff826b76d4e7dc19e2c8a50138f2942b0ab726bde062168a75"
