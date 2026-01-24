@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
-import CloseIcon from '@mui/icons-material/Close';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
-import { IconButton } from '@mui/material';
 import { useLocation } from '../context/LocationContext';
 
 const BANNER_DISMISSED_KEY = 'goodmap_location_banner_dismissed';
@@ -40,51 +38,61 @@ export const LocationPermissionBanner = () => {
 
     return (
         <BannerContainer>
-            <BannerContent>
-                <LocationOnIcon sx={{ fontSize: 18, color: '#1976d2', flexShrink: 0 }} />
-                <BannerText>{t('locationBannerMessage')}</BannerText>
-            </BannerContent>
-            <EnableButton type="button" onClick={handleEnableLocation}>
-                {t('locationBannerEnable')}
-            </EnableButton>
-            <IconButton
-                size="small"
-                onClick={handleDismiss}
-                aria-label={t('locationBannerDismiss')}
-                sx={{ color: '#666', padding: '2px', marginLeft: '-4px' }}
-            >
-                <CloseIcon sx={{ fontSize: 16 }} />
-            </IconButton>
+            <LocationOnIcon sx={{ fontSize: 20, color: '#1976d2', flexShrink: 0 }} />
+            <BannerText>{t('locationBannerMessage')}</BannerText>
+            <ButtonGroup>
+                <EnableButton type="button" onClick={handleEnableLocation}>
+                    {t('locationBannerEnable')}
+                </EnableButton>
+                <DismissButton type="button" onClick={handleDismiss}>
+                    {t('locationBannerDismiss')}
+                </DismissButton>
+            </ButtonGroup>
         </BannerContainer>
     );
 };
 
 const BannerContainer = styled.div`
     position: absolute;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%);
+    /* Positioned above the zoom controls and other map buttons */
+    bottom: 90px;
+    left: 20px;
+    right: 20px;
     z-index: 1000;
     display: flex;
     align-items: center;
-    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
     background-color: rgba(255, 255, 255, 0.95);
     color: #333;
-    padding: 10px 16px;
-    border-radius: 24px;
+    padding: 12px 16px;
+    border-radius: 16px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
     font-size: 13px;
     backdrop-filter: blur(8px);
-`;
+    max-width: 500px;
+    margin: 0 auto;
 
-const BannerContent = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    @media (max-width: 600px) {
+        bottom: 80px;
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
+    }
 `;
 
 const BannerText = styled.span`
-    white-space: nowrap;
+    flex: 1;
+    line-height: 1.4;
+    min-width: 0;
+`;
+
+const ButtonGroup = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
 `;
 
 const EnableButton = styled.button`
@@ -100,5 +108,19 @@ const EnableButton = styled.button`
 
     &:hover {
         background: #1565c0;
+    }
+`;
+
+const DismissButton = styled.button`
+    background: none;
+    border: none;
+    color: #666;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: color 0.2s;
+
+    &:hover {
+        color: #333;
     }
 `;

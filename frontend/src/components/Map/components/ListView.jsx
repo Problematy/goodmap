@@ -17,11 +17,11 @@ import { getLocationAwareStyles } from '../../../styles/buttonStyle';
  */
 const ListView = ({ onClick }) => {
     const { t } = useTranslation();
-    const { locationGranted, requestGeolocation } = useLocation();
+    const { locationGranted, requestLocationWithFeedback } = useLocation();
 
     const handleOnClick = e => {
         e.stopPropagation();
-        requestGeolocation(onClick);
+        requestLocationWithFeedback(onClick);
     };
 
     return (

@@ -17,10 +17,12 @@ export const mockGeolocationSuccess = (lat = 0, lng = 0) => {
 
 /**
  * Mocks geolocation with error callback
+ * @param {number} code - Error code (1=PERMISSION_DENIED, 2=POSITION_UNAVAILABLE, 3=TIMEOUT)
+ * @param {string} message - Error message
  */
-export const mockGeolocationError = () => {
+export const mockGeolocationError = (code = 1, message = 'User denied geolocation') => {
     globalThis.navigator.geolocation = {
-        getCurrentPosition: jest.fn((success, error) => error()),
+        getCurrentPosition: jest.fn((success, error) => error({ code, message })),
     };
 };
 

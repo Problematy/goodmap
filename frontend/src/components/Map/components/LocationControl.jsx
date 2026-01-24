@@ -37,7 +37,7 @@ const createLocationIcon = () => {
  */
 const LocationControl = () => {
     const { t } = useTranslation();
-    const { locationGranted, userPosition, requestGeolocation } = useLocation();
+    const { locationGranted, userPosition, requestLocationWithFeedback } = useLocation();
     const map = useMap();
 
     const flyToLocation = (location, mapInstance) => {
@@ -46,11 +46,7 @@ const LocationControl = () => {
     };
 
     const handleFlyToLocationClick = () => {
-        if (userPosition) {
-            flyToLocation(userPosition, map);
-        } else {
-            requestGeolocation(position => flyToLocation(position, map));
-        }
+        requestLocationWithFeedback(position => flyToLocation(position, map));
     };
 
     const { lat, lng } = userPosition || {};

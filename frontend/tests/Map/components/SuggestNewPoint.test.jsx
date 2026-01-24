@@ -82,6 +82,7 @@ const mockUploadingFileWithSizeInMB = sizeInMB => {
 
 describe('SuggestNewPointButton', () => {
     it('shows disabled state when geolocation is not supported', async () => {
+        const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
         mockGeolocationUnsupported();
 
         renderWithProvider(<SuggestNewPointButton />);
@@ -98,9 +99,12 @@ describe('SuggestNewPointButton', () => {
         // Clicking should not open dialog when geolocation is unsupported
         clickSuggestButton();
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+        consoleErrorSpy.mockRestore();
     });
 
     it('shows disabled state when location services are not enabled', async () => {
+        const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
         mockGeolocationError();
 
         renderWithProvider(<SuggestNewPointButton />);
@@ -117,6 +121,28 @@ describe('SuggestNewPointButton', () => {
         // Clicking should not open dialog when geolocation fails
         clickSuggestButton();
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+        consoleErrorSpy.mockRestore();
+    });
+
+    it('shows disabled tooltip and does not open dialog when geolocation is denied', async () => {
+        mockGeolocationError();
+
+        renderWithProvider(<SuggestNewPointButton />);
+
+        // Button should show disabled state via tooltip (aria-label)
+        const button = screen.getByTestId('suggest-new-point');
+        expect(button).toHaveAttribute(
+            'aria-label',
+            'Location services are disabled. Please enable them to use this feature.',
+        );
+
+        clickSuggestButton();
+
+        // Dialog should not open when geolocation is denied
+        await waitFor(() => {
+            expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        });
     });
 
     it('opens new point suggestion box when location services are enabled', async () => {

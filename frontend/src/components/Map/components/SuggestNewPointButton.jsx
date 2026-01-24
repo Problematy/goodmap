@@ -41,7 +41,7 @@ import { httpService } from '../../../services/http/httpService';
  */
 export const SuggestNewPointButton = () => {
     const { t } = useTranslation();
-    const { locationGranted, userPosition, requestGeolocation } = useLocation();
+    const { locationGranted, userPosition, requestLocationWithFeedback } = useLocation();
     const [showNewPointBox, setShowNewPointSuggestionBox] = useState(false);
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
@@ -113,14 +113,11 @@ export const SuggestNewPointButton = () => {
     const [formFields, setFormFields] = useState(initializeFormFields);
 
     const handleNewPointButton = () => {
-        requestGeolocation(() => setShowNewPointSuggestionBox(true));
+        requestLocationWithFeedback(() => setShowNewPointSuggestionBox(true));
     };
 
     const handleLocateMe = () => {
-        requestGeolocation(null, () => {
-            setSnackbarMessage(t('locationServicesDisabled'));
-            setSnackbarOpen(true);
-        });
+        requestLocationWithFeedback();
     };
 
     const handleCloseNewPointBox = () => {
