@@ -24,6 +24,7 @@ from goodmap.clustering import (
     match_clusters_uuids,
 )
 from goodmap.exceptions import LocationValidationError
+from goodmap.feature_flags import CategoriesHelp
 from goodmap.formatter import prepare_pin
 from goodmap.json_security import (
     MAX_JSON_DEPTH_LOCATION,
@@ -383,7 +384,7 @@ def core_pages(
         raw_categories = database.get_categories()
         categories = make_tuple_translation(raw_categories)
 
-        if not feature_flags.get("CATEGORIES_HELP", False):
+        if CategoriesHelp not in feature_flags:
             return jsonify(categories)
         else:
             category_data = database.get_category_data()
@@ -415,7 +416,7 @@ def core_pages(
                 "options": make_tuple_translation(options),
             }
 
-            if feature_flags.get("CATEGORIES_HELP", False):
+            if CategoriesHelp in feature_flags:
                 option_help_list = categories_options_help.get(key, [])
                 proper_options_help = []
                 for option in option_help_list:
@@ -428,7 +429,7 @@ def core_pages(
 
         response = {"categories": result}
 
-        if feature_flags.get("CATEGORIES_HELP", False):
+        if CategoriesHelp in feature_flags:
             categories_help = categories_data.get("categories_help", [])
             proper_categories_help = []
             for option in categories_help:
@@ -466,7 +467,7 @@ def core_pages(
                 proper_categories_options_help.append(
                     {option: gettext(f"categories_options_help_{option}")}
                 )
-        if not feature_flags.get("CATEGORIES_HELP", False):
+        if CategoriesHelp not in feature_flags:
             return jsonify(local_data)
         else:
             return jsonify(

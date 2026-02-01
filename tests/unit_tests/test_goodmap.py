@@ -35,27 +35,6 @@ def test_create_app_delegation(mock_parse_yaml, mock_create_app_from_config):
     mock_create_app_from_config.assert_called_once_with(mock_parse_yaml.return_value)
 
 
-def test_is_feature_enabled():
-    # Test with feature flags set to True
-    config_with_flag = GoodmapConfig(
-        APP_NAME="test",
-        SECRET_KEY="test",
-        DB=JsonDbConfig(DATA={}, TYPE="json"),
-        FEATURE_FLAGS={"flag": True, "other": False},
-    )
-    assert goodmap.is_feature_enabled(config_with_flag, "flag") is True
-    assert goodmap.is_feature_enabled(config_with_flag, "other") is False
-
-    # Test with feature flags set to empty dict
-    config_no_flag = GoodmapConfig(
-        APP_NAME="test",
-        SECRET_KEY="test",
-        DB=JsonDbConfig(DATA={}, TYPE="json"),
-        FEATURE_FLAGS={},
-    )
-    assert goodmap.is_feature_enabled(config_no_flag, "flag") is False
-
-
 @mock.patch("goodmap.goodmap.get_location_obligatory_fields")
 def test_use_lazy_loading_branch(mock_get_location_obligatory_fields):
     config = GoodmapConfig(
