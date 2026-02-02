@@ -1977,14 +1977,14 @@ type = ["mypy (>=1.14.1)"]
 
 [[package]]
 name = "platzky"
-version = "1.3.1"
+version = "1.4.1"
 description = "Not only blog engine"
 optional = false
 python-versions = "<4.0,>=3.10"
 groups = ["main"]
 files = [
-    {file = "platzky-1.3.1-py3-none-any.whl", hash = "sha256:493d160fd386b3d8ffd56e882555bde371f49d41a6f5ba23929f5ae884ff82e1"},
-    {file = "platzky-1.3.1.tar.gz", hash = "sha256:2285a6559fddf27174800d9827b498945b8fff8312dec3c0d5fcb49296935524"},
+    {file = "platzky-1.4.1-py3-none-any.whl", hash = "sha256:ae818aeea77c329c6d8ec9480d349f7a6e7af06576f9cbfa0e0892b76f8e41b1"},
+    {file = "platzky-1.4.1.tar.gz", hash = "sha256:e3141da16891f62742ac4bcf3d179132550e334d6e731301c092ea7cf38d9744"},
 ]
 
 [package.dependencies]
@@ -3894,4 +3894,4 @@ docs = ["myst-parser", "sphinx", "sphinx-rtd-theme", "tomli"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "379e0bb25d06c613b8eac9e68a6d825f5ea0a31da6d8e98691ba279cbb211ac3"
+content-hash = "49bc2f6788181aded17cb5bbd0784e1cc4658013cbca94b752e67c80b888a5e1"
