@@ -60,7 +60,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
     if "MAX_CONTENT_LENGTH" not in app.config:
         app.config["MAX_CONTENT_LENGTH"] = 100 * 1024  # 100KB
 
-    if UseLazyLoading in config.feature_flags:
+    if app.is_enabled(UseLazyLoading):
         location_obligatory_fields = get_location_obligatory_fields(app.db)
         # Extend db with goodmap queries first so we can use the bound method
         location_model = create_location_model(location_obligatory_fields, {})
@@ -106,7 +106,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         location_model,
         photo_attachment_class=PhotoAttachment,
         photo_attachment_config=photo_attachment_config,
-        feature_flags=config.feature_flags,
+        is_enabled=app.is_enabled,
     )
     app.register_blueprint(cp)
 
@@ -162,7 +162,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         Returns:
             Rendered goodmap-admin.html template or redirect to login
         """
-        if EnableAdminPanel not in config.feature_flags:
+        if not app.is_enabled(EnableAdminPanel):
             return redirect("/")
 
         user = session.get("user", None)
@@ -181,7 +181,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
 
     app.register_blueprint(goodmap)
 
-    if EnableAdminPanel in config.feature_flags:
+    if app.is_enabled(EnableAdminPanel):
         admin_bp = admin_pages(app.db, location_model)
         app.register_blueprint(admin_bp)
 
