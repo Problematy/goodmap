@@ -12,7 +12,7 @@ def test_goodmap_config_default_frontend_url():
     """Test that GoodmapConfig has the correct default frontend library URL."""
     config = GoodmapConfig(
         APP_NAME="test",
-        SECRET_KEY="test",
+        SECRET_KEY="test",  # noqa: S106 - test-only secret
         DB=JsonDbConfig(DATA={}, TYPE="json"),
     )
     assert (
@@ -25,7 +25,7 @@ def test_goodmap_config_custom_frontend_url():
     custom_url = "https://example.com/custom-goodmap.js"
     config = GoodmapConfig(
         APP_NAME="test",
-        SECRET_KEY="test",
+        SECRET_KEY="test",  # noqa: S106 - test-only secret
         DB=JsonDbConfig(DATA={}, TYPE="json"),
         GOODMAP_FRONTEND_LIB_URL=custom_url,
     )
@@ -64,7 +64,7 @@ GOODMAP_FRONTEND_LIB_URL: https://example.com/goodmap.js
         config = GoodmapConfig.parse_yaml(temp_path)
         assert isinstance(config, GoodmapConfig)
         assert config.app_name == "test_app"
-        assert config.secret_key == "test_secret"
+        assert config.secret_key == "test_secret"  # noqa: S105 - test-only secret
         assert config.goodmap_frontend_lib_url == "https://example.com/goodmap.js"
     finally:
         Path(temp_path).unlink()
@@ -106,13 +106,13 @@ def test_goodmap_config_inherits_platzky_config():
     flags = FeatureFlagSet(frozenset({test_flag}), {test_flag.alias: True})
     config = GoodmapConfig(
         APP_NAME="test_app",
-        SECRET_KEY="secret123",
+        SECRET_KEY="secret123",  # noqa: S106 - test-only secret
         DB=JsonDbConfig(DATA={}, TYPE="json"),
         FEATURE_FLAGS=flags,
     )
     # Verify PlatzkyConfig fields are accessible (use lowercase field names)
     assert config.app_name == "test_app"
-    assert config.secret_key == "secret123"
+    assert config.secret_key == "secret123"  # noqa: S105 - test-only secret
     assert test_flag in config.feature_flags
     # Verify GoodmapConfig specific field
     assert (
