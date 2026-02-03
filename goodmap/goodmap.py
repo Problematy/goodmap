@@ -18,6 +18,7 @@ from goodmap.db import (
     extend_db_with_goodmap_queries,
     get_location_obligatory_fields,
 )
+from goodmap.feature_flags import EnableAdminPanel, UseLazyLoading
 
 logger = logging.getLogger(__name__)
 
@@ -33,20 +34,6 @@ def create_app(config_path: str) -> platzky.Engine:
     """
     config = GoodmapConfig.parse_yaml(config_path)
     return create_app_from_config(config)
-
-
-# TODO Checking if there is a feature flag secition should be part of configs logic not client app
-def is_feature_enabled(config: GoodmapConfig, feature: str) -> bool:
-    """Check if a feature flag is enabled in the configuration.
-
-    Args:
-        config: Goodmap configuration object
-        feature: Name of the feature flag to check
-
-    Returns:
-        bool: True if feature is enabled, False otherwise
-    """
-    return config.feature_flags.get(feature, False) if config.feature_flags else False
 
 
 def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
@@ -73,7 +60,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
     if "MAX_CONTENT_LENGTH" not in app.config:
         app.config["MAX_CONTENT_LENGTH"] = 100 * 1024  # 100KB
 
-    if is_feature_enabled(config, "USE_LAZY_LOADING"):
+    if app.is_enabled(UseLazyLoading):
         location_obligatory_fields = get_location_obligatory_fields(app.db)
         # Extend db with goodmap queries first so we can use the bound method
         location_model = create_location_model(location_obligatory_fields, {})
@@ -175,7 +162,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         Returns:
             Rendered goodmap-admin.html template or redirect to login
         """
-        if not is_feature_enabled(config, "ENABLE_ADMIN_PANEL"):
+        if not app.is_enabled(EnableAdminPanel):
             return redirect("/")
 
         user = session.get("user", None)
@@ -194,7 +181,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
 
     app.register_blueprint(goodmap)
 
-    if is_feature_enabled(config, "ENABLE_ADMIN_PANEL"):
+    if app.is_enabled(EnableAdminPanel):
         admin_bp = admin_pages(app.db, location_model)
         app.register_blueprint(admin_bp)
 

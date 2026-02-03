@@ -6,12 +6,14 @@ import pytest
 
 from goodmap.config import GoodmapConfig
 from goodmap.core_api import get_or_none, make_tuple_translation
+from goodmap.feature_flags import CategoriesHelp
 from goodmap.goodmap import create_app_from_config
 from tests.unit_tests.conftest import (
     api_post,
     create_test_app,
     fake_translation,
     get_test_config_data,
+    make_flag_set,
 )
 
 # --- Basic endpoint tests ---
@@ -85,7 +87,7 @@ def test_categories_endpoints_old_format(test_app_without_helpers):
 @mock.patch("flask_babel.gettext", fake_translation)
 def test_categories_endpoint_with_categories_help():
     test_app = create_test_app(
-        feature_flags={"CATEGORIES_HELP": True},
+        feature_flags=make_flag_set(CategoriesHelp),
         db_overrides={"categories_help": ["option1", "option2"]},
     )
     response = test_app.get("/api/categories")
@@ -101,7 +103,7 @@ def test_categories_endpoint_with_categories_help():
 @mock.patch("flask_babel.gettext", fake_translation)
 def test_category_data_endpoint_with_categories_options_help():
     test_app = create_test_app(
-        feature_flags={"CATEGORIES_HELP": True},
+        feature_flags=make_flag_set(CategoriesHelp),
         db_overrides={"categories_options_help": {"test-category": ["help1", "help2"]}},
     )
     response = test_app.get("/api/category/test-category")
@@ -117,7 +119,7 @@ def test_category_data_endpoint_with_categories_options_help():
 
 def test_categories_endpoint_with_none_categories_help():
     test_app = create_test_app(
-        feature_flags={"CATEGORIES_HELP": True}, db_overrides={"categories_help": None}
+        feature_flags=make_flag_set(CategoriesHelp), db_overrides={"categories_help": None}
     )
     response = test_app.get("/api/categories")
     assert response.status_code == 200
@@ -128,7 +130,7 @@ def test_categories_endpoint_with_none_categories_help():
 
 def test_category_data_endpoint_with_none_categories_options_help():
     config_data = get_test_config_data()
-    config_data["FEATURE_FLAGS"] = {"CATEGORIES_HELP": True}
+    config_data["FEATURE_FLAGS"] = make_flag_set(CategoriesHelp)
     config_data["DB"]["DATA"].pop("categories_options_help", None)
     config = GoodmapConfig.model_validate(config_data)
     app = create_app_from_config(config)
@@ -192,7 +194,7 @@ def test_categories_full_endpoint_with_multiple_categories():
 @mock.patch("goodmap.core_api.gettext", fake_translation)
 def test_categories_full_endpoint_with_categories_help():
     test_app = create_test_app(
-        feature_flags={"CATEGORIES_HELP": True},
+        feature_flags=make_flag_set(CategoriesHelp),
         db_overrides={
             "categories": {"test-category": ["opt1", "opt2"]},
             "categories_help": ["test-category"],
@@ -221,7 +223,7 @@ def test_categories_full_endpoint_with_categories_help():
 @mock.patch("goodmap.core_api.gettext", fake_translation)
 def test_categories_full_endpoint_without_categories_help():
     test_app = create_test_app(
-        feature_flags={"CATEGORIES_HELP": False},
+        feature_flags=make_flag_set(),
         db_overrides={
             "categories": {"test-category": ["opt1", "opt2"]},
         },

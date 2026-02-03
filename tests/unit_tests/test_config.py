@@ -2,6 +2,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
+from platzky import FeatureFlag, FeatureFlagSet
 from platzky.db.json_db import JsonDbConfig
 
 from goodmap.config import GoodmapConfig
@@ -101,16 +102,18 @@ def test_goodmap_config_parse_yaml_non_existing_file():
 
 def test_goodmap_config_inherits_platzky_config():
     """Test that GoodmapConfig properly inherits PlatzkyConfig fields."""
+    test_flag = FeatureFlag(alias="test_flag")
+    flags = FeatureFlagSet({test_flag.alias: True})
     config = GoodmapConfig(
         APP_NAME="test_app",
         SECRET_KEY="secret123",
         DB=JsonDbConfig(DATA={}, TYPE="json"),
-        FEATURE_FLAGS={"test_flag": True},
+        FEATURE_FLAGS=flags,
     )
     # Verify PlatzkyConfig fields are accessible (use lowercase field names)
     assert config.app_name == "test_app"
     assert config.secret_key == "secret123"
-    assert config.feature_flags == {"test_flag": True}
+    assert test_flag in config.feature_flags
     # Verify GoodmapConfig specific field
     assert (
         config.goodmap_frontend_lib_url == "https://cdn.jsdelivr.net/npm/@problematy/goodmap@1.0.4"
