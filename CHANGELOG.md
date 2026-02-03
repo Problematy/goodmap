@@ -2,6 +2,36 @@
 
 <!-- version list -->
 
+## v1.5.0 (2026-02-03)
+
+### Chores
+
+- **ci**: Bump actions/download-artifact from 4 to 7
+  ([#329](https://github.com/Problematy/goodmap/pull/329),
+  [`44652a6`](https://github.com/Problematy/goodmap/commit/44652a6a3a315554f3f3e4bd3b42c3ad6af1b677))
+
+- **ci**: Bump actions/upload-artifact from 4 to 6
+  ([#328](https://github.com/Problematy/goodmap/pull/328),
+  [`cdf0b96`](https://github.com/Problematy/goodmap/commit/cdf0b9685604566a70809792e95a1e85c4b73d03))
+
+- **deps)(deps**: Bump gunicorn from 23.0.0 to 24.1.1
+  ([#326](https://github.com/Problematy/goodmap/pull/326),
+  [`3834b67`](https://github.com/Problematy/goodmap/commit/3834b67dd07aa488b8d8fc418788061b467b7832))
+
+- **deps)(deps**: Bump the minor-and-patch group with 7 updates
+  ([#325](https://github.com/Problematy/goodmap/pull/325),
+  [`630e567`](https://github.com/Problematy/goodmap/commit/630e5673b28c26dfc975c8defc6c70653c4b6a7a))
+
+- **deps)(deps-dev**: Bump black from 24.10.0 to 26.1.0
+  ([#327](https://github.com/Problematy/goodmap/pull/327),
+  [`553dfa7`](https://github.com/Problematy/goodmap/commit/553dfa7d0f45f42925f8cbe713b98577fb0e3338))
+
+### Features
+
+- Refactor feature flags from dict-based ([#330](https://github.com/Problematy/goodmap/pull/330),
+  [`5deb7ef`](https://github.com/Problematy/goodmap/commit/5deb7efa6c87103fe748cee3c0ddec59f8a8e98c))
+
+
 ## v1.4.0 (2026-01-24)
 
 ### Features
