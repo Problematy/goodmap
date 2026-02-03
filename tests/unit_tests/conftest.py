@@ -12,7 +12,7 @@ from goodmap.goodmap import create_app_from_config
 
 def make_flag_set(*flags: FeatureFlag) -> FeatureFlagSet:
     """Build a FeatureFlagSet from typed FeatureFlag instances."""
-    return FeatureFlagSet(frozenset(flags), {f.alias: True for f in flags})
+    return FeatureFlagSet({f.alias: True for f in flags})
 
 
 def fake_translation(key: str):

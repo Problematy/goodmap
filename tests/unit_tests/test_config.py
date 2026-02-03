@@ -102,8 +102,8 @@ def test_goodmap_config_parse_yaml_non_existing_file():
 
 def test_goodmap_config_inherits_platzky_config():
     """Test that GoodmapConfig properly inherits PlatzkyConfig fields."""
-    test_flag = FeatureFlag(alias="test_flag", register=False)
-    flags = FeatureFlagSet(frozenset({test_flag}), {test_flag.alias: True})
+    test_flag = FeatureFlag(alias="test_flag")
+    flags = FeatureFlagSet({test_flag.alias: True})
     config = GoodmapConfig(
         APP_NAME="test_app",
         SECRET_KEY="secret123",
