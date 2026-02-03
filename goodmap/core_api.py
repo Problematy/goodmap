@@ -388,13 +388,13 @@ def core_pages(
 
         if not is_enabled(CategoriesHelp):
             return jsonify(categories)
-        else:
-            category_data = database.get_category_data()
-            categories_help = category_data.get("categories_help")
-            proper_categories_help = []
-            if categories_help is not None:
-                for option in categories_help:
-                    proper_categories_help.append({option: gettext(f"categories_help_{option}")})
+
+        category_data = database.get_category_data()
+        categories_help = category_data.get("categories_help")
+        proper_categories_help = []
+        if categories_help is not None:
+            for option in categories_help:
+                proper_categories_help.append({option: gettext(f"categories_help_{option}")})
 
         return jsonify({"categories": categories, "categories_help": proper_categories_help})
 
@@ -471,13 +471,13 @@ def core_pages(
                 )
         if not is_enabled(CategoriesHelp):
             return jsonify(local_data)
-        else:
-            return jsonify(
-                {
-                    "categories_options": local_data,
-                    "categories_options_help": proper_categories_options_help,
-                }
-            )
+
+        return jsonify(
+            {
+                "categories_options": local_data,
+                "categories_options_help": proper_categories_options_help,
+            }
+        )
 
     # Register Spectree with blueprint after all routes are defined
     spec.register(core_api_blueprint)

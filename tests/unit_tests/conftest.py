@@ -3,9 +3,16 @@ from typing import Any
 
 import deprecation
 import pytest
+from platzky import FeatureFlag, FeatureFlagSet
 
 from goodmap.config import GoodmapConfig
+from goodmap.feature_flags import CategoriesHelp, EnableAdminPanel, UseLazyLoading
 from goodmap.goodmap import create_app_from_config
+
+
+def make_flag_set(*flags: FeatureFlag) -> FeatureFlagSet:
+    """Build a FeatureFlagSet from typed FeatureFlag instances."""
+    return FeatureFlagSet(frozenset(flags), {f.alias: True for f in flags})
 
 
 def fake_translation(key: str):
@@ -81,15 +88,12 @@ def api_delete(client, url):
     return client.delete(url)
 
 
-def create_test_app(feature_flags=None, db_overrides=None):
+def create_test_app(
+    feature_flags=make_flag_set(CategoriesHelp, UseLazyLoading, EnableAdminPanel),
+    db_overrides=None,
+):
     """Create a test app with optional feature flags and db overrides."""
     config_data = get_test_config_data()
-    if feature_flags is None:
-        feature_flags = {
-            "CATEGORIES_HELP": True,
-            "USE_LAZY_LOADING": True,
-            "ENABLE_ADMIN_PANEL": True,
-        }
     config_data["FEATURE_FLAGS"] = feature_flags
     if db_overrides:
         config_data["DB"]["DATA"].update(db_overrides)
@@ -114,4 +118,4 @@ def test_app():
 )
 @pytest.fixture
 def test_app_without_helpers():
-    return create_test_app(feature_flags={"CATEGORIES_HELP": False})
+    return create_test_app(feature_flags=make_flag_set(UseLazyLoading, EnableAdminPanel))
