@@ -138,9 +138,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         }
 
         reported_issue_types_raw = app.db.get_reported_issue_types()  # type: ignore[attr-defined]
-        reported_issue_types = [
-            {"value": t, "label": gettext(t)} for t in reported_issue_types_raw
-        ]
+        reported_issue_types = [{"value": t, "label": gettext(t)} for t in reported_issue_types_raw]
 
         location_schema = {  # TODO remove backward compatibility - deprecation
             "obligatory_fields": app.extensions["goodmap"][

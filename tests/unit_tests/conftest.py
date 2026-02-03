@@ -4,6 +4,7 @@ from typing import Any
 import deprecation
 import pytest
 from platzky import FeatureFlag, FeatureFlagSet
+from flask.testing import FlaskClient
 
 from goodmap.config import GoodmapConfig
 from goodmap.feature_flags import CategoriesHelp, EnableAdminPanel, UseLazyLoading

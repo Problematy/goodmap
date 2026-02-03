@@ -691,7 +691,7 @@ def test_reported_issue_types_from_db(test_app):
 
 def test_reported_issue_types_empty_when_not_configured():
     client = create_test_app(db_overrides={"reported_issue_types": []})
-    db = client.application.db
+    db = client.application.db  # type: ignore[attr-defined]
     assert db.get_reported_issue_types() == []
 
 
@@ -706,7 +706,7 @@ def test_reported_issue_types_defaults_to_empty_when_missing():
     config = GoodmapConfig.model_validate(config_data)
     app = create_app_from_config(config)
     db = app.db
-    assert db.get_reported_issue_types() == []
+    assert db.get_reported_issue_types() == []  # type: ignore[attr-defined]
 
 
 def test_get_locations_from_request_helper(test_app):
