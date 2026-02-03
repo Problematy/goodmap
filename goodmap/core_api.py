@@ -5,8 +5,9 @@ import uuid
 import deprecation
 import numpy
 import pysupercluster
-from flask import Blueprint, current_app, jsonify, make_response, request
+from flask import Blueprint, jsonify, make_response, request
 from flask_babel import gettext
+from platzky import FeatureFlagSet
 from platzky.attachment import AttachmentProtocol
 from platzky.config import AttachmentConfig, LanguagesMapping
 from spectree import Response, SpecTree
@@ -84,6 +85,7 @@ def core_pages(
     location_model,
     photo_attachment_class: type[AttachmentProtocol],
     photo_attachment_config: AttachmentConfig,
+    feature_flags: FeatureFlagSet,
 ) -> Blueprint:
     core_api_blueprint = Blueprint("api", __name__, url_prefix="/api")
 
@@ -383,7 +385,7 @@ def core_pages(
         raw_categories = database.get_categories()
         categories = make_tuple_translation(raw_categories)
 
-        if not current_app.is_enabled(CategoriesHelp):
+        if CategoriesHelp not in feature_flags:
             return jsonify(categories)
 
         category_data = database.get_category_data()
@@ -415,7 +417,7 @@ def core_pages(
                 "options": make_tuple_translation(options),
             }
 
-            if current_app.is_enabled(CategoriesHelp):
+            if CategoriesHelp in feature_flags:
                 option_help_list = categories_options_help.get(key, [])
                 proper_options_help = []
                 for option in option_help_list:
@@ -428,7 +430,7 @@ def core_pages(
 
         response = {"categories": result}
 
-        if current_app.is_enabled(CategoriesHelp):
+        if CategoriesHelp in feature_flags:
             categories_help = categories_data.get("categories_help", [])
             proper_categories_help = []
             for option in categories_help:
@@ -466,7 +468,7 @@ def core_pages(
                 proper_categories_options_help.append(
                     {option: gettext(f"categories_options_help_{option}")}
                 )
-        if not current_app.is_enabled(CategoriesHelp):
+        if CategoriesHelp not in feature_flags:
             return jsonify(local_data)
 
         return jsonify(

@@ -106,6 +106,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         location_model,
         photo_attachment_class=PhotoAttachment,
         photo_attachment_config=photo_attachment_config,
+        feature_flags=config.feature_flags,
     )
     app.register_blueprint(cp)
 
