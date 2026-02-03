@@ -63,6 +63,7 @@ def get_test_config_data() -> dict[str, Any]:
                     ("type_of_place", "str"),
                     ("name", "str"),
                 ],
+                "reported_issue_types": ["test issue 1", "test issue 2"],
                 "suggestions": [],
                 "reports": [],
             },

@@ -684,6 +684,31 @@ def test_get_or_none(data, keys, expected):
     assert result == expected
 
 
+def test_reported_issue_types_from_db(test_app):
+    db = test_app.application.db
+    assert db.get_reported_issue_types() == ["test issue 1", "test issue 2"]
+
+
+def test_reported_issue_types_empty_when_not_configured():
+    client = create_test_app(db_overrides={"reported_issue_types": []})
+    db = client.application.db
+    assert db.get_reported_issue_types() == []
+
+
+def test_reported_issue_types_defaults_to_empty_when_missing():
+    config_data = get_test_config_data()
+    config_data["FEATURE_FLAGS"] = {
+        "CATEGORIES_HELP": True,
+        "USE_LAZY_LOADING": True,
+        "ENABLE_ADMIN_PANEL": True,
+    }
+    config_data["DB"]["DATA"].pop("reported_issue_types", None)
+    config = GoodmapConfig.model_validate(config_data)
+    app = create_app_from_config(config)
+    db = app.db
+    assert db.get_reported_issue_types() == []
+
+
 def test_get_locations_from_request_helper(test_app):
     from goodmap.core_api import get_locations_from_request
 
