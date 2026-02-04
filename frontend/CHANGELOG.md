@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/Problematy/goodmap-frontend/compare/1.3.3...1.4.0) (2026-02-04)
+
+
+### Features
+
+* support to goto point and custom issues in report ([#148](https://github.com/Problematy/goodmap-frontend/issues/148)) ([4f7c0dd](https://github.com/Problematy/goodmap-frontend/commit/4f7c0dd36d69ed08f2e405c86b3632d2783ea08b))
+
 ## [1.3.3](https://github.com/Problematy/goodmap-frontend/compare/1.3.2...1.3.3) (2026-01-24)
 
 
