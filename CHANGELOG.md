@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.6.0 (2026-02-04)
+
+### Features
+
+- Add configurable reported issue types ([#331](https://github.com/Problematy/goodmap/pull/331),
+  [`28e1f85`](https://github.com/Problematy/goodmap/commit/28e1f85e964af4e00251f21106d0438266b64502))
+
+
 ## v1.5.0 (2026-02-03)
 
 ### Chores
