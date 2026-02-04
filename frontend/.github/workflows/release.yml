@@ -30,7 +30,7 @@ jobs:
                   private-key: ${{ secrets.MY_RELEASER_PRIVATE_KEY }}
 
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
               with:
                   fetch-depth: 0
                   token: ${{ steps.generate_token.outputs.token }}
