@@ -14,6 +14,7 @@ import { AppToaster } from '../common/AppToaster';
 import { Markers } from './components/Markers';
 import { MapLoadingOverlay } from './components/MapLoadingOverlay';
 import { LocationProvider, useLocation } from './context/LocationContext';
+import { GoToLocation } from './components/GoToLocation';
 
 /**
  * Inner map component that uses the shared location context.
@@ -53,6 +54,7 @@ const MapComponentInner = () => {
                 zoomControl={false}
             >
                 <SaveMapConfiguration />
+                <GoToLocation />
                 <TileLayer
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     attribution='&amp;copy <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'

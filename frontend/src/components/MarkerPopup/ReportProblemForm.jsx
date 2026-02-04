@@ -121,12 +121,38 @@ const SuccessMessage = styled.div`
  * @param {string} props.placeId - UUID of the location being reported
  * @returns {React.ReactElement} Form for reporting problems or success message after submission
  */
+/**
+ * Get issue type options from backend configuration or fall back to defaults.
+ * Dynamic types come from LOCATION_SCHEMA.reported_issue_types (configured per deployment).
+ * Default types are kept for backward compatibility with backends that don't provide this field (until 2.0.0).
+ *
+ * @param {Function} t - Translation function
+ * @returns {Array<{value: string, label: string}>} Issue type options (without "other", which is always appended)
+ */
+const getIssueTypeOptions = t => {
+    const dynamicTypes = globalThis.LOCATION_SCHEMA?.reported_issue_types;
+    if (dynamicTypes && dynamicTypes.length > 0) {
+        return dynamicTypes.map(type => ({
+            value: type.value,
+            label: type.label,
+        }));
+    }
+    // Backward-compatible defaults (remove in 2.0.0)
+    return [
+        { value: 'notHere', label: t('reportNotHere') },
+        { value: 'overload', label: t('reportOverload') },
+        { value: 'broken', label: t('reportBroken') },
+    ];
+};
+
 export const ReportProblemForm = ({ placeId }) => {
     const { t } = useTranslation();
     const [problem, setProblem] = useState('');
     const [problemType, setProblemType] = useState('');
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [responseMessage, setResponseMessage] = useState('');
+
+    const issueTypeOptions = getIssueTypeOptions(t);
 
     const handleSubmit = async event => {
         event.preventDefault();
@@ -160,9 +186,11 @@ export const ReportProblemForm = ({ placeId }) => {
                 {t('reportProblemLabel')}
                 <Select value={problemType} onChange={e => setProblemType(e.target.value)}>
                     <option value="">{t('reportChooseOption')}</option>
-                    <option value="notHere">{t('reportNotHere')}</option>
-                    <option value="overload">{t('reportOverload')}</option>
-                    <option value="broken">{t('reportBroken')}</option>
+                    {issueTypeOptions.map(opt => (
+                        <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                        </option>
+                    ))}
                     <option value="other">{t('reportOther')}</option>
                 </Select>
             </Label>

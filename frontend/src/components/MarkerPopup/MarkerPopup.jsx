@@ -5,6 +5,7 @@ import { isMobile } from 'react-device-detect';
 import { Icon } from 'leaflet';
 import { useTranslation } from 'react-i18next';
 import { httpService } from '../../services/http/httpService';
+import { useMapStore } from '../Map/store/map.store';
 
 import { LocationDetailsBox } from './LocationDetails';
 import { MobilePopup } from './MobilePopup';
@@ -84,8 +85,18 @@ const asteriskIcon = new Icon({
  * @returns {React.ReactElement} Leaflet Marker component with click-to-show-details functionality
  */
 export const MarkerPopup = ({ place }) => {
+    const selectedLocationId = useMapStore(state => state.selectedLocationId);
+    const setSelectedLocationId = useMapStore(state => state.setSelectedLocationId);
     const [isClicked, setIsClicked] = useState(false);
-    const handleMarkerClick = e => {
+
+    useEffect(() => {
+        if (selectedLocationId === place.uuid) {
+            setIsClicked(true);
+            setSelectedLocationId(null);
+        }
+    }, [selectedLocationId, place.uuid, setSelectedLocationId]);
+
+    const handleMarkerClick = () => {
         setIsClicked(true);
     };
 
