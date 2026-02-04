@@ -1,6 +1,5 @@
 reviews:
   review_status: true
+  commit_status: true
   auto_review:
-    ignore_usernames:
-      - dependabot[bot]
-    report_status_when_skipped: true
+    enabled: true
