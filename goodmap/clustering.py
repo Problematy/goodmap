@@ -10,6 +10,21 @@ logger = logging.getLogger(__name__)
 
 
 def map_clustering_data_to_proper_lazy_loading_object(input_array):
+    """Convert clustering data into lazy-loading response objects.
+
+    Transforms an array of clustered point data into response objects suitable
+    for lazy loading on the frontend. Single-point clusters become "point" type
+    objects with their original UUID, while multi-point clusters become "cluster"
+    type objects with a generated UUID and count.
+
+    Args:
+        input_array: List of cluster dicts with 'count', 'longitude', 'latitude',
+                     and 'uuid' keys.
+
+    Returns:
+        List of response dicts with 'position', 'uuid', 'cluster_uuid',
+        'cluster_count', and 'type' keys.
+    """
     response_array = []
     for item in input_array:
         if item["count"] == 1:
