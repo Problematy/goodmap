@@ -40,10 +40,15 @@ MAX_ZOOM = 16
 CLUSTER_RADIUS = 200
 CLUSTER_EXTENT = 512
 
+# Report description validation constants
+DEFAULT_ISSUE_OPTIONS = ["notHere", "overload", "broken", "other"]
+MAX_DESCRIPTION_LENGTH = 500
+
 # Error message constants
 ERROR_INVALID_REQUEST_DATA = "Invalid request data"
 ERROR_INVALID_LOCATION_DATA = "Invalid location data"
 ERROR_LOCATION_NOT_FOUND = "Location not found"
+ERROR_INVALID_DESCRIPTION = "Invalid report description"
 
 logger = logging.getLogger(__name__)
 
@@ -249,10 +254,23 @@ def core_pages(
         """
         try:
             location_report = request.get_json()
+            description = location_report["description"]
+
+            # Validate description against configured issue options
+            issue_options = database.get_issue_options()
+            if not issue_options:
+                issue_options = DEFAULT_ISSUE_OPTIONS
+
+            if description not in issue_options:
+                if "other" not in issue_options:
+                    return make_response(jsonify({"message": ERROR_INVALID_DESCRIPTION}), 400)
+                if len(description) > MAX_DESCRIPTION_LENGTH:
+                    return make_response(jsonify({"message": ERROR_INVALID_DESCRIPTION}), 400)
+
             report = {
                 "uuid": str(uuid.uuid4()),
                 "location_id": location_report["id"],
-                "description": location_report["description"],
+                "description": description,
                 "status": "pending",
                 "priority": "medium",
             }

@@ -336,31 +336,31 @@ def get_location_obligatory_fields(db):
 
 
 # ------------------------------------------------
-# get_reported_issue_types
+# get_issue_options
 
 
-def json_db_get_reported_issue_types(self):
+def json_db_get_issue_options(self):
     return self.data.get("reported_issue_types", [])
 
 
-def json_file_db_get_reported_issue_types(self):
+def json_file_db_get_issue_options(self):
     with open(self.data_file_path, "r") as file:
         return json.load(file)["map"].get("reported_issue_types", [])
 
 
-def google_json_db_get_reported_issue_types(self):
+def google_json_db_get_issue_options(self):
     return self.data.get("map", {}).get("reported_issue_types", [])
 
 
-def mongodb_db_get_reported_issue_types(self):
+def mongodb_db_get_issue_options(self):
     config_doc = self.db.config.find_one({"_id": "map_config"})
     if config_doc and "reported_issue_types" in config_doc:
         return config_doc["reported_issue_types"]
     return []
 
 
-def get_reported_issue_types(db):
-    return globals()[f"{db.module_name}_get_reported_issue_types"]
+def get_issue_options(db):
+    return globals()[f"{db.module_name}_get_issue_options"]
 
 
 # ------------------------------------------------
@@ -1468,7 +1468,7 @@ def delete_report(db, report_id):
 
 
 def extend_db_with_goodmap_queries(db, location_model):
-    db.extend("get_reported_issue_types", get_reported_issue_types(db))
+    db.extend("get_issue_options", get_issue_options(db))
     db.extend("get_data", get_data(db))
     db.extend("get_visible_data", get_visible_data(db))
     db.extend("get_meta_data", get_meta_data(db))
