@@ -14,7 +14,9 @@ class LocationReportRequest(BaseModel):
     """Request model for reporting a location issue."""
 
     id: str = Field(..., description="Location UUID to report")
-    description: str = Field(..., min_length=1, description="Description of the problem")
+    description: str = Field(
+        ..., min_length=1, max_length=500, description="Description of the problem"
+    )
 
 
 class LocationReportResponse(BaseModel):

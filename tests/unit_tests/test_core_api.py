@@ -281,7 +281,7 @@ def test_get_location_not_found(test_app):
 
 def test_reporting_location_success(test_app):
     response = api_post(
-        test_app, "/api/report-location", {"id": "location-id", "description": "some error"}
+        test_app, "/api/report-location", {"id": "location-id", "description": "test issue 1"}
     )
     assert response.status_code == 200
 
@@ -298,7 +298,7 @@ def test_reporting_returns_error_when_wrong_json(test_app):
 @mock.patch("flask_babel.gettext", fake_translation)
 def test_report_location_notification_success(test_app):
     response = api_post(
-        test_app, "/api/report-location", {"id": "test-location", "description": "Test description"}
+        test_app, "/api/report-location", {"id": "test-location", "description": "test issue 1"}
     )
     assert response.status_code == 200
     assert response.json["message"] == "Location reported-translated"
@@ -315,9 +315,73 @@ def test_report_location_unexpected_error(test_app):
     db = test_app.application.db
     with mock.patch.object(db, "add_report", side_effect=Exception("Database failure")):
         response = api_post(
-            test_app, "/api/report-location", {"id": "test-id", "description": "Test report"}
+            test_app, "/api/report-location", {"id": "test-id", "description": "test issue 1"}
         )
         assert response.status_code == 500
+
+
+# --- Report description validation tests ---
+
+
+def test_report_description_matches_configured_option(test_app):
+    """Description matching a configured issue option should be accepted."""
+    response = api_post(
+        test_app, "/api/report-location", {"id": "loc-1", "description": "test issue 1"}
+    )
+    assert response.status_code == 200
+
+
+def test_report_description_not_in_options_without_other(test_app):
+    """Description not in options (without 'other') should be rejected."""
+    response = api_post(
+        test_app, "/api/report-location", {"id": "loc-1", "description": "unknown problem"}
+    )
+    assert response.status_code == 400
+    assert "Invalid report description" in response.json["message"]
+
+
+@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("flask_babel.gettext", fake_translation)
+def test_report_description_free_text_with_other_option():
+    """When 'other' is in options, free text within limit should be accepted."""
+    test_app = create_test_app(db_overrides={"reported_issue_types": ["broken", "other"]})
+    response = api_post(
+        test_app, "/api/report-location", {"id": "loc-1", "description": "custom free text"}
+    )
+    assert response.status_code == 200
+
+
+@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("flask_babel.gettext", fake_translation)
+def test_report_description_exceeds_max_length():
+    """Description exceeding max length should be rejected even with 'other'."""
+    test_app = create_test_app(db_overrides={"reported_issue_types": ["broken", "other"]})
+    long_description = "x" * 501
+    response = api_post(
+        test_app, "/api/report-location", {"id": "loc-1", "description": long_description}
+    )
+    assert response.status_code in (400, 422)
+
+
+@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("flask_babel.gettext", fake_translation)
+def test_report_description_empty_options_uses_fallback():
+    """Empty issue options should fall back to defaults (which include 'other')."""
+    test_app = create_test_app(db_overrides={"reported_issue_types": []})
+    # "notHere" is in the default fallback list
+    response = api_post(test_app, "/api/report-location", {"id": "loc-1", "description": "notHere"})
+    assert response.status_code == 200
+
+
+@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("flask_babel.gettext", fake_translation)
+def test_report_description_empty_options_allows_free_text():
+    """Empty issue options fallback includes 'other', so free text is allowed."""
+    test_app = create_test_app(db_overrides={"reported_issue_types": []})
+    response = api_post(
+        test_app, "/api/report-location", {"id": "loc-1", "description": "some custom text"}
+    )
+    assert response.status_code == 200
 
 
 # --- Suggest location tests ---
@@ -682,6 +746,31 @@ def test_make_tuple_translation():
 def test_get_or_none(data, keys, expected):
     result = get_or_none(data, *keys)
     assert result == expected
+
+
+def test_issue_options_from_db(test_app):
+    db = test_app.application.db
+    assert db.get_issue_options() == ["test issue 1", "test issue 2"]
+
+
+def test_issue_options_empty_when_not_configured():
+    client = create_test_app(db_overrides={"reported_issue_types": []})
+    db = client.application.db  # type: ignore[attr-defined]
+    assert db.get_issue_options() == []
+
+
+def test_issue_options_defaults_to_empty_when_missing():
+    config_data = get_test_config_data()
+    config_data["FEATURE_FLAGS"] = {
+        "CATEGORIES_HELP": True,
+        "USE_LAZY_LOADING": True,
+        "ENABLE_ADMIN_PANEL": True,
+    }
+    config_data["DB"]["DATA"].pop("reported_issue_types", None)
+    config = GoodmapConfig.model_validate(config_data)
+    app = create_app_from_config(config)
+    db = app.db
+    assert db.get_issue_options() == []  # type: ignore[attr-defined]
 
 
 def test_get_locations_from_request_helper(test_app):

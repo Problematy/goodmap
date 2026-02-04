@@ -4,6 +4,7 @@ import logging
 import os
 
 from flask import Blueprint, redirect, render_template, session
+from flask_babel import gettext
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from platzky import platzky
 from platzky.attachment import create_attachment_class
@@ -136,12 +137,16 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
             name: spec for name, spec in properties.items() if name not in ("uuid", "position")
         }
 
+        issue_options_raw = app.db.get_issue_options()  # type: ignore[attr-defined]
+        reported_issue_types = [{"value": t, "label": gettext(t)} for t in issue_options_raw]
+
         location_schema = {  # TODO remove backward compatibility - deprecation
             "obligatory_fields": app.extensions["goodmap"][
                 "location_obligatory_fields"
             ],  # Backward compatibility
             "categories": categories,  # Backward compatibility
             "fields": form_fields,
+            "reported_issue_types": reported_issue_types,
         }
 
         return render_template(
