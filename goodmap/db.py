@@ -62,6 +62,12 @@ def __build_pagination_response(items, total, page, per_page):
 
 
 def json_file_atomic_dump(data, file_path):
+    """Write JSON data to a file atomically using a temporary file and rename.
+
+    Args:
+        data: Data to serialize as JSON.
+        file_path: Destination file path.
+    """
     dir_name = os.path.dirname(file_path)
     with tempfile.NamedTemporaryFile("w", dir=dir_name, delete=False) as temp_file:
         json.dump(data, temp_file)
@@ -312,19 +318,23 @@ class CRUDHelper:
 
 
 def json_db_get_location_obligatory_fields(db):
+    """Return location obligatory fields from in-memory JSON database."""
     return db.data["location_obligatory_fields"]
 
 
 def json_file_db_get_location_obligatory_fields(db):
+    """Return location obligatory fields from JSON file database."""
     with open(db.data_file_path, "r") as file:
         return json.load(file)["map"]["location_obligatory_fields"]
 
 
 def google_json_db_get_location_obligatory_fields(db):
+    """Return location obligatory fields from Google Cloud Storage JSON."""
     return db.data.get("map", {}).get("location_obligatory_fields", [])
 
 
 def mongodb_db_get_location_obligatory_fields(db):
+    """Return location obligatory fields from MongoDB."""
     config_doc = db.db.config.find_one({"_id": "map_config"})
     if config_doc and "location_obligatory_fields" in config_doc:
         return config_doc["location_obligatory_fields"]
@@ -332,6 +342,7 @@ def mongodb_db_get_location_obligatory_fields(db):
 
 
 def get_location_obligatory_fields(db):
+    """Dispatch to the backend-specific get_location_obligatory_fields function."""
     return globals()[f"{db.module_name}_get_location_obligatory_fields"](db)
 
 
@@ -340,19 +351,23 @@ def get_location_obligatory_fields(db):
 
 
 def json_db_get_issue_options(self):
+    """Return reported issue types from in-memory JSON database."""
     return self.data.get("reported_issue_types", [])
 
 
 def json_file_db_get_issue_options(self):
+    """Return reported issue types from JSON file database."""
     with open(self.data_file_path, "r") as file:
         return json.load(file)["map"].get("reported_issue_types", [])
 
 
 def google_json_db_get_issue_options(self):
+    """Return reported issue types from Google Cloud Storage JSON."""
     return self.data.get("map", {}).get("reported_issue_types", [])
 
 
 def mongodb_db_get_issue_options(self):
+    """Return reported issue types from MongoDB."""
     config_doc = self.db.config.find_one({"_id": "map_config"})
     if config_doc and "reported_issue_types" in config_doc:
         return config_doc["reported_issue_types"]
@@ -360,6 +375,7 @@ def mongodb_db_get_issue_options(self):
 
 
 def get_issue_options(db):
+    """Dispatch to the backend-specific get_issue_options function."""
     return globals()[f"{db.module_name}_get_issue_options"]
 
 
@@ -368,19 +384,23 @@ def get_issue_options(db):
 
 
 def google_json_db_get_data(self):
+    """Return map data from Google Cloud Storage JSON."""
     return self.data.get("map", {})
 
 
 def json_file_db_get_data(self):
+    """Return map data from JSON file database."""
     with open(self.data_file_path, "r") as file:
         return json.load(file)["map"]
 
 
 def json_db_get_data(self):
+    """Return map data from in-memory JSON database."""
     return self.data
 
 
 def mongodb_db_get_data(self):
+    """Return map data from MongoDB, including locations and config."""
     config_doc = self.db.config.find_one({"_id": "map_config"})
     if config_doc:
         return {
@@ -401,6 +421,7 @@ def mongodb_db_get_data(self):
 
 
 def get_data(db):
+    """Dispatch to the backend-specific get_data function."""
     return globals()[f"{db.module_name}_get_data"]
 
 
@@ -545,19 +566,23 @@ def get_meta_data(db):
 
 
 def json_db_get_categories(self):
+    """Return category keys from in-memory JSON database."""
     return self.data["categories"].keys()
 
 
 def json_file_db_get_categories(self):
+    """Return category keys from JSON file database."""
     with open(self.data_file_path, "r") as file:
         return json.load(file)["map"]["categories"].keys()
 
 
 def google_json_db_get_categories(self):
+    """Return category keys from Google Cloud Storage JSON."""
     return self.data.get("map", {}).get("categories", {}).keys()
 
 
 def mongodb_db_get_categories(self):
+    """Return category keys from MongoDB."""
     config_doc = self.db.config.find_one({"_id": "map_config"})
     if config_doc and "categories" in config_doc:
         return list(config_doc["categories"].keys())
@@ -565,6 +590,7 @@ def mongodb_db_get_categories(self):
 
 
 def get_categories(db):
+    """Dispatch to the backend-specific get_categories function."""
     return globals()[f"{db.module_name}_get_categories"]
 
 
@@ -573,6 +599,7 @@ def get_categories(db):
 
 
 def json_db_get_category_data(self, category_type=None):
+    """Return category data from in-memory JSON database, optionally filtered by type."""
     if category_type:
         return {
             "categories": {category_type: self.data["categories"].get(category_type, [])},
@@ -589,6 +616,7 @@ def json_db_get_category_data(self, category_type=None):
 
 
 def json_file_db_get_category_data(self, category_type=None):
+    """Return category data from JSON file database, optionally filtered by type."""
     with open(self.data_file_path, "r") as file:
         data = json.load(file)["map"]
         if category_type:
@@ -607,6 +635,7 @@ def json_file_db_get_category_data(self, category_type=None):
 
 
 def google_json_db_get_category_data(self, category_type=None):
+    """Return category data from Google Cloud Storage JSON, optionally filtered by type."""
     data = self.data.get("map", {})
     if category_type:
         return {
@@ -624,6 +653,7 @@ def google_json_db_get_category_data(self, category_type=None):
 
 
 def mongodb_db_get_category_data(self, category_type=None):
+    """Return category data from MongoDB, optionally filtered by type."""
     config_doc = self.db.config.find_one({"_id": "map_config"})
     if config_doc:
         if category_type:
@@ -647,6 +677,7 @@ def mongodb_db_get_category_data(self, category_type=None):
 
 
 def get_category_data(db):
+    """Dispatch to the backend-specific get_category_data function."""
     return globals()[f"{db.module_name}_get_category_data"]
 
 
@@ -655,30 +686,45 @@ def get_category_data(db):
 
 
 def get_location_from_raw_data(raw_data, uuid, location_model):
+    """Find and validate a single location by UUID from raw data.
+
+    Args:
+        raw_data: Dict containing a 'data' key with a list of location dicts.
+        uuid: UUID string of the location to find.
+        location_model: Pydantic model class to validate the location.
+
+    Returns:
+        Validated location model instance, or None if not found.
+    """
     point = next((point for point in raw_data["data"] if point["uuid"] == uuid), None)
     return location_model.model_validate(point) if point else None
 
 
 def google_json_db_get_location(self, uuid, location_model):
+    """Retrieve a single location by UUID from Google Cloud Storage JSON."""
     return get_location_from_raw_data(self.data.get("map", {}), uuid, location_model)
 
 
 def json_file_db_get_location(self, uuid, location_model):
+    """Retrieve a single location by UUID from JSON file database."""
     with open(self.data_file_path, "r") as file:
         point = get_location_from_raw_data(json.load(file)["map"], uuid, location_model)
         return point
 
 
 def json_db_get_location(self, uuid, location_model):
+    """Retrieve a single location by UUID from in-memory JSON database."""
     return get_location_from_raw_data(self.data, uuid, location_model)
 
 
 def mongodb_db_get_location(self, uuid, location_model):
+    """Retrieve a single location by UUID from MongoDB."""
     location_doc = self.db.locations.find_one({"uuid": uuid}, {"_id": 0})
     return location_model.model_validate(location_doc) if location_doc else None
 
 
 def get_location(db, location_model):
+    """Dispatch to the backend-specific get_location function."""
     return partial(globals()[f"{db.module_name}_get_location"], location_model=location_model)
 
 
@@ -687,24 +733,38 @@ def get_location(db, location_model):
 
 
 def get_locations_list_from_raw_data(map_data, query, location_model):
+    """Filter and validate locations from raw map data based on query parameters.
+
+    Args:
+        map_data: Dict containing 'data' and 'categories' keys.
+        query: Dict of query parameters for filtering.
+        location_model: Pydantic model class to validate each location.
+
+    Returns:
+        List of validated location model instances.
+    """
     filtered_locations = get_queried_data(map_data["data"], map_data["categories"], query)
     return [location_model.model_validate(point) for point in filtered_locations]
 
 
 def google_json_db_get_locations(self, query, location_model):
+    """Retrieve filtered locations from Google Cloud Storage JSON."""
     return get_locations_list_from_raw_data(self.data.get("map", {}), query, location_model)
 
 
 def json_file_db_get_locations(self, query, location_model):
+    """Retrieve filtered locations from JSON file database."""
     with open(self.data_file_path, "r") as file:
         return get_locations_list_from_raw_data(json.load(file)["map"], query, location_model)
 
 
 def json_db_get_locations(self, query, location_model):
+    """Retrieve filtered locations from in-memory JSON database."""
     return get_locations_list_from_raw_data(self.data, query, location_model)
 
 
 def mongodb_db_get_locations(self, query, location_model):
+    """Retrieve filtered locations from MongoDB."""
     mongo_query = {}
     for key, values in query.items():
         if values:
@@ -716,6 +776,7 @@ def mongodb_db_get_locations(self, query, location_model):
 
 
 def get_locations(db, location_model):
+    """Dispatch to the backend-specific get_locations function."""
     return partial(globals()[f"{db.module_name}_get_locations"], location_model=location_model)
 
 
@@ -784,6 +845,7 @@ def mongodb_db_get_locations_paginated(self, query, location_model):
 
 
 def get_locations_paginated(db, location_model):
+    """Dispatch to the backend-specific get_locations_paginated function."""
     return partial(
         globals()[f"{db.module_name}_get_locations_paginated"], location_model=location_model
     )
@@ -794,6 +856,11 @@ def get_locations_paginated(db, location_model):
 
 
 def json_file_db_add_location(self, location_data, location_model):
+    """Add a new location to the JSON file database.
+
+    Raises:
+        LocationAlreadyExistsError: If a location with the same UUID already exists.
+    """
     location = location_model.model_validate(location_data)
     with open(self.data_file_path, "r") as file:
         json_file = json.load(file)
@@ -812,6 +879,11 @@ def json_file_db_add_location(self, location_data, location_model):
 
 
 def json_db_add_location(self, location_data, location_model):
+    """Add a new location to the in-memory JSON database.
+
+    Raises:
+        LocationAlreadyExistsError: If a location with the same UUID already exists.
+    """
     location = location_model.model_validate(location_data)
     idx = next(
         (
@@ -827,6 +899,11 @@ def json_db_add_location(self, location_data, location_model):
 
 
 def mongodb_db_add_location(self, location_data, location_model):
+    """Add a new location to MongoDB.
+
+    Raises:
+        LocationAlreadyExistsError: If a location with the same UUID already exists.
+    """
     location = location_model.model_validate(location_data)
     existing = self.db.locations.find_one({"uuid": location_data["uuid"]})
     if existing:
@@ -835,6 +912,7 @@ def mongodb_db_add_location(self, location_data, location_model):
 
 
 def add_location(db, location_data, location_model):
+    """Dispatch to the backend-specific add_location function."""
     return globals()[f"{db.module_name}_add_location"](db, location_data, location_model)
 
 
@@ -843,6 +921,11 @@ def add_location(db, location_data, location_model):
 
 
 def json_file_db_update_location(self, uuid, location_data, location_model):
+    """Update an existing location in the JSON file database.
+
+    Raises:
+        LocationNotFoundError: If no location with the given UUID exists.
+    """
     location = location_model.model_validate(location_data)
     with open(self.data_file_path, "r") as file:
         json_file = json.load(file)
@@ -859,6 +942,11 @@ def json_file_db_update_location(self, uuid, location_data, location_model):
 
 
 def json_db_update_location(self, uuid, location_data, location_model):
+    """Update an existing location in the in-memory JSON database.
+
+    Raises:
+        LocationNotFoundError: If no location with the given UUID exists.
+    """
     location = location_model.model_validate(location_data)
     idx = next(
         (i for i, point in enumerate(self.data.get("data", [])) if point.get("uuid") == uuid), None
@@ -869,6 +957,11 @@ def json_db_update_location(self, uuid, location_data, location_model):
 
 
 def mongodb_db_update_location(self, uuid, location_data, location_model):
+    """Update an existing location in MongoDB.
+
+    Raises:
+        LocationNotFoundError: If no location with the given UUID exists.
+    """
     location = location_model.model_validate(location_data)
     result = self.db.locations.update_one({"uuid": uuid}, {"$set": location.model_dump()})
     if result.matched_count == 0:
@@ -876,6 +969,7 @@ def mongodb_db_update_location(self, uuid, location_data, location_model):
 
 
 def update_location(db, uuid, location_data, location_model):
+    """Dispatch to the backend-specific update_location function."""
     return globals()[f"{db.module_name}_update_location"](db, uuid, location_data, location_model)
 
 
@@ -884,6 +978,11 @@ def update_location(db, uuid, location_data, location_model):
 
 
 def json_file_db_delete_location(self, uuid):
+    """Delete a location from the JSON file database.
+
+    Raises:
+        LocationNotFoundError: If no location with the given UUID exists.
+    """
     with open(self.data_file_path, "r") as file:
         json_file = json.load(file)
 
@@ -899,6 +998,11 @@ def json_file_db_delete_location(self, uuid):
 
 
 def json_db_delete_location(self, uuid):
+    """Delete a location from the in-memory JSON database.
+
+    Raises:
+        LocationNotFoundError: If no location with the given UUID exists.
+    """
     idx = next(
         (i for i, point in enumerate(self.data.get("data", [])) if point.get("uuid") == uuid), None
     )
@@ -908,12 +1012,18 @@ def json_db_delete_location(self, uuid):
 
 
 def mongodb_db_delete_location(self, uuid):
+    """Delete a location from MongoDB.
+
+    Raises:
+        LocationNotFoundError: If no location with the given UUID exists.
+    """
     result = self.db.locations.delete_one({"uuid": uuid})
     if result.deleted_count == 0:
         raise LocationNotFoundError(uuid)
 
 
 def delete_location(db, uuid):
+    """Dispatch to the backend-specific delete_location function."""
     return globals()[f"{db.module_name}_delete_location"](db, uuid)
 
 
@@ -922,26 +1032,31 @@ def delete_location(db, uuid):
 
 
 def json_db_add_suggestion(self, suggestion_data):
+    """Add a suggestion to the in-memory JSON database with 'pending' status."""
     CRUDHelper.add_item_to_json_db(self.data, "suggestions", suggestion_data, "pending")
 
 
 def json_file_db_add_suggestion(self, suggestion_data):
+    """Add a suggestion to the JSON file database with 'pending' status."""
     CRUDHelper.add_item_to_json_file_db(
         self.data_file_path, "suggestions", suggestion_data, "pending"
     )
 
 
 def mongodb_db_add_suggestion(self, suggestion_data):
+    """Add a suggestion to MongoDB with 'pending' status."""
     CRUDHelper.add_item_to_mongodb(self.db.suggestions, suggestion_data, "Suggestion", "pending")
 
 
 def google_json_db_add_suggestion(self, suggestion_data):
+    """No-op for Google Cloud Storage JSON (read-only backend)."""
     # Temporary workaround: just use notifier without storing
     # Full implementation would require writing back to Google Cloud Storage
     pass
 
 
 def add_suggestion(db, suggestion_data):
+    """Dispatch to the backend-specific add_suggestion function."""
     return globals()[f"{db.module_name}_add_suggestion"](db, suggestion_data)
 
 
@@ -950,6 +1065,7 @@ def add_suggestion(db, suggestion_data):
 
 
 def json_db_get_suggestions(self, query_params):
+    """Return suggestions from in-memory JSON database, optionally filtered by status."""
     suggestions = self.data.get("suggestions", [])
 
     statuses = query_params.get("status")
@@ -966,6 +1082,7 @@ def json_db_get_suggestions_paginated(self, query):
 
 
 def json_file_db_get_suggestions(self, query_params):
+    """Return suggestions from JSON file database, optionally filtered by status."""
     with open(self.data_file_path, "r") as file:
         json_file = json.load(file)
 
@@ -988,6 +1105,7 @@ def json_file_db_get_suggestions_paginated(self, query):
 
 
 def mongodb_db_get_suggestions(self, query_params):
+    """Return suggestions from MongoDB, optionally filtered by status."""
     query = {}
     statuses = query_params.get("status")
     if statuses:
@@ -1032,6 +1150,7 @@ def mongodb_db_get_suggestions_paginated(self, query):
 
 
 def google_json_db_get_suggestions(self, query_params):
+    """Return empty list for Google Cloud Storage JSON (read-only backend)."""
     # GoogleJsonDb is read-only, suggestions not stored in blob
     return []
 
@@ -1042,10 +1161,12 @@ def google_json_db_get_suggestions_paginated(self, query):
 
 
 def get_suggestions(db):
+    """Dispatch to the backend-specific get_suggestions function."""
     return globals()[f"{db.module_name}_get_suggestions"]
 
 
 def get_suggestions_paginated(db):
+    """Dispatch to the backend-specific get_suggestions_paginated function."""
     return globals()[f"{db.module_name}_get_suggestions_paginated"]
 
 
@@ -1054,12 +1175,14 @@ def get_suggestions_paginated(db):
 
 
 def json_db_get_suggestion(self, suggestion_id):
+    """Return a single suggestion by UUID from in-memory JSON database."""
     return next(
         (s for s in self.data.get("suggestions", []) if s.get("uuid") == suggestion_id), None
     )
 
 
 def json_file_db_get_suggestion(self, suggestion_id):
+    """Return a single suggestion by UUID from JSON file database."""
     with open(self.data_file_path, "r") as file:
         json_file = json.load(file)
     return next(
@@ -1068,15 +1191,18 @@ def json_file_db_get_suggestion(self, suggestion_id):
 
 
 def mongodb_db_get_suggestion(self, suggestion_id):
+    """Return a single suggestion by UUID from MongoDB."""
     return self.db.suggestions.find_one({"uuid": suggestion_id}, {"_id": 0})
 
 
 def google_json_db_get_suggestion(self, suggestion_id):
+    """Return None for Google Cloud Storage JSON (read-only backend)."""
     # GoogleJsonDb is read-only, suggestions not stored in blob
     return None
 
 
 def get_suggestion(db):
+    """Dispatch to the backend-specific get_suggestion function."""
     return globals()[f"{db.module_name}_get_suggestion"]
 
 
@@ -1085,6 +1211,11 @@ def get_suggestion(db):
 
 
 def json_db_update_suggestion(self, suggestion_id, status):
+    """Update a suggestion's status in the in-memory JSON database.
+
+    Raises:
+        ValueError: If no suggestion with the given UUID exists.
+    """
     suggestions = self.data.get("suggestions", [])
     for s in suggestions:
         if s.get("uuid") == suggestion_id:
@@ -1094,6 +1225,11 @@ def json_db_update_suggestion(self, suggestion_id, status):
 
 
 def json_file_db_update_suggestion(self, suggestion_id, status):
+    """Update a suggestion's status in the JSON file database.
+
+    Raises:
+        ValueError: If no suggestion with the given UUID exists.
+    """
     with open(self.data_file_path, "r") as file:
         json_file = json.load(file)
 
@@ -1111,17 +1247,24 @@ def json_file_db_update_suggestion(self, suggestion_id, status):
 
 
 def mongodb_db_update_suggestion(self, suggestion_id, status):
+    """Update a suggestion's status in MongoDB.
+
+    Raises:
+        ValueError: If no suggestion with the given UUID exists.
+    """
     result = self.db.suggestions.update_one({"uuid": suggestion_id}, {"$set": {"status": status}})
     if result.matched_count == 0:
         raise ValueError(f"Suggestion with uuid {suggestion_id} not found")
 
 
 def google_json_db_update_suggestion(self, suggestion_id, status):
+    """No-op for Google Cloud Storage JSON (read-only backend)."""
     # GoogleJsonDb is read-only, no-op
     pass
 
 
 def update_suggestion(db, suggestion_id, status):
+    """Dispatch to the backend-specific update_suggestion function."""
     return globals()[f"{db.module_name}_update_suggestion"](db, suggestion_id, status)
 
 
@@ -1130,6 +1273,11 @@ def update_suggestion(db, suggestion_id, status):
 
 
 def json_db_delete_suggestion(self, suggestion_id):
+    """Delete a suggestion from the in-memory JSON database.
+
+    Raises:
+        ValueError: If no suggestion with the given UUID exists.
+    """
     suggestions = self.data.get("suggestions", [])
     idx = next((i for i, s in enumerate(suggestions) if s.get("uuid") == suggestion_id), None)
     if idx is None:
@@ -1139,6 +1287,11 @@ def json_db_delete_suggestion(self, suggestion_id):
 
 
 def json_file_db_delete_suggestion(self, suggestion_id):
+    """Delete a suggestion from the JSON file database.
+
+    Raises:
+        ValueError: If no suggestion with the given UUID exists.
+    """
     with open(self.data_file_path, "r") as file:
         json_file = json.load(file)
 
@@ -1154,17 +1307,24 @@ def json_file_db_delete_suggestion(self, suggestion_id):
 
 
 def mongodb_db_delete_suggestion(self, suggestion_id):
+    """Delete a suggestion from MongoDB.
+
+    Raises:
+        ValueError: If no suggestion with the given UUID exists.
+    """
     result = self.db.suggestions.delete_one({"uuid": suggestion_id})
     if result.deleted_count == 0:
         raise ValueError(f"Suggestion with uuid {suggestion_id} not found")
 
 
 def google_json_db_delete_suggestion(self, suggestion_id):
+    """No-op for Google Cloud Storage JSON (read-only backend)."""
     # GoogleJsonDb is read-only, no-op
     pass
 
 
 def delete_suggestion(db, suggestion_id):
+    """Dispatch to the backend-specific delete_suggestion function."""
     return globals()[f"{db.module_name}_delete_suggestion"](db, suggestion_id)
 
 
@@ -1173,6 +1333,11 @@ def delete_suggestion(db, suggestion_id):
 
 
 def json_db_add_report(self, report_data):
+    """Add a report to the in-memory JSON database.
+
+    Raises:
+        ValueError: If a report with the same UUID already exists.
+    """
     reports = self.data.setdefault("reports", [])
     if any(r.get("uuid") == report_data.get("uuid") for r in reports):
         raise ValueError(f"Report with uuid {report_data['uuid']} already exists")
@@ -1181,6 +1346,11 @@ def json_db_add_report(self, report_data):
 
 
 def json_file_db_add_report(self, report_data):
+    """Add a report to the JSON file database.
+
+    Raises:
+        ValueError: If a report with the same UUID already exists.
+    """
     with open(self.data_file_path, "r") as file:
         json_file = json.load(file)
 
@@ -1195,6 +1365,11 @@ def json_file_db_add_report(self, report_data):
 
 
 def mongodb_db_add_report(self, report_data):
+    """Add a report to MongoDB.
+
+    Raises:
+        ValueError: If a report with the same UUID already exists.
+    """
     existing = self.db.reports.find_one({"uuid": report_data.get("uuid")})
     if existing:
         raise ValueError(f"Report with uuid {report_data['uuid']} already exists")
@@ -1203,12 +1378,14 @@ def mongodb_db_add_report(self, report_data):
 
 
 def google_json_db_add_report(self, report_data):
+    """No-op for Google Cloud Storage JSON (read-only backend)."""
     # Temporary workaround: just use notifier without storing
     # Full implementation would require writing back to Google Cloud Storage
     pass
 
 
 def add_report(db, report_data):
+    """Dispatch to the backend-specific add_report function."""
     return globals()[f"{db.module_name}_add_report"](db, report_data)
 
 
@@ -1217,6 +1394,7 @@ def add_report(db, report_data):
 
 
 def json_db_get_reports(self, query_params):
+    """Return reports from in-memory JSON database, optionally filtered by status and priority."""
     reports = self.data.get("reports", [])
 
     statuses = query_params.get("status")
@@ -1237,6 +1415,7 @@ def json_db_get_reports_paginated(self, query):
 
 
 def json_file_db_get_reports(self, query_params):
+    """Return reports from JSON file database, optionally filtered by status and priority."""
     with open(self.data_file_path, "r") as file:
         json_file = json.load(file)
 
@@ -1261,6 +1440,7 @@ def json_file_db_get_reports_paginated(self, query):
 
 
 def mongodb_db_get_reports(self, query_params):
+    """Return reports from MongoDB, optionally filtered by status and priority."""
     query = {}
 
     statuses = query_params.get("status")
@@ -1315,6 +1495,7 @@ def mongodb_db_get_reports_paginated(self, query):
 
 
 def google_json_db_get_reports(self, query_params):
+    """Return empty list for Google Cloud Storage JSON (read-only backend)."""
     # GoogleJsonDb is read-only, reports not stored in blob
     return []
 
@@ -1325,10 +1506,12 @@ def google_json_db_get_reports_paginated(self, query):
 
 
 def get_reports(db):
+    """Dispatch to the backend-specific get_reports function."""
     return globals()[f"{db.module_name}_get_reports"]
 
 
 def get_reports_paginated(db):
+    """Dispatch to the backend-specific get_reports_paginated function."""
     return globals()[f"{db.module_name}_get_reports_paginated"]
 
 
@@ -1337,10 +1520,12 @@ def get_reports_paginated(db):
 
 
 def json_db_get_report(self, report_id):
+    """Return a single report by UUID from in-memory JSON database."""
     return next((r for r in self.data.get("reports", []) if r.get("uuid") == report_id), None)
 
 
 def json_file_db_get_report(self, report_id):
+    """Return a single report by UUID from JSON file database."""
     with open(self.data_file_path, "r") as file:
         json_file = json.load(file)
 
@@ -1350,15 +1535,18 @@ def json_file_db_get_report(self, report_id):
 
 
 def mongodb_db_get_report(self, report_id):
+    """Return a single report by UUID from MongoDB."""
     return self.db.reports.find_one({"uuid": report_id}, {"_id": 0})
 
 
 def google_json_db_get_report(self, report_id):
+    """Return None for Google Cloud Storage JSON (read-only backend)."""
     # GoogleJsonDb is read-only, reports not stored in blob
     return None
 
 
 def get_report(db):
+    """Dispatch to the backend-specific get_report function."""
     return globals()[f"{db.module_name}_get_report"]
 
 
@@ -1367,6 +1555,11 @@ def get_report(db):
 
 
 def json_db_update_report(self, report_id, status=None, priority=None):
+    """Update a report's status and/or priority in the in-memory JSON database.
+
+    Raises:
+        ReportNotFoundError: If no report with the given UUID exists.
+    """
     reports = self.data.get("reports", [])
     for r in reports:
         if r.get("uuid") == report_id:
@@ -1379,6 +1572,11 @@ def json_db_update_report(self, report_id, status=None, priority=None):
 
 
 def json_file_db_update_report(self, report_id, status=None, priority=None):
+    """Update a report's status and/or priority in the JSON file database.
+
+    Raises:
+        ReportNotFoundError: If no report with the given UUID exists.
+    """
     with open(self.data_file_path, "r") as file:
         json_file = json.load(file)
 
@@ -1399,6 +1597,11 @@ def json_file_db_update_report(self, report_id, status=None, priority=None):
 
 
 def mongodb_db_update_report(self, report_id, status=None, priority=None):
+    """Update a report's status and/or priority in MongoDB.
+
+    Raises:
+        ReportNotFoundError: If no report with the given UUID exists.
+    """
     update_doc = {}
     if status:
         update_doc["status"] = status
@@ -1412,11 +1615,13 @@ def mongodb_db_update_report(self, report_id, status=None, priority=None):
 
 
 def google_json_db_update_report(self, report_id, status=None, priority=None):
+    """No-op for Google Cloud Storage JSON (read-only backend)."""
     # GoogleJsonDb is read-only, no-op
     pass
 
 
 def update_report(db, report_id, status=None, priority=None):
+    """Dispatch to the backend-specific update_report function."""
     return globals()[f"{db.module_name}_update_report"](db, report_id, status, priority)
 
 
@@ -1425,6 +1630,11 @@ def update_report(db, report_id, status=None, priority=None):
 
 
 def json_db_delete_report(self, report_id):
+    """Delete a report from the in-memory JSON database.
+
+    Raises:
+        ReportNotFoundError: If no report with the given UUID exists.
+    """
     reports = self.data.get("reports", [])
     idx = next((i for i, r in enumerate(reports) if r.get("uuid") == report_id), None)
     if idx is None:
@@ -1433,6 +1643,11 @@ def json_db_delete_report(self, report_id):
 
 
 def json_file_db_delete_report(self, report_id):
+    """Delete a report from the JSON file database.
+
+    Raises:
+        ReportNotFoundError: If no report with the given UUID exists.
+    """
     with open(self.data_file_path, "r") as file:
         json_file = json.load(file)
 
@@ -1448,17 +1663,24 @@ def json_file_db_delete_report(self, report_id):
 
 
 def mongodb_db_delete_report(self, report_id):
+    """Delete a report from MongoDB.
+
+    Raises:
+        ReportNotFoundError: If no report with the given UUID exists.
+    """
     result = self.db.reports.delete_one({"uuid": report_id})
     if result.deleted_count == 0:
         raise ReportNotFoundError(report_id)
 
 
 def google_json_db_delete_report(self, report_id):
+    """No-op for Google Cloud Storage JSON (read-only backend)."""
     # GoogleJsonDb is read-only, no-op
     pass
 
 
 def delete_report(db, report_id):
+    """Dispatch to the backend-specific delete_report function."""
     return globals()[f"{db.module_name}_delete_report"](db, report_id)
 
 
@@ -1468,6 +1690,18 @@ def delete_report(db, report_id):
 
 
 def extend_db_with_goodmap_queries(db, location_model):
+    """Register all goodmap-specific query functions on the database instance.
+
+    Binds backend-specific implementations of all CRUD operations for locations,
+    suggestions, and reports to the given database object.
+
+    Args:
+        db: Database instance to extend with query functions.
+        location_model: Pydantic model class used for location validation.
+
+    Returns:
+        The extended database instance.
+    """
     db.extend("get_issue_options", get_issue_options(db))
     db.extend("get_data", get_data(db))
     db.extend("get_visible_data", get_visible_data(db))
