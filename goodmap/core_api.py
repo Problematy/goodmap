@@ -41,7 +41,6 @@ CLUSTER_RADIUS = 200
 CLUSTER_EXTENT = 512
 
 # Report description validation constants
-DEFAULT_ISSUE_OPTIONS = ["notHere", "overload", "broken", "other"]
 MAX_DESCRIPTION_LENGTH = 500
 
 # Error message constants
@@ -51,6 +50,17 @@ ERROR_LOCATION_NOT_FOUND = "Location not found"
 ERROR_INVALID_DESCRIPTION = "Invalid report description"
 
 logger = logging.getLogger(__name__)
+
+
+@deprecation.deprecated(
+    deprecated_in="1.5.0",
+    removed_in="2.0.0",
+    details="Configure 'reported_issue_types' in the database instead. "
+    "The hardcoded fallback will be removed in a future release.",
+)
+def get_default_issue_options():
+    """Return hardcoded fallback issue options for backward compatibility."""
+    return ["notHere", "overload", "broken", "other"]
 
 
 def make_tuple_translation(keys_to_translate):
@@ -259,7 +269,7 @@ def core_pages(
             # Validate description against configured issue options
             issue_options = database.get_issue_options()
             if not issue_options:
-                issue_options = DEFAULT_ISSUE_OPTIONS
+                issue_options = get_default_issue_options()
 
             if description not in issue_options:
                 if "other" not in issue_options:
