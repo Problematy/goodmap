@@ -30,5 +30,8 @@
     "locationServicesDisabled": "Служби визначення місцезнаходження вимкнено. Будь ласка, увімкніть їх, щоб скористатися цією функцією.",
     "locationBannerMessage": "Увімкніть геолокацію, щоб бачити найближчі точки та додавати нові.",
     "locationBannerEnable": "Увімкнути",
-    "locationBannerDismiss": "Закрити"
+    "locationBannerDismiss": "Закрити",
+    "shareLocation": "поділитися",
+    "linkCopied": "Посилання скопійовано",
+    "linkCopyFailed": "Не вдалося скопіювати посилання"
 }

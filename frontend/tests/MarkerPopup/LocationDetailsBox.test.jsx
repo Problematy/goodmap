@@ -1,7 +1,8 @@
 import React from 'react';
 import '@testing-library/jest-dom';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { LocationDetailsBox } from '../../src/components/MarkerPopup/LocationDetails';
+import { toast } from '../../src/utils/toast';
 
 const correctMarkerData = {
     title: 'Most Grunwaldzki',
@@ -92,6 +93,42 @@ describe('should render marker popup correctly', () => {
 
                 consoleSpy.mockRestore();
             });
+        });
+    });
+});
+
+jest.mock('../../src/utils/toast', () => ({
+    toast: {
+        success: jest.fn(),
+        error: jest.fn(),
+        info: jest.fn(),
+    },
+}));
+
+describe('share button', () => {
+    beforeEach(() => {
+        jest.restoreAllMocks();
+        render(<LocationDetailsBox place={correctMarkerData} />);
+    });
+
+    it('should render share button in the popup', () => {
+        expect(screen.getByText('share')).toBeInTheDocument();
+    });
+
+    it('should copy share URL to clipboard when clicked', () => {
+        const writeTextMock = jest.fn().mockResolvedValue(undefined);
+        Object.assign(navigator, {
+            clipboard: { writeText: writeTextMock },
+            share: undefined,
+        });
+
+        fireEvent.click(screen.getByText('share'));
+
+        return waitFor(() => {
+            expect(writeTextMock).toHaveBeenCalledWith(
+                expect.stringContaining(`?locationId=${correctMarkerData.metadata.uuid}`),
+            );
+            expect(toast.success).toHaveBeenCalledWith('Link copied to clipboard');
         });
     });
 });

@@ -31,5 +31,8 @@
     "locationServicesDisabled": "Usługi lokalizacji są wyłączone. Włącz je, aby korzystać z tej funkcji.",
     "locationBannerMessage": "Włącz lokalizację, aby zobaczyć pobliskie punkty i dodawać nowe.",
     "locationBannerEnable": "Włącz",
-    "locationBannerDismiss": "Zamknij"
+    "locationBannerDismiss": "Zamknij",
+    "shareLocation": "udostępnij",
+    "linkCopied": "Link skopiowany do schowka",
+    "linkCopyFailed": "Nie udało się skopiować linku"
 }

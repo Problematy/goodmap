@@ -2,11 +2,13 @@ import PropTypes from 'prop-types';
 import styled from 'styled-components';
 import ExploreIcon from '@mui/icons-material/Explore';
 import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined';
+import ShareIcon from '@mui/icons-material/Share';
 import { useTranslation } from 'react-i18next';
 import { isMobile } from 'react-device-detect';
 import { buttonStyleSmall } from '../../styles/buttonStyle';
 import { getContentAsString, mapCustomTypeToReactComponent } from './mapCustomTypeToReactComponent';
 import { ReportProblemForm } from './ReportProblemForm';
+import { toast } from '../../utils/toast';
 
 import React, { useState } from 'react';
 
@@ -57,6 +59,24 @@ const DetailValue = styled.span`
 
 const CTAContainer = styled.div`
     margin: 8px;
+`;
+
+const ActionButton = styled.button`
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #888;
+    font-size: 11px;
+    transition: color 0.2s;
+    background: none;
+    border: none;
+    padding: 0;
+
+    &:hover,
+    &:focus {
+        color: ${props => props.$hoverColor};
+    }
 `;
 
 /**
@@ -206,6 +226,65 @@ LocationDetails.propTypes = {
 };
 
 /**
+ * Button component that shares or copies a link to the current location.
+ * On mobile, tries the Web Share API first, falling back to clipboard copy.
+ * On desktop, copies the URL to clipboard and shows a toast notification.
+ *
+ * @param {Object} props - Component props
+ * @param {Object} props.place - Location data object
+ * @param {Object} props.place.metadata - Metadata object
+ * @param {string} props.place.metadata.uuid - Unique identifier for the location
+ * @returns {React.ReactElement} Button element for sharing the location
+ */
+const ShareLocationButton = ({ place }) => {
+    const { t } = useTranslation();
+
+    const copyToClipboard = async url => {
+        if (!navigator.clipboard) {
+            toast.error(t('linkCopyFailed'));
+            return;
+        }
+        try {
+            await navigator.clipboard.writeText(url);
+            toast.success(t('linkCopied'));
+        } catch {
+            toast.error(t('linkCopyFailed'));
+        }
+    };
+
+    const handleShare = async () => {
+        const shareUrl = `${globalThis.location.origin}${globalThis.location.pathname}?locationId=${place.metadata.uuid}`;
+
+        if (navigator.share) {
+            try {
+                await navigator.share({ url: shareUrl });
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    await copyToClipboard(shareUrl);
+                }
+            }
+        } else {
+            await copyToClipboard(shareUrl);
+        }
+    };
+
+    return (
+        <ActionButton type="button" onClick={handleShare} $hoverColor="#1976d2">
+            <ShareIcon style={{ fontSize: 14 }} />
+            <span>{t('shareLocation')}</span>
+        </ActionButton>
+    );
+};
+
+ShareLocationButton.propTypes = {
+    place: PropTypes.shape({
+        metadata: PropTypes.shape({
+            uuid: PropTypes.string.isRequired,
+        }).isRequired,
+    }).isRequired,
+};
+
+/**
  * Main component that wraps location details with additional features.
  * Includes location details, optional navigation button (mobile only), and report problem form.
  * Manages the visibility state of the problem reporting form.
@@ -241,33 +320,21 @@ export const LocationDetailsBox = ({ place }) => {
                 {isMobile && <NavigateMeButton place={place} />}
             </div>
 
-            <button
-                type="button"
-                onClick={toggleForm}
+            <div
                 style={{
-                    cursor: 'pointer',
                     display: 'flex',
+                    justifyContent: 'space-between',
                     alignItems: 'center',
-                    justifyContent: 'flex-end',
-                    gap: '4px',
-                    color: '#888',
-                    fontSize: '11px',
                     marginTop: '8px',
                     marginBottom: '5px',
-                    transition: 'color 0.2s',
-                    background: 'none',
-                    border: 'none',
-                    padding: 0,
-                    width: '100%',
                 }}
-                onMouseOver={e => (e.currentTarget.style.color = '#d32f2f')}
-                onFocus={e => (e.currentTarget.style.color = '#d32f2f')}
-                onMouseOut={e => (e.currentTarget.style.color = '#888')}
-                onBlur={e => (e.currentTarget.style.color = '#888')}
             >
-                <ReportProblemOutlinedIcon style={{ fontSize: 14 }} />
-                <span>{t('ReportIssueButton')}</span>
-            </button>
+                <ShareLocationButton place={place} />
+                <ActionButton type="button" onClick={toggleForm} $hoverColor="#d32f2f">
+                    <ReportProblemOutlinedIcon style={{ fontSize: 14 }} />
+                    <span>{t('ReportIssueButton')}</span>
+                </ActionButton>
+            </div>
             {showForm && <ReportProblemForm placeId={place.metadata.uuid} />}
         </React.Fragment>
     );

@@ -31,5 +31,8 @@
     "locationServicesDisabled": "Location services are disabled. Please enable them to use this feature.",
     "locationBannerMessage": "Enable location to see nearby points and suggest new ones.",
     "locationBannerEnable": "Enable",
-    "locationBannerDismiss": "Dismiss"
+    "locationBannerDismiss": "Dismiss",
+    "shareLocation": "share",
+    "linkCopied": "Link copied to clipboard",
+    "linkCopyFailed": "Failed to copy link"
 }
