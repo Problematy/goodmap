@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/Problematy/goodmap-frontend/compare/1.4.0...1.5.0) (2026-02-05)
+
+
+### Features
+
+* added share button ([#150](https://github.com/Problematy/goodmap-frontend/issues/150)) ([dd111a7](https://github.com/Problematy/goodmap-frontend/commit/dd111a7fc565f7ed5a007b91df5224aab1744b51))
+
 # [1.4.0](https://github.com/Problematy/goodmap-frontend/compare/1.3.3...1.4.0) (2026-02-04)
 
 
