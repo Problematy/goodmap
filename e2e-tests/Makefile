@@ -2,6 +2,7 @@
 -include .env
 
 CONFIG_PATH ?= e2e_test_config.yml
+STRESS_CONFIG_PATH ?= e2e_stress_test_config.yml
 GOODMAP_PATH ?= .
 PYTEST_SPEC ?= tests/
 
@@ -32,6 +33,9 @@ e2e-stress-tests:
 
 run-e2e-env:
 	poetry --project '$(GOODMAP_PATH)' run flask --app "goodmap.goodmap:create_app(config_path='$(CONFIG_PATH)')" --debug run
+
+run-e2e-stress-env:
+	poetry --project '$(GOODMAP_PATH)' run flask --app "goodmap.goodmap:create_app(config_path='$(STRESS_CONFIG_PATH)')" --debug run
 
 compile-translations:
 	poetry run pybabel compile -d translations

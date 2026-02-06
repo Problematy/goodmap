@@ -41,13 +41,11 @@ class TestGeolocationRequestOnPageLoad:
         expect(location_button).to_have_css("opacity", "1", timeout=5000)
         expect(location_button).to_have_css("filter", "none")
 
-    def test_buttons_show_disabled_when_permission_denied_on_load(self, browser, webpack_script):
+    def test_buttons_show_disabled_when_permission_denied_on_load(self, browser):
         """
         Verify that when geolocation permission is denied/not granted,
         buttons show disabled state on page load.
         """
-        from tests.conftest import WEBPACK_SCRIPT_URL
-
         # Mock geolocation API to simulate permission denied - add at context level
         # so it runs before any page script
         geolocation_denied_script = """
@@ -76,18 +74,9 @@ class TestGeolocationRequestOnPageLoad:
 
         page = context.new_page()
 
-        # Setup webpack route interception
-        def handle_webpack_route(route):
-            route.fulfill(
-                status=200,
-                content_type="application/javascript; charset=utf-8",
-                body=webpack_script,
-            )
-
         def block_hmr_route(route):
             route.abort()
 
-        page.route(WEBPACK_SCRIPT_URL, handle_webpack_route)
         page.route("**/ws", block_hmr_route)
         page.route("**/*.hot-update.*", block_hmr_route)
 

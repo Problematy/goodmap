@@ -9,7 +9,7 @@ import time
 
 from playwright.sync_api import Page, expect
 
-from tests.conftest import BASE_URL
+from tests.conftest import BASE_URL, MARKER_LOAD_TIMEOUT
 
 
 class TestStress:
@@ -88,7 +88,8 @@ class TestStress:
             elapsed_ms = (end_time - start_time) * 1000
 
             print(
-                f"Run {run_number} took {elapsed_ms:.0f}ms and loaded {marker_count} markers/clusters"
+                f"Run {run_number} took {elapsed_ms:.0f}ms "
+                f"and loaded {marker_count} markers/clusters"
             )
 
             # Record performance data
@@ -98,6 +99,38 @@ class TestStress:
             assert (
                 marker_count >= min_expected_markers
             ), f"Expected at least {min_expected_markers} markers but got {marker_count}"
+
+            # Click clusters until individual markers appear, then click a marker
+            clusters = page.locator(".marker-cluster")
+            individual_markers = page.locator(".leaflet-marker-icon:not(.marker-cluster)")
+            popup = page.locator(".leaflet-popup-content")
+            max_clicks = 20
+            for i in range(max_clicks):
+                if individual_markers.count() > 0:
+                    break
+                if clusters.count() == 0:
+                    raise AssertionError("No clusters or individual markers found to click")
+                clusters.first.click()
+                print(f"Click {i + 1}: expanding cluster...")
+                expect(page.locator(".leaflet-marker-icon").first).to_be_visible(
+                    timeout=MARKER_LOAD_TIMEOUT
+                )
+            else:
+                raise AssertionError(
+                    f"No individual markers appeared after {max_clicks} cluster clicks"
+                )
+
+            # Click an individual marker to open its popup
+            individual_markers.first.click()
+            expect(popup).to_be_visible(timeout=MARKER_LOAD_TIMEOUT)
+
+            # Wait for content to load (popup initially shows "Loading...")
+            title = popup.locator("h3")
+            expect(title).to_be_visible(timeout=MARKER_LOAD_TIMEOUT)
+            assert title.text_content(), "Popup title should not be empty"
+            expect(popup.get_by_text("type_of_place").first).to_be_visible()
+            expect(popup.get_by_text("accessible_by").first).to_be_visible()
+            print(f"Popup verified for: {title.text_content()}")
 
         # Save performance data to JSON file
         performance_tracker.save("test-results/stress-test-perf.json", max_allowed_time_ms)

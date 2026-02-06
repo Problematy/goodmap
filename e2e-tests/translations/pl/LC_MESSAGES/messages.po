@@ -41,6 +41,13 @@ msgstr "duży most"
 msgid "small bridge"
 msgstr "mały most"
 
+# Reported issue types
+msgid "under construction"
+msgstr "w budowie"
+
+msgid "has a hole"
+msgstr "ma dziurę"
+
 # Help texts - category headers
 msgid "categories_help_accessible_by"
 msgstr "Kto może korzystać z tego mostu"

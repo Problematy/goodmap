@@ -1,7 +1,7 @@
 """
 Pytest fixtures and configuration for Playwright E2E tests.
 
-This module provides custom fixtures for:
+Provides custom fixtures for:
 - Webpack script caching and interception
 - Window.open() stub tracking
 - Geolocation mocking
@@ -11,221 +11,120 @@ This module provides custom fixtures for:
 import json
 from collections.abc import Callable, Generator
 from pathlib import Path
-from urllib.error import URLError
-from urllib.parse import urlparse
-from urllib.request import urlopen
 
 import pytest
-from playwright.sync_api import BrowserContext, Page, Route
+from playwright.sync_api import BrowserContext, Page
 
-# Constants
-WEBPACK_SCRIPT_URL = "http://localhost:8080/index.min.js"
-CACHE_DIR = Path(".playwright-cache")
-CACHE_FILE = CACHE_DIR / "webpack-script.js"
 BASE_URL = "http://localhost:5000"
 
-# Timeouts (in milliseconds)
-MAP_LOAD_TIMEOUT = 5000
 MARKER_LOAD_TIMEOUT = 5000
 TABLE_LOAD_TIMEOUT = 5000
 
-# Mobile device configurations for Playwright
 MOBILE_DEVICES = {
     "iphone-x": {
         "viewport": {"width": 375, "height": 812},
-        "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1",
+        "user_agent": (
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) "
+            "AppleWebKit/604.1.38 (KHTML, like Gecko) "
+            "Version/11.0 Mobile/15A372 Safari/604.1"
+        ),
     },
     "iphone-6": {
         "viewport": {"width": 375, "height": 667},
-        "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1",
+        "user_agent": (
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) "
+            "AppleWebKit/604.1.38 (KHTML, like Gecko) "
+            "Version/11.0 Mobile/15A372 Safari/604.1"
+        ),
     },
     "ipad-2": {
         "viewport": {"width": 768, "height": 1024},
-        "user_agent": "Mozilla/5.0 (iPad; CPU OS 11_0 like Mac OS X) AppleWebKit/604.1.34 (KHTML, like Gecko) Version/11.0 Mobile/15A5341f Safari/604.1",
+        "user_agent": (
+            "Mozilla/5.0 (iPad; CPU OS 11_0 like Mac OS X) "
+            "AppleWebKit/604.1.34 (KHTML, like Gecko) "
+            "Version/11.0 Mobile/15A5341f Safari/604.1"
+        ),
     },
     "samsung-s10": {
         "viewport": {"width": 360, "height": 760},
-        "user_agent": "Mozilla/5.0 (Linux; Android 9; SAMSUNG SM-G973U) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/9.2 Chrome/67.0.3396.87 Mobile Safari/537.36",
+        "user_agent": (
+            "Mozilla/5.0 (Linux; Android 9; SAMSUNG SM-G973U) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "SamsungBrowser/9.2 Chrome/67.0.3396.87 Mobile Safari/537.36"
+        ),
     },
 }
 
-# Device lists for parametrized tests
 ALL_MOBILE_DEVICES = list(MOBILE_DEVICES.keys())
 
-# UI alignment tolerance (in pixels)
 UI_VERTICAL_ALIGNMENT_TOLERANCE = 3
 
-# Test locations
 TEST_LOCATIONS = {
     "RYSY_MOUNTAIN": {
         "lat": 49.179,
         "lon": 20.088,
-        # Tile pattern matches zoom 14-16 for Rysy Mountain area
-        # Zoom 16: 36424/22456, Zoom 15: 18211-18212/11227-11228, Zoom 14: 9105-9106/5613-5614
         "tile_pattern": r"https://[abc]\.tile\.openstreetmap\.org/1[456]/\d+/\d+\.png",
     },
     "WROCLAW_CENTER": {"lat": 51.10655, "lon": 17.0555},
 }
 
 
-def pytest_configure(config):
+def _block_hmr(page: Page) -> None:
+    """Block HMR/hot reload requests to prevent page refreshes during tests."""
+    page.route("**/ws", lambda route: route.abort())
+    page.route("**/*.hot-update.*", lambda route: route.abort())
+
+
+def _stub_window_open(page: Page) -> Callable[[], list[str]]:
+    """Stub window.open() and return a callable that retrieves opened URLs."""
+    opened_urls = []
+    page.expose_function("__captureWindowOpen", lambda url: opened_urls.append(url))
+    page.add_init_script(
+        """
+        window.open = function(url, target, features) {
+            window.__captureWindowOpen(url);
+            return null;
+        };
     """
-    Pytest hook called before test collection.
-    Fetches and caches the webpack script from the frontend dev server.
-    """
-    # In xdist, run this only on master (workers share FS)
-    if getattr(config, "workerinput", None) is not None:
-        return
-
-    # Create cache directory if it doesn't exist
-    CACHE_DIR.mkdir(parents=True, exist_ok=True)
-
-    # Fetch webpack script if not cached
-    if not CACHE_FILE.exists():
-        print(f"\nFetching webpack script from {WEBPACK_SCRIPT_URL}...")
-        try:
-            # Validate URL scheme and hostname (Ruff S310)
-            parsed = urlparse(WEBPACK_SCRIPT_URL)
-            if parsed.scheme not in {"http", "https"} or parsed.hostname not in {
-                "localhost",
-                "127.0.0.1",
-            }:
-                raise ValueError(f"Refusing non-local URL: {WEBPACK_SCRIPT_URL}")
-
-            with urlopen(WEBPACK_SCRIPT_URL, timeout=10) as response:  # noqa: S310
-                script_content = response.read().decode("utf-8")
-
-            # Validate script content
-            if len(script_content) < 100:
-                raise ValueError("Webpack script content is too short, likely invalid")
-
-            # Save to cache (atomic write via temp file)
-            tmp = CACHE_FILE.with_suffix(".js.tmp")
-            tmp.write_text(script_content, encoding="utf-8")
-            tmp.replace(CACHE_FILE)
-            print(f"Webpack script cached to {CACHE_FILE} ({len(script_content)} bytes)")
-
-        except (URLError, TimeoutError) as e:
-            print(f"WARNING: Failed to fetch webpack script: {e}")
-            print("Tests may fail if webpack script is required.")
-    else:
-        print(f"\nUsing cached webpack script from {CACHE_FILE}")
-
-
-@pytest.hookimpl(tryfirst=True, hookwrapper=True)
-def pytest_runtest_makereport(item, call):  # noqa: ARG001
-    """
-    Hook to store test result on the item for use in fixtures.
-    Used by mobile_page fixture to determine if video should be retained.
-    """
-    outcome = yield
-    rep = outcome.get_result()
-    setattr(item, f"rep_{rep.when}", rep)
-
-
-@pytest.fixture(scope="session")
-def webpack_script() -> str:
-    """
-    Session-scoped fixture that loads the cached webpack script.
-    """
-    if not CACHE_FILE.exists():
-        raise FileNotFoundError(
-            f"Webpack script cache file not found: {CACHE_FILE}. "
-            "Ensure the frontend dev server is running on localhost:8080."
-        )
-
-    return CACHE_FILE.read_text()
+    )
+    return lambda: opened_urls.copy()
 
 
 @pytest.fixture
-def page(page: Page, webpack_script: str) -> Page:
+def page(page: Page) -> Page:
     """
-    Override the default Playwright page fixture to intercept webpack script requests.
+    Override the default Playwright page fixture.
 
-    This fixture automatically routes requests to the webpack script URL
-    and serves the cached version instead of hitting the network.
     Sets desktop viewport size (1280x800) for consistent desktop testing.
     Blocks HMR/websocket requests to prevent page refreshes during tests.
     """
-    # Set desktop viewport size
     page.set_viewport_size({"width": 1280, "height": 800})
-
-    def handle_webpack_route(route: Route) -> None:
-        """Intercept webpack script requests and serve from cache"""
-        route.fulfill(
-            status=200, content_type="application/javascript; charset=utf-8", body=webpack_script
-        )
-
-    def block_hmr_route(route: Route) -> None:
-        """Block HMR/hot reload requests to prevent page refreshes"""
-        route.abort()
-
-    # Setup route interception
-    page.route(WEBPACK_SCRIPT_URL, handle_webpack_route)
-    # Block HMR websocket and hot update requests
-    page.route("**/ws", block_hmr_route)
-    page.route("**/*.hot-update.*", block_hmr_route)
-
+    _block_hmr(page)
     return page
 
 
 @pytest.fixture
 def window_open_stub(page: Page) -> Callable[[], list[str]]:
     """
-    Fixture that stubs window.open() and tracks all opened URLs.
+    Stub window.open() and track all opened URLs.
 
-    Returns:
-        A callable that returns the list of URLs opened via window.open()
-
-    Example:
-        def test_popup_opens_link(page, window_open_stub):
-            page.goto(BASE_URL)
-            page.click("text=Open Link")
-            opened_urls = window_open_stub()
-            assert len(opened_urls) == 1
-            assert "google.com" in opened_urls[0]
+    Returns a callable that returns the list of URLs opened via window.open().
     """
-    opened_urls = []
-
-    # Expose a function to capture window.open calls
-    page.expose_function("__captureWindowOpen", lambda url: opened_urls.append(url))
-
-    # Stub window.open in the page context
-    page.add_init_script(
-        """
-        window.open = function(url, target, features) {
-            window.__captureWindowOpen(url);
-            return null;  // Prevent actual window opening
-        };
-    """
-    )
-
-    def get_opened_urls() -> list[str]:
-        return opened_urls.copy()
-
-    return get_opened_urls
+    return _stub_window_open(page)
 
 
 @pytest.fixture
-def mobile_page(browser, webpack_script: str, request) -> Generator[Page, None, None]:
+def mobile_page(browser, request) -> Generator[Page, None, None]:
     """
-    Fixture that creates a page with proper mobile device emulation.
+    Create a page with proper mobile device emulation.
 
-    This fixture creates a new browser context with the correct user agent,
+    Creates a new browser context with the correct user agent,
     ensuring that react-device-detect properly identifies the device as mobile.
 
     Supports two parametrization styles:
-    1. Indirect (preferred):
-        @pytest.mark.parametrize("mobile_page", ALL_MOBILE_DEVICES, indirect=True)
-        def test_mobile(mobile_page):
-            ...
-
-    2. Legacy (device_name parameter):
-        @pytest.mark.parametrize("device_name", ALL_MOBILE_DEVICES)
-        def test_mobile(mobile_page, device_name):
-            ...
+    1. Indirect: @pytest.mark.parametrize("mobile_page", ALL_MOBILE_DEVICES, indirect=True)
+    2. Legacy: @pytest.mark.parametrize("device_name", ALL_MOBILE_DEVICES)
     """
-    # Support both indirect parametrization and legacy device_name parameter
     if hasattr(request, "param"):
         device_name = request.param
     else:
@@ -236,148 +135,53 @@ def mobile_page(browser, webpack_script: str, request) -> Generator[Page, None, 
         if not device_name:
             raise ValueError("mobile_page fixture requires 'device_name' parameter")
 
-    try:
-        device_config = MOBILE_DEVICES[device_name]
-    except KeyError as e:
-        raise ValueError(
-            f"Unknown device_name={device_name}. Expected one of: {list(MOBILE_DEVICES)}"
-        ) from e
+    device_config = MOBILE_DEVICES[device_name]
 
-    # Determine video recording settings from pytest config
-    video_option = request.config.getoption("--video", default="off")
-    record_video_dir = None
-    record_video_size = None
-    if video_option in ("on", "retain-on-failure"):
-        output_dir = request.config.getoption("--output", default="test-results")
-        # Create a unique directory for this test's video using nodeid to prevent collisions
-        nodeid = request.node.nodeid
-        safe_nodeid = (
-            nodeid.replace("::", "__").replace("/", "__").replace("[", "-").replace("]", "")
-        )
-        record_video_dir = str(Path(output_dir) / safe_nodeid)
-        # Set video size to match mobile viewport for clearer recordings
-        record_video_size = device_config["viewport"]
-
-    # Create a new context with mobile user agent, touch support, and optional video recording
     context = browser.new_context(
         viewport=device_config["viewport"],
         user_agent=device_config["user_agent"],
         has_touch=True,
-        record_video_dir=record_video_dir,
-        record_video_size=record_video_size,
     )
-
-    # Create a page from this context
     page = context.new_page()
-
-    # Setup webpack route interception (same as regular page fixture)
-    def handle_webpack_route(route: Route) -> None:
-        route.fulfill(
-            status=200, content_type="application/javascript; charset=utf-8", body=webpack_script
-        )
-
-    def block_hmr_route(route: Route) -> None:
-        """Block HMR/hot reload requests to prevent page refreshes"""
-        route.abort()
-
-    page.route(WEBPACK_SCRIPT_URL, handle_webpack_route)
-    # Block HMR websocket and hot update requests
-    page.route("**/ws", block_hmr_route)
-    page.route("**/*.hot-update.*", block_hmr_route)
+    _block_hmr(page)
 
     yield page
 
-    # Get video path before closing (video is saved on close)
-    video = page.video
-    video_path = video.path() if video else None
-
-    # Cleanup
     page.close()
     context.close()
-
-    # Handle retain-on-failure: delete video if test passed
-    if video_path and video_option == "retain-on-failure":
-        # Check if any test phase failed (setup, call, or teardown)
-        rep_setup = getattr(request.node, "rep_setup", None)
-        rep_call = getattr(request.node, "rep_call", None)
-        rep_teardown = getattr(request.node, "rep_teardown", None)
-        test_failed = any(rep and rep.failed for rep in (rep_setup, rep_call, rep_teardown))
-        if not test_failed and Path(video_path).exists():
-            Path(video_path).unlink()
-            # Remove empty directory
-            video_dir = Path(video_path).parent
-            if video_dir.exists() and not any(video_dir.iterdir()):
-                video_dir.rmdir()
 
 
 @pytest.fixture
 def mobile_window_open_stub(mobile_page: Page) -> Callable[[], list[str]]:
     """
-    Fixture that stubs window.open() for mobile pages and tracks all opened URLs.
-    Same as window_open_stub but works with mobile_page fixture.
+    Stub window.open() for mobile pages and track all opened URLs.
+
+    Same as window_open_stub but works with the mobile_page fixture.
     """
-    opened_urls = []
-
-    # Expose a function to capture window.open calls
-    mobile_page.expose_function("__captureWindowOpen", lambda url: opened_urls.append(url))
-
-    # Stub window.open in the page context
-    mobile_page.add_init_script(
-        """
-        window.open = function(url, target, features) {
-            window.__captureWindowOpen(url);
-            return null;  // Prevent actual window opening
-        };
-    """
-    )
-
-    def get_opened_urls() -> list[str]:
-        return opened_urls.copy()
-
-    return get_opened_urls
+    return _stub_window_open(mobile_page)
 
 
 @pytest.fixture
 def geolocation(context: BrowserContext) -> Callable[[float, float], None]:
     """
-    Fixture that provides a function to set geolocation.
+    Provide a function to set browser geolocation.
 
-    Returns:
-        A callable that sets the geolocation to the given lat/lon coordinates.
-
-    Example:
-        def test_my_location(page, geolocation):
-            geolocation(50.0614, 19.9365)  # Krakow coordinates
-            page.goto(BASE_URL)
-            # ... test location-based functionality
+    Returns a callable that sets the geolocation to the given lat/lon coordinates.
     """
-    # Grant geolocation permissions
     context.grant_permissions(["geolocation"])
 
     def set_location(latitude: float, longitude: float) -> None:
-        """Set the browser geolocation"""
         context.set_geolocation({"latitude": latitude, "longitude": longitude})
 
     return set_location
 
 
 @pytest.fixture
-def performance_tracker() -> Callable:
+def performance_tracker():
     """
-    Fixture for tracking performance metrics in stress tests.
+    Track performance metrics for stress tests.
 
-    Returns:
-        An object with methods to measure and retrieve run times.
-
-    Example:
-        def test_stress(page, performance_tracker):
-            for i in range(5):
-                start_time = time.time()
-                # ... perform test actions
-                elapsed_ms = (time.time() - start_time) * 1000
-                performance_tracker.add_run(i + 1, elapsed_ms, marker_count)
-
-            performance_tracker.save("test-results/stress-test-perf.json")
+    Returns an object with methods to add_run(), calculate_stats(), and save() results.
     """
 
     class PerformanceTracker:
@@ -387,14 +191,12 @@ def performance_tracker() -> Callable:
             self.expected_runs = 0
 
         def add_run(self, run_number: int, time_ms: float, markers: int):
-            """Add a performance measurement"""
             self.run_times.append(
                 {"run": run_number, "time": round(time_ms, 2), "markers": markers}
             )
             self.num_runs += 1
 
         def calculate_stats(self, max_allowed_ms: int = 25000):
-            """Calculate performance statistics"""
             if not self.run_times:
                 return {}
 
@@ -414,39 +216,9 @@ def performance_tracker() -> Callable:
             }
 
         def save(self, filepath: str, max_allowed_ms: int = 25000):
-            """Save performance data to JSON file"""
             stats = self.calculate_stats(max_allowed_ms)
-
-            # Ensure directory exists
             Path(filepath).parent.mkdir(parents=True, exist_ok=True)
-
             with open(filepath, "w") as f:
                 json.dump(stats, f, indent=2)
 
-            print(f"\nPerformance data saved to {filepath}")
-            if stats:
-                print(f"Average time: {stats['avgTime']}ms")
-                print(f"Max time: {stats['maxTime']}ms")
-                print(f"Passed: {stats['passed']}")
-            else:
-                print("No runs recorded.")
-
     return PerformanceTracker()
-
-
-# Export constants for use in tests
-__all__ = [
-    "ALL_MOBILE_DEVICES",
-    "BASE_URL",
-    "MAP_LOAD_TIMEOUT",
-    "MARKER_LOAD_TIMEOUT",
-    "MOBILE_DEVICES",
-    "TABLE_LOAD_TIMEOUT",
-    "TEST_LOCATIONS",
-    "UI_VERTICAL_ALIGNMENT_TOLERANCE",
-    "geolocation",
-    "page",
-    "performance_tracker",
-    "webpack_script",
-    "window_open_stub",
-]

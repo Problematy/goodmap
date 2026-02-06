@@ -18,3 +18,8 @@ __pycache__/
 # Compiled translation files (generated from .po files)
 translations/**/messages.mo
 
+*~
+
+CLAUDE.md
+.playwright-mcp
+.plans

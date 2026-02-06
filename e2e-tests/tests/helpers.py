@@ -144,11 +144,10 @@ def verify_problem_form(page: Page) -> None:
     expect(dropdown).to_be_visible()
 
     options_text = dropdown.locator("option").all_text_contents()
-    # Check that all problem type options exist
+    # Check that all problem type options exist (dynamic from backend config)
     expected_options = [
-        "this point is not here",
-        "it's overloaded",
-        "it's broken",
+        "under construction",
+        "has a hole",
         "other",
     ]
 

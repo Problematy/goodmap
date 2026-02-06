@@ -180,7 +180,7 @@ class TestLeftPanelMobile:
         expect(filter_dialog).to_be_visible(timeout=5000)
 
         # Filter form should be visible inside dialog
-        filter_form = mobile_page.locator('#filter-form')
+        filter_form = mobile_page.locator("#filter-form")
         expect(filter_form).to_be_visible()
 
     @pytest.mark.parametrize("mobile_page", ["iphone-6"], indirect=True)
@@ -318,15 +318,15 @@ class TestLeftPanelTablet:
 
         # Check that filter category headers are fully visible
         # Look for specific text that was previously truncated
-        panel_text = page.evaluate(
-            "() => document.querySelector('#left-panel').textContent"
-        )
+        panel_text = page.evaluate("() => document.querySelector('#left-panel').textContent")
 
         # These should be fully visible, not truncated
-        assert "type_of_place" in panel_text or "type of place" in panel_text.lower(), \
-            "type_of_place should be fully visible"
-        assert "accessible_by" in panel_text or "accessible by" in panel_text.lower(), \
-            "accessible_by should be fully visible"
+        assert (
+            "type_of_place" in panel_text or "type of place" in panel_text.lower()
+        ), "type_of_place should be fully visible"
+        assert (
+            "accessible_by" in panel_text or "accessible by" in panel_text.lower()
+        ), "accessible_by should be fully visible"
 
 
 class TestLeftPanelFilterHelpers:
@@ -376,8 +376,11 @@ class TestLeftPanelScrollbar:
         # Chromium uses ::-webkit-scrollbar (can't easily check via JS)
         # Just verify the property is set (may be empty string in Chromium)
         # This test mainly verifies the CSS is being applied
-        assert scrollbar_width in ["thin", "auto", ""], \
-            f"Unexpected scrollbar-width value: {scrollbar_width}"
+        assert scrollbar_width in [
+            "thin",
+            "auto",
+            "",
+        ], f"Unexpected scrollbar-width value: {scrollbar_width}"
 
     def test_offcanvas_body_has_overflow_auto(self, page: Page):
         """

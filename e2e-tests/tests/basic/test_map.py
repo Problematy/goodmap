@@ -46,13 +46,17 @@ class TestMap:
         )
 
         # Assert no scrollbars (scroll dimensions should not exceed viewport)
-        assert (
-            dimensions["scrollWidth"] <= dimensions["innerWidth"]
-        ), f"Horizontal scrollbar detected: scrollWidth={dimensions['scrollWidth']}, innerWidth={dimensions['innerWidth']}"
+        assert dimensions["scrollWidth"] <= dimensions["innerWidth"], (
+            f"Horizontal scrollbar detected: "
+            f"scrollWidth={dimensions['scrollWidth']}, "
+            f"innerWidth={dimensions['innerWidth']}"
+        )
 
-        assert (
-            dimensions["scrollHeight"] <= dimensions["innerHeight"]
-        ), f"Vertical scrollbar detected: scrollHeight={dimensions['scrollHeight']}, innerHeight={dimensions['innerHeight']}"
+        assert dimensions["scrollHeight"] <= dimensions["innerHeight"], (
+            f"Vertical scrollbar detected: "
+            f"scrollHeight={dimensions['scrollHeight']}, "
+            f"innerHeight={dimensions['innerHeight']}"
+        )
 
     def test_filter_checkbox_filters_markers(self, page: Page):
         """Verify clicking filter checkbox actually filters the markers on the map"""

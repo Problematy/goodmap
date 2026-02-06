@@ -41,6 +41,13 @@ msgstr "big bridge"
 msgid "small bridge"
 msgstr "small bridge"
 
+# Reported issue types
+msgid "under construction"
+msgstr "under construction"
+
+msgid "has a hole"
+msgstr "has a hole"
+
 # Help texts - category headers
 msgid "categories_help_accessible_by"
 msgstr "Who can use this bridge"

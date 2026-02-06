@@ -7,7 +7,7 @@ USE_WWW: False
 TRANSLATION_DIRECTORIES: [__E2E_TESTS_DIR__/translations]
 DB:
   TYPE: json_file
-  PATH: e2e_test_data.json
+  PATH: __E2E_TESTS_DIR__/e2e_test_data.json
 
 #TODO this should not be necessary argument
 LANGUAGES:
