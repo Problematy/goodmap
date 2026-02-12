@@ -97,8 +97,8 @@ class PaginationHelper:
         if sort_by:
             reverse = sort_order == "desc"
             items.sort(
-                key=lambda item: PaginationHelper.get_sort_key(item, sort_by),
-                reverse=reverse,  # type: ignore
+                key=lambda item: PaginationHelper.get_sort_key(item, sort_by),  # type: ignore[reportUnknownLambdaType]
+                reverse=reverse,
             )
 
         total_count = len(items)
