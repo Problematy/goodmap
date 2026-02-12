@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v1.6.1 (2026-02-12)
+
+### Bug Fixes
+
+- Update platzky dependency ([#333](https://github.com/Problematy/goodmap/pull/333),
+  [`1714928`](https://github.com/Problematy/goodmap/commit/17149289e77c276db76eee5d1bf208f1e3a064bc))
+
+### Chores
+
+- More docs introduced ([#332](https://github.com/Problematy/goodmap/pull/332),
+  [`6696298`](https://github.com/Problematy/goodmap/commit/6696298c0f705bebc78fe2ac8daaa1da6a3c2ee0))
+
+
 ## v1.6.0 (2026-02-04)
 
 ### Features
