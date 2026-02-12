@@ -97,7 +97,7 @@ jobs:
       contents: read
       actions: read
       pull-requests: write
-    uses: problematy/goodmap-e2e-tests/.github/workflows/e2e-tests.yml@c25676cead90dd61e45397f991153d7a86cf29ca
+    uses: problematy/goodmap-e2e-tests/.github/workflows/e2e-tests.yml@a48cdaedbeed0a38d4852ffc973e52477114ae9e
     with:
       goodmap-version: ${{ github.sha }}
       goodmap-frontend-version: 'main'
