@@ -104,4 +104,3 @@ jobs:
     with:
       goodmap-version: ${{ github.sha }}
       goodmap-frontend-version: 'main'
-      python-version: '3.14'
