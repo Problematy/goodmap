@@ -50,7 +50,7 @@ class TestStress:
             # This ensures all initial markers are rendered
             previous_count = 0
             stable_count = 0  # Count consecutive stable readings
-            max_attempts = 120  # 60 seconds at 500ms intervals
+            max_attempts = 300  # 60 seconds at 200ms intervals
             attempt = 0
 
             while attempt < max_attempts:
@@ -62,8 +62,8 @@ class TestStress:
                 # Check if count has stabilized
                 if current_count == previous_count and current_count >= min_expected_markers:
                     stable_count += 1
-                    # Require 3 consecutive stable readings
-                    if stable_count >= 3:
+                    # Require 2 consecutive stable readings
+                    if stable_count >= 2:
                         break
                 else:
                     stable_count = 0
@@ -71,7 +71,7 @@ class TestStress:
                         print(f"Marker count changed: {previous_count} -> {current_count}")
 
                 previous_count = current_count
-                time.sleep(0.5)
+                time.sleep(0.2)
                 attempt += 1
 
             if attempt >= max_attempts:
@@ -100,28 +100,34 @@ class TestStress:
                 marker_count >= min_expected_markers
             ), f"Expected at least {min_expected_markers} markers but got {marker_count}"
 
-            # Click clusters until individual markers appear, then click a marker
-            clusters = page.locator(".marker-cluster")
-            individual_markers = page.locator(".leaflet-marker-icon:not(.marker-cluster)")
+            # Find visible elements not behind the left panel (x>220) or navbar (y>60)
+            find_visible_js = """(selector) => {
+                return Array.from(document.querySelectorAll(selector))
+                    .find(el => {
+                        const r = el.getBoundingClientRect();
+                        return r.left > 220 && r.top > 60
+                            && r.right < window.innerWidth
+                            && r.bottom < window.innerHeight;
+                    }) || null;
+            }"""
             popup = page.locator(".leaflet-popup-content")
-            max_clicks = 20
-            for i in range(max_clicks):
-                if individual_markers.count() > 0:
-                    break
-                if clusters.count() == 0:
-                    raise AssertionError("No clusters or individual markers found to click")
-                clusters.first.click()
-                print(f"Click {i + 1}: expanding cluster...")
-                expect(page.locator(".leaflet-marker-icon").first).to_be_visible(
-                    timeout=MARKER_LOAD_TIMEOUT
-                )
-            else:
-                raise AssertionError(
-                    f"No individual markers appeared after {max_clicks} cluster clicks"
-                )
+
+            # Click a cluster to zoom in
+            cluster = page.evaluate_handle(find_visible_js, ".marker-cluster")
+            assert cluster.as_element(), "No visible cluster found"
+            cluster.as_element().click()
+
+            # Wait for individual marker to appear after zoom
+            individual_marker = page.locator(".leaflet-marker-icon:not(.marker-cluster)").first
+            expect(individual_marker).to_be_visible(timeout=MARKER_LOAD_TIMEOUT)
 
             # Click an individual marker to open its popup
-            individual_markers.first.click()
+            marker = page.evaluate_handle(
+                find_visible_js,
+                ".leaflet-marker-icon:not(.marker-cluster)",
+            )
+            assert marker.as_element(), "No visible individual marker found"
+            marker.as_element().click()
             expect(popup).to_be_visible(timeout=MARKER_LOAD_TIMEOUT)
 
             # Wait for content to load (popup initially shows "Loading...")
