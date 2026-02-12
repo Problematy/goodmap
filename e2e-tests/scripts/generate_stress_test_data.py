@@ -10,6 +10,9 @@ import json
 import random
 import uuid
 
+# Seed for deterministic data generation across runs
+SEED = 42
+
 # Configuration
 NUM_MARKERS = 100_000
 OUTPUT_FILE = "e2e_stress_test_data.json"
@@ -39,12 +42,13 @@ def generate_marker():
         "position": [lat, lon],
         "accessible_by": accessible_by,
         "type_of_place": random.choice(PLACE_TYPES),
-        "uuid": str(uuid.uuid4()),
+        "uuid": str(uuid.uuid5(uuid.NAMESPACE_DNS, f"stress-test-marker-{name}-{lat}-{lon}")),
     }
 
 
 def main():
     """Generate stress test data file."""
+    random.seed(SEED)
     print(f"Generating {NUM_MARKERS:,} markers...")
 
     markers = [generate_marker() for _ in range(NUM_MARKERS)]
