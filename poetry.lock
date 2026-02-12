@@ -901,22 +901,23 @@ test = ["pytest (>=6)"]
 
 [[package]]
 name = "flask"
-version = "3.0.3"
+version = "3.1.2"
 description = "A simple framework for building complex web applications."
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "flask-3.0.3-py3-none-any.whl", hash = "sha256:34e815dfaa43340d1d15a5c3a02b8476004037eb4840b34910c6e21679d288f3"},
-    {file = "flask-3.0.3.tar.gz", hash = "sha256:ceb27b0af3823ea2737928a4d99d125a06175b8512c445cbd9a9ce200ef76842"},
+    {file = "flask-3.1.2-py3-none-any.whl", hash = "sha256:ca1d8112ec8a6158cc29ea4858963350011b5c846a414cdb7a954aa9e967d03c"},
+    {file = "flask-3.1.2.tar.gz", hash = "sha256:bf656c15c80190ed628ad08cdfd3aaa35beb087855e2f494910aa3774cc4fd87"},
 ]
 
 [package.dependencies]
-blinker = ">=1.6.2"
+blinker = ">=1.9.0"
 click = ">=8.1.3"
-itsdangerous = ">=2.1.2"
-Jinja2 = ">=3.1.2"
-Werkzeug = ">=3.0.0"
+itsdangerous = ">=2.2.0"
+jinja2 = ">=3.1.2"
+markupsafe = ">=2.1.1"
+werkzeug = ">=3.1.0"
 
 [package.extras]
 async = ["asgiref (>=3.2)"]
@@ -1977,20 +1978,20 @@ type = ["mypy (>=1.14.1)"]
 
 [[package]]
 name = "platzky"
-version = "1.4.2"
+version = "1.4.6"
 description = "Not only blog engine"
 optional = false
 python-versions = "<4.0,>=3.10"
 groups = ["main"]
 files = [
-    {file = "platzky-1.4.2-py3-none-any.whl", hash = "sha256:ddcead1a66aedf6925e9d721f8b2983aa0eb910ee212cbf51a1952ba1743eebe"},
-    {file = "platzky-1.4.2.tar.gz", hash = "sha256:609f828acc91d063d78a51b07b31cfd912eb612ea3a095ebdbb22529db7f9aef"},
+    {file = "platzky-1.4.6-py3-none-any.whl", hash = "sha256:bbf24d5141395ccdf9220ebb09629bf46a31e9ef968594dae0f36d07cf79949f"},
+    {file = "platzky-1.4.6.tar.gz", hash = "sha256:276960a74763d64e32070f50a8f7f5e149b8b2f603403cbc038dc3e368730898"},
 ]
 
 [package.dependencies]
-aiohttp = ">=3.9.5,<4.0.0"
+aiohttp = ">=3.13.3,<4.0.0"
 deprecation = ">=2.1.0,<3.0.0"
-Flask = "3.0.3"
+Flask = ">=3.1.0,<4.0.0"
 Flask-Babel = ">=4.0.0,<5.0.0"
 Flask-Minify = ">=0.42,<0.43"
 Flask-WTF = ">=1.2.1,<2.0.0"
@@ -2005,7 +2006,7 @@ PyYAML = ">=6.0,<7.0"
 
 [package.extras]
 docs = ["myst-parser (>=4.0.0,<5.0.0)", "sphinx (>=8.0.0,<9.0.0)", "sphinx-rtd-theme (>=3.0.0,<4.0.0)", "tomli (>=2.0.0,<3.0.0)"]
-telemetry = ["opentelemetry-api (>=1.27.0,<2.0.0)", "opentelemetry-exporter-otlp-proto-grpc (>=1.27.0,<2.0.0)", "opentelemetry-instrumentation-flask (>=0.48b0,<0.49)", "opentelemetry-instrumentation-logging (>=0.48b0,<0.49)", "opentelemetry-sdk (>=1.27.0,<2.0.0)"]
+telemetry = ["opentelemetry-api (>=1.39.0,<2.0.0)", "opentelemetry-exporter-otlp-proto-grpc (>=1.39.0,<2.0.0)", "opentelemetry-instrumentation-flask (>=0.50b0,<1.0.0)", "opentelemetry-instrumentation-logging (>=0.50b0,<1.0.0)", "opentelemetry-sdk (>=1.39.0,<2.0.0)"]
 
 [[package]]
 name = "platzky-redirections"
@@ -3894,4 +3895,4 @@ docs = ["myst-parser", "sphinx", "sphinx-rtd-theme", "tomli"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "49bc2f6788181aded17cb5bbd0784e1cc4658013cbca94b752e67c80b888a5e1"
+content-hash = "92371180290ec9a4f5dfe03fb2f9cf5506e04ef13b6cec5ae3070dd21cbf90e7"
