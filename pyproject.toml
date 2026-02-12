@@ -7,7 +7,7 @@ readme = "README.md"
 exclude = ["goodmap/locale/*/LC_MESSAGES/*.po"]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.14"
 spectree = "^2.0.1"
 Flask-Babel = "^4.0.0"
 Babel = "^2.10.3"
@@ -19,13 +19,13 @@ Flask-WTF = "^1.2.1"
 gql = "^3.4.0"
 aiohttp = "^3.8.4"
 pydantic = "^2.12.0"
-platzky = "^1.4.6"
+platzky = "^1.4.10"
 deprecation = "^2.1.0"
 numpy = "^2.2.0"
 # Using fork because official PyPI version (0.7.7) has outdated numpy setup hack
 # that breaks with numpy >= 2.0. Fork simply removes the obsolete hack.
 pysupercluster-problematy = "^0.7.8"
-scipy = "^1.15.1"
+scipy = "^1.17.0"
 sphinx = {version = "^8.0.0", optional = true}
 sphinx-rtd-theme = {version = "^3.0.0", optional = true}
 tomli = {version = "^2.0.0", optional = true}
