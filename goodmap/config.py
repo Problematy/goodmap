@@ -1,5 +1,6 @@
 import sys
 import typing as t
+from typing import Literal
 
 import yaml
 from platzky.config import Config as PlatzkyConfig
@@ -22,12 +23,21 @@ class GoodmapConfig(PlatzkyConfig):
         strict: bool | None = None,
         from_attributes: bool | None = None,
         context: dict[str, t.Any] | None = None,
+        by_alias: bool | None = None,
+        by_name: bool | None = None,
+        extra: Literal["allow", "ignore", "forbid"] | None = None,
     ) -> "GoodmapConfig":
         """Override to return correct type for GoodmapConfig."""
         return t.cast(
             "GoodmapConfig",
             super().model_validate(
-                obj, strict=strict, from_attributes=from_attributes, context=context
+                obj,
+                strict=strict,
+                from_attributes=from_attributes,
+                context=context,
+                by_alias=by_alias,
+                by_name=by_name,
+                extra=extra,
             ),
         )
 

@@ -68,7 +68,7 @@ def test_category_match_if_not_specified():
 def test_that_limit_works_properly():
     test_data_15_items = [
         {
-            "name": f"PCK_{i+1}",
+            "name": f"PCK_{i + 1}",
             "position": [51.1, 17.05],
             "types": ["clothes"],
             "gender": ["male"],

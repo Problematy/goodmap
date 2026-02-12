@@ -55,8 +55,7 @@ def safe_json_loads(
     byte_size = len(json_string.encode("utf-8"))
     if byte_size > max_size:
         raise JSONSizeError(
-            f"JSON payload size ({byte_size} bytes) exceeds maximum "
-            f"allowed size ({max_size} bytes)"
+            f"JSON payload size ({byte_size} bytes) exceeds maximum allowed size ({max_size} bytes)"
         )
 
     # Parse JSON
