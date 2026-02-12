@@ -65,8 +65,8 @@ class TestNavigationMenu:
         # Navigate to About page first
         page.goto(f"{BASE_URL}/blog/page/about", wait_until="domcontentloaded")
 
-        # Click home link (logo)
-        home_link = page.get_by_role("link", name="Link to home page")
+        # Click home link (logo) - try aria-label first, fall back to navbar-brand link
+        home_link = page.locator('a[aria-label="Link to home page"], a.navbar-brand').first
         home_link.click()
 
         # Verify we're back on the home page

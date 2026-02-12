@@ -63,7 +63,7 @@ TEST_LOCATIONS = {
     "RYSY_MOUNTAIN": {
         "lat": 49.179,
         "lon": 20.088,
-        "tile_pattern": r"https://[abc]\.tile\.openstreetmap\.org/1[456]/\d+/\d+\.png",
+        "tile_pattern": r"https://[abc]\.tile\.openstreetmap\.org/1[3-6]/\d+/\d+\.png",
     },
     "WROCLAW_CENTER": {"lat": 51.10655, "lon": 17.0555},
 }
