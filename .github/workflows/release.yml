@@ -103,7 +103,7 @@ jobs:
           tag: ${{ steps.release.outputs.tag }}
 
       - name: Upload | Distribution Artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: steps.release.outputs.released == 'true'
         with:
           name: distribution-artifacts
