@@ -1,18 +1,27 @@
 {
   "map": {
+    "data_templates": {
+      "type_of_place": {
+        "big bridge": {
+          "accessible_by": ["pedestrians", "cars"],
+          "material": "steel",
+          "river": "Odra"
+        },
+        "small bridge": {
+          "accessible_by": ["pedestrians"],
+          "material": "concrete",
+          "river": "Odra"
+        }
+      }
+    },
     "data": [
       {
         "name": "Grunwaldzki",
-        "position": [
-          51.1095,
-          17.0525
-        ],
-        "accessible_by": [
-          "pedestrians",
-          "cars"
-        ],
+        "position": [51.1095, 17.0525],
         "type_of_place": "big bridge",
-        "uuid": "hidden",
+        "uuid": "grunwaldzki",
+        "year_built": 1910,
+        "length_m": 112,
         "CTA": {
           "type": "CTA",
           "value": "https://www.example.com",
@@ -21,66 +30,98 @@
       },
       {
         "name": "Zwierzyniecka",
-        "position": [
-          51.10655,
-          17.0555
-        ],
-        "accessible_by": [
-          "bikes",
-          "pedestrians"
-        ],
+        "position": [51.10655, 17.0555],
         "type_of_place": "small bridge",
-        "uuid": "dattarro",
+        "uuid": "zwierzyniecka",
+        "year_built": 1897,
+        "length_m": 35,
         "remark": "very old bridge"
+      },
+      {
+        "name": "Mieszczański",
+        "position": [51.1150, 17.0390],
+        "type_of_place": "big bridge",
+        "uuid": "mieszczanski",
+        "year_built": 1949,
+        "length_m": 145
+      },
+      {
+        "name": "Szczytnicki",
+        "position": [51.1080, 17.0620],
+        "type_of_place": "small bridge",
+        "uuid": "szczytnicki",
+        "year_built": 1927,
+        "length_m": 28
+      },
+      {
+        "name": "Pokoju",
+        "position": [51.1200, 17.0310],
+        "type_of_place": "big bridge",
+        "uuid": "pokoju",
+        "year_built": 1947,
+        "length_m": 130
+      },
+      {
+        "name": "Osobowicki",
+        "position": [51.1350, 17.0280],
+        "type_of_place": "big bridge",
+        "uuid": "osobowicki",
+        "year_built": 1935,
+        "length_m": 160
+      },
+      {
+        "name": "Rędziński",
+        "position": [51.1420, 17.0180],
+        "type_of_place": "big bridge",
+        "uuid": "redzinski",
+        "year_built": 2011,
+        "length_m": 612,
+        "material": "cable-stayed",
+        "remark": "longest cable-stayed bridge in Poland"
+      },
+      {
+        "name": "Trzebnicki",
+        "position": [51.1280, 17.0200],
+        "type_of_place": "small bridge",
+        "uuid": "trzebnicki",
+        "year_built": 1912,
+        "length_m": 42
+      },
+      {
+        "name": "Bolesława Chrobrego",
+        "position": [51.1070, 17.0470],
+        "type_of_place": "small bridge",
+        "uuid": "chrobrego",
+        "year_built": 1904,
+        "length_m": 31,
+        "accessible_by": ["pedestrians", "bikes"]
+      },
+      {
+        "name": "Łużycki",
+        "position": [51.1030, 17.0590],
+        "type_of_place": "small bridge",
+        "uuid": "luzycki",
+        "year_built": 1966,
+        "length_m": 22
       }
     ],
     "location_obligatory_fields": [
-      [
-        "name",
-        "str"
-      ],
-      [
-        "accessible_by",
-        "list"
-      ],
-      [
-        "type_of_place",
-        "str"
-      ]
+      ["name", "str"],
+      ["accessible_by", "list"],
+      ["type_of_place", "str"]
     ],
     "reported_issue_types": ["under construction", "has a hole"],
     "categories": {
-      "accessible_by": [
-        "bikes",
-        "cars",
-        "pedestrians"
-      ],
-      "type_of_place": [
-        "big bridge",
-        "small bridge"
-      ]
+      "accessible_by": ["bikes", "cars", "pedestrians"],
+      "type_of_place": ["big bridge", "small bridge"]
     },
-    "categories_help": [
-      "accessible_by"
-    ],
+    "categories_help": ["accessible_by"],
     "categories_options_help": {
-      "type_of_place": [
-        "small bridge"
-      ],
-      "accessible_by": [
-        "cars",
-        "pedestrians"
-      ]
+      "type_of_place": ["small bridge"],
+      "accessible_by": ["cars", "pedestrians"]
     },
-    "visible_data": [
-      "remark",
-      "accessible_by",
-      "type_of_place",
-      "CTA"
-    ],
-    "meta_data": [
-      "uuid"
-    ]
+    "visible_data": ["remark", "accessible_by", "type_of_place", "material", "year_built", "length_m", "CTA"],
+    "meta_data": ["uuid", "river"]
   },
   "site_content": {
     "pages": [

@@ -2409,3 +2409,173 @@ def test_pagination_helper_error_handling():
     items = [{"name": "test", "custom_field": "test_value"}]
     result = PaginationHelper.create_paginated_response(items, query, custom_extract)
     assert len(result["items"]) == 1  # Custom filter should pass the item
+
+
+# ------------------------------------------------
+# apply_data_defaults
+
+
+from goodmap.db import apply_data_defaults, get_locations_list_from_raw_data  # noqa: E402
+
+
+class TestApplyDataDefaults:
+    def test_no_defaults_returns_point_unchanged(self):
+        map_data = {"data": [], "categories": {}}
+        point = {"uuid": "1", "name": "A", "accessible_by": ["cars"]}
+        assert apply_data_defaults(map_data, point) == point
+
+    def test_missing_data_defaults_key_returns_point_unchanged(self):
+        map_data = {}
+        point = {"uuid": "1"}
+        assert apply_data_defaults(map_data, point) is point
+
+    def test_empty_data_defaults_returns_point_unchanged(self):
+        map_data = {"data_defaults": {}}
+        point = {"uuid": "1", "name": "B"}
+        assert apply_data_defaults(map_data, point) is point
+
+    def test_data_defaults_are_applied_to_point(self):
+        map_data = {
+            "data_defaults": {"accessible_by": ["pedestrians"], "type_of_place": "small bridge"}
+        }
+        point = {"uuid": "1", "name": "Bridge"}
+        result = apply_data_defaults(map_data, point)
+        assert result["accessible_by"] == ["pedestrians"]
+        assert result["type_of_place"] == "small bridge"
+        assert result["name"] == "Bridge"
+
+    def test_point_field_overrides_data_default(self):
+        map_data = {"data_defaults": {"accessible_by": ["pedestrians"]}}
+        point = {"uuid": "1", "name": "Big Bridge", "accessible_by": ["pedestrians", "cars"]}
+        result = apply_data_defaults(map_data, point)
+        assert result["accessible_by"] == ["pedestrians", "cars"]
+
+    def test_original_point_dict_not_mutated(self):
+        map_data = {"data_defaults": {"accessible_by": ["pedestrians"]}}
+        point = {"uuid": "1", "name": "Bridge"}
+        apply_data_defaults(map_data, point)
+        assert "accessible_by" not in point
+
+    def test_data_templates_applied_by_field_value(self):
+        map_data = {
+            "data_templates": {
+                "type_of_place": {
+                    "big bridge": {"accessible_by": ["pedestrians", "cars"], "material": "steel"},
+                    "small bridge": {"accessible_by": ["pedestrians"], "material": "concrete"},
+                }
+            }
+        }
+        big = apply_data_defaults(
+            map_data, {"uuid": "1", "name": "Big", "type_of_place": "big bridge"}
+        )
+        small = apply_data_defaults(
+            map_data, {"uuid": "2", "name": "Small", "type_of_place": "small bridge"}
+        )
+        assert big["accessible_by"] == ["pedestrians", "cars"]
+        assert big["material"] == "steel"
+        assert small["accessible_by"] == ["pedestrians"]
+        assert small["material"] == "concrete"
+
+    def test_point_field_overrides_template(self):
+        map_data = {
+            "data_templates": {
+                "type_of_place": {
+                    "big bridge": {"accessible_by": ["pedestrians", "cars"], "material": "steel"},
+                }
+            }
+        }
+        point = {
+            "uuid": "1",
+            "name": "Special",
+            "type_of_place": "big bridge",
+            "material": "cable-stayed",
+        }
+        result = apply_data_defaults(map_data, point)
+        assert result["material"] == "cable-stayed"
+        assert result["accessible_by"] == ["pedestrians", "cars"]
+
+    def test_data_defaults_overridden_by_data_templates(self):
+        # data_templates (type-specific) take priority over data_defaults (global)
+        map_data = {
+            "data_defaults": {"material": "wood"},
+            "data_templates": {
+                "type_of_place": {
+                    "big bridge": {"material": "steel"},
+                }
+            },
+        }
+        point = {"uuid": "1", "name": "B", "type_of_place": "big bridge"}
+        result = apply_data_defaults(map_data, point)
+        assert result["material"] == "steel"
+
+    def test_unmatched_template_key_ignored(self):
+        map_data = {
+            "data_templates": {
+                "type_of_place": {
+                    "big bridge": {"accessible_by": ["pedestrians", "cars"]},
+                }
+            }
+        }
+        point = {"uuid": "1", "name": "Small", "type_of_place": "small bridge"}
+        result = apply_data_defaults(map_data, point)
+        assert "accessible_by" not in result
+
+
+class TestGetLocationsListFromRawDataWithDefaults:
+    def setup_method(self):
+        self.location_model = create_location_model(
+            [("name", "str"), ("accessible_by", "list")], {"accessible_by": ["pedestrians", "cars"]}
+        )
+
+    def test_defaults_applied_before_filtering(self):
+        map_data = {
+            "data_defaults": {"accessible_by": ["pedestrians"]},
+            "data": [
+                {"uuid": "1", "name": "Small Bridge", "position": [51.1, 17.0]},
+            ],
+            "categories": {"accessible_by": ["pedestrians", "cars"]},
+        }
+        query = {"accessible_by": ["pedestrians"]}
+        result = get_locations_list_from_raw_data(map_data, query, self.location_model)
+        assert len(result) == 1
+
+    def test_point_override_wins_in_filtering(self):
+        map_data = {
+            "data_defaults": {"accessible_by": ["pedestrians"]},
+            "data": [
+                {"uuid": "1", "name": "Small Bridge", "position": [51.1, 17.0]},
+                {
+                    "uuid": "2",
+                    "name": "Big Bridge",
+                    "position": [51.2, 17.1],
+                    "accessible_by": ["pedestrians", "cars"],
+                },
+            ],
+            "categories": {"accessible_by": ["pedestrians", "cars"]},
+        }
+        query = {"accessible_by": ["cars"]}
+        result = get_locations_list_from_raw_data(map_data, query, self.location_model)
+        assert len(result) == 1
+        assert result[0].uuid == "2"
+
+    def test_no_defaults_behavior_unchanged(self):
+        map_data = {
+            "data": [
+                {
+                    "uuid": "1",
+                    "name": "Bridge A",
+                    "position": [51.1, 17.0],
+                    "accessible_by": ["pedestrians"],
+                },
+                {
+                    "uuid": "2",
+                    "name": "Bridge B",
+                    "position": [51.2, 17.1],
+                    "accessible_by": ["cars"],
+                },
+            ],
+            "categories": {"accessible_by": ["pedestrians", "cars"]},
+        }
+        query = {}
+        result = get_locations_list_from_raw_data(map_data, query, self.location_model)
+        assert len(result) == 2
