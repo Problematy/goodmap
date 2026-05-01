@@ -683,6 +683,39 @@ def get_category_data(db):
 
 
 # ------------------------------------------------
+# data_defaults helpers
+
+
+def apply_data_defaults(map_data: dict, point: dict) -> dict:
+    """Merge map-level defaults with a single point dict. Point fields take precedence.
+
+    Merge order (lowest → highest priority):
+      1. data_defaults  — flat dict applied to every point
+      2. data_templates — per-value defaults keyed by a field name and its value
+      3. point fields   — always win
+
+    Example data_templates structure:
+        "data_templates": {
+            "type_of_place": {
+                "big bridge": {"accessible_by": ["pedestrians", "cars"]},
+                "small bridge": {"accessible_by": ["pedestrians"]}
+            }
+        }
+    """
+    global_defaults = map_data.get("data_defaults", {})
+
+    type_defaults: dict = {}
+    for field, variants in map_data.get("data_templates", {}).items():
+        value = point.get(field)
+        if value is not None and value in variants:
+            type_defaults.update(variants[value])
+
+    if not global_defaults and not type_defaults:
+        return point
+    return {**global_defaults, **type_defaults, **point}
+
+
+# ------------------------------------------------
 # get_location
 
 
@@ -697,8 +730,10 @@ def get_location_from_raw_data(raw_data, uuid, location_model):
     Returns:
         Validated location model instance, or None if not found.
     """
-    point = next((point for point in raw_data["data"] if point["uuid"] == uuid), None)
-    return location_model.model_validate(point) if point else None
+    point = next((p for p in raw_data["data"] if p["uuid"] == uuid), None)
+    if point is None:
+        return None
+    return location_model.model_validate(apply_data_defaults(raw_data, point))
 
 
 def google_json_db_get_location(self, uuid, location_model):
@@ -744,7 +779,8 @@ def get_locations_list_from_raw_data(map_data, query, location_model):
     Returns:
         List of validated location model instances.
     """
-    filtered_locations = get_queried_data(map_data["data"], map_data["categories"], query)
+    merged_data = [apply_data_defaults(map_data, p) for p in map_data["data"]]
+    filtered_locations = get_queried_data(merged_data, map_data["categories"], query)
     return [location_model.model_validate(point) for point in filtered_locations]
 
 
