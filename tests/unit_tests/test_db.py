@@ -2435,7 +2435,9 @@ class TestApplyDataDefaults:
         assert apply_data_defaults(map_data, point) is point
 
     def test_data_defaults_are_applied_to_point(self):
-        map_data = {"data_defaults": {"accessible_by": ["pedestrians"], "type_of_place": "small bridge"}}
+        map_data = {
+            "data_defaults": {"accessible_by": ["pedestrians"], "type_of_place": "small bridge"}
+        }
         point = {"uuid": "1", "name": "Bridge"}
         result = apply_data_defaults(map_data, point)
         assert result["accessible_by"] == ["pedestrians"]
@@ -2463,8 +2465,12 @@ class TestApplyDataDefaults:
                 }
             }
         }
-        big = apply_data_defaults(map_data, {"uuid": "1", "name": "Big", "type_of_place": "big bridge"})
-        small = apply_data_defaults(map_data, {"uuid": "2", "name": "Small", "type_of_place": "small bridge"})
+        big = apply_data_defaults(
+            map_data, {"uuid": "1", "name": "Big", "type_of_place": "big bridge"}
+        )
+        small = apply_data_defaults(
+            map_data, {"uuid": "2", "name": "Small", "type_of_place": "small bridge"}
+        )
         assert big["accessible_by"] == ["pedestrians", "cars"]
         assert big["material"] == "steel"
         assert small["accessible_by"] == ["pedestrians"]
@@ -2478,7 +2484,12 @@ class TestApplyDataDefaults:
                 }
             }
         }
-        point = {"uuid": "1", "name": "Special", "type_of_place": "big bridge", "material": "cable-stayed"}
+        point = {
+            "uuid": "1",
+            "name": "Special",
+            "type_of_place": "big bridge",
+            "material": "cable-stayed",
+        }
         result = apply_data_defaults(map_data, point)
         assert result["material"] == "cable-stayed"
         assert result["accessible_by"] == ["pedestrians", "cars"]
@@ -2512,7 +2523,9 @@ class TestApplyDataDefaults:
 
 class TestGetLocationsListFromRawDataWithDefaults:
     def setup_method(self):
-        self.location_model = create_location_model([("name", "str"), ("accessible_by", "list")], {"accessible_by": ["pedestrians", "cars"]})
+        self.location_model = create_location_model(
+            [("name", "str"), ("accessible_by", "list")], {"accessible_by": ["pedestrians", "cars"]}
+        )
 
     def test_defaults_applied_before_filtering(self):
         map_data = {
@@ -2531,7 +2544,12 @@ class TestGetLocationsListFromRawDataWithDefaults:
             "data_defaults": {"accessible_by": ["pedestrians"]},
             "data": [
                 {"uuid": "1", "name": "Small Bridge", "position": [51.1, 17.0]},
-                {"uuid": "2", "name": "Big Bridge", "position": [51.2, 17.1], "accessible_by": ["pedestrians", "cars"]},
+                {
+                    "uuid": "2",
+                    "name": "Big Bridge",
+                    "position": [51.2, 17.1],
+                    "accessible_by": ["pedestrians", "cars"],
+                },
             ],
             "categories": {"accessible_by": ["pedestrians", "cars"]},
         }
@@ -2543,8 +2561,18 @@ class TestGetLocationsListFromRawDataWithDefaults:
     def test_no_defaults_behavior_unchanged(self):
         map_data = {
             "data": [
-                {"uuid": "1", "name": "Bridge A", "position": [51.1, 17.0], "accessible_by": ["pedestrians"]},
-                {"uuid": "2", "name": "Bridge B", "position": [51.2, 17.1], "accessible_by": ["cars"]},
+                {
+                    "uuid": "1",
+                    "name": "Bridge A",
+                    "position": [51.1, 17.0],
+                    "accessible_by": ["pedestrians"],
+                },
+                {
+                    "uuid": "2",
+                    "name": "Bridge B",
+                    "position": [51.2, 17.1],
+                    "accessible_by": ["cars"],
+                },
             ],
             "categories": {"accessible_by": ["pedestrians", "cars"]},
         }
