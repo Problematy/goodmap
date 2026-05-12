@@ -107,10 +107,7 @@ LocationDetailsValue.propTypes = {
         PropTypes.string,
         PropTypes.number,
         PropTypes.array,
-        PropTypes.shape({
-            type: PropTypes.string.isRequired,
-            value: PropTypes.string.isRequired,
-        }),
+        PropTypes.object,
     ]).isRequired,
 };
 

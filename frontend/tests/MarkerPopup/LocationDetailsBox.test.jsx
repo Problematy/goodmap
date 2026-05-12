@@ -32,6 +32,9 @@ const incorrectComplexMarkerData = {
     position: [51.1095, 17.0525],
     subtitle: 'big bridge',
     data: [['website', { wrongTypeAttribute: 'hyperlink', value: 'https://www.google.com' }]],
+    metadata: {
+        uuid: '21231',
+    },
 };
 
 describe('should render marker popup correctly', () => {
@@ -80,18 +83,11 @@ describe('should render marker popup correctly', () => {
             });
         });
 
-        describe('should throw error when complex data is incorrect', () => {
-            it('should throw error when data type is not given', () => {
-                // consoleSpy is used to suppress console.error output,
-                // which is expected in this test
-                const consoleSpy = jest.spyOn(console, 'error');
-                consoleSpy.mockImplementation(() => {});
-
+        describe('should handle incorrect complex data gracefully', () => {
+            it('should render without throwing when data type is not given', () => {
                 expect(() =>
                     render(<LocationDetailsBox place={incorrectComplexMarkerData} />),
-                ).toThrow('Custom value must have type and value properties');
-
-                consoleSpy.mockRestore();
+                ).not.toThrow();
             });
         });
     });

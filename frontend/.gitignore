@@ -12,3 +12,4 @@ coverage
 
 # Webpack cache
 .webpack-cache
+.playwright-mcp

@@ -1,5 +1,6 @@
 import React from 'react';
 import { MarkerCTAButtonStyle } from '../../styles/buttonStyle';
+import PluginSlot from '../../plugins/PluginSlot';
 
 /**
  * Converts data to a string representation.
@@ -39,11 +40,15 @@ const sanitizeUrl = raw => {
  * @param {string} customValue.value - URL or value to use
  * @param {string} [customValue.displayValue] - Optional display text (falls back to value)
  * @returns {React.ReactElement|string} React component for the custom type or string content
- * @throws {Error} If customValue is missing type or value properties
  */
 export const mapCustomTypeToReactComponent = customValue => {
+    if (customValue.scope) {
+        const { scope, ...props } = customValue;
+        return <PluginSlot scope={scope} props={props} />;
+    }
+
     if (!customValue.type || !customValue.value) {
-        throw new Error('Custom value must have type and value properties');
+        return getContentAsString(customValue);
     }
 
     const valueToDisplay = customValue?.displayValue || customValue.value;

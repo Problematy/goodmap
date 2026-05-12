@@ -1,12 +1,24 @@
 const path = require('node:path');
 const webpack = require('webpack');
 const TerserPlugin = require('terser-webpack-plugin');
+const { ModuleFederationPlugin } = require('webpack').container;
+const deps = require('./package.json').dependencies;
 
 module.exports = (env, argv) => {
     const IS_PROD = argv.mode === 'production';
     const runOnAllInterfaces = env && env.serve === 'network';
 
     return {
+        plugins: [
+            new ModuleFederationPlugin({
+                name: 'goodmap',
+                remotes: {},
+                shared: {
+                    react: { singleton: true, eager: true, requiredVersion: deps.react },
+                    'react-dom': { singleton: true, eager: true, requiredVersion: deps['react-dom'] },
+                },
+            }),
+        ],
         cache: {
             type: 'filesystem',
             cacheDirectory: path.resolve(__dirname, '.webpack-cache'),
