@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/Problematy/goodmap-frontend/compare/1.5.1...1.6.0) (2026-05-12)
+
+
+### Features
+
+* added platzky plugins handling in frontend ([#156](https://github.com/Problematy/goodmap-frontend/issues/156)) ([2a81e56](https://github.com/Problematy/goodmap-frontend/commit/2a81e56019b0fa9e6d3d790d4c45137a9a4b3cb5))
+
 ## [1.5.1](https://github.com/Problematy/goodmap-frontend/compare/1.5.0...1.5.1) (2026-05-12)
 
 
