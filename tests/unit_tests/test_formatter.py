@@ -25,6 +25,12 @@ def test_field_plugin_ignores_non_dict_values():
     assert result["data"] == [["plain_text", "text"]]
 
 
+def test_field_plugin_drops_unconfigured_dict_with_code():
+    place = {**test_place, "promo_code": {"code": "HIDDEN"}}
+    result = prepare_pin(place, ["promo_code"], [], field_plugins={})
+    assert result["data"] == []
+
+
 def test_formatting_when_missing_visible_field():
     visible_fields = ["types", "gender", "visible_without_data", "dict_data", "plain_text"]
     expected_data = {

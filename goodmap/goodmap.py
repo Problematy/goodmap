@@ -14,7 +14,6 @@ from platzky.config import AttachmentConfig, languages_dict
 from platzky.models import CmsModule
 
 from goodmap.admin_api import admin_pages
-from goodmap.plugin import GoodmapPlugin
 from goodmap.config import GoodmapConfig
 from goodmap.core_api import core_pages
 from goodmap.data_models.location import create_location_model
@@ -91,11 +90,6 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
     app.extensions["goodmap"] = {"location_obligatory_fields": location_obligatory_fields}
 
     field_renderers: dict[str, str] = {}
-    for plugin_list in app.plugins.values():
-        for plugin in plugin_list:
-            if isinstance(plugin, GoodmapPlugin):
-                field_renderers.update(plugin.field_renderers)
-
     for sc_name in app.shortcodes:
         field_renderers.setdefault(sc_name, sc_name)
 

@@ -52,9 +52,8 @@ def prepare_pin(place, visible_fields, meta_data, field_plugins=None):
         visible_fields: List of field names to display in pin
         meta_data: List of metadata field names
         field_plugins: Optional mapping of field name → plugin scope. Dict-valued
-            fields listed here are wrapped with
-            ``{"type": "plugin", "scope": ..., "props": ...}`` so the frontend
-            can route them to the correct plugin component.
+            fields listed here are wrapped with ``{"scope": "<name>", ...original_fields}``
+            so the frontend can route them to the correct plugin component via ``PluginSlot``.
 
     Returns:
         dict: Formatted pin data with title, subtitle, position, metadata, and translated fields

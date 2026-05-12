@@ -127,3 +127,45 @@ Field Lifecycle
 +----------------------+-----------------------------------------------+--------------------------------------------+
 | Standard custom type | ``{"type": "hyperlink", "value": "..."}``     | Rendered as link or CTA button             |
 +----------------------+-----------------------------------------------+--------------------------------------------+
+
+Writing a Plugin
+----------------
+
+Use ``platzky-promocode`` as the reference implementation
+(`source <https://github.com/problematy/platzky-promocode>`_).
+
+The minimum required steps:
+
+1. Subclass ``ContentTransformerPluginBase`` (from ``platzky.plugin.content_transformer``).
+2. Declare a ``shortcodes`` class variable mapping shortcode name → ``Shortcode`` instance.
+3. Implement a ``Shortcode`` subclass with ``name``, ``attributes``, and ``render()``.
+4. Register via a ``pyproject.toml`` entry point in group ``platzky.plugins``.
+5. *(Optional)* ship a Webpack Module Federation ``remoteEntry.js`` in your package's
+   ``static/`` directory — Goodmap will serve it automatically and add it to
+   ``PLUGIN_MANIFEST`` (module name must be ``./Button``).
+
+.. code-block:: python
+
+   from platzky.plugin.content_transformer import ContentTransformerPluginBase
+   from platzky.shortcodes.shortcode import Shortcode, ShortcodeAttrs
+
+   class _MyShortcode(Shortcode):
+       name = "myplugin"
+       description = "My plugin shortcode"
+       attributes = ShortcodeAttrs([])
+       example = "[myplugin]value[/myplugin]"
+
+       def render(self, attrs: ShortcodeAttrs, content: str) -> str:
+           return f"<span>{content}</span>"
+
+   class MyPlugin(ContentTransformerPluginBase):
+       shortcodes = {"myplugin": _MyShortcode({})}
+
+       def __init__(self, _config):
+           pass
+
+.. code-block:: toml
+
+   # pyproject.toml
+   [tool.poetry.plugins."platzky.plugins"]
+   myplugin = "my_package.plugin:MyPlugin"
