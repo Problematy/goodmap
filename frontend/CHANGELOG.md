@@ -1,3 +1,10 @@
+## [1.5.1](https://github.com/Problematy/goodmap-frontend/compare/1.5.0...1.5.1) (2026-05-12)
+
+
+### Bug Fixes
+
+* updated translations according to requests ([#155](https://github.com/Problematy/goodmap-frontend/issues/155)) ([0e77d23](https://github.com/Problematy/goodmap-frontend/commit/0e77d232f756d6287e1cb7f662c7e5c3f3070d91))
+
 # [1.5.0](https://github.com/Problematy/goodmap-frontend/compare/1.4.0...1.5.0) (2026-02-05)
 
 
