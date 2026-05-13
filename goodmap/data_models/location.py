@@ -104,12 +104,35 @@ _MAX_LIST_ITEM_LENGTH = 100
 
 
 def _check_allowed(value: Any, allowed: list[str]) -> Any:
+    """Validate that a value is in the allowed list.
+
+    Args:
+        value: The value to check.
+        allowed: List of permitted values.
+
+    Returns:
+        The value unchanged if valid.
+
+    Raises:
+        ValueError: If value is not in the allowed list.
+    """
     if value not in allowed:
         raise ValueError(f"must be one of {allowed}, got '{value}'")
     return value
 
 
 def _make_list_validator(allowed: list[str]):
+    """Create a validator for list items with optional enum constraint.
+
+    When allowed is non-empty, each item is validated against it.
+    String items exceeding ``_MAX_LIST_ITEM_LENGTH`` are always rejected.
+
+    Args:
+        allowed: List of permitted values, or empty for no enum restriction.
+
+    Returns:
+        A validator function that checks each item in the list.
+    """
     def validate(v: list[Any]) -> list[Any]:
         for item in v:
             if allowed:
