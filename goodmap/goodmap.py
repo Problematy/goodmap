@@ -13,6 +13,7 @@ from platzky import platzky
 from platzky.attachment import create_attachment_class
 from platzky.config import AttachmentConfig, languages_dict
 from platzky.models import CmsModule
+from pydantic import BaseModel
 
 from goodmap.admin_api import admin_pages
 from goodmap.config import GoodmapConfig
@@ -74,6 +75,34 @@ def _register_plugin_static_resources(
         return None, None
 
 
+def _setup_location_model(
+    db: Any,
+) -> tuple[list[Any], dict[str, Any], type[BaseModel], Any]:
+    """Configure location model and db with lazy-loading and categories support.
+
+    Args:
+        db: The database instance to extend with location queries.
+
+    Returns:
+        Tuple of (obligatory_fields, categories, location_model, db).
+    """
+    obligatory_fields = get_location_obligatory_fields(db)
+    location_model = create_location_model(obligatory_fields, {})
+    extended_db = extend_db_with_goodmap_queries(db, location_model)
+
+    try:
+        category_data = extended_db.get_category_data()
+        categories = category_data.get("categories", {})
+    except (KeyError, AttributeError):
+        categories = {}
+
+    if categories:
+        location_model = create_location_model(obligatory_fields, categories)
+        extended_db = extend_db_with_goodmap_queries(extended_db, location_model)
+
+    return obligatory_fields, categories, location_model, extended_db
+
+
 def create_app(config_path: str) -> platzky.Engine:
     """Create Goodmap application from YAML configuration file.
 
@@ -112,27 +141,10 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         app.config["MAX_CONTENT_LENGTH"] = 100 * 1024  # 100KB
 
     if app.is_enabled(UseLazyLoading):
-        location_obligatory_fields = get_location_obligatory_fields(app.db)
-        # Extend db with goodmap queries first so we can use the bound method
-        location_model = create_location_model(location_obligatory_fields, {})
-        app.db = extend_db_with_goodmap_queries(app.db, location_model)
-
-        # Use the extended db method directly (already bound by extend_db_with_goodmap_queries)
-        try:
-            category_data = app.db.get_category_data()  # type: ignore[attr-defined]
-            categories = category_data.get("categories", {})
-        except (KeyError, AttributeError):
-            # Handle case where categories don't exist in the data
-            categories = {}
-
-        # Recreate location model with categories if we got them
-        if categories:
-            location_model = create_location_model(location_obligatory_fields, categories)
-            app.db = extend_db_with_goodmap_queries(app.db, location_model)
+        location_obligatory_fields, _, location_model, app.db = _setup_location_model(app.db)
     else:
         location_obligatory_fields = []
-        categories = {}
-        location_model = create_location_model(location_obligatory_fields, categories)
+        location_model = create_location_model([], {})
         app.db = extend_db_with_goodmap_queries(app.db, location_model)
 
     app.extensions["goodmap"] = {"location_obligatory_fields": location_obligatory_fields}
