@@ -17,10 +17,11 @@ Plugins are discovered automatically through Python entry points
 * Provide static assets served by the Flask backend
 
 Goodmap then uses the registered shortcode names as field renderer identifiers
-for locations. When a plugin-contributed field appears in a location's
-``visible_data`` and the plugin is configured, the API wraps the field value
-with ``{"scope": "<shortcode_name>", ...}``. The frontend detects the
-``scope`` key and renders the appropriate plugin component.
+for locations. ``visible_data`` is a list of field names that should be
+displayed in location markers on the map. When a plugin-contributed field
+appears in a location's ``visible_data`` and the plugin is configured, the API
+wraps the field value with ``{"scope": "<shortcode_name>", ...}``. The frontend
+detects the ``scope`` key and renders the appropriate plugin component.
 
 Configuration
 -------------
