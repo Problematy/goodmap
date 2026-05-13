@@ -16,7 +16,10 @@ def test_field_plugin_wraps_dict_value_with_scope():
     place = {**test_place, "promo_code": {"code": "SUMMER24", "text": "Get it", "color": "#f00"}}
     result = prepare_pin(place, ["promo_code"], [], field_plugins={"promo_code": "promocode"})
     assert result["data"] == [
-        ["promo_code", {"scope": "promocode", "code": "U1VNTUVSMjQ=", "text": "Get it", "color": "#f00"}]
+        [
+            "promo_code",
+            {"scope": "promocode", "code": "U1VNTUVSMjQ=", "text": "Get it", "color": "#f00"},
+        ]
     ]
 
 

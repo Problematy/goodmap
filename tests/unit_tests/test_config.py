@@ -7,8 +7,8 @@ from platzky.db.json_db import JsonDbConfig
 
 from goodmap.config import GoodmapConfig
 
-
 _FRONTEND_LIB_URL = "https://cdn.jsdelivr.net/npm/@problematy/goodmap@1.6.1"
+
 
 def test_goodmap_config_default_frontend_url():
     """Test that GoodmapConfig has the correct default frontend library URL."""
@@ -17,9 +17,7 @@ def test_goodmap_config_default_frontend_url():
         SECRET_KEY="test",
         DB=JsonDbConfig(DATA={}, TYPE="json"),
     )
-    assert (
-        config.goodmap_frontend_lib_url == _FRONTEND_LIB_URL
-    )
+    assert config.goodmap_frontend_lib_url == _FRONTEND_LIB_URL
 
 
 def test_goodmap_config_custom_frontend_url():
@@ -87,9 +85,7 @@ DB:
 
     try:
         config = GoodmapConfig.parse_yaml(temp_path)
-        assert (
-            config.goodmap_frontend_lib_url == _FRONTEND_LIB_URL
-        )
+        assert config.goodmap_frontend_lib_url == _FRONTEND_LIB_URL
     finally:
         Path(temp_path).unlink()
 
@@ -116,6 +112,4 @@ def test_goodmap_config_inherits_platzky_config():
     assert config.secret_key == "secret123"
     assert test_flag in config.feature_flags
     # Verify GoodmapConfig specific field
-    assert (
-        config.goodmap_frontend_lib_url == _FRONTEND_LIB_URL
-    )
+    assert config.goodmap_frontend_lib_url == _FRONTEND_LIB_URL
