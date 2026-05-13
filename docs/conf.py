@@ -10,10 +10,10 @@ sys.path.insert(0, str(project_root))
 
 # Read version from installed package metadata
 try:
-    version = release = importlib.metadata.version("goodmap")
+    version = importlib.metadata.version("goodmap")
 except importlib.metadata.PackageNotFoundError:
     print("Warning: Could not read version from package metadata")
-    version = release = "unknown"
+    version = "unknown"
 
 # Project information
 project = "Goodmap"
