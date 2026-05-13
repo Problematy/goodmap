@@ -1,3 +1,10 @@
+## [1.6.1](https://github.com/Problematy/goodmap-frontend/compare/1.6.0...1.6.1) (2026-05-13)
+
+
+### Bug Fixes
+
+* PluginSlot props are now required and tests are added ([#157](https://github.com/Problematy/goodmap-frontend/issues/157)) ([5e6b24c](https://github.com/Problematy/goodmap-frontend/commit/5e6b24cd3fe23b43e13bc533fb1d74f6b6744203))
+
 # [1.6.0](https://github.com/Problematy/goodmap-frontend/compare/1.5.1...1.6.0) (2026-05-12)
 
 
