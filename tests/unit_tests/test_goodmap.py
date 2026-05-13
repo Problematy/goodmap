@@ -1,3 +1,8 @@
+import importlib.metadata
+import os
+import tempfile
+import types
+from typing import Any
 from unittest import mock
 from unittest.mock import MagicMock, patch
 
@@ -6,7 +11,7 @@ from platzky.db.json_db import JsonDbConfig
 
 from goodmap import goodmap
 from goodmap.config import GoodmapConfig
-from goodmap.feature_flags import UseLazyLoading
+from goodmap.feature_flags import EnableAdminPanel, UseLazyLoading
 from tests.unit_tests.conftest import make_flag_set
 
 config = GoodmapConfig(
@@ -123,3 +128,161 @@ def test_index_route_location_schema_with_lazy_loading():
     assert "name" in response_text
     assert "position" in response_text
     assert "test_category" in response_text
+
+
+def make_mock_entry_point(name: str, module_path: str):
+    """Create a mock EntryPoint that loads a module from the given path.
+
+    Creates a real module file so inspect.getfile resolves correctly.
+    """
+    os.makedirs(module_path, exist_ok=True)
+    init_file = os.path.join(module_path, "__init__.py")
+    if not os.path.exists(init_file):
+        open(init_file, "w").close()
+
+    real_module = types.ModuleType(name)
+    real_module.__file__ = init_file
+
+    spec = mock.MagicMock(spec=importlib.metadata.EntryPoint)
+    spec.name = name
+    spec.load.return_value = real_module
+    return spec
+
+
+def test_plugin_with_static_dir():
+    """Should register blueprint and manifest entry when plugin has a static directory."""
+    config = _make_test_app_config()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        plugin_dir = os.path.join(tmpdir, "my_plugin")
+        static_dir = os.path.join(plugin_dir, "static")
+        os.makedirs(static_dir)
+
+        ep = make_mock_entry_point("my_plugin", plugin_dir)
+
+        with patch("importlib.metadata.entry_points", return_value=[ep]):
+            app = goodmap.create_app_from_config(config)
+
+    assert "plugin_my_plugin" in app.blueprints
+    assert app.config["PLUGIN_MANIFEST"] == [
+        {
+            "scope": "my_plugin",
+            "url": "/plugins/my_plugin/static/remoteEntry.js",
+            "module": "./Button",
+        }
+    ]
+
+
+def test_plugin_without_static_dir():
+    """Should not register blueprint when plugin has no static directory."""
+    config = _make_test_app_config()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        ep = make_mock_entry_point("no_static_plugin", tmpdir)
+
+        with patch("importlib.metadata.entry_points", return_value=[ep]):
+            app = goodmap.create_app_from_config(config)
+
+    assert "plugin_no_static_plugin" not in app.blueprints
+    assert app.config["PLUGIN_MANIFEST"] == []
+
+
+def test_plugin_load_failure():
+    """Should log warning and skip plugin when loading fails."""
+    config = _make_test_app_config()
+    ep = mock.MagicMock(spec=importlib.metadata.EntryPoint)
+    ep.name = "broken_plugin"
+    ep.load.side_effect = ImportError("Module not found")
+
+    with patch("importlib.metadata.entry_points", return_value=[ep]):
+        with patch.object(goodmap.logger, "warning") as mock_warning:
+            app = goodmap.create_app_from_config(config)
+
+    assert "plugin_broken_plugin" not in app.blueprints
+    assert app.config["PLUGIN_MANIFEST"] == []
+    mock_warning.assert_called_once_with(
+        "Failed to serve static files for plugin '%s'", "broken_plugin"
+    )
+
+
+def _make_test_app_config(feature_flags: Any = None, extra_data: Any = None) -> GoodmapConfig:
+    data: dict[str, Any] = {
+        "site_content": {"pages": []},
+        "location_obligatory_fields": [],
+    }
+    if extra_data:
+        data.update(extra_data)
+    return GoodmapConfig(
+        APP_NAME="test_app",
+        SECRET_KEY="test_secret",
+        USE_WWW=False,
+        BLOG_PREFIX="/blog",
+        DB=JsonDbConfig(DATA=data, TYPE="json"),
+        FEATURE_FLAGS=feature_flags,
+    )
+
+
+def test_admin_route_disabled():
+    """Should redirect to / when admin panel feature flag is disabled."""
+    config = _make_test_app_config()
+    app = goodmap.create_app_from_config(config)
+    app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
+    client = app.test_client()
+
+    response = client.get("/goodmap-admin")
+
+    assert response.status_code == 302
+    assert response.location == "/"
+
+
+def test_admin_route_no_user():
+    """Should redirect to /admin when user is not logged in."""
+    config = _make_test_app_config(feature_flags=make_flag_set(EnableAdminPanel))
+    app = goodmap.create_app_from_config(config)
+    app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
+    client = app.test_client()
+
+    response = client.get("/goodmap-admin")
+
+    assert response.status_code == 302
+    assert response.location == "/admin"
+
+
+def test_admin_route_logged_in():
+    """Should render admin template when user is logged in."""
+    config = _make_test_app_config(feature_flags=make_flag_set(EnableAdminPanel))
+    app = goodmap.create_app_from_config(config)
+    app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
+    client = app.test_client()
+
+    with client.session_transaction() as sess:
+        sess["user"] = {"username": "Test User"}
+
+    response = client.get("/goodmap-admin")
+
+    assert response.status_code == 200
+    response_text = response.data.decode("utf-8")
+    assert "Test User" in response_text
+
+
+def test_plugin_blueprint_sets_cors_header():
+    """Should set Access-Control-Allow-Origin on plugin blueprint responses."""
+    config = _make_test_app_config()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        plugin_dir = os.path.join(tmpdir, "cors_plugin")
+        static_dir = os.path.join(plugin_dir, "static")
+        os.makedirs(static_dir)
+
+        # Create a test file in the static dir
+        open(os.path.join(static_dir, "test.js"), "w").close()
+
+        ep = make_mock_entry_point("cors_plugin", plugin_dir)
+
+        with patch("importlib.metadata.entry_points", return_value=[ep]):
+            app = goodmap.create_app_from_config(config)
+
+        app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
+        client = app.test_client()
+
+        response = client.get("/plugins/cors_plugin/static/test.js")
+
+        assert response.status_code == 200
+        assert response.headers.get("Access-Control-Allow-Origin") == "*"

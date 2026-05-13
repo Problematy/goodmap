@@ -118,7 +118,7 @@ data_json = json.dumps({"map": data})
 
 def initialize_and_assert_db(db, data):
     location_obligatory_fields = get_location_obligatory_fields(db)
-    location_model = create_location_model(location_obligatory_fields)
+    location_model = create_location_model(location_obligatory_fields, {})
     extend_db_with_goodmap_queries(db, location_model)
 
     query = {"test-category": "searchable"}
@@ -325,7 +325,7 @@ def test_google_json_db_get_meta_data_empty(mock_cli):
 
 def test_get_location_from_raw_data_found():
     raw = {"data": [{"uuid": "X", "position": [0, 0]}]}
-    Location = create_location_model([])
+    Location = create_location_model([], {})
     location: Any = get_location_from_raw_data(raw, "X", Location)
     assert location is not None
     assert location.uuid == "X"
@@ -334,12 +334,12 @@ def test_get_location_from_raw_data_found():
 
 def test_get_location_from_raw_data_not_found():
     raw = {"data": [{"uuid": "X", "position": [0, 0]}]}
-    Location = create_location_model([])
+    Location = create_location_model([], {})
     assert get_location_from_raw_data(raw, "Y", Location) is None
 
 
 def test_json_db_add_location():
-    Location = create_location_model([])
+    Location = create_location_model([], {})
     db = Json({"data": []})
     location = {"uuid": "1", "position": [1, 2]}
     json_db_add_location(db, location, Location)
@@ -348,7 +348,7 @@ def test_json_db_add_location():
 
 
 def test_json_db_add_duplicate_location():
-    Location = create_location_model([])
+    Location = create_location_model([], {})
     db = Json({"data": []})
     location = {"uuid": "1", "position": [1, 2]}
     json_db_add_location(db, location, Location)
@@ -357,7 +357,7 @@ def test_json_db_add_duplicate_location():
 
 
 def test_json_db_update_location():
-    Location = create_location_model([])
+    Location = create_location_model([], {})
     db = Json({"data": [{"uuid": "1", "position": [1, 2]}]})
     location_update = {"uuid": "1", "position": [3, 4]}
     json_db_update_location(db, "1", location_update, Location)
@@ -365,7 +365,7 @@ def test_json_db_update_location():
 
 
 def test_json_db_update_location_not_found():
-    Location = create_location_model([])
+    Location = create_location_model([], {})
     db = Json({"data": []})
     location_update = {"uuid": "1", "position": [3, 4]}
     with pytest.raises(LocationNotFoundError):
@@ -387,7 +387,7 @@ def test_json_db_delete_location_not_found():
 @mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {"data": []}})))
 @mock.patch("goodmap.db.json_file_atomic_dump")
 def test_json_file_db_add_location(mock_atomic_dump):
-    Location = create_location_model([])
+    Location = create_location_model([], {})
     file_path = "locs.json"
     db = JsonFile(file_path)
     location_raw = {"uuid": "a", "position": [5, 6]}
@@ -401,7 +401,7 @@ def test_json_file_db_add_location(mock_atomic_dump):
     mock.mock_open(read_data=json.dumps({"map": {"data": [{"uuid": "a", "position": [5, 6]}]}})),
 )
 def test_json_file_db_add_duplicate_location():
-    Location = create_location_model([])
+    Location = create_location_model([], {})
     file_path = "locs.json"
     db = JsonFile(file_path)
     location = {"uuid": "a", "position": [5, 6]}
@@ -415,7 +415,7 @@ def test_json_file_db_add_duplicate_location():
 )
 @mock.patch("goodmap.db.json_file_atomic_dump")
 def test_json_file_db_update_location(mock_atomic_dump):
-    Location = create_location_model([])
+    Location = create_location_model([], {})
     file_path = "locs.json"
     db = JsonFile(file_path)
     location_update_raw = {"uuid": "a", "position": [7, 8]}
@@ -426,7 +426,7 @@ def test_json_file_db_update_location(mock_atomic_dump):
 
 @mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {"data": []}})))
 def test_json_file_db_update_location_not_found():
-    Location = create_location_model([])
+    Location = create_location_model([], {})
     file_path = "locs.json"
     db = JsonFile(file_path)
     location_update_raw = {"uuid": "a", "position": [7, 8]}
@@ -884,7 +884,7 @@ def test_json_file_db_delete_report_not_found():
 
 def test_dispatch_add_update_delete_location():
     db = Json({"data": []})
-    Location = create_location_model([])
+    Location = create_location_model([], {})
 
     loc = {"uuid": "u1", "position": [10, 20]}
     add_location(db, loc, Location)
@@ -1084,7 +1084,7 @@ def test_mongodb_db_get_location(mock_client):
     mock_client.return_value.__getitem__.return_value = mock_db
     mock_db.locations.find_one.return_value = {"uuid": "1", "position": [50, 50], "name": "one"}
 
-    Location = create_location_model([])
+    Location = create_location_model([], {})
     db = MongoDB("mongodb://localhost:27017", "test_db")
     result = mongodb_db_get_location(db, "1", Location)
 
@@ -1101,7 +1101,7 @@ def test_mongodb_db_get_location_not_found(mock_client):
     mock_client.return_value.__getitem__.return_value = mock_db
     mock_db.locations.find_one.return_value = None
 
-    Location = create_location_model([])
+    Location = create_location_model([], {})
     db = MongoDB("mongodb://localhost:27017", "test_db")
     result = mongodb_db_get_location(db, "nonexistent", Location)
 
@@ -1114,7 +1114,7 @@ def test_mongodb_db_add_location(mock_client):
     mock_client.return_value.__getitem__.return_value = mock_db
     mock_db.locations.find_one.return_value = None  # No existing location
 
-    Location = create_location_model([])
+    Location = create_location_model([], {})
     db = MongoDB("mongodb://localhost:27017", "test_db")
     location_data = {"uuid": "new1", "position": [10, 20]}
 
@@ -1131,7 +1131,7 @@ def test_mongodb_db_add_duplicate_location(mock_client):
     existing_uuid = "450e8400-e29b-41d4-a716-446655440000"
     mock_db.locations.find_one.return_value = {"uuid": existing_uuid}
 
-    Location = create_location_model([])
+    Location = create_location_model([], {})
     db = MongoDB("mongodb://localhost:27017", "test_db")
     location_data = {"uuid": existing_uuid, "position": [10, 20]}
 
@@ -1149,7 +1149,7 @@ def test_mongodb_db_update_location(mock_client):
     mock_result.matched_count = 1
     mock_db.locations.update_one.return_value = mock_result
 
-    Location = create_location_model([])
+    Location = create_location_model([], {})
     db = MongoDB("mongodb://localhost:27017", "test_db")
     location_data = {"uuid": "1", "position": [30, 40]}
 
@@ -1166,7 +1166,7 @@ def test_mongodb_db_update_location_not_found(mock_client):
     mock_result.matched_count = 0
     mock_db.locations.update_one.return_value = mock_result
 
-    Location = create_location_model([])
+    Location = create_location_model([], {})
     db = MongoDB("mongodb://localhost:27017", "test_db")
     nonexistent_uuid = "850e8400-e29b-41d4-a716-446655440000"
     location_data = {"uuid": nonexistent_uuid, "position": [30, 40]}
@@ -1763,7 +1763,7 @@ def test_json_file_db_get_locations_paginated(tmp_path):
     test_file.write_text(data_json)
 
     db = JsonFile(str(test_file))
-    Location = create_location_model([])
+    Location = create_location_model([], {})
 
     query = {"page": ["1"], "per_page": ["2"], "sort_by": ["name"], "sort_order": ["asc"]}
     result = json_file_db_get_locations_paginated(db, query, Location)
@@ -1781,7 +1781,7 @@ def test_google_json_db_get_locations_paginated(mock_client):
         data_json
     )
     db = GoogleJsonDb("bucket", "file.json")
-    Location = create_location_model([])
+    Location = create_location_model([], {})
 
     query = {"page": ["1"], "per_page": ["2"]}
     result = google_json_db_get_locations_paginated(db, query, Location)
@@ -1803,7 +1803,7 @@ def test_mongodb_db_get_locations_paginated(mock_client):
     ]
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
-    Location = create_location_model([])
+    Location = create_location_model([], {})
 
     query = {"page": ["1"], "per_page": ["2"], "sort_by": ["name"], "sort_order": ["desc"]}
     result = mongodb_db_get_locations_paginated(db, query, Location)
@@ -1967,7 +1967,7 @@ def test_json_db_get_locations_paginated():
     from goodmap.db import json_db_get_locations_paginated
 
     db = Json(data)
-    Location = create_location_model([])
+    Location = create_location_model([], {})
 
     # Test with sorting by name
     query = {"page": ["1"], "per_page": ["10"], "sort_by": ["name"], "sort_order": ["desc"]}
@@ -2063,7 +2063,7 @@ def test_google_json_db_sorting_edge_cases():
         mock_blob = mock_client.return_value.bucket.return_value.blob.return_value
         mock_blob.download_as_text.return_value = data_json
         db = GoogleJsonDb("bucket", "file.json")
-        Location = create_location_model([])
+        Location = create_location_model([], {})
 
         # Test sort by non-existent field
         query = {
@@ -2096,7 +2096,7 @@ def test_mongodb_sorting_edge_cases():
         ]
 
         db = MongoDB("mongodb://localhost:27017", "test_db")
-        Location = create_location_model([])
+        Location = create_location_model([], {})
 
         # Test sort_direction logic
         query = {"page": ["1"], "per_page": ["2"], "sort_by": ["name"], "sort_order": ["desc"]}
@@ -2133,7 +2133,7 @@ def test_google_json_db_pagination_no_per_page():
         mock_blob = mock_client.return_value.bucket.return_value.blob.return_value
         mock_blob.download_as_text.return_value = data_json
         db = GoogleJsonDb("bucket", "file.json")
-        Location = create_location_model([])
+        Location = create_location_model([], {})
 
         # Test without per_page
         query = {"page": ["1"]}  # No per_page specified
@@ -2150,7 +2150,7 @@ def test_json_db_pagination_no_per_page():
     from goodmap.db import json_db_get_locations_paginated
 
     db = Json(data)
-    Location = create_location_model([])
+    Location = create_location_model([], {})
 
     # Test lines 384, 390 - no per_page
     query = {"page": ["1"]}  # No per_page specified
@@ -2167,12 +2167,12 @@ def test_json_file_pagination_no_hasattr():
 
         # Test get_sort_key when item has name attribute
         query = {"page": ["1"], "per_page": ["10"], "sort_by": ["name"], "sort_order": ["asc"]}
-        result = json_file_db_get_locations_paginated(db, query, create_location_model([]))
+        result = json_file_db_get_locations_paginated(db, query, create_location_model([], {}))
         assert "items" in result
 
         # Test get_sort_key when sort_by is not 'name'
         query = {"page": ["1"], "per_page": ["10"], "sort_by": ["uuid"], "sort_order": ["asc"]}
-        result = json_file_db_get_locations_paginated(db, query, create_location_model([]))
+        result = json_file_db_get_locations_paginated(db, query, create_location_model([], {}))
         assert "items" in result
 
 
@@ -2230,7 +2230,7 @@ def test_json_file_pagination_no_per_page():
     # Test line 427 - no per_page in json_file_db
     with mock.patch("builtins.open", mock.mock_open(read_data=data_json)):
         db = JsonFile("/fake/path/file.json")
-        Location = create_location_model([])
+        Location = create_location_model([], {})
 
         query = {"page": ["1"]}  # No per_page
         result = json_file_db_get_locations_paginated(db, query, Location)
@@ -2254,7 +2254,7 @@ def test_specific_missing_lines():
         mock_blob = mock_client.return_value.bucket.return_value.blob.return_value
         mock_blob.download_as_text.return_value = data_json
         db = GoogleJsonDb("bucket", "file.json")
-        Location = create_location_model([])
+        Location = create_location_model([], {})
 
         # Force per_page to be None by using "all"
         query = {"per_page": ["all"], "page": ["1"]}
@@ -2271,12 +2271,13 @@ def test_specific_missing_lines():
         with mock.patch("goodmap.db.get_locations_list_from_raw_data") as mock_get_locs:
             mock_get_locs.return_value = [{"uuid": "1", "position": [50, 50]}]  # Raw dicts
             query = {"per_page": ["1"], "page": ["1"]}
-            result = google_json_db_get_locations_paginated(db, query, create_location_model([]))
+            Location = create_location_model([], {})
+            result = google_json_db_get_locations_paginated(db, query, Location)
             assert len(result["items"]) == 1
 
     # Test line 384 - json_db when per_page is None
     db = Json(data)
-    Location = create_location_model([])
+    Location = create_location_model([], {})
     query = {"per_page": ["all"], "page": ["1"]}
     result = json_db_get_locations_paginated(db, query, Location)
     assert len(result["items"]) == 2
@@ -2291,7 +2292,7 @@ def test_specific_missing_lines():
     # Test line 427 - json_file_db when per_page is None
     with mock.patch("builtins.open", mock.mock_open(read_data=data_json)):
         db = JsonFile("/fake/path/file.json")
-        Location = create_location_model([])
+        Location = create_location_model([], {})
         query = {"per_page": ["all"], "page": ["1"]}
         result = json_file_db_get_locations_paginated(db, query, Location)
         assert len(result["items"]) == 2
@@ -2301,7 +2302,7 @@ def test_specific_missing_lines():
         with mock.patch("goodmap.db.get_locations_list_from_raw_data") as mock_get_locs:
             mock_get_locs.return_value = [{"uuid": "1", "position": [50, 50]}]  # Raw dicts
             db = JsonFile("/fake/path/file.json")
-            Location = create_location_model([])
+            Location = create_location_model([], {})
             query = {"per_page": ["1"], "page": ["1"]}
             result = json_file_db_get_locations_paginated(db, query, Location)
             assert len(result["items"]) == 1
@@ -2349,7 +2350,7 @@ def test_specific_missing_lines():
         with mock.patch("goodmap.db.get_locations_list_from_raw_data") as mock_get_locs:
             mock_get_locs.return_value = [{"uuid": "1", "position": [50, 50]}]  # Raw dicts
             db = JsonFile("/fake/path/file.json")
-            Location = create_location_model([])
+            Location = create_location_model([], {})
             query = {"per_page": ["1"], "page": ["1"], "sort_by": ["name"]}
             result = json_file_db_get_locations_paginated(db, query, Location)
             assert len(result["items"]) == 1
@@ -2370,7 +2371,7 @@ def test_remaining_missing_coverage_lines():
         mock_db.locations.aggregate.return_value = []  # Empty locations list
 
         db = MongoDB("mongodb://localhost:27017", "test_db")
-        Location = create_location_model([])
+        Location = create_location_model([], {})
 
         query = {"per_page": ["1"], "page": ["1"]}
         result = mongodb_db_get_locations_paginated(db, query, Location)
