@@ -82,13 +82,20 @@ target-version = ["py310"]
 line-length = 100
 target-version = "py310"
 show-fixes = true
+
+# TODO unify linting across whole python code
 lint.select = [
+#    "D", # pydocstyle
     "I", # isort
     "F", # Pyflakes
     "E", # pycodestyle Error
     "W", # pycodestyle Warning
     "RUF", # Ruff-specific rules
 ]
+
+# TODO unify linting across whole python code
+# [tool.ruff.lint.pydocstyle]
+# convention = "google"
 
 [tool.pytest.ini_options]
 markers = [
