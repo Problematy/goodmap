@@ -1,3 +1,6 @@
+import importlib.metadata
+import os
+import tempfile
 from unittest import mock
 from unittest.mock import MagicMock, patch
 
@@ -123,3 +126,72 @@ def test_index_route_location_schema_with_lazy_loading():
     assert "name" in response_text
     assert "position" in response_text
     assert "test_category" in response_text
+
+
+def make_mock_entry_point(name: str, module_path: str):
+    """Create a mock EntryPoint that loads a module from the given path.
+
+    Creates a real module file so inspect.getfile resolves correctly.
+    """
+    os.makedirs(module_path, exist_ok=True)
+    init_file = os.path.join(module_path, "__init__.py")
+    if not os.path.exists(init_file):
+        open(init_file, "w").close()
+
+    spec = mock.MagicMock(spec=importlib.metadata.EntryPoint)
+    spec.name = name
+
+    mock_module = mock.MagicMock()
+    mock_module.__file__ = init_file
+    spec.load.return_value = mock_module
+    return spec
+
+
+def test_register_plugin_static_resources_with_static_dir():
+    """Should return (blueprint, manifest) when plugin has a static directory."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        plugin_dir = os.path.join(tmpdir, "my_plugin")
+        static_dir = os.path.join(plugin_dir, "static")
+        os.makedirs(static_dir)
+
+        ep = make_mock_entry_point("my_plugin", plugin_dir)
+
+        with patch("goodmap.goodmap.inspect.getfile", lambda x: x.__file__):
+            bp, entry = goodmap._register_plugin_static_resources(ep)
+
+        assert bp is not None
+        assert entry == {
+            "scope": "my_plugin",
+            "url": "/plugins/my_plugin/static/remoteEntry.js",
+            "module": "./Button",
+        }
+
+
+def test_register_plugin_static_resources_no_static_dir():
+    """Should return (None, None) when plugin has no static directory."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        ep = make_mock_entry_point("no_static_plugin", tmpdir)
+
+        bp, entry = goodmap._register_plugin_static_resources(ep)
+
+        assert bp is None
+        assert entry is None
+
+
+def test_register_plugin_static_resources_load_failure():
+    """Should return (None, None) and log warning when plugin loading fails."""
+    ep = mock.MagicMock(spec=importlib.metadata.EntryPoint)
+    ep.name = "broken_plugin"
+    ep.load.side_effect = ImportError("Module not found")
+
+    with patch.object(goodmap.logger, "warning") as mock_warning:
+        bp, entry = goodmap._register_plugin_static_resources(ep)
+
+    assert bp is None
+    assert entry is None
+    mock_warning.assert_called_once_with(
+        "Failed to serve static files for plugin '%s'", "broken_plugin"
+    )
+
+
+

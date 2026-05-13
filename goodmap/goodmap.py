@@ -25,6 +25,53 @@ from goodmap.feature_flags import EnableAdminPanel, UseLazyLoading
 
 logger = logging.getLogger(__name__)
 
+_PLUGIN_ENTRY_POINT_GROUP = "platzky.plugins"
+
+
+def _register_plugin_static_resources(
+    ep: importlib.metadata.EntryPoint,
+) -> tuple[Blueprint | None, dict | None]:
+    """Load a plugin's static resources and return its blueprint and manifest entry.
+
+    Loads the plugin module, checks for a 'static' directory, and if found
+    creates a Flask blueprint and a manifest entry for the frontend.
+
+    Args:
+        ep: The entry point for the plugin.
+
+    Returns:
+        A tuple of (blueprint, manifest_entry). Both are None if the plugin
+        has no static directory or loading fails.
+    """
+    try:
+        mod_path = os.path.dirname(os.path.realpath(inspect.getfile(ep.load())))
+        static_dir = os.path.join(mod_path, "static")
+        if not os.path.isdir(static_dir):
+            return None, None
+
+        bp = Blueprint(
+            f"plugin_{ep.name}",
+            __name__,
+            url_prefix=f"/plugins/{ep.name}",
+            static_folder=static_dir,
+            static_url_path="/static",
+        )
+
+        @bp.after_request
+        def _add_cors(response):
+            response.headers["Access-Control-Allow-Origin"] = "*"
+            return response
+
+        manifest_entry = {
+            "scope": ep.name,
+            "url": f"/plugins/{ep.name}/static/remoteEntry.js",
+            "module": "./Button",
+        }
+        return bp, manifest_entry
+    except Exception:
+        logger.warning("Failed to serve static files for plugin '%s'", ep.name)
+        return None, None
+
 
 def create_app(config_path: str) -> platzky.Engine:
     """Create Goodmap application from YAML configuration file.
@@ -94,35 +141,11 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         field_renderers.setdefault(sc_name, sc_name)
 
     plugin_manifest = []
-    _PLUGIN_ENTRY_POINT_GROUP = "platzky.plugins"
     for ep in importlib.metadata.entry_points(group=_PLUGIN_ENTRY_POINT_GROUP):
-        try:
-            mod_path = os.path.dirname(os.path.realpath(inspect.getfile(ep.load())))
-            static_dir = os.path.join(mod_path, "static")
-            if os.path.isdir(static_dir):
-                bp = Blueprint(
-                    f"plugin_{ep.name}",
-                    __name__,
-                    url_prefix=f"/plugins/{ep.name}",
-                    static_folder=static_dir,
-                    static_url_path="/static",
-                )
-
-                @bp.after_request
-                def _add_cors(response):
-                    response.headers["Access-Control-Allow-Origin"] = "*"
-                    return response
-
-                app.register_blueprint(bp)
-                plugin_manifest.append(
-                    {
-                        "scope": ep.name,
-                        "url": f"/plugins/{ep.name}/static/remoteEntry.js",
-                        "module": "./Button",
-                    }
-                )
-        except Exception:
-            logger.warning("Failed to serve static files for plugin '%s'", ep.name)
+        bp, entry = _register_plugin_static_resources(ep)
+        if bp is not None:
+            app.register_blueprint(bp)
+            plugin_manifest.append(entry)
 
     app.config["PLUGIN_MANIFEST"] = plugin_manifest
 
