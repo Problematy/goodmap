@@ -1,4 +1,9 @@
-"""Pydantic models for location data validation and schema generation."""
+"""Pydantic models for location data validation and dynamic schema generation.
+
+This module provides the core data models for representing location data,
+including position validation, UUID tracking, and dynamic model creation
+for location-based applications with custom fields.
+"""
 
 import warnings
 from typing import Annotated, Any, Type, cast
@@ -35,7 +40,17 @@ class LocationBase(BaseModel, extra="allow"):
     @model_validator(mode="before")
     @classmethod
     def validate_uuid_exists(cls, data: Any) -> Any:
-        """Ensure UUID is present before validation for better error messages."""
+        """Ensure UUID is present before validation for better error messages.
+
+        Args:
+            data: Raw input data to validate (dict or other).
+
+        Returns:
+            The input data unchanged if valid.
+
+        Raises:
+            ValueError: If data is a dict without a 'uuid' field.
+        """
         if isinstance(data, dict) and "uuid" not in data:
             raise ValueError("Location data must include 'uuid' field")
         return data
@@ -43,7 +58,21 @@ class LocationBase(BaseModel, extra="allow"):
     @model_validator(mode="wrap")
     @classmethod
     def enrich_validation_errors(cls, data, handler):
-        """Wrap validation errors with UUID context for better debugging."""
+        """Wrap validation errors with UUID context for better debugging.
+
+        Intercepts ValidationError and re-raises as LocationValidationError
+        with the UUID attached, making it easier to trace which record failed.
+
+        Args:
+            data: Raw input data being validated.
+            handler: The next validation handler in the chain.
+
+        Returns:
+            The result of the validation handler.
+
+        Raises:
+            LocationValidationError: If validation fails, enriched with UUID.
+        """
         try:
             return handler(data)
         except ValidationError as e:
@@ -75,9 +104,28 @@ _MAX_LIST_ITEM_LENGTH = 100
 
 
 def _make_list_validator(allowed: list[str] | None):
-    """Create a validator for list items with optional enum constraint."""
+    """Create a validator for list items with optional enum constraint.
+
+    Args:
+        allowed: List of permitted values, or None to allow any values.
+
+    Returns:
+        A validator function that checks each item in the list.
+    """
 
     def validate(v: list[Any]) -> list[Any]:
+        """Validate each item in the list.
+
+        Args:
+            v: List of values to validate.
+
+        Returns:
+            The validated list unchanged if all items pass.
+
+        Raises:
+            ValueError: If an item is not in the allowed list or exceeds
+                max length.
+        """
         for item in v:
             if allowed is not None and item not in allowed:
                 raise ValueError(f"must be one of {allowed}, got '{item}'")
@@ -91,9 +139,27 @@ def _make_list_validator(allowed: list[str] | None):
 
 
 def _make_str_validator(allowed: list[str]):
-    """Create a validator that checks string value is in allowed list."""
+    """Create a validator that checks string value is in allowed list.
+
+    Args:
+        allowed: List of permitted string values.
+
+    Returns:
+        A validator function that checks the string against the allowed list.
+    """
 
     def validate(v: str) -> str:
+        """Validate that a string is in the allowed list.
+
+        Args:
+            v: The string value to validate.
+
+        Returns:
+            The validated string if it passes.
+
+        Raises:
+            ValueError: If v is not in the allowed list.
+        """
         if v not in allowed:
             raise ValueError(f"must be one of {allowed}, got '{v}'")
         return v
@@ -119,7 +185,15 @@ def _normalize_field_type(field_type_input: str | Type[Any]) -> str:
 def _build_field_definition(
     field_type_str: str, allowed_values: list[str] | None
 ) -> tuple[Any, Any]:
-    """Build a complete field definition based on type and constraints."""
+    """Build a complete field definition based on type and constraints.
+
+    Args:
+        field_type_str: String name of the field type ("str", "list", etc.).
+        allowed_values: Optional list of permitted enum values.
+
+    Returns:
+        A tuple of (field_type, Field) suitable for Pydantic's create_model.
+    """
     is_list = field_type_str.startswith("list")
 
     if is_list:
