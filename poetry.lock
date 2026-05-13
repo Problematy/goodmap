@@ -3499,7 +3499,7 @@ widechars = ["wcwidth"]
 name = "tomli"
 version = "2.4.1"
 description = "A lil' TOML parser"
-optional = true
+optional = false
 python-versions = ">=3.8"
 groups = ["main", "dev"]
 files = [
@@ -3551,7 +3551,7 @@ files = [
     {file = "tomli-2.4.1-py3-none-any.whl", hash = "sha256:0d85819802132122da43cb86656f8d1f8c6587d54ae7dcaf30e90533028b49fe"},
     {file = "tomli-2.4.1.tar.gz", hash = "sha256:7c7e1a961a0b2f2472c1ac5b69affa0ae1132c39adcb67aba98568702b9cc23f"},
 ]
-markers = {main = "extra == \"docs\"", dev = "extra == \"docs\" and python_version < \"3.13\" or python_full_version <= \"3.11.0a6\""}
+markers = {main = "extra == \"docs\" and python_version == \"3.10\"", dev = "python_full_version <= \"3.11.0a6\""}
 
 [[package]]
 name = "tomlkit"
@@ -4008,9 +4008,9 @@ multidict = ">=4.0"
 propcache = ">=0.2.1"
 
 [extras]
-docs = ["myst-parser", "sphinx", "sphinx-rtd-theme", "tomli"]
+docs = ["myst-parser", "sphinx", "sphinx-rtd-theme"]
 
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "b35ae3adcbb9422ed41eb49eddaa8cd0a09feee770da0f89a5e7ec789004788f"
+content-hash = "3ec325f7f0366c95bda33620438e421520f395295ad81fbd0710da681187ad48"
