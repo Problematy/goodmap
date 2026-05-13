@@ -138,9 +138,7 @@ def _normalize_field_type(field_type_input: str | Type[Any]) -> str:
     return field_type_input
 
 
-def _build_field_definition(
-    field_type_str: str, allowed_values: list[str]
-) -> tuple[Any, Any]:
+def _build_field_definition(field_type_str: str, allowed_values: list[str]) -> tuple[Any, Any]:
     """Build a complete field definition based on type and constraints.
 
     Args:
@@ -186,7 +184,7 @@ def _build_field_definition(
 
 def create_location_model(
     obligatory_fields: list[tuple[str, str]] | list[tuple[str, Type[Any]]],
-    categories: dict[str, list[str]] = {},
+    categories: dict[str, list[str]],
 ) -> Type[BaseModel]:
     """Dynamically create a Location model with additional required fields.
 

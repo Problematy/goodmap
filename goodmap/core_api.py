@@ -101,7 +101,7 @@ def core_pages(
     photo_attachment_class: type[AttachmentProtocol],
     photo_attachment_config: AttachmentConfig,
     feature_flags: FeatureFlagSet,
-    field_renderers: dict[str, str] = {},
+    field_renderers: dict[str, str],
 ) -> Blueprint:
     core_api_blueprint = Blueprint("api", __name__, url_prefix="/api")
 
