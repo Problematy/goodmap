@@ -276,6 +276,7 @@ def test_plugin_blueprint_sets_cors_header():
         assert bp is not None
 
         test_app = Flask(__name__)
+        test_app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
         test_app.register_blueprint(bp)
         client = test_app.test_client()
 
