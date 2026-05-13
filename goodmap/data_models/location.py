@@ -164,9 +164,7 @@ def _normalize_field_type(field_type_input: str | Type[Any]) -> str:
     return field_type_input
 
 
-def _build_field_definition(
-    field_type_str: str, allowed_values: frozenset[str]
-) -> tuple[Any, Any]:
+def _build_field_definition(field_type_str: str, allowed_values: frozenset[str]) -> tuple[Any, Any]:
     """Build a complete field definition based on type and constraints.
 
     Args:
@@ -251,9 +249,7 @@ def create_location_model(
         raw = categories.get(field_name)
         if raw is not None:
             if not raw:
-                raise ValueError(
-                    f"Category '{field_name}' exists but has no allowed values"
-                )
+                raise ValueError(f"Category '{field_name}' exists but has no allowed values")
             allowed = frozenset(raw)
         else:
             allowed = frozenset()
