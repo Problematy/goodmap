@@ -34,7 +34,7 @@ def _apply_field_plugin(value, field, field_plugins):
     """
     if isinstance(value, dict):
         if field in field_plugins:
-            result = {"scope": field_plugins[field], **value}
+            result = {**value, "scope": field_plugins[field]}
             if isinstance(result.get("code"), str):
                 result["code"] = base64.b64encode(result["code"].encode()).decode()
             return result
