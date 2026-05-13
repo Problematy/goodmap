@@ -103,44 +103,47 @@ _TYPE_MAPPING: dict[str, type] = {
 _MAX_LIST_ITEM_LENGTH = 100
 
 
-def _check_allowed(value: Any, allowed: list[str]) -> Any:
+def _check_allowed(value: Any, allowed: frozenset[str]) -> Any:
     """Validate that a value is in the allowed list.
 
     Args:
         value: The value to check.
-        allowed: List of permitted values.
+        allowed: Set of permitted values.
 
     Returns:
         The value unchanged if valid.
 
     Raises:
-        ValueError: If value is not in the allowed list.
+        ValueError: If value is not in the allowed set.
     """
     if value not in allowed:
         raise ValueError(f"must be one of {allowed}, got '{value}'")
     return value
 
 
-def _make_list_validator(allowed: list[str]):
-    """Create a validator for list items with optional enum constraint.
+def _check_max_item_length(v: list[Any]) -> list[Any]:
+    """Reject list items that exceed the maximum allowed length."""
+    for item in v:
+        if isinstance(item, str) and len(item) > _MAX_LIST_ITEM_LENGTH:
+            raise ValueError(
+                f"list item too long (max {_MAX_LIST_ITEM_LENGTH} chars), got {len(item)}"
+            )
+    return v
 
-    When allowed is non-empty, each item is validated against it.
-    String items exceeding ``_MAX_LIST_ITEM_LENGTH`` are always rejected.
+
+def _make_list_validator(allowed: frozenset[str]):
+    """Create a validator for list items against an allowed set.
 
     Args:
-        allowed: List of permitted values, or empty for no enum restriction.
+        allowed: Set of permitted values (must be non-empty).
 
     Returns:
-        A validator function that checks each item in the list.
+        A validator function that checks each item against allowed.
     """
+
     def validate(v: list[Any]) -> list[Any]:
         for item in v:
-            if allowed:
-                _check_allowed(item, allowed)
-            if isinstance(item, str) and len(item) > _MAX_LIST_ITEM_LENGTH:
-                raise ValueError(
-                    f"list item too long (max {_MAX_LIST_ITEM_LENGTH} chars), got {len(item)}"
-                )
+            _check_allowed(item, allowed)
         return v
 
     return validate
@@ -161,12 +164,14 @@ def _normalize_field_type(field_type_input: str | Type[Any]) -> str:
     return field_type_input
 
 
-def _build_field_definition(field_type_str: str, allowed_values: list[str]) -> tuple[Any, Any]:
+def _build_field_definition(
+    field_type_str: str, allowed_values: frozenset[str]
+) -> tuple[Any, Any]:
     """Build a complete field definition based on type and constraints.
 
     Args:
         field_type_str: String name of the field type ("str", "list", etc.).
-        allowed_values: List of permitted enum values (empty if none).
+        allowed_values: Set of permitted enum values (empty if none).
 
     Returns:
         A tuple of (field_type, Field) suitable for Pydantic's create_model.
@@ -174,28 +179,37 @@ def _build_field_definition(field_type_str: str, allowed_values: list[str]) -> t
     is_list = field_type_str.startswith("list")
 
     if is_list:
-        field_type = Annotated[list[Any], AfterValidator(_make_list_validator(allowed_values))]
         if allowed_values:
+            field_type = Annotated[
+                list[Any],
+                AfterValidator(_check_max_item_length),
+                AfterValidator(_make_list_validator(allowed_values)),
+            ]
+            allowed_list = sorted(allowed_values)
             return (
                 field_type,
                 Field(
                     ...,
-                    description=f"Allowed values: {', '.join(allowed_values)}",
+                    description=f"Allowed values: {', '.join(allowed_list)}",
                     max_length=20,
-                    json_schema_extra=cast(Any, {"enum_items": allowed_values}),
+                    json_schema_extra=cast(Any, {"enum_items": allowed_list}),
                 ),
             )
-        return (field_type, Field(..., max_length=20))
+        return (
+            Annotated[list[Any], AfterValidator(_check_max_item_length)],
+            Field(..., max_length=20),
+        )
 
     if allowed_values:
         field_type = Annotated[str, AfterValidator(lambda v: _check_allowed(v, allowed_values))]
+        allowed_list = sorted(allowed_values)
         return (
             field_type,
             Field(
                 ...,
-                description=f"Allowed values: {', '.join(allowed_values)}",
+                description=f"Allowed values: {', '.join(allowed_list)}",
                 max_length=200,
-                json_schema_extra=cast(Any, {"enum": allowed_values}),
+                json_schema_extra=cast(Any, {"enum": allowed_list}),
             ),
         )
 
@@ -234,8 +248,16 @@ def create_location_model(
 
     for field_name, field_type_input in obligatory_fields:
         field_type_str = _normalize_field_type(field_type_input)
-        allowed_values = categories.get(field_name, [])
-        fields[field_name] = _build_field_definition(field_type_str, allowed_values)
+        raw = categories.get(field_name)
+        if raw is not None:
+            if not raw:
+                raise ValueError(
+                    f"Category '{field_name}' exists but has no allowed values"
+                )
+            allowed = frozenset(raw)
+        else:
+            allowed = frozenset()
+        fields[field_name] = _build_field_definition(field_type_str, allowed)
 
     return create_model(
         "Location",
