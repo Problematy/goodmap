@@ -101,7 +101,7 @@ def core_pages(
     photo_attachment_class: type[AttachmentProtocol],
     photo_attachment_config: AttachmentConfig,
     feature_flags: FeatureFlagSet,
-    field_renderers: dict[str, str] | None = None,
+    field_renderers: dict[str, str] = {},
 ) -> Blueprint:
     core_api_blueprint = Blueprint("api", __name__, url_prefix="/api")
 
@@ -373,9 +373,9 @@ def core_pages(
 
         visible_data = database.get_visible_data()
         meta_data = database.get_meta_data()
-        field_plugins = field_renderers or {}
-
-        formatted_data = prepare_pin(location.model_dump(), visible_data, meta_data, field_plugins)
+        formatted_data = prepare_pin(
+            location.model_dump(), visible_data, meta_data, field_renderers
+        )
         return jsonify(formatted_data)
 
     @core_api_blueprint.route("/version", methods=["GET"])
