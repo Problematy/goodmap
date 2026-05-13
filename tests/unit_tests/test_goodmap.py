@@ -1,21 +1,18 @@
 import importlib.metadata
 import os
 import tempfile
+import types
 from typing import Any
 from unittest import mock
 from unittest.mock import MagicMock, patch
 
 import pytest
-from flask import Flask
-from flask_wtf.csrf import CSRFProtect
 from platzky.db.json_db import JsonDbConfig
 
 from goodmap import goodmap
 from goodmap.config import GoodmapConfig
 from goodmap.feature_flags import EnableAdminPanel, UseLazyLoading
 from tests.unit_tests.conftest import make_flag_set
-
-# pyright: reportPrivateUsage=false, reportUnknownLambdaType=false
 
 config = GoodmapConfig(
     APP_NAME="test",
@@ -143,17 +140,18 @@ def make_mock_entry_point(name: str, module_path: str):
     if not os.path.exists(init_file):
         open(init_file, "w").close()
 
+    real_module = types.ModuleType(name)
+    real_module.__file__ = init_file
+
     spec = mock.MagicMock(spec=importlib.metadata.EntryPoint)
     spec.name = name
-
-    mock_module = mock.MagicMock()
-    mock_module.__file__ = init_file
-    spec.load.return_value = mock_module
+    spec.load.return_value = real_module
     return spec
 
 
-def test_register_plugin_static_resources_with_static_dir():
-    """Should return (blueprint, manifest) when plugin has a static directory."""
+def test_plugin_with_static_dir():
+    """Should register blueprint and manifest entry when plugin has a static directory."""
+    config = _make_test_app_config()
     with tempfile.TemporaryDirectory() as tmpdir:
         plugin_dir = os.path.join(tmpdir, "my_plugin")
         static_dir = os.path.join(plugin_dir, "static")
@@ -161,39 +159,45 @@ def test_register_plugin_static_resources_with_static_dir():
 
         ep = make_mock_entry_point("my_plugin", plugin_dir)
 
-        with patch("goodmap.goodmap.inspect.getfile", lambda x: x.__file__):
-            bp, entry = goodmap._register_plugin_static_resources(ep)
+        with patch("importlib.metadata.entry_points", return_value=[ep]):
+            app = goodmap.create_app_from_config(config)
 
-        assert bp is not None
-        assert entry == {
+    assert "plugin_my_plugin" in app.blueprints
+    assert app.config["PLUGIN_MANIFEST"] == [
+        {
             "scope": "my_plugin",
             "url": "/plugins/my_plugin/static/remoteEntry.js",
             "module": "./Button",
         }
+    ]
 
 
-def test_register_plugin_static_resources_no_static_dir():
-    """Should return (None, None) when plugin has no static directory."""
+def test_plugin_without_static_dir():
+    """Should not register blueprint when plugin has no static directory."""
+    config = _make_test_app_config()
     with tempfile.TemporaryDirectory() as tmpdir:
         ep = make_mock_entry_point("no_static_plugin", tmpdir)
 
-        bp, entry = goodmap._register_plugin_static_resources(ep)
+        with patch("importlib.metadata.entry_points", return_value=[ep]):
+            app = goodmap.create_app_from_config(config)
 
-        assert bp is None
-        assert entry is None
+    assert "plugin_no_static_plugin" not in app.blueprints
+    assert app.config["PLUGIN_MANIFEST"] == []
 
 
-def test_register_plugin_static_resources_load_failure():
-    """Should return (None, None) and log warning when plugin loading fails."""
+def test_plugin_load_failure():
+    """Should log warning and skip plugin when loading fails."""
+    config = _make_test_app_config()
     ep = mock.MagicMock(spec=importlib.metadata.EntryPoint)
     ep.name = "broken_plugin"
     ep.load.side_effect = ImportError("Module not found")
 
-    with patch.object(goodmap.logger, "warning") as mock_warning:
-        bp, entry = goodmap._register_plugin_static_resources(ep)
+    with patch("importlib.metadata.entry_points", return_value=[ep]):
+        with patch.object(goodmap.logger, "warning") as mock_warning:
+            app = goodmap.create_app_from_config(config)
 
-    assert bp is None
-    assert entry is None
+    assert "plugin_broken_plugin" not in app.blueprints
+    assert app.config["PLUGIN_MANIFEST"] == []
     mock_warning.assert_called_once_with(
         "Failed to serve static files for plugin '%s'", "broken_plugin"
     )
@@ -261,6 +265,7 @@ def test_admin_route_logged_in():
 
 def test_plugin_blueprint_sets_cors_header():
     """Should set Access-Control-Allow-Origin on plugin blueprint responses."""
+    config = _make_test_app_config()
     with tempfile.TemporaryDirectory() as tmpdir:
         plugin_dir = os.path.join(tmpdir, "cors_plugin")
         static_dir = os.path.join(plugin_dir, "static")
@@ -271,16 +276,11 @@ def test_plugin_blueprint_sets_cors_header():
 
         ep = make_mock_entry_point("cors_plugin", plugin_dir)
 
-        with patch("goodmap.goodmap.inspect.getfile", lambda x: x.__file__):
-            bp, _ = goodmap._register_plugin_static_resources(ep)
+        with patch("importlib.metadata.entry_points", return_value=[ep]):
+            app = goodmap.create_app_from_config(config)
 
-        assert bp is not None
-
-        test_app = Flask(__name__)
-        CSRFProtect(test_app)
-        test_app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
-        test_app.register_blueprint(bp)
-        client = test_app.test_client()
+        app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
+        client = app.test_client()
 
         response = client.get("/plugins/cors_plugin/static/test.js")
 
