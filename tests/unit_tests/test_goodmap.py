@@ -1,6 +1,7 @@
 import importlib.metadata
 import os
 import tempfile
+from typing import Any
 from unittest import mock
 from unittest.mock import MagicMock, patch
 
@@ -12,6 +13,8 @@ from goodmap import goodmap
 from goodmap.config import GoodmapConfig
 from goodmap.feature_flags import EnableAdminPanel, UseLazyLoading
 from tests.unit_tests.conftest import make_flag_set
+
+# pyright: reportPrivateUsage=false, reportUnknownLambdaType=false
 
 config = GoodmapConfig(
     APP_NAME="test",
@@ -195,23 +198,21 @@ def test_register_plugin_static_resources_load_failure():
     )
 
 
-def _make_test_app_config(feature_flags=None, extra_data=None):
-    data = {
+def _make_test_app_config(feature_flags: Any = None, extra_data: Any = None) -> GoodmapConfig:
+    data: dict[str, Any] = {
         "site_content": {"pages": []},
         "location_obligatory_fields": [],
     }
     if extra_data:
         data.update(extra_data)
-    kwargs = dict(
+    return GoodmapConfig(
         APP_NAME="test_app",
         SECRET_KEY="test_secret",
         USE_WWW=False,
         BLOG_PREFIX="/blog",
         DB=JsonDbConfig(DATA=data, TYPE="json"),
+        FEATURE_FLAGS=feature_flags,
     )
-    if feature_flags is not None:
-        kwargs["FEATURE_FLAGS"] = feature_flags
-    return GoodmapConfig(**kwargs)
 
 
 def test_admin_route_disabled():

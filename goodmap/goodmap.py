@@ -4,6 +4,7 @@ import importlib.metadata
 import inspect
 import logging
 import os
+from typing import Any
 
 from flask import Blueprint, redirect, render_template, session
 from flask_babel import gettext
@@ -30,7 +31,7 @@ _PLUGIN_ENTRY_POINT_GROUP = "platzky.plugins"
 
 def _register_plugin_static_resources(
     ep: importlib.metadata.EntryPoint,
-) -> tuple[Blueprint | None, dict | None]:
+) -> tuple[Blueprint | None, dict[str, Any] | None]:
     """Load a plugin's static resources and return its blueprint and manifest entry.
 
     Loads the plugin module, checks for a 'static' directory, and if found
