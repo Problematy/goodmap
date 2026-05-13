@@ -90,6 +90,18 @@ describe('should render marker popup correctly', () => {
                 ).not.toThrow();
             });
         });
+
+        describe('should handle plugin fields', () => {
+            it('renders the field label for a scoped plugin field even when plugin is not loaded', () => {
+                const placeWithPlugin = {
+                    ...correctMarkerData,
+                    data: [['promocode', { scope: 'promocode', code: 'U1VN', text: 'Get it' }]],
+                    metadata: { uuid: 'test-uuid' },
+                };
+                render(<LocationDetailsBox place={placeWithPlugin} />);
+                expect(screen.getByText('promocode')).toBeInTheDocument();
+            });
+        });
     });
 });
 

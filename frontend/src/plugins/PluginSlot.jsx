@@ -16,11 +16,7 @@ const PluginSlot = ({ scope, props: componentProps }) => {
 
 PluginSlot.propTypes = {
     scope: PropTypes.string.isRequired,
-    props: PropTypes.object, // eslint-disable-line react/forbid-prop-types
-};
-
-PluginSlot.defaultProps = {
-    props: {},
+    props: PropTypes.object.isRequired, // eslint-disable-line react/forbid-prop-types
 };
 
 export default PluginSlot;
