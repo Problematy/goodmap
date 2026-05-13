@@ -103,65 +103,21 @@ _TYPE_MAPPING: dict[str, type] = {
 _MAX_LIST_ITEM_LENGTH = 100
 
 
-def _make_list_validator(allowed: list[str] | None):
-    """Create a validator for list items with optional enum constraint.
+def _check_allowed(value: Any, allowed: list[str]) -> Any:
+    if value not in allowed:
+        raise ValueError(f"must be one of {allowed}, got '{value}'")
+    return value
 
-    Args:
-        allowed: List of permitted values, or None to allow any values.
 
-    Returns:
-        A validator function that checks each item in the list.
-    """
-
+def _make_list_validator(allowed: list[str]):
     def validate(v: list[Any]) -> list[Any]:
-        """Validate each item in the list.
-
-        Args:
-            v: List of values to validate.
-
-        Returns:
-            The validated list unchanged if all items pass.
-
-        Raises:
-            ValueError: If an item is not in the allowed list or exceeds
-                max length.
-        """
         for item in v:
-            if allowed is not None and item not in allowed:
-                raise ValueError(f"must be one of {allowed}, got '{item}'")
+            if allowed:
+                _check_allowed(item, allowed)
             if isinstance(item, str) and len(item) > _MAX_LIST_ITEM_LENGTH:
                 raise ValueError(
                     f"list item too long (max {_MAX_LIST_ITEM_LENGTH} chars), got {len(item)}"
                 )
-        return v
-
-    return validate
-
-
-def _make_str_validator(allowed: list[str]):
-    """Create a validator that checks string value is in allowed list.
-
-    Args:
-        allowed: List of permitted string values.
-
-    Returns:
-        A validator function that checks the string against the allowed list.
-    """
-
-    def validate(v: str) -> str:
-        """Validate that a string is in the allowed list.
-
-        Args:
-            v: The string value to validate.
-
-        Returns:
-            The validated string if it passes.
-
-        Raises:
-            ValueError: If v is not in the allowed list.
-        """
-        if v not in allowed:
-            raise ValueError(f"must be one of {allowed}, got '{v}'")
         return v
 
     return validate
@@ -183,13 +139,13 @@ def _normalize_field_type(field_type_input: str | Type[Any]) -> str:
 
 
 def _build_field_definition(
-    field_type_str: str, allowed_values: list[str] | None
+    field_type_str: str, allowed_values: list[str]
 ) -> tuple[Any, Any]:
     """Build a complete field definition based on type and constraints.
 
     Args:
         field_type_str: String name of the field type ("str", "list", etc.).
-        allowed_values: Optional list of permitted enum values.
+        allowed_values: List of permitted enum values (empty if none).
 
     Returns:
         A tuple of (field_type, Field) suitable for Pydantic's create_model.
@@ -211,7 +167,7 @@ def _build_field_definition(
         return (field_type, Field(..., max_length=20))
 
     if allowed_values:
-        field_type = Annotated[str, AfterValidator(_make_str_validator(allowed_values))]
+        field_type = Annotated[str, AfterValidator(lambda v: _check_allowed(v, allowed_values))]
         return (
             field_type,
             Field(
@@ -230,7 +186,7 @@ def _build_field_definition(
 
 def create_location_model(
     obligatory_fields: list[tuple[str, str]] | list[tuple[str, Type[Any]]],
-    categories: dict[str, list[str]] | None = None,
+    categories: dict[str, list[str]] = {},
 ) -> Type[BaseModel]:
     """Dynamically create a Location model with additional required fields.
 
@@ -241,7 +197,7 @@ def create_location_model(
                           field_type can be either:
                           - String type name: "str", "list", "int", "float", "bool", "dict"
                           - Python type object: str, list, int, etc. (deprecated)
-        categories: Optional dict mapping field names to allowed values (enums)
+        categories: Dict mapping field names to allowed values (enums).
 
     Returns:
         A Location model class extending LocationBase with additional fields
@@ -253,12 +209,11 @@ def create_location_model(
         >>> # Deprecated: Python type objects (supported for backward compatibility)
         >>> model = create_location_model([("name", str), ("tags", list)])
     """
-    categories = categories or {}
     fields: dict[str, Any] = {}
 
     for field_name, field_type_input in obligatory_fields:
         field_type_str = _normalize_field_type(field_type_input)
-        allowed_values = categories.get(field_name)
+        allowed_values = categories.get(field_name, [])
         fields[field_name] = _build_field_definition(field_type_str, allowed_values)
 
     return create_model(
