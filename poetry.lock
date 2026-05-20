@@ -1999,14 +1999,14 @@ type = ["mypy (>=1.14.1)"]
 
 [[package]]
 name = "platzky"
-version = "1.4.10"
+version = "2.0.0a0"
 description = "Not only blog engine"
 optional = false
 python-versions = "<4.0,>=3.10"
 groups = ["main"]
 files = [
-    {file = "platzky-1.4.10-py3-none-any.whl", hash = "sha256:00ddfa5fe1451b86223b09dd1241f19a65f6430a7c476f55c53209ca7520d192"},
-    {file = "platzky-1.4.10.tar.gz", hash = "sha256:24273397fd564a83cb181d84167a7e2c32cc077d133a66326e5a23620e87cc3b"},
+    {file = "platzky-2.0.0a0-py3-none-any.whl", hash = "sha256:b91f6df7be68dc766a73cc4125312a52561acf8e765461500d2007c8884c0bc7"},
+    {file = "platzky-2.0.0a0.tar.gz", hash = "sha256:8d5cc9906941d9aa18fb22d5645d078490c6374666958735758555709e52f7d4"},
 ]
 
 [package.dependencies]
@@ -2017,7 +2017,7 @@ Flask-Babel = ">=4.0.0,<5.0.0"
 Flask-Minify = ">=0.50,<0.51"
 Flask-WTF = ">=1.2.1,<2.0.0"
 google-cloud-storage = ">=2.5.0,<3.0.0"
-gql = ">=3.4.0,<4.0.0"
+gql = ">=3.4,<5.0"
 humanize = ">=4.9.0,<5.0.0"
 puremagic = ">=1.30,<2.0"
 pydantic = ">=2.7.1,<3.0.0"
@@ -3499,7 +3499,7 @@ widechars = ["wcwidth"]
 name = "tomli"
 version = "2.4.1"
 description = "A lil' TOML parser"
-optional = true
+optional = false
 python-versions = ">=3.8"
 groups = ["main", "dev"]
 files = [
@@ -3551,7 +3551,7 @@ files = [
     {file = "tomli-2.4.1-py3-none-any.whl", hash = "sha256:0d85819802132122da43cb86656f8d1f8c6587d54ae7dcaf30e90533028b49fe"},
     {file = "tomli-2.4.1.tar.gz", hash = "sha256:7c7e1a961a0b2f2472c1ac5b69affa0ae1132c39adcb67aba98568702b9cc23f"},
 ]
-markers = {main = "extra == \"docs\"", dev = "extra == \"docs\" and python_version < \"3.13\" or python_full_version <= \"3.11.0a6\""}
+markers = {main = "extra == \"docs\" and python_version == \"3.10\"", dev = "python_full_version <= \"3.11.0a6\""}
 
 [[package]]
 name = "tomlkit"
@@ -4008,9 +4008,9 @@ multidict = ">=4.0"
 propcache = ">=0.2.1"
 
 [extras]
-docs = ["myst-parser", "sphinx", "sphinx-rtd-theme", "tomli"]
+docs = ["myst-parser", "sphinx", "sphinx-rtd-theme"]
 
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "00bffff4423f9fec3fcae6ee303cf1a1428ff3506d98e52b06d6d02a2c09f04a"
+content-hash = "3ec325f7f0366c95bda33620438e421520f395295ad81fbd0710da681187ad48"

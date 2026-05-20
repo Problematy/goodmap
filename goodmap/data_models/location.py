@@ -1,4 +1,9 @@
-"""Pydantic models for location data validation and schema generation."""
+"""Pydantic models for location data validation and dynamic schema generation.
+
+This module provides the core data models for representing location data,
+including position validation, UUID tracking, and dynamic model creation
+for location-based applications with custom fields.
+"""
 
 import warnings
 from typing import Annotated, Any, Type, cast
@@ -35,7 +40,17 @@ class LocationBase(BaseModel, extra="allow"):
     @model_validator(mode="before")
     @classmethod
     def validate_uuid_exists(cls, data: Any) -> Any:
-        """Ensure UUID is present before validation for better error messages."""
+        """Ensure UUID is present before validation for better error messages.
+
+        Args:
+            data: Raw input data to validate (dict or other).
+
+        Returns:
+            The input data unchanged if valid.
+
+        Raises:
+            ValueError: If data is a dict without a 'uuid' field.
+        """
         if isinstance(data, dict) and "uuid" not in data:
             raise ValueError("Location data must include 'uuid' field")
         return data
@@ -43,7 +58,21 @@ class LocationBase(BaseModel, extra="allow"):
     @model_validator(mode="wrap")
     @classmethod
     def enrich_validation_errors(cls, data, handler):
-        """Wrap validation errors with UUID context for better debugging."""
+        """Wrap validation errors with UUID context for better debugging.
+
+        Intercepts ValidationError and re-raises as LocationValidationError
+        with the UUID attached, making it easier to trace which record failed.
+
+        Args:
+            data: Raw input data being validated.
+            handler: The next validation handler in the chain.
+
+        Returns:
+            The result of the validation handler.
+
+        Raises:
+            LocationValidationError: If validation fails, enriched with UUID.
+        """
         try:
             return handler(data)
         except ValidationError as e:
@@ -74,28 +103,47 @@ _TYPE_MAPPING: dict[str, type] = {
 _MAX_LIST_ITEM_LENGTH = 100
 
 
-def _make_list_validator(allowed: list[str] | None):
-    """Create a validator for list items with optional enum constraint."""
+def _check_allowed(value: Any, allowed: frozenset[str]) -> Any:
+    """Validate that a value is in the allowed list.
+
+    Args:
+        value: The value to check.
+        allowed: Set of permitted values.
+
+    Returns:
+        The value unchanged if valid.
+
+    Raises:
+        ValueError: If value is not in the allowed set.
+    """
+    if value not in allowed:
+        raise ValueError(f"must be one of {allowed}, got '{value}'")
+    return value
+
+
+def _check_max_item_length(v: list[Any]) -> list[Any]:
+    """Reject list items that exceed the maximum allowed length."""
+    for item in v:
+        if isinstance(item, str) and len(item) > _MAX_LIST_ITEM_LENGTH:
+            raise ValueError(
+                f"list item too long (max {_MAX_LIST_ITEM_LENGTH} chars), got {len(item)}"
+            )
+    return v
+
+
+def _make_list_validator(allowed: frozenset[str]):
+    """Create a validator for list items against an allowed set.
+
+    Args:
+        allowed: Set of permitted values (must be non-empty).
+
+    Returns:
+        A validator function that checks each item against allowed.
+    """
 
     def validate(v: list[Any]) -> list[Any]:
         for item in v:
-            if allowed is not None and item not in allowed:
-                raise ValueError(f"must be one of {allowed}, got '{item}'")
-            if isinstance(item, str) and len(item) > _MAX_LIST_ITEM_LENGTH:
-                raise ValueError(
-                    f"list item too long (max {_MAX_LIST_ITEM_LENGTH} chars), got {len(item)}"
-                )
-        return v
-
-    return validate
-
-
-def _make_str_validator(allowed: list[str]):
-    """Create a validator that checks string value is in allowed list."""
-
-    def validate(v: str) -> str:
-        if v not in allowed:
-            raise ValueError(f"must be one of {allowed}, got '{v}'")
+            _check_allowed(item, allowed)
         return v
 
     return validate
@@ -116,35 +164,50 @@ def _normalize_field_type(field_type_input: str | Type[Any]) -> str:
     return field_type_input
 
 
-def _build_field_definition(
-    field_type_str: str, allowed_values: list[str] | None
-) -> tuple[Any, Any]:
-    """Build a complete field definition based on type and constraints."""
+def _build_field_definition(field_type_str: str, allowed_values: frozenset[str]) -> tuple[Any, Any]:
+    """Build a complete field definition based on type and constraints.
+
+    Args:
+        field_type_str: String name of the field type ("str", "list", etc.).
+        allowed_values: Set of permitted enum values (empty if none).
+
+    Returns:
+        A tuple of (field_type, Field) suitable for Pydantic's create_model.
+    """
     is_list = field_type_str.startswith("list")
 
     if is_list:
-        field_type = Annotated[list[Any], AfterValidator(_make_list_validator(allowed_values))]
         if allowed_values:
+            field_type = Annotated[
+                list[Any],
+                AfterValidator(_check_max_item_length),
+                AfterValidator(_make_list_validator(allowed_values)),
+            ]
+            allowed_list = sorted(allowed_values)
             return (
                 field_type,
                 Field(
                     ...,
-                    description=f"Allowed values: {', '.join(allowed_values)}",
+                    description=f"Allowed values: {', '.join(allowed_list)}",
                     max_length=20,
-                    json_schema_extra=cast(Any, {"enum_items": allowed_values}),
+                    json_schema_extra=cast(Any, {"enum_items": allowed_list}),
                 ),
             )
-        return (field_type, Field(..., max_length=20))
+        return (
+            Annotated[list[Any], AfterValidator(_check_max_item_length)],
+            Field(..., max_length=20),
+        )
 
     if allowed_values:
-        field_type = Annotated[str, AfterValidator(_make_str_validator(allowed_values))]
+        field_type = Annotated[str, AfterValidator(lambda v: _check_allowed(v, allowed_values))]
+        allowed_list = sorted(allowed_values)
         return (
             field_type,
             Field(
                 ...,
-                description=f"Allowed values: {', '.join(allowed_values)}",
+                description=f"Allowed values: {', '.join(allowed_list)}",
                 max_length=200,
-                json_schema_extra=cast(Any, {"enum": allowed_values}),
+                json_schema_extra=cast(Any, {"enum": allowed_list}),
             ),
         )
 
@@ -156,7 +219,7 @@ def _build_field_definition(
 
 def create_location_model(
     obligatory_fields: list[tuple[str, str]] | list[tuple[str, Type[Any]]],
-    categories: dict[str, list[str]] | None = None,
+    categories: dict[str, list[str]],
 ) -> Type[BaseModel]:
     """Dynamically create a Location model with additional required fields.
 
@@ -167,7 +230,7 @@ def create_location_model(
                           field_type can be either:
                           - String type name: "str", "list", "int", "float", "bool", "dict"
                           - Python type object: str, list, int, etc. (deprecated)
-        categories: Optional dict mapping field names to allowed values (enums)
+        categories: Dict mapping field names to allowed values (enums).
 
     Returns:
         A Location model class extending LocationBase with additional fields
@@ -179,13 +242,18 @@ def create_location_model(
         >>> # Deprecated: Python type objects (supported for backward compatibility)
         >>> model = create_location_model([("name", str), ("tags", list)])
     """
-    categories = categories or {}
     fields: dict[str, Any] = {}
 
     for field_name, field_type_input in obligatory_fields:
         field_type_str = _normalize_field_type(field_type_input)
-        allowed_values = categories.get(field_name)
-        fields[field_name] = _build_field_definition(field_type_str, allowed_values)
+        raw = categories.get(field_name)
+        if raw is not None:
+            if not raw:
+                raise ValueError(f"Category '{field_name}' exists but has no allowed values")
+            allowed = frozenset(raw)
+        else:
+            allowed = frozenset()
+        fields[field_name] = _build_field_definition(field_type_str, allowed)
 
     return create_model(
         "Location",

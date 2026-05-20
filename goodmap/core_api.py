@@ -101,6 +101,7 @@ def core_pages(
     photo_attachment_class: type[AttachmentProtocol],
     photo_attachment_config: AttachmentConfig,
     feature_flags: FeatureFlagSet,
+    field_renderers: dict[str, str],
 ) -> Blueprint:
     core_api_blueprint = Blueprint("api", __name__, url_prefix="/api")
 
@@ -245,7 +246,7 @@ def core_pages(
             )
             return make_response(jsonify({"message": ERROR_INVALID_LOCATION_DATA}), 400)
         except Exception:
-            logger.error("Error in suggest location endpoint", exc_info=True)
+            logger.exception("Error in suggest location endpoint")
             return make_response(
                 jsonify({"message": "An error occurred while processing your suggestion"}), 500
             )
@@ -291,7 +292,7 @@ def core_pages(
             )
             notifier_function(message)
         except Exception:
-            logger.error("Error in report location endpoint", exc_info=True)
+            logger.exception("Error in report location endpoint")
             error_message = gettext("Error sending notification")
             return make_response(jsonify({"message": error_message}), 500)
         return make_response(jsonify({"message": gettext("Location reported")}), 200)
@@ -354,7 +355,7 @@ def core_pages(
             logger.warning("Invalid parameter in clustering request: %s", e)
             return make_response(jsonify({"message": "Invalid parameters provided"}), 400)
         except Exception as e:
-            logger.error("Clustering operation failed: %s", e, exc_info=True)
+            logger.exception("Clustering operation failed: %s", e)
             return make_response(jsonify({"message": "An error occurred during clustering"}), 500)
 
     @core_api_blueprint.route("/location/<location_id>", methods=["GET"])
@@ -372,8 +373,9 @@ def core_pages(
 
         visible_data = database.get_visible_data()
         meta_data = database.get_meta_data()
-
-        formatted_data = prepare_pin(location.model_dump(), visible_data, meta_data)
+        formatted_data = prepare_pin(
+            location.model_dump(), visible_data, meta_data, field_renderers
+        )
         return jsonify(formatted_data)
 
     @core_api_blueprint.route("/version", methods=["GET"])

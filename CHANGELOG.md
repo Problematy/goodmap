@@ -2,6 +2,47 @@
 
 <!-- version list -->
 
+## v1.7.0 (2026-05-13)
+
+### Chores
+
+- Add python 3.14 test matrix and update dependencies
+  ([#334](https://github.com/Problematy/goodmap/pull/334),
+  [`486a94e`](https://github.com/Problematy/goodmap/commit/486a94e1f4bfbf951431d3b3b7c20f3f2f31e07e))
+
+- Lock github actions versions ([#342](https://github.com/Problematy/goodmap/pull/342),
+  [`c0e7a58`](https://github.com/Problematy/goodmap/commit/c0e7a58d0f1bbd3a5a4b9b8ba09925996a3f99c6))
+
+- More quality checks for repository ([#341](https://github.com/Problematy/goodmap/pull/341),
+  [`1ef5f7a`](https://github.com/Problematy/goodmap/commit/1ef5f7a043fe412d2ee1072acad6d0688236547e))
+
+- **ci**: Bump actions/create-github-app-token from 2.2.1 to 3.0.0
+  ([#340](https://github.com/Problematy/goodmap/pull/340),
+  [`1021554`](https://github.com/Problematy/goodmap/commit/1021554ba494cc5ee66c5049b4c9a2beb309f38a))
+
+- **ci**: Bump actions/download-artifact from 7 to 8
+  ([#337](https://github.com/Problematy/goodmap/pull/337),
+  [`c718929`](https://github.com/Problematy/goodmap/commit/c718929202f611d46fb88d0a07f7a34204c3bc5e))
+
+- **ci**: Bump actions/upload-artifact from 6 to 7
+  ([#338](https://github.com/Problematy/goodmap/pull/338),
+  [`a0b9dbc`](https://github.com/Problematy/goodmap/commit/a0b9dbc12e8a8a789128d5494c261a1b33fde199))
+
+- **deps**: Update gunicorn version constraint to allow up to 26.0
+  ([#345](https://github.com/Problematy/goodmap/pull/345),
+  [`bfbcae0`](https://github.com/Problematy/goodmap/commit/bfbcae0844829cf15c745f134c999e538864aa1d))
+
+- **deps)(deps**: Bump the minor-and-patch group across 1 directory with 8 updates
+  ([#343](https://github.com/Problematy/goodmap/pull/343),
+  [`c0d99d6`](https://github.com/Problematy/goodmap/commit/c0d99d6e3091eea1f0d73f9815fbfdd7eb06c405))
+
+### Features
+
+- Integrate platzky plugins with static assets and field rendering
+  ([#351](https://github.com/Problematy/goodmap/pull/351),
+  [`e666c3e`](https://github.com/Problematy/goodmap/commit/e666c3ecda12ea5f0482629dc330703151dd0385))
+
+
 ## v1.6.1 (2026-02-12)
 
 ### Bug Fixes

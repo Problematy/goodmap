@@ -1,7 +1,10 @@
 """Goodmap engine with location management and admin interface."""
 
+import importlib.metadata
+import inspect
 import logging
 import os
+from typing import Any
 
 from flask import Blueprint, redirect, render_template, session
 from flask_babel import gettext
@@ -10,6 +13,7 @@ from platzky import platzky
 from platzky.attachment import create_attachment_class
 from platzky.config import AttachmentConfig, languages_dict
 from platzky.models import CmsModule
+from pydantic import BaseModel
 
 from goodmap.admin_api import admin_pages
 from goodmap.config import GoodmapConfig
@@ -22,6 +26,81 @@ from goodmap.db import (
 from goodmap.feature_flags import EnableAdminPanel, UseLazyLoading
 
 logger = logging.getLogger(__name__)
+
+_PLUGIN_ENTRY_POINT_GROUP = "platzky.plugins"
+
+
+def _register_plugin_static_resources(
+    ep: importlib.metadata.EntryPoint,
+) -> tuple[Blueprint | None, dict[str, Any] | None]:
+    """Load a plugin's static resources and return its blueprint and manifest entry.
+
+    Loads the plugin module, checks for a 'static' directory, and if found
+    creates a Flask blueprint and a manifest entry for the frontend.
+
+    Args:
+        ep: The entry point for the plugin.
+
+    Returns:
+        A tuple of (blueprint, manifest_entry). Both are None if the plugin
+        has no static directory or loading fails.
+    """
+    try:
+        mod_path = os.path.dirname(os.path.realpath(inspect.getfile(ep.load())))
+        static_dir = os.path.join(mod_path, "static")
+        if not os.path.isdir(static_dir):
+            return None, None
+
+        bp = Blueprint(
+            f"plugin_{ep.name}",
+            __name__,
+            url_prefix=f"/plugins/{ep.name}",
+            static_folder=static_dir,
+            static_url_path="/static",
+        )
+
+        @bp.after_request
+        def _add_cors(response):
+            response.headers["Access-Control-Allow-Origin"] = "*"
+            return response
+
+        manifest_entry = {
+            "scope": ep.name,
+            "url": f"/plugins/{ep.name}/static/remoteEntry.js",
+            "module": "./Button",
+        }
+        return bp, manifest_entry
+    except Exception:
+        logger.warning("Failed to serve static files for plugin '%s'", ep.name)
+        return None, None
+
+
+def _setup_location_model(
+    db: Any,
+) -> tuple[list[Any], dict[str, Any], type[BaseModel], Any]:
+    """Configure location model and db with lazy-loading and categories support.
+
+    Args:
+        db: The database instance to extend with location queries.
+
+    Returns:
+        Tuple of (obligatory_fields, categories, location_model, db).
+    """
+    obligatory_fields = get_location_obligatory_fields(db)
+    location_model = create_location_model(obligatory_fields, {})
+    extended_db = extend_db_with_goodmap_queries(db, location_model)
+
+    try:
+        category_data = extended_db.get_category_data()
+        categories = category_data.get("categories", {})
+    except (KeyError, AttributeError):
+        categories = {}
+
+    if categories:
+        location_model = create_location_model(obligatory_fields, categories)
+        extended_db = extend_db_with_goodmap_queries(extended_db, location_model)
+
+    return obligatory_fields, categories, location_model, extended_db
 
 
 def create_app(config_path: str) -> platzky.Engine:
@@ -62,30 +141,26 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         app.config["MAX_CONTENT_LENGTH"] = 100 * 1024  # 100KB
 
     if app.is_enabled(UseLazyLoading):
-        location_obligatory_fields = get_location_obligatory_fields(app.db)
-        # Extend db with goodmap queries first so we can use the bound method
-        location_model = create_location_model(location_obligatory_fields, {})
-        app.db = extend_db_with_goodmap_queries(app.db, location_model)
-
-        # Use the extended db method directly (already bound by extend_db_with_goodmap_queries)
-        try:
-            category_data = app.db.get_category_data()  # type: ignore[attr-defined]
-            categories = category_data.get("categories", {})
-        except (KeyError, AttributeError):
-            # Handle case where categories don't exist in the data
-            categories = {}
-
-        # Recreate location model with categories if we got them
-        if categories:
-            location_model = create_location_model(location_obligatory_fields, categories)
-            app.db = extend_db_with_goodmap_queries(app.db, location_model)
+        location_obligatory_fields, _, location_model, app.db = _setup_location_model(app.db)
     else:
         location_obligatory_fields = []
-        categories = {}
-        location_model = create_location_model(location_obligatory_fields, categories)
+        location_model = create_location_model([], {})
         app.db = extend_db_with_goodmap_queries(app.db, location_model)
 
     app.extensions["goodmap"] = {"location_obligatory_fields": location_obligatory_fields}
+
+    field_renderers: dict[str, str] = {}
+    for sc_name in app.shortcodes:
+        field_renderers.setdefault(sc_name, sc_name)
+
+    plugin_manifest = []
+    for ep in importlib.metadata.entry_points(group=_PLUGIN_ENTRY_POINT_GROUP):
+        bp, entry = _register_plugin_static_resources(ep)
+        if bp is not None:
+            app.register_blueprint(bp)
+            plugin_manifest.append(entry)
+
+    app.config["PLUGIN_MANIFEST"] = plugin_manifest
 
     CSRFProtect(app)
 
@@ -108,6 +183,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         photo_attachment_class=PhotoAttachment,
         photo_attachment_config=photo_attachment_config,
         feature_flags=config.feature_flags,
+        field_renderers=field_renderers,
     )
     app.register_blueprint(cp)
 
@@ -154,6 +230,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
             feature_flags=config.feature_flags,
             goodmap_frontend_lib_url=config.goodmap_frontend_lib_url,
             location_schema=location_schema,
+            plugin_manifest=plugin_manifest,
         )
 
     @goodmap.route("/goodmap-admin")

@@ -718,9 +718,8 @@ def test_location_clustering_logs_on_exception(test_app):
         mock.patch("goodmap.core_api.logger") as mock_logger,
     ):
         test_app.get("/api/locations-clustered?zoom=10")
-        mock_logger.error.assert_called_once()
-        assert "Clustering operation failed" in mock_logger.error.call_args[0][0]
-        assert mock_logger.error.call_args[1]["exc_info"] is True
+        mock_logger.exception.assert_called_once()
+        assert "Clustering operation failed" in mock_logger.exception.call_args[0][0]
 
 
 # --- Helper function tests ---

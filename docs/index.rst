@@ -11,7 +11,7 @@ Goodmap is a map engine designed to serve all the people :)
 
    installation
    quickstart
-   frontend-integration
+   plugins
    api
    development
 
