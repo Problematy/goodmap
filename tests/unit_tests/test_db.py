@@ -2420,40 +2420,23 @@ from goodmap.db import apply_data_defaults, get_locations_list_from_raw_data  # 
 
 
 class TestApplyDataDefaults:
-    def test_no_defaults_returns_point_unchanged(self):
+    def test_no_templates_returns_point_unchanged(self):
         map_data = {"data": [], "categories": {}}
         point = {"uuid": "1", "name": "A", "accessible_by": ["cars"]}
         assert apply_data_defaults(map_data, point) == point
 
-    def test_missing_data_defaults_key_returns_point_unchanged(self):
+    def test_missing_data_templates_key_returns_point_unchanged(self):
         map_data = {}
         point = {"uuid": "1"}
         assert apply_data_defaults(map_data, point) is point
 
-    def test_empty_data_defaults_returns_point_unchanged(self):
-        map_data = {"data_defaults": {}}
-        point = {"uuid": "1", "name": "B"}
-        assert apply_data_defaults(map_data, point) is point
-
-    def test_data_defaults_are_applied_to_point(self):
-        map_data = {
-            "data_defaults": {"accessible_by": ["pedestrians"], "type_of_place": "small bridge"}
-        }
-        point = {"uuid": "1", "name": "Bridge"}
-        result = apply_data_defaults(map_data, point)
-        assert result["accessible_by"] == ["pedestrians"]
-        assert result["type_of_place"] == "small bridge"
-        assert result["name"] == "Bridge"
-
-    def test_point_field_overrides_data_default(self):
-        map_data = {"data_defaults": {"accessible_by": ["pedestrians"]}}
-        point = {"uuid": "1", "name": "Big Bridge", "accessible_by": ["pedestrians", "cars"]}
-        result = apply_data_defaults(map_data, point)
-        assert result["accessible_by"] == ["pedestrians", "cars"]
-
     def test_original_point_dict_not_mutated(self):
-        map_data = {"data_defaults": {"accessible_by": ["pedestrians"]}}
-        point = {"uuid": "1", "name": "Bridge"}
+        map_data = {
+            "data_templates": {
+                "type_of_place": {"big bridge": {"accessible_by": ["pedestrians", "cars"]}}
+            }
+        }
+        point = {"uuid": "1", "name": "Bridge", "type_of_place": "big bridge"}
         apply_data_defaults(map_data, point)
         assert "accessible_by" not in point
 
@@ -2495,20 +2478,6 @@ class TestApplyDataDefaults:
         assert result["material"] == "cable-stayed"
         assert result["accessible_by"] == ["pedestrians", "cars"]
 
-    def test_data_defaults_overridden_by_data_templates(self):
-        # data_templates (type-specific) take priority over data_defaults (global)
-        map_data = {
-            "data_defaults": {"material": "wood"},
-            "data_templates": {
-                "type_of_place": {
-                    "big bridge": {"material": "steel"},
-                }
-            },
-        }
-        point = {"uuid": "1", "name": "B", "type_of_place": "big bridge"}
-        result = apply_data_defaults(map_data, point)
-        assert result["material"] == "steel"
-
     def test_unmatched_template_key_ignored(self):
         map_data = {
             "data_templates": {
@@ -2528,11 +2497,13 @@ class TestGetLocationsListFromRawDataWithDefaults:
             [("name", "str"), ("accessible_by", "list")], {"accessible_by": ["pedestrians", "cars"]}
         )
 
-    def test_defaults_applied_before_filtering(self):
+    def test_templates_applied_before_filtering(self):
         map_data = {
-            "data_defaults": {"accessible_by": ["pedestrians"]},
+            "data_templates": {
+                "type_of_place": {"small bridge": {"accessible_by": ["pedestrians"]}}
+            },
             "data": [
-                {"uuid": "1", "name": "Small Bridge", "position": [51.1, 17.0]},
+                {"uuid": "1", "name": "Small Bridge", "position": [51.1, 17.0], "type_of_place": "small bridge"},
             ],
             "categories": {"accessible_by": ["pedestrians", "cars"]},
         }
@@ -2542,13 +2513,16 @@ class TestGetLocationsListFromRawDataWithDefaults:
 
     def test_point_override_wins_in_filtering(self):
         map_data = {
-            "data_defaults": {"accessible_by": ["pedestrians"]},
+            "data_templates": {
+                "type_of_place": {"small bridge": {"accessible_by": ["pedestrians"]}}
+            },
             "data": [
-                {"uuid": "1", "name": "Small Bridge", "position": [51.1, 17.0]},
+                {"uuid": "1", "name": "Small Bridge", "position": [51.1, 17.0], "type_of_place": "small bridge"},
                 {
                     "uuid": "2",
                     "name": "Big Bridge",
                     "position": [51.2, 17.1],
+                    "type_of_place": "small bridge",
                     "accessible_by": ["pedestrians", "cars"],
                 },
             ],

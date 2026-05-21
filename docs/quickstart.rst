@@ -58,6 +58,35 @@ configuration keys control how these fields appear on the map:
    forms. Supported types: ``str``, ``list``, ``int``, ``float``, ``bool``,
    ``dict``.
 
+``data_templates``
+   Per-value defaults keyed by a field name and its possible values. When a
+   point has a matching field value, the corresponding template fields are
+   merged in. Point-level fields always win.
+
+   This lets you define "presets" for recurring location types so shared
+   fields don't have to be repeated on every record.
+
+   .. code-block:: json
+
+      {
+        "data_templates": {
+          "type_of_place": {
+            "big bridge": {
+              "accessible_by": ["pedestrians", "cars"],
+              "material": "steel"
+            },
+            "small bridge": {
+              "accessible_by": ["pedestrians"],
+              "material": "concrete"
+            }
+          }
+        }
+      }
+
+   With this configuration a point that only stores ``{"type_of_place": "big bridge"}``
+   will automatically receive ``accessible_by`` and ``material`` without those
+   fields being duplicated in every record.
+
 Example configuration in your data source:
 
 .. code-block:: json
@@ -67,7 +96,13 @@ Example configuration in your data source:
      "meta_data": ["uuid"],
      "location_obligatory_fields": [
        ["test_category", "list[str]"]
-     ]
+     ],
+     "data_templates": {
+       "type_of_place": {
+         "big bridge": {"accessible_by": ["pedestrians", "cars"]},
+         "small bridge": {"accessible_by": ["pedestrians"]}
+       }
+     }
    }
 
 .. _data-model-visible_data:

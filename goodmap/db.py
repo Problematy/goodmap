@@ -683,18 +683,13 @@ def get_category_data(db):
 
 
 # ------------------------------------------------
-# data_defaults helpers
+# data_templates helpers
 
 
 def apply_data_defaults(map_data: dict, point: dict) -> dict:
-    """Merge map-level defaults with a single point dict. Point fields take precedence.
+    """Merge data_templates defaults into a point. Point fields always win.
 
-    Merge order (lowest → highest priority):
-      1. data_defaults  — flat dict applied to every point
-      2. data_templates — per-value defaults keyed by a field name and its value
-      3. point fields   — always win
-
-    Example data_templates structure:
+    data_templates structure:
         "data_templates": {
             "type_of_place": {
                 "big bridge": {"accessible_by": ["pedestrians", "cars"]},
@@ -702,17 +697,15 @@ def apply_data_defaults(map_data: dict, point: dict) -> dict:
             }
         }
     """
-    global_defaults = map_data.get("data_defaults", {})
-
     type_defaults: dict = {}
     for field, variants in map_data.get("data_templates", {}).items():
         value = point.get(field)
         if value is not None and value in variants:
             type_defaults.update(variants[value])
 
-    if not global_defaults and not type_defaults:
+    if not type_defaults:
         return point
-    return {**global_defaults, **type_defaults, **point}
+    return {**type_defaults, **point}
 
 
 # ------------------------------------------------
