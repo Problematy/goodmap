@@ -31,11 +31,9 @@ def prepare_pin(place, visible_fields, meta_data, shortcodes=None):
         place: Location data dictionary
         visible_fields: List of field names to display in pin
         meta_data: List of metadata field names
-        shortcodes: Optional mapping of shortcode name → Shortcode instance.
-            Dict-valued fields whose name matches a shortcode are transformed via
-            ``shortcode.transform_field_value()`` before display.  Dict-valued
-            fields with a ``"code"`` key but no matching shortcode are dropped
-            to prevent raw plugin data leaking to the frontend.
+        shortcodes: Optional mapping of field name → Shortcode instance.
+            When a field name matches a shortcode, its value is transformed via
+            ``shortcode.transform_field_value()`` before display.
 
     Returns:
         dict: Formatted pin data with title, subtitle, position, metadata, and translated fields
