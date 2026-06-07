@@ -426,7 +426,7 @@ FAKE_JPEG_CONTENT = JPEG_HEADER + b"\x00" * 100  # Minimal valid-looking JPEG
 
 def test_suggest_location_with_valid_jpeg_photo(test_app):
     """Valid JPEG photo upload should succeed."""
-    with mock.patch("platzky.attachment.core.validate_content_mime_type", return_value=None):
+    with mock.patch("platzky.attachment.mime_validation.validate_content_mime_type", return_value=None):
         response = test_app.post(
             "/api/suggest-new-point",
             data={
@@ -521,7 +521,7 @@ def test_suggest_location_with_photo_stores_suggestion(test_app):
     db = test_app.application.db
     initial_count = len(db.get_suggestions({}))
 
-    with mock.patch("platzky.attachment.core.validate_content_mime_type", return_value=None):
+    with mock.patch("platzky.attachment.mime_validation.validate_content_mime_type", return_value=None):
         response = test_app.post(
             "/api/suggest-new-point",
             data={

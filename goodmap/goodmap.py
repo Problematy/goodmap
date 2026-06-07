@@ -10,7 +10,6 @@ from flask import Blueprint, redirect, render_template, session
 from flask_babel import gettext
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from platzky import platzky
-from platzky.attachment import create_attachment_class
 from platzky.config import AttachmentConfig, languages_dict
 from platzky.models import CmsModule
 from pydantic import BaseModel
@@ -149,9 +148,6 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
 
     app.extensions["goodmap"] = {"location_obligatory_fields": location_obligatory_fields}
 
-    field_renderers: dict[str, str] = {}
-    for sc_name in app.shortcodes:
-        field_renderers.setdefault(sc_name, sc_name)
 
     plugin_manifest = []
     for ep in importlib.metadata.entry_points(group=_PLUGIN_ENTRY_POINT_GROUP):
@@ -164,7 +160,6 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
 
     CSRFProtect(app)
 
-    # Create Attachment class for photo uploads
     # JPEG-only: universal browser/device support, good compression for location photos,
     # no transparency needed. PNG/WebP can be added if user demand warrants it.
     photo_attachment_config = AttachmentConfig(
@@ -172,7 +167,6 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         allowed_extensions=frozenset({"jpg", "jpeg"}),
         max_size=5 * 1024 * 1024,  # 5MB - reasonable for location photos
     )
-    PhotoAttachment = create_attachment_class(photo_attachment_config)
 
     cp = core_pages(
         app.db,
@@ -180,10 +174,9 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         app.notify,
         generate_csrf,
         location_model,
-        photo_attachment_class=PhotoAttachment,
         photo_attachment_config=photo_attachment_config,
         feature_flags=config.feature_flags,
-        field_renderers=field_renderers,
+        shortcodes=app.shortcodes,
     )
     app.register_blueprint(cp)
 

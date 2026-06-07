@@ -1,6 +1,5 @@
 """Formatters for translating and preparing location data for display."""
 
-import base64
 import logging
 
 from flask_babel import gettext, lazy_gettext
@@ -25,47 +24,31 @@ def safe_gettext(text):
         return gettext(text)
 
 
-def _apply_field_plugin(value, field, field_plugins):
-    """Wrap a dict field value with its plugin scope if a handler is registered.
-
-    Returns:
-        The wrapped dict with scope if registered, None if the value is an
-        unconfigured plugin field, or the original value otherwise.
-    """
-    if isinstance(value, dict):
-        if field in field_plugins:
-            result = {**value, "scope": field_plugins[field]}
-            if isinstance(result.get("code"), str):
-                result["code"] = base64.b64encode(result["code"].encode()).decode()
-            return result
-        if "code" in value and "type" not in value and "scope" not in value:
-            logger.debug("Dropping field '%s': unconfigured plugin data %s", field, value)
-            return None
-    return value
-
-
-def prepare_pin(place, visible_fields, meta_data, field_plugins=None):
+def prepare_pin(place, visible_fields, meta_data, shortcodes=None):
     """Prepare location data for map pin display with translations.
 
     Args:
         place: Location data dictionary
         visible_fields: List of field names to display in pin
         meta_data: List of metadata field names
-        field_plugins: Optional mapping of field name → plugin scope. Dict-valued
-            fields listed here are wrapped with ``{"scope": "<name>", ...original_fields}``
-            so the frontend can route them to the correct plugin component via ``PluginSlot``.
+        shortcodes: Optional mapping of shortcode name → Shortcode instance.
+            Dict-valued fields whose name matches a shortcode are transformed via
+            ``shortcode.transform_field_value()`` before display.  Dict-valued
+            fields with a ``"code"`` key but no matching shortcode are dropped
+            to prevent raw plugin data leaking to the frontend.
 
     Returns:
         dict: Formatted pin data with title, subtitle, position, metadata, and translated fields
     """
-    plugins = field_plugins or {}
+    plugins = shortcodes or {}
     data = []
     for field in visible_fields:
         if field not in place:
             continue
-        processed = _apply_field_plugin(safe_gettext(place[field]), field, plugins)
-        if processed is not None:
-            data.append([gettext(field), processed])
+        value = safe_gettext(place[field])
+        if field in plugins:
+            value = plugins[field].transform_field_value(value)
+        data.append([gettext(field), value])
     pin_data = {
         "title": place["name"],
         "subtitle": lazy_gettext(place["type_of_place"]),  # TODO this should not be obligatory
