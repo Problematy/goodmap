@@ -148,7 +148,6 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
 
     app.extensions["goodmap"] = {"location_obligatory_fields": location_obligatory_fields}
 
-
     plugin_manifest = []
     for ep in importlib.metadata.entry_points(group=_PLUGIN_ENTRY_POINT_GROUP):
         bp, entry = _register_plugin_static_resources(ep)

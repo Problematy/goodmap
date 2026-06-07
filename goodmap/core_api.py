@@ -372,9 +372,7 @@ def core_pages(
 
         visible_data = database.get_visible_data()
         meta_data = database.get_meta_data()
-        formatted_data = prepare_pin(
-            location.model_dump(), visible_data, meta_data, shortcodes
-        )
+        formatted_data = prepare_pin(location.model_dump(), visible_data, meta_data, shortcodes)
         return jsonify(formatted_data)
 
     @core_api_blueprint.route("/version", methods=["GET"])

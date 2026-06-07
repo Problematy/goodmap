@@ -33,9 +33,7 @@ class _FakeShortcode(Shortcode):
 def test_field_plugin_transforms_value():
     place = {**test_place, "promo_code": "SAVE20"}
     result = prepare_pin(place, ["promo_code"], [], shortcodes={"promo_code": _FakeShortcode()})
-    assert result["data"] == [
-        ["promo_code", {"scope": "promo_code", "value": "SAVE20"}]
-    ]
+    assert result["data"] == [["promo_code", {"scope": "promo_code", "value": "SAVE20"}]]
 
 
 def test_field_plugin_merges_defaults():
@@ -43,7 +41,10 @@ def test_field_plugin_merges_defaults():
     sc = _FakeShortcode(defaults={"color": "#4caf50", "text": "Reveal"})
     result = prepare_pin(place, ["promo_code"], [], shortcodes={"promo_code": sc})
     assert result["data"] == [
-        ["promo_code", {"scope": "promo_code", "value": "SAVE20", "color": "#4caf50", "text": "Reveal"}]
+        [
+            "promo_code",
+            {"scope": "promo_code", "value": "SAVE20", "color": "#4caf50", "text": "Reveal"},
+        ]
     ]
 
 
