@@ -9,7 +9,7 @@ import re
 import pytest
 from playwright.sync_api import Page, expect
 
-from tests.conftest import BASE_URL, MARKER_LOAD_TIMEOUT, TEST_LOCATIONS
+from tests.conftest import BASE_URL, FLY_TO_TIMEOUT, TEST_LOCATIONS
 
 
 class TestGoToMyLocationButton:
@@ -39,9 +39,13 @@ class TestGoToMyLocationButton:
         )
         my_location_button.click()
 
-        # Wait for map tile to load and verify it's a high-zoom tile for the location
-        # Different frontend versions may zoom to slightly different levels (13-16)
+        # Wait for destination tiles to appear.  Leaflet only requests tiles at the
+        # final location after flyTo completes, so this implicitly synchronises on
+        # the animation end without relying on the presence or absence of
+        # .leaflet-zoom-anim (which is not reliably added in all environments).
+        # The timeout is generous to cover animation time (>5 s in headless CI).
+        # Different frontend versions may zoom to slightly different levels (13-16).
         map_tile = page.locator(".leaflet-tile-container > img").first
         expect(map_tile).to_have_attribute(
-            "src", re.compile(location["tile_pattern"]), timeout=MARKER_LOAD_TIMEOUT
+            "src", re.compile(location["tile_pattern"]), timeout=FLY_TO_TIMEOUT
         )
