@@ -2,6 +2,41 @@
 
 <!-- version list -->
 
+## v1.8.0 (2026-06-08)
+
+### Chores
+
+- **ci**: Bump actions/cache from 5.0.4 to 5.0.5
+  ([#350](https://github.com/Problematy/goodmap/pull/350),
+  [`8ee3410`](https://github.com/Problematy/goodmap/commit/8ee341079c8681732bae1a0efc0534c2f3393136))
+
+- **ci**: Bump actions/create-github-app-token from 3.0.0 to 3.1.1
+  ([#348](https://github.com/Problematy/goodmap/pull/348),
+  [`6a4c8bc`](https://github.com/Problematy/goodmap/commit/6a4c8bcea1ea6b1fde5a2bd3acdf7ae0b2ad699b))
+
+- **ci**: Bump actions/create-github-app-token from 3.1.1 to 3.2.0
+  ([#358](https://github.com/Problematy/goodmap/pull/358),
+  [`de223e7`](https://github.com/Problematy/goodmap/commit/de223e729f85358c204211591e0a35d37bbe7f20))
+
+- **ci**: Bump actions/dependency-review-action from 4.9.0 to 5.0.0
+  ([#359](https://github.com/Problematy/goodmap/pull/359),
+  [`ba43610`](https://github.com/Problematy/goodmap/commit/ba4361074d4a548bb2371761c171c5c85886ca11))
+
+- **ci**: Bump github/codeql-action from 4.33.0 to 4.36.1
+  ([#357](https://github.com/Problematy/goodmap/pull/357),
+  [`ad1bf7b`](https://github.com/Problematy/goodmap/commit/ad1bf7b15318288b9f9c6b132936a8d26a198272))
+
+- **ci**: Bump pypa/gh-action-pypi-publish from 1.13.0 to 1.14.0
+  ([#349](https://github.com/Problematy/goodmap/pull/349),
+  [`cc85ca7`](https://github.com/Problematy/goodmap/commit/cc85ca75df2e4bf34e54744cf6a734182ec58350))
+
+### Features
+
+- Added locations transformers based on shortcodes
+  ([#360](https://github.com/Problematy/goodmap/pull/360),
+  [`23a7497`](https://github.com/Problematy/goodmap/commit/23a74971f0369532a48247fd264322a922bb11ee))
+
+
 ## v1.7.0 (2026-05-13)
 
 ### Chores
