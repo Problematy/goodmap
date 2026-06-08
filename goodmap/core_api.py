@@ -8,8 +8,9 @@ import pysupercluster
 from flask import Blueprint, jsonify, make_response, request
 from flask_babel import gettext
 from platzky import FeatureFlagSet
-from platzky.attachment import AttachmentProtocol
+from platzky.attachment import create_attachment
 from platzky.config import AttachmentConfig, LanguagesMapping
+from platzky.shortcodes import Shortcode
 from spectree import Response, SpecTree
 
 from goodmap.api_models import (
@@ -98,10 +99,9 @@ def core_pages(
     notifier_function,
     csrf_generator,
     location_model,
-    photo_attachment_class: type[AttachmentProtocol],
     photo_attachment_config: AttachmentConfig,
     feature_flags: FeatureFlagSet,
-    field_renderers: dict[str, str],
+    shortcodes: dict[str, Shortcode],
 ) -> Blueprint:
     core_api_blueprint = Blueprint("api", __name__, url_prefix="/api")
 
@@ -180,10 +180,9 @@ def core_pages(
                     photo_content = photo_file.read()
                     photo_mime = photo_file.content_type or "application/octet-stream"
 
-                    # Validate using configured Attachment class
                     try:
-                        photo_attachment = photo_attachment_class(
-                            photo_file.filename, photo_content, photo_mime
+                        photo_attachment = create_attachment(
+                            photo_file.filename, photo_content, photo_mime, photo_attachment_config
                         )
                     except ValueError as e:
                         logger.warning(
@@ -373,9 +372,7 @@ def core_pages(
 
         visible_data = database.get_visible_data()
         meta_data = database.get_meta_data()
-        formatted_data = prepare_pin(
-            location.model_dump(), visible_data, meta_data, field_renderers
-        )
+        formatted_data = prepare_pin(location.model_dump(), visible_data, meta_data, shortcodes)
         return jsonify(formatted_data)
 
     @core_api_blueprint.route("/version", methods=["GET"])

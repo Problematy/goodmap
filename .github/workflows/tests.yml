@@ -87,6 +87,7 @@ jobs:
     - name: Run tests with coverage
       run: make coverage
     - name: Coveralls
+      if: matrix.python-version == '3.14'
       uses: coverallsapp/github-action@5cbfd81b66ca5d10c19b062c04de0199c215fb6e # v2.3.7
       with:
         path-to-lcov: "./coverage.lcov"
@@ -98,7 +99,7 @@ jobs:
       contents: read
       actions: read
       pull-requests: write
-    uses: problematy/goodmap-e2e-tests/.github/workflows/e2e-tests.yml@b2b85b731205989fc162841df6fee397f716d80b
+    uses: problematy/goodmap-e2e-tests/.github/workflows/e2e-tests.yml@cac4085419b27dfa74062cab5f2f2fcc43ffa230
     with:
       goodmap-version: ${{ github.sha }}
       goodmap-frontend-version: 'main'

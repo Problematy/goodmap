@@ -1,3 +1,5 @@
+from platzky.shortcodes.shortcode import Shortcode, ShortcodeAttrs
+
 from goodmap.formatter import prepare_pin
 
 test_place = {
@@ -12,26 +14,38 @@ test_place = {
 }
 
 
-def test_field_plugin_wraps_dict_value_with_scope():
-    place = {**test_place, "promo_code": {"code": "SUMMER24", "text": "Get it", "color": "#f00"}}
-    result = prepare_pin(place, ["promo_code"], [], field_plugins={"promo_code": "promocode"})
+class _FakeShortcode(Shortcode):
+    """Minimal shortcode stub for formatter tests."""
+
+    name = "promo_code"
+    description = "test"
+
+    def __init__(self, defaults=None):
+        self._defaults = defaults or {}
+
+    def transform_field_value(self, value: object) -> dict[str, object]:
+        return {**self._defaults, "value": value, "scope": self.name}
+
+    def render(self, attrs: ShortcodeAttrs, content: str) -> str:
+        return content
+
+
+def test_field_plugin_transforms_value():
+    place = {**test_place, "promo_code": "SAVE20"}
+    result = prepare_pin(place, ["promo_code"], [], shortcodes={"promo_code": _FakeShortcode()})
+    assert result["data"] == [["promo_code", {"scope": "promo_code", "value": "SAVE20"}]]
+
+
+def test_field_plugin_merges_defaults():
+    place = {**test_place, "promo_code": "SAVE20"}
+    sc = _FakeShortcode(defaults={"color": "#4caf50", "text": "Reveal"})
+    result = prepare_pin(place, ["promo_code"], [], shortcodes={"promo_code": sc})
     assert result["data"] == [
         [
             "promo_code",
-            {"scope": "promocode", "code": "U1VNTUVSMjQ=", "text": "Get it", "color": "#f00"},
+            {"scope": "promo_code", "value": "SAVE20", "color": "#4caf50", "text": "Reveal"},
         ]
     ]
-
-
-def test_field_plugin_ignores_non_dict_values():
-    result = prepare_pin(test_place, ["plain_text"], [], field_plugins={"plain_text": "someplugin"})
-    assert result["data"] == [["plain_text", "text"]]
-
-
-def test_field_plugin_drops_unconfigured_dict_with_code():
-    place = {**test_place, "promo_code": {"code": "HIDDEN"}}
-    result = prepare_pin(place, ["promo_code"], [], field_plugins={})
-    assert result["data"] == []
 
 
 def test_formatting_when_missing_visible_field():
