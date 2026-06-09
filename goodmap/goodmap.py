@@ -11,6 +11,7 @@ from flask_babel import gettext
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from platzky import platzky
 from platzky.config import AttachmentConfig, languages_dict
+from platzky.plugin.content_transformer import ContentTransformerPluginBase
 from platzky.models import CmsModule
 from pydantic import BaseModel
 
@@ -26,7 +27,7 @@ from goodmap.feature_flags import EnableAdminPanel, UseLazyLoading
 
 logger = logging.getLogger(__name__)
 
-_PLUGIN_ENTRY_POINT_GROUP = "platzky.plugins"
+_PLUGIN_ENTRY_POINT_GROUP = "goodmap.plugins"
 
 
 def _register_plugin_static_resources(
@@ -66,7 +67,7 @@ def _register_plugin_static_resources(
         manifest_entry = {
             "scope": ep.name,
             "url": f"/plugins/{ep.name}/static/remoteEntry.js",
-            "module": "./Button",
+            "module": "./Plugin",
         }
         return bp, manifest_entry
     except Exception:
@@ -175,7 +176,13 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         location_model,
         photo_attachment_config=photo_attachment_config,
         feature_flags=config.feature_flags,
-        shortcodes=app.shortcodes,
+        shortcodes={
+            name: sc
+            for plugin in app.loaded_plugins
+            if isinstance(plugin, ContentTransformerPluginBase)
+            and "field" in plugin.accepted_content_types
+            for name, sc in plugin.shortcodes.items()
+        },
     )
     app.register_blueprint(cp)
 
