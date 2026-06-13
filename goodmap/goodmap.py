@@ -67,7 +67,7 @@ def _register_plugin_static_resources(
         manifest_entry = {
             "scope": ep.name,
             "url": f"/plugins/{ep.name}/static/remoteEntry.js",
-            "module": "./Plugin",
+            "module": "./Button",
         }
         return bp, manifest_entry
     except Exception:
