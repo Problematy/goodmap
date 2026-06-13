@@ -11,8 +11,8 @@ from flask_babel import gettext
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from platzky import platzky
 from platzky.config import AttachmentConfig, languages_dict
-from platzky.plugin.content_transformer import ContentTransformerPluginBase
 from platzky.models import CmsModule
+from platzky.plugin.content_transformer import ContentTransformerPluginBase
 from pydantic import BaseModel
 
 from goodmap.admin_api import admin_pages
@@ -180,7 +180,6 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
             name: sc
             for plugin in app.loaded_plugins
             if isinstance(plugin, ContentTransformerPluginBase)
-            and "field" in plugin.accepted_content_types
             for name, sc in plugin.shortcodes.items()
         },
     )

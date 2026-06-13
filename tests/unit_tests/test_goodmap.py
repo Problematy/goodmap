@@ -263,12 +263,11 @@ def test_admin_route_logged_in():
     assert "Test User" in response_text
 
 
-def test_field_renderer_shortcodes_filtered_by_accepted_content_types() -> None:
-    """Shortcodes from plugins with 'field' in accepted_content_types are passed to core_pages;
-    plugins without 'field' are excluded."""
+def test_field_renderer_shortcodes_collected_from_content_transformer_plugins() -> None:
+    """Shortcodes from all ContentTransformerPluginBase plugins are passed to core_pages."""
     from typing import ClassVar
 
-    from platzky.content_types import ALL_CONTENT_TYPES, ContentType
+    from platzky.content_types import ALL_CONTENT_TYPES
     from platzky.plugin.content_transformer import ContentTransformerPluginBase
     from platzky.shortcodes import Shortcode, ShortcodeAttrs
 
@@ -286,12 +285,10 @@ def test_field_renderer_shortcodes_filtered_by_accepted_content_types() -> None:
         def render(self, attrs: ShortcodeAttrs, content: str) -> str:
             return content
 
-    class _FieldPlugin(ContentTransformerPluginBase):
-        accepted_content_types: ClassVar[frozenset[ContentType]] = frozenset({"post", "field"})
+    class _PluginA(ContentTransformerPluginBase):
         shortcodes: ClassVar[dict[str, Shortcode]] = {"testfieldsc": _FieldSC()}
 
-    class _PostOnlyPlugin(ContentTransformerPluginBase):
-        accepted_content_types: ClassVar[frozenset[ContentType]] = frozenset({"post", "page"})
+    class _PluginB(ContentTransformerPluginBase):
         shortcodes: ClassVar[dict[str, Shortcode]] = {"testpostsc": _PostSC()}
 
     config = _make_test_app_config(
@@ -322,18 +319,18 @@ def test_field_renderer_shortcodes_filtered_by_accepted_content_types() -> None:
 
     field_ep = mock.MagicMock()
     field_ep.name = "field_plugin"
-    field_ep.load.return_value = _FieldPlugin
+    field_ep.load.return_value = _PluginA
 
     post_ep = mock.MagicMock()
     post_ep.name = "post_plugin"
-    post_ep.load.return_value = _PostOnlyPlugin
+    post_ep.load.return_value = _PluginB
 
     with mock.patch("goodmap.goodmap.core_pages", side_effect=_spy_core_pages):
         with mock.patch("importlib.metadata.entry_points", return_value=[field_ep, post_ep]):
             goodmap.create_app_from_config(config)
 
     assert "testfieldsc" in captured["shortcodes"]
-    assert "testpostsc" not in captured["shortcodes"]
+    assert "testpostsc" in captured["shortcodes"]
 
 
 def test_plugin_blueprint_sets_cors_header():
