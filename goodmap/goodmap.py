@@ -12,8 +12,6 @@ from flask_wtf.csrf import CSRFProtect, generate_csrf
 from platzky import platzky
 from platzky.config import AttachmentConfig, languages_dict
 from platzky.models import CmsModule
-from platzky.plugin.content_transformer import ContentTransformerPluginBase
-from platzky.shortcodes import Shortcode
 from pydantic import BaseModel
 
 from goodmap.admin_api import admin_pages
@@ -28,7 +26,7 @@ from goodmap.feature_flags import EnableAdminPanel, UseLazyLoading
 
 logger = logging.getLogger(__name__)
 
-_PLUGIN_ENTRY_POINT_GROUP = "goodmap.plugins"
+_PLUGIN_ENTRY_POINT_GROUP = "platzky.plugins"
 
 
 def _register_plugin_static_resources(
@@ -169,20 +167,6 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         max_size=5 * 1024 * 1024,  # 5MB - reasonable for location photos
     )
 
-    shortcodes: dict[str, Shortcode] = {}
-    for plugin in app.loaded_plugins:
-        if isinstance(plugin, ContentTransformerPluginBase):
-            for name, sc in plugin.shortcodes.items():
-                if name in shortcodes:
-                    logger.warning(
-                        "Shortcode '%s' from plugin '%s' conflicts with "
-                        "an already-registered shortcode; skipping",
-                        name,
-                        type(plugin).__name__,
-                    )
-                else:
-                    shortcodes[name] = sc
-
     cp = core_pages(
         app.db,
         languages_dict(config.languages),
@@ -191,7 +175,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         location_model,
         photo_attachment_config=photo_attachment_config,
         feature_flags=config.feature_flags,
-        shortcodes=shortcodes,
+        shortcodes=app.shortcodes,
     )
     app.register_blueprint(cp)
 
