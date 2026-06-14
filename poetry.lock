@@ -1999,14 +1999,14 @@ type = ["mypy (>=1.14.1)"]
 
 [[package]]
 name = "platzky"
-version = "2.0.0a2"
+version = "2.0.0a3"
 description = "Not only blog engine"
 optional = false
 python-versions = "<4.0,>=3.10"
 groups = ["main"]
 files = [
-    {file = "platzky-2.0.0a2-py3-none-any.whl", hash = "sha256:39da542c56466152fb202cacc564b45a4daf66de5d6b0c44f0b4060fb2484a96"},
-    {file = "platzky-2.0.0a2.tar.gz", hash = "sha256:5a09a424cf74f7678f3de7382cc09ffeaf98ce7a0bdd4e949a78f025ba1f2da8"},
+    {file = "platzky-2.0.0a3-py3-none-any.whl", hash = "sha256:e647b22d890da71d954ba1df1dd322daa910b694b0c462dc17639eee1e5eb0a4"},
+    {file = "platzky-2.0.0a3.tar.gz", hash = "sha256:1f1347579955bbf670dbb549f865a43579d6de841c0e8722bc2e1400cc026bd7"},
 ]
 
 [package.dependencies]
@@ -2016,7 +2016,7 @@ Flask = ">=3.1.0,<4.0.0"
 Flask-Babel = ">=4.0.0,<5.0.0"
 Flask-Minify = ">=0.50,<0.51"
 Flask-WTF = ">=1.2.1,<2.0.0"
-google-cloud-storage = ">=2.5.0,<3.0.0"
+google-cloud-storage = ">=2.5,<4.0"
 gql = ">=3.4,<5.0"
 humanize = ">=4.9.0,<5.0.0"
 puremagic = ">=1.30,<2.0"
@@ -4013,4 +4013,4 @@ docs = ["myst-parser", "sphinx", "sphinx-rtd-theme"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "18cd461f3f07235dac94fff3e8e282335289b4751f5ea4aa9766cce7859f6cfb"
+content-hash = "b4e486cf60e2c18231821460df74949b027e98d91365e3896e23ceef4ade7712"

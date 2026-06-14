@@ -263,6 +263,76 @@ def test_admin_route_logged_in():
     assert "Test User" in response_text
 
 
+def test_field_renderer_shortcodes_collected_from_content_transformer_plugins() -> None:
+    """Shortcodes from all ContentTransformerPluginBase plugins are passed to core_pages."""
+    from typing import ClassVar
+
+    from platzky.content_types import ALL_CONTENT_TYPES
+    from platzky.plugin.content_transformer import ContentTransformerPluginBase
+    from platzky.shortcodes import Shortcode, ShortcodeAttrs
+
+    class _FieldSC(Shortcode):
+        name = "testfieldsc"
+        description = "Field-capable shortcode"
+
+        def render(self, attrs: ShortcodeAttrs, content: str) -> str:
+            return content
+
+    class _PostSC(Shortcode):
+        name = "testpostsc"
+        description = "Post-only shortcode"
+
+        def render(self, attrs: ShortcodeAttrs, content: str) -> str:
+            return content
+
+    class _PluginA(ContentTransformerPluginBase):
+        shortcodes: ClassVar[dict[str, Shortcode]] = {"testfieldsc": _FieldSC()}
+
+    class _PluginB(ContentTransformerPluginBase):
+        shortcodes: ClassVar[dict[str, Shortcode]] = {"testpostsc": _PostSC()}
+
+    config = _make_test_app_config(
+        extra_data={
+            "plugins": [
+                {
+                    "name": "field_plugin",
+                    "config": {},
+                    "allowed_content_types": list(ALL_CONTENT_TYPES),
+                    "allowed_topics": ["general", "content", "security"],
+                },
+                {
+                    "name": "post_plugin",
+                    "config": {},
+                    "allowed_content_types": list(ALL_CONTENT_TYPES),
+                    "allowed_topics": ["general", "content", "security"],
+                },
+            ]
+        }
+    )
+
+    captured: dict[str, Any] = {}
+    orig_core_pages = goodmap.core_pages
+
+    def _spy_core_pages(*args: Any, **kwargs: Any) -> Any:
+        captured["shortcodes"] = kwargs.get("shortcodes", {})
+        return orig_core_pages(*args, **kwargs)
+
+    field_ep = mock.MagicMock()
+    field_ep.name = "field_plugin"
+    field_ep.load.return_value = _PluginA
+
+    post_ep = mock.MagicMock()
+    post_ep.name = "post_plugin"
+    post_ep.load.return_value = _PluginB
+
+    with mock.patch("goodmap.goodmap.core_pages", side_effect=_spy_core_pages):
+        with mock.patch("importlib.metadata.entry_points", return_value=[field_ep, post_ep]):
+            goodmap.create_app_from_config(config)
+
+    assert "testfieldsc" in captured["shortcodes"]
+    assert "testpostsc" in captured["shortcodes"]
+
+
 def test_plugin_blueprint_sets_cors_header():
     """Should set Access-Control-Allow-Origin on plugin blueprint responses."""
     config = _make_test_app_config()
