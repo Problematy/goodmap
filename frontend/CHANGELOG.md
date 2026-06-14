@@ -1,3 +1,10 @@
+## [1.6.2](https://github.com/Problematy/goodmap-frontend/compare/1.6.1...1.6.2) (2026-06-14)
+
+
+### Bug Fixes
+
+* fix plugins support ([#159](https://github.com/Problematy/goodmap-frontend/issues/159)) ([f408b87](https://github.com/Problematy/goodmap-frontend/commit/f408b8729767641d73b9bf1b66e1af0b2f1d2bb0))
+
 ## [1.6.1](https://github.com/Problematy/goodmap-frontend/compare/1.6.0...1.6.1) (2026-05-13)
 
 
