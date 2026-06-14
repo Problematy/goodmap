@@ -168,6 +168,11 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         max_size=5 * 1024 * 1024,  # 5MB - reasonable for location photos
     )
 
+    shortcodes: dict[str, Any] = {}
+    for plugin in app.loaded_plugins:
+        if isinstance(plugin, ContentTransformerPluginBase):
+            shortcodes.update(plugin.shortcodes)
+
     cp = core_pages(
         app.db,
         languages_dict(config.languages),
@@ -176,12 +181,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         location_model,
         photo_attachment_config=photo_attachment_config,
         feature_flags=config.feature_flags,
-        shortcodes={
-            name: sc
-            for plugin in app.loaded_plugins
-            if isinstance(plugin, ContentTransformerPluginBase)
-            for name, sc in plugin.shortcodes.items()
-        },
+        shortcodes=shortcodes,
     )
     app.register_blueprint(cp)
 
