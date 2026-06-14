@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.8.1 (2026-06-14)
+
+### Bug Fixes
+
+- Filter not wanted plugins changes ([#361](https://github.com/Problematy/goodmap/pull/361),
+  [`206f947`](https://github.com/Problematy/goodmap/commit/206f9475c5e4af94a6b5488103e1deb22e233c02))
+
+
 ## v1.8.0 (2026-06-08)
 
 ### Chores
