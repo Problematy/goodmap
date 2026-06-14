@@ -175,7 +175,8 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
             for name, sc in plugin.shortcodes.items():
                 if name in shortcodes:
                     logger.warning(
-                        "Shortcode '%s' from plugin '%s' conflicts with an already-registered shortcode; skipping",
+                        "Shortcode '%s' from plugin '%s' conflicts with "
+                        "an already-registered shortcode; skipping",
                         name,
                         type(plugin).__name__,
                     )
