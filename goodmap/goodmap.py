@@ -13,6 +13,7 @@ from platzky import platzky
 from platzky.config import AttachmentConfig, languages_dict
 from platzky.models import CmsModule
 from platzky.plugin.content_transformer import ContentTransformerPluginBase
+from platzky.shortcodes import Shortcode
 from pydantic import BaseModel
 
 from goodmap.admin_api import admin_pages
@@ -168,10 +169,18 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         max_size=5 * 1024 * 1024,  # 5MB - reasonable for location photos
     )
 
-    shortcodes: dict[str, Any] = {}
+    shortcodes: dict[str, Shortcode] = {}
     for plugin in app.loaded_plugins:
         if isinstance(plugin, ContentTransformerPluginBase):
-            shortcodes.update(plugin.shortcodes)
+            for name, sc in plugin.shortcodes.items():
+                if name in shortcodes:
+                    logger.warning(
+                        "Shortcode '%s' from plugin '%s' conflicts with an already-registered shortcode; skipping",
+                        name,
+                        type(plugin).__name__,
+                    )
+                else:
+                    shortcodes[name] = sc
 
     cp = core_pages(
         app.db,
