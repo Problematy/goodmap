@@ -10,6 +10,10 @@ export function getPlugin(scope) {
     return registry.get(scope);
 }
 
+export function getAllPlugins() {
+    return Array.from(registry.entries());
+}
+
 export function subscribe(fn) {
     listeners.add(fn);
     return () => listeners.delete(fn);
