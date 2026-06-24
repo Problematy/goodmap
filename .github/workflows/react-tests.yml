@@ -1,12 +1,16 @@
-name: CI
+name: React tests
 
 on:
   pull_request:
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - 'LICENSE'
-      - '.gitignore'
+    branches:
+      - main
+    paths:
+      - 'frontend/**'
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/**'
 
 # Cancel outdated workflow runs when new commits are pushed to the PR
 concurrency:
@@ -18,13 +22,17 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    defaults:
+      run:
+        working-directory: frontend
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: '24'
           cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
       - name: Install dev dependencies
         run: npm ci
       - name: Run lint test
@@ -34,27 +42,23 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    defaults:
+      run:
+        working-directory: frontend
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: '24'
           cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
       - name: Install dependencies
         run: npm ci
       - name: Test with coverage
         run: make coverage
       - name: Coveralls
-        uses: coverallsapp/github-action@v2
+        uses: coverallsapp/github-action@5cbfd81b66ca5d10c19b062c04de0199c215fb6e # v2.3.7
         with:
-          path-to-lcov: './coverage/lcov.info'
+          path-to-lcov: './frontend/coverage/lcov.info'
           github-token: ${{ secrets.GITHUB_TOKEN }}
-
-  e2e-tests:
-    needs: test
-
-    uses: problematy/goodmap-e2e-tests/.github/workflows/e2e-tests.yml@6bafe2bd7fa7a1be6e3dfe0d36a2ce36d4e46d5d
-    with:
-      goodmap-version: 'main'
-      goodmap-frontend-version: ${{ github.sha }}

@@ -2,7 +2,7 @@ name: Post E2E Test Results
 
 on:
   workflow_run:
-    workflows: ["Testing pipeline"]
+    workflows: ["E2E tests"]
     types:
       - completed
 

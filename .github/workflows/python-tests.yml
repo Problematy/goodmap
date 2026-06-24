@@ -1,4 +1,4 @@
-name: Testing pipeline
+name: Python tests
 
 on:
   pull_request:
@@ -12,6 +12,7 @@ on:
       - '.gitignore'
       - 'CHANGELOG.md'
       - 'examples/**/*.json'
+      - 'frontend/**'
   push:
     branches:
       - main
@@ -23,6 +24,7 @@ on:
       - '.gitignore'
       - 'CHANGELOG.md'
       - 'examples/**/*.json'
+      - 'frontend/**'
 
 # Cancel outdated workflow runs when new commits are pushed to the PR
 concurrency:
@@ -92,14 +94,3 @@ jobs:
       with:
         path-to-lcov: "./coverage.lcov"
         github-token: ${{ secrets.GITHUB_TOKEN }}
-
-  e2e-tests:
-    needs: [lint, test]
-    permissions:
-      contents: read
-      actions: read
-      pull-requests: write
-    uses: problematy/goodmap-e2e-tests/.github/workflows/e2e-tests.yml@cac4085419b27dfa74062cab5f2f2fcc43ffa230
-    with:
-      goodmap-version: ${{ github.sha }}
-      goodmap-frontend-version: 'main'
