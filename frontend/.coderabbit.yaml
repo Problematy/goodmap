@@ -1,0 +1,5 @@
+reviews:
+  review_status: true
+  commit_status: true
+  auto_review:
+    enabled: true

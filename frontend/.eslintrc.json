@@ -1,0 +1,52 @@
+{
+    "extends": [
+        "eslint:recommended",
+        "plugin:react/recommended",
+        "plugin:prettier/recommended",
+        "airbnb",
+        "prettier",
+        "wikimedia/client/es6"],
+    "plugins": ["react", "prettier", "eslint-plugin-react", "eslint-plugin-react-hooks"],
+    "parser": "@babel/eslint-parser",
+    "parserOptions": {
+        "sourceType": "module"
+    },
+    "globals": {
+        "document": true,
+        "navigator": true,
+        "globalThis": true
+    },
+    "env": {
+        "jest": true,
+        "browser": true
+    },
+    "rules": {
+        "array-bracket-spacing": "off",
+        "space-in-parens": "off",
+        "prettier/prettier": "error",
+        "no-unused-vars": "warn",
+        "no-console": "warn",
+        "func-names": "error",
+        "no-process-exit": "error",
+        "object-shorthand": "error",
+        "template-curly-spacing": "off",
+        "computed-property-spacing": "off",
+        "arrow-parens": "off",
+        "class-methods-use-this": "error",
+        "import/prefer-default-export": "error",
+        "react/require-default-props": "error",
+        "comma-dangle": "off",
+        "es-x/no-rest-spread-properties": "off",
+        "es-x/no-trailing-function-commas": "off",
+        "es-x/no-global-this": "off",
+        "indent": ["error", 4],
+        "implicit-arrow-linebreak": "off",
+        "react/function-component-definition": [
+            2,
+            {
+                "namedComponents": "arrow-function",
+                "unnamedComponents": "arrow-function"
+            }
+        ]
+    }
+}

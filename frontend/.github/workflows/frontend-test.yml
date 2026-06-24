@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  pull_request:
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'LICENSE'
+      - '.gitignore'
+
+# Cancel outdated workflow runs when new commits are pushed to the PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: 'npm'
+      - name: Install dev dependencies
+        run: npm ci
+      - name: Run lint test
+        run: make lint
+
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Test with coverage
+        run: make coverage
+      - name: Coveralls
+        uses: coverallsapp/github-action@v2
+        with:
+          path-to-lcov: './coverage/lcov.info'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  e2e-tests:
+    needs: test
+
+    uses: problematy/goodmap-e2e-tests/.github/workflows/e2e-tests.yml@6bafe2bd7fa7a1be6e3dfe0d36a2ce36d4e46d5d
+    with:
+      goodmap-version: 'main'
+      goodmap-frontend-version: ${{ github.sha }}
