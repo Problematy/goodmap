@@ -42,8 +42,7 @@ class TestPopupOnMobile:
         expect(markers).to_have_count(2)
 
         # Click the rightmost marker
-        mobile_page.evaluate(
-            """
+        mobile_page.evaluate("""
             () => {
                 const markers = document.querySelectorAll('.leaflet-marker-icon');
                 let rightmostMarker = null;
@@ -61,8 +60,7 @@ class TestPopupOnMobile:
                     rightmostMarker.click();
                 }
             }
-        """
-        )
+        """)
 
         # On mobile, popup appears as Material-UI Dialog (bottom sheet)
         dialog_content = mobile_page.locator(".MuiDialogContent-root")

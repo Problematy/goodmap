@@ -80,14 +80,12 @@ def _stub_window_open(page: Page) -> Callable[[], list[str]]:
     """Stub window.open() and return a callable that retrieves opened URLs."""
     opened_urls = []
     page.expose_function("__captureWindowOpen", lambda url: opened_urls.append(url))
-    page.add_init_script(
-        """
+    page.add_init_script("""
         window.open = function(url, target, features) {
             window.__captureWindowOpen(url);
             return null;
         };
-    """
-    )
+    """)
     return lambda: opened_urls.copy()
 
 

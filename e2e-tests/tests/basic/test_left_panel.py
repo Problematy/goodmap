@@ -72,16 +72,14 @@ class TestLeftPanelDesktop:
         assert body_overflow == "hidden", f"Expected body overflow: hidden, got: {body_overflow}"
 
         # Check that page is not actually scrollable (attempt scroll test)
-        has_scroll = page.evaluate(
-            """() => {
+        has_scroll = page.evaluate("""() => {
                 const el = document.scrollingElement || document.documentElement;
                 const before = el.scrollTop;
                 el.scrollTo(0, 100);
                 const after = el.scrollTop;
                 el.scrollTo(0, 0);
                 return after > before;
-            }"""
-        )
+            }""")
         assert not has_scroll, "Page should not be scrollable"
 
     def test_panel_content_scrolls_on_desktop(self, page: Page):
@@ -99,13 +97,11 @@ class TestLeftPanelDesktop:
         panel_body = page.locator("#left-panel .offcanvas-body")
 
         # Check if content overflows (scrollHeight > clientHeight)
-        scroll_info = panel_body.evaluate(
-            """el => ({
+        scroll_info = panel_body.evaluate("""el => ({
                 clientHeight: el.clientHeight,
                 scrollHeight: el.scrollHeight,
                 hasOverflow: el.scrollHeight > el.clientHeight
-            })"""
-        )
+            })""")
 
         # If there's overflow, verify scrolling works
         if scroll_info["hasOverflow"]:
@@ -135,13 +131,11 @@ class TestLeftPanelDesktop:
 
         # Check that type_of_place category is visible after scrolling
         # Look for the category header text
-        category_visible = page.evaluate(
-            """() => {
+        category_visible = page.evaluate("""() => {
                 const panel = document.querySelector('#left-panel .offcanvas-body');
                 const text = panel.textContent.toLowerCase();
                 return text.includes('type_of_place') || text.includes('type of place');
-            }"""
-        )
+            }""")
         assert category_visible, "type_of_place category should be accessible after scrolling"
 
 
@@ -242,12 +236,10 @@ class TestLeftPanelMobile:
         mobile_page.wait_for_selector("#left-panel.show", timeout=5000)
 
         # Get panel width and viewport width
-        widths = mobile_page.evaluate(
-            """() => ({
+        widths = mobile_page.evaluate("""() => ({
                 panelWidth: document.querySelector('#left-panel').clientWidth,
                 viewportWidth: window.innerWidth
-            })"""
-        )
+            })""")
 
         expected_width = widths["viewportWidth"] * 0.8
         actual_width = widths["panelWidth"]
@@ -391,11 +383,9 @@ class TestLeftPanelScrollbar:
 
         page.wait_for_selector("#filter-form", timeout=10000)
 
-        overflow_y = page.evaluate(
-            """() => {
+        overflow_y = page.evaluate("""() => {
                 const el = document.querySelector('#left-panel .offcanvas-body');
                 return getComputedStyle(el).overflowY;
-            }"""
-        )
+            }""")
 
         assert overflow_y == "auto", f"Expected overflow-y: auto, got: {overflow_y}"

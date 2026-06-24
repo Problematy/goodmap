@@ -39,8 +39,7 @@ def get_rightmost_marker(page: Page) -> ElementHandle | None:
     Consider adding data-testid attributes to markers in the backend/frontend.
     """
     # Use evaluate_handle to return a proper element handle instead of serialized null
-    handle = page.evaluate_handle(
-        """
+    handle = page.evaluate_handle("""
         () => {
             const markers = document.querySelectorAll(
                 '.leaflet-marker-icon, .leaflet-marker-cluster'
@@ -58,8 +57,7 @@ def get_rightmost_marker(page: Page) -> ElementHandle | None:
 
             return rightmostMarker;
         }
-    """
-    )
+    """)
     # Convert JSHandle to ElementHandle if it's an element, otherwise return None
     return handle.as_element()
 

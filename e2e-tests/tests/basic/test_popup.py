@@ -32,8 +32,7 @@ class TestPopupOnDesktop:
 
         # Click the rightmost marker
         # Note: Using evaluate to find rightmost marker since we don't have data-testid
-        page.evaluate(
-            """
+        page.evaluate("""
             () => {
                 const markers = document.querySelectorAll('.leaflet-marker-icon');
                 let rightmostMarker = null;
@@ -51,8 +50,7 @@ class TestPopupOnDesktop:
                     rightmostMarker.click();
                 }
             }
-        """
-        )
+        """)
 
         # Verify popup content
         popup = page.locator(".leaflet-popup-content")
@@ -89,8 +87,7 @@ class TestPopupOnDesktop:
         expect(markers).to_have_count(2, timeout=MARKER_LOAD_TIMEOUT)
 
         # Click the rightmost marker
-        page.evaluate(
-            """
+        page.evaluate("""
             () => {
                 const markers = document.querySelectorAll('.leaflet-marker-icon');
                 let rightmostMarker = null;
@@ -108,8 +105,7 @@ class TestPopupOnDesktop:
                     rightmostMarker.click();
                 }
             }
-        """
-        )
+        """)
 
         # Verify popup is visible
         popup = page.locator(".leaflet-popup-content")

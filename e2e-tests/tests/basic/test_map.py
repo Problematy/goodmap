@@ -32,8 +32,7 @@ class TestMap:
     def test_should_not_have_scrollbars(self, page: Page):
         """Verify the page has no horizontal or vertical scrollbars"""
         # Get viewport and document dimensions
-        dimensions = page.evaluate(
-            """
+        dimensions = page.evaluate("""
             () => {
                 return {
                     innerWidth: window.innerWidth,
@@ -42,8 +41,7 @@ class TestMap:
                     scrollHeight: document.documentElement.scrollHeight
                 };
             }
-        """
-        )
+        """)
 
         # Assert no scrollbars (scroll dimensions should not exceed viewport)
         assert dimensions["scrollWidth"] <= dimensions["innerWidth"], (

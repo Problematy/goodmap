@@ -35,8 +35,7 @@ class TestShareOnDesktop:
         expect(markers).to_have_count(2, timeout=MARKER_LOAD_TIMEOUT)
 
         # Click the rightmost marker
-        page.evaluate(
-            """
+        page.evaluate("""
             () => {
                 const markers = document.querySelectorAll('.leaflet-marker-icon');
                 let rightmostMarker = null;
@@ -54,8 +53,7 @@ class TestShareOnDesktop:
                     rightmostMarker.click();
                 }
             }
-        """
-        )
+        """)
 
         # Verify popup is visible
         popup = page.locator(".leaflet-popup-content")
@@ -104,15 +102,13 @@ class TestShareOnMobile:
         Tests on all mobile devices: iphone-x, iphone-6, ipad-2, samsung-s10
         """
         # Stub navigator.share() before navigating
-        mobile_page.add_init_script(
-            """
+        mobile_page.add_init_script("""
             window.__shareArgs = [];
             navigator.share = (data) => {
                 window.__shareArgs.push(data);
                 return Promise.resolve();
             };
-        """
-        )
+        """)
 
         mobile_page.goto(BASE_URL, wait_until="domcontentloaded")
 
@@ -125,8 +121,7 @@ class TestShareOnMobile:
         expect(markers).to_have_count(2, timeout=MARKER_LOAD_TIMEOUT)
 
         # Click the rightmost marker
-        mobile_page.evaluate(
-            """
+        mobile_page.evaluate("""
             () => {
                 const markers = document.querySelectorAll('.leaflet-marker-icon');
                 let rightmostMarker = null;
@@ -144,8 +139,7 @@ class TestShareOnMobile:
                     rightmostMarker.click();
                 }
             }
-        """
-        )
+        """)
 
         # On mobile, popup appears as Material-UI Dialog
         dialog_content = mobile_page.locator(".MuiDialogContent-root")

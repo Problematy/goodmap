@@ -79,8 +79,7 @@ class TestLanguageSwitching:
         expect(markers).to_have_count(2, timeout=MARKER_LOAD_TIMEOUT)
 
         # Click rightmost marker to open popup
-        page.evaluate(
-            """
+        page.evaluate("""
             () => {
                 const markers = document.querySelectorAll('.leaflet-marker-icon');
                 let rightmostMarker = null;
@@ -98,8 +97,7 @@ class TestLanguageSwitching:
                     rightmostMarker.click();
                 }
             }
-        """
-        )
+        """)
 
         # Verify popup is visible
         popup = page.locator(".leaflet-popup-content")
