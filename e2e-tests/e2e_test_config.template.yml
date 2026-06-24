@@ -1,0 +1,33 @@
+APP_NAME: Bridges in Wroclaw
+SECRET_KEY: SECRET
+BLOG_PREFIX: "/blog"
+USE_WWW: False
+# Note: __E2E_TESTS_DIR__ is replaced by `make setup-test-data` with the absolute path
+# This is needed because Flask-Babel resolves relative paths to app.root_path (platzky dir)
+TRANSLATION_DIRECTORIES: [__E2E_TESTS_DIR__/translations]
+DB:
+  TYPE: json_file
+  PATH: __E2E_TESTS_DIR__/e2e_test_data.json
+
+#TODO this should not be necessary argument
+LANGUAGES:
+  en:
+    name: English
+    flag: gb
+    country: GB
+  pl:
+    name: polski
+    flag: pl
+    country: PL
+
+FEATURE_FLAGS:
+  USE_LAZY_LOADING: True
+  SHOW_ACCESSIBILITY_TABLE: True
+  USE_SERVER_SIDE_CLUSTERING: False
+  CATEGORIES_HELP: True
+  FAKE_LOGIN: False
+  SHOW_SEARCH_BAR: True
+  SHOW_SUGGEST_NEW_POINT_BUTTON: True
+
+
+GOODMAP_FRONTEND_LIB_URL: "http://localhost:8080/index.min.js"

@@ -1,0 +1,24 @@
+name: E2E Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  e2e-tests:
+    uses: ./.github/workflows/e2e-tests.yml
+    permissions:
+      contents: read
+      actions: read  # Required for canonical/get-workflow-version-action
+    secrets: inherit
+    with:
+      goodmap-version: 'main'
+      goodmap-frontend-version: 'main'
+      e2e-tests-version: ${{ github.sha }}
