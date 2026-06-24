@@ -69,6 +69,7 @@ def main():
             "meta_data": ["uuid"],
         },
         "site_content": {
+            "home_page_path": "/map",
             "pages": [],
             "menu_items": {
                 "en": [{"name": "Map", "url": "/"}],
