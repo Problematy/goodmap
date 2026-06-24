@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - main
+      - next
     paths-ignore:
       - '**.md'
       - '**.rst'
@@ -16,6 +17,7 @@ on:
   push:
     branches:
       - main
+      - next
     paths-ignore:
       - '**.md'
       - '**.rst'

@@ -39,9 +39,20 @@ If your PR contains **only** tests that make our code more bug-resistant, you ca
 
 ## Development Setup
 
-1. Use `poetry` to manage Python dependencies.
-2. Run linters (`make lint`) before submitting a PR.
-3. Follow the repository's coding standards (e.g., line length of 100).
+This repo is a monorepo: the Python/platzky backend lives at the root, the
+React frontend in `frontend/`, and Playwright end-to-end tests in `e2e-tests/`.
+Each has its own dependency manager and Makefile.
+
+1. Use `poetry` to manage Python dependencies (backend and `e2e-tests/` each
+   have their own `pyproject.toml` — run `poetry install` in both if you're
+   touching e2e tests).
+2. Run `npm install` inside `frontend/` if you're touching frontend code.
+3. Before submitting a PR, run the linter for whatever you changed:
+   - `make lint-check` (backend only), or
+   - `make lint-check-all` to check backend, frontend, and e2e-tests together.
+   - `make dev` runs `make lint-fix-all` plus backend type-checking — useful
+     as a one-shot local check-and-fix command.
+4. Follow the repository's coding standards (e.g., line length of 100).
 
 ## Additional Notes
 

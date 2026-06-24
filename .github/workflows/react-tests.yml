@@ -4,11 +4,13 @@ on:
   pull_request:
     branches:
       - main
+      - next
     paths:
       - 'frontend/**'
   push:
     branches:
       - main
+      - next
     paths:
       - 'frontend/**'
 

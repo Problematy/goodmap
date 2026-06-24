@@ -5,6 +5,16 @@
 
 Map engine to serve all the people ;) 
 
+## Project Structure
+
+This repository is a monorepo containing three parts:
+
+- **`goodmap/`** (repo root) — the Python backend, built on the [`platzky`](https://pypi.org/project/platzky/) framework, published to PyPI as `goodmap`.
+- **`frontend/`** — the React frontend, built and bundled into the PyPI package (see `make build-frontend`). Not published as a separate npm package.
+- **`e2e-tests/`** — Playwright-based end-to-end tests exercising the backend and frontend together.
+
+Each has its own dependency manager (`poetry` for the backend and e2e-tests, `npm` for the frontend) and is set up independently — see each directory's README for details. The root `Makefile` has convenience targets (`make dev`, `make lint-check-all`) that run across all three.
+
 ## Setup
 
 #### 0. Clone the repo

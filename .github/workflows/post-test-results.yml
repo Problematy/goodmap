@@ -13,8 +13,12 @@ permissions:
 
 jobs:
   post-results:
-    uses: problematy/goodmap-e2e-tests/.github/workflows/pr-comment.yml@572c78cf1da91526c9f1139c7cc741f034f52ff6
+    if: github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion != 'cancelled'
+    uses: ./.github/workflows/pr-comment.yml
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    secrets: inherit
     with:
       run_id: ${{ github.event.workflow_run.id }}
-    secrets:
-      comment_token: ${{ secrets.GITHUB_TOKEN }}

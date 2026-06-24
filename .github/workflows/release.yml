@@ -1,22 +1,23 @@
-name: Semantic Release
+name: Release
 
 on:
   push:
     branches:
       - main
+      - next
 
 # default: least privileged permissions across all jobs
 permissions:
   contents: read
 
 jobs:
-  # Tests run automatically on push to main via tests.yml
+  # Tests run automatically on push to main via python-tests.yml / react-tests.yml / e2e-tests.yml
   # Branch protection rules ensure tests pass before this workflow runs
-  release:
+  release-please:
     runs-on: ubuntu-latest
     outputs:
-      released: ${{ steps.release.outputs.released }}
-      tag: ${{ steps.release.outputs.tag }}
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
 
     concurrency:
       group: ${{ github.workflow }}-release-${{ github.ref_name }}
@@ -24,7 +25,6 @@ jobs:
 
     permissions:
       contents: write
-      issues: write
       pull-requests: write
 
     steps:
@@ -35,11 +35,31 @@ jobs:
           app-id: ${{ secrets.MY_RELEASER_ID }}
           private-key: ${{ secrets.MY_RELEASER_PRIVATE_KEY }}
 
+      - name: Release Please
+        id: release
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          token: ${{ steps.generate_token.outputs.token }}
+          target-branch: ${{ github.ref_name }}
+
+  build-and-publish:
+    runs-on: ubuntu-latest
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
+
+    environment:
+      name: pypi
+      url: https://pypi.org/p/goodmap
+
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          token: ${{ steps.generate_token.outputs.token }}
-          fetch-depth: 0
+          ref: ${{ needs.release-please.outputs.tag_name }}
 
       - name: Set up Python 3.10
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
@@ -47,88 +67,29 @@ jobs:
           python-version: "3.10"
           cache: 'pip'
 
-      - name: Cache Poetry virtualenv
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          path: |
-            ~/.cache/pypoetry/virtualenvs
-            ~/.cache/pip
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-poetry-
+      - name: Install Poetry
+        run: pip install poetry==2.0.1
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install poetry==2.0.1
-          poetry install
+        run: poetry install
 
-      - name: Action | Semantic Version Release
-        id: release
-        uses: python-semantic-release/python-semantic-release@350c48fcb3ffcdfd2e0a235206bc2ecea6b69df0
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
         with:
-          github_token: ${{ steps.generate_token.outputs.token }}
-          git_committer_name: "semantic-release"
-          git_committer_email: "semantic-release@users.noreply.github.com"
-          build: false
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
 
-      - name: Debug | Check if CHANGELOG.md exists and show git status
-        if: steps.release.outputs.released == 'true'
-        run: |
-          echo "=== Checking CHANGELOG.md ==="
-          if [ -f CHANGELOG.md ]; then
-            echo "✅ CHANGELOG.md exists"
-            echo "File size: $(wc -c < CHANGELOG.md) bytes"
-            echo "Last 20 lines:"
-            tail -20 CHANGELOG.md
-          else
-            echo "❌ CHANGELOG.md does NOT exist"
-          fi
-          echo ""
-          echo "=== Git Status ==="
-          git status
-          echo ""
-          echo "=== Git Log (last commit) ==="
-          git log -1 --stat
+      - name: Build frontend bundle
+        run: make build-frontend
 
       - name: Build package
-        if: steps.release.outputs.released == 'true'
         run: poetry build
 
-      - name: Publish | Upload to GitHub Release Assets
-        uses: python-semantic-release/publish-action@310a9983a0ae878b29f3aac778d7c77c1db27378
-        if: steps.release.outputs.released == 'true'
-        with:
-          github_token: ${{ steps.generate_token.outputs.token }}
-          tag: ${{ steps.release.outputs.tag }}
-
-      - name: Upload | Distribution Artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: steps.release.outputs.released == 'true'
-        with:
-          name: distribution-artifacts
-          path: dist
-          if-no-files-found: error
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: release
-    if: ${{ needs.release.outputs.released == 'true' }}
-
-    environment:
-      name: pypi
-      url: https://pypi.org/p/goodmap
-
-    permissions:
-      contents: read
-      id-token: write
-
-    steps:
-      - name: Setup | Download Build Artifacts
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: distribution-artifacts
-          path: dist
+      - name: Attach frontend bundle to GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${{ needs.release-please.outputs.tag_name }}" goodmap/static/frontend/index.min.js --clobber
 
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b

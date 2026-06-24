@@ -5,6 +5,7 @@ description = "Map engine to serve all the people :)"
 authors = ["Krzysztof Kolodzinski <krzysztof.kolodzinski@problematy.pl>"]
 readme = "README.md"
 exclude = ["goodmap/locale/*/LC_MESSAGES/*.po"]
+include = ["goodmap/static/frontend/index.min.js"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -19,7 +20,7 @@ Flask-WTF = "^1.2.1"
 gql = "^3.4.0"
 aiohttp = "^3.8.4"
 pydantic = "^2.12.0"
-platzky = "2.0.0a3"
+platzky = "2.0.0a8"
 deprecation = "^2.1.0"
 numpy = "^2.2.0"
 # Using fork because official PyPI version (0.7.7) has outdated numpy setup hack
@@ -46,7 +47,6 @@ freezegun = "^1.2.2"
 black = ">=24.8,<27.0"
 ruff = ">=0.4.4,<0.16.0"
 platzky-redirections = "^0.1.0"
-python-semantic-release = "^10.4.1"
 interrogate = "^1.7.0"
 
 [build-system]
@@ -96,40 +96,10 @@ lint.select = [
 # convention = "google"
 
 [tool.pytest.ini_options]
+testpaths = ["tests"]
 markers = [
     "skip_coverage: skip coverage for this test"
 ]
-
-[tool.semantic_release]
-version_toml = ["pyproject.toml:tool.poetry.version"]
-build_command = "poetry build"
-dist_path = "dist/"
-upload_to_release = true
-remove_dist = false
-commit_author = "semantic-release <semantic-release>"
-commit_message = "chore(release): {version} [skip ci]"
-tag_format = "{version}"
-
-[tool.semantic_release.changelog]
-exclude_commit_patterns = []
-
-[tool.semantic_release.changelog.default_templates]
-changelog_file = "CHANGELOG.md"
-output_format = "md"
-mask_initial_release = true
-
-[tool.semantic_release.branches.main]
-match = "main"
-prerelease = false
-
-[tool.semantic_release.commit_parser_options]
-allowed_tags = ["feat", "fix", "docs", "style", "refactor", "perf", "test", "build", "ci", "chore", "revert"]
-minor_tags = ["feat"]
-patch_tags = ["fix", "perf"]
-
-[tool.semantic_release.publish]
-dist_glob_patterns = ["dist/*"]
-upload_to_vcs_release = true
 
 [tool.interrogate]
 fail-under = 95

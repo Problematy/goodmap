@@ -29,7 +29,9 @@ module.exports = (env, argv) => {
         devtool: 'source-map',
         entry: './src/index.js',
         output: {
-            path: `${__dirname}/dist`,
+            path: process.env.OUTPUT_DIR
+                ? path.resolve(__dirname, process.env.OUTPUT_DIR)
+                : `${__dirname}/dist`,
             filename: IS_PROD ? 'index.min.js' : 'index.js',
         },
         resolve: {

@@ -83,6 +83,7 @@
     ]
   },
   "site_content": {
+    "home_page_path": "/map",
     "pages": [
       {
         "title": "O nas",

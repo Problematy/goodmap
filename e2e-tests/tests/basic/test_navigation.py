@@ -45,7 +45,7 @@ class TestNavigationMenu:
 
         # Verify we're on the About page
         expect(page).to_have_url(f"{BASE_URL}/blog/page/about")
-        expect(page).to_have_title("About")
+        expect(page).to_have_title("About – Bridges in Wroclaw")
 
         # Verify About heading is present
         heading = page.get_by_role("heading", name="About", level=1)
@@ -56,7 +56,7 @@ class TestNavigationMenu:
         page.goto(f"{BASE_URL}/blog/page/about", wait_until="domcontentloaded")
 
         # Verify page title and heading
-        expect(page).to_have_title("About")
+        expect(page).to_have_title("About – Bridges in Wroclaw")
         heading = page.get_by_role("heading", name="About", level=1)
         expect(heading).to_be_visible()
 

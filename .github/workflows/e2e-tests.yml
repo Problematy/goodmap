@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - main
+      - next
     paths-ignore:
       - '**.md'
       - '**.rst'
@@ -15,6 +16,7 @@ on:
   push:
     branches:
       - main
+      - next
     paths-ignore:
       - '**.md'
       - '**.rst'
@@ -29,13 +31,182 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   e2e-tests:
-    permissions:
-      contents: read
-      actions: read
-      pull-requests: write
-    uses: problematy/goodmap-e2e-tests/.github/workflows/e2e-tests.yml@cac4085419b27dfa74062cab5f2f2fcc43ffa230
-    with:
-      goodmap-version: ${{ github.sha }}
-      goodmap-frontend-version: ${{ github.sha }}
+    name: E2E tests
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+
+    - name: Install frontend dependencies
+      working-directory: frontend
+      run: npm install
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: 'latest'
+
+    - name: Install python dependencies
+      run: poetry install
+
+    - name: Install e2e dependencies
+      working-directory: e2e-tests
+      run: |
+        poetry install
+        poetry run playwright install chromium --with-deps
+
+    - name: Start frontend server
+      working-directory: frontend
+      run: |
+        make serve-prod &
+        FRONTEND_PID=$!
+        echo $FRONTEND_PID > /tmp/frontend.pid
+        disown $FRONTEND_PID
+        sleep 3
+
+    - name: Setup test data
+      working-directory: e2e-tests
+      run: make setup-test-data
+
+    - name: Start backend for e2e tests
+      working-directory: e2e-tests
+      run: |
+        CONFIG_PATH="${{ github.workspace }}/e2e-tests/e2e_test_config.yml"
+        GOODMAP_PATH="${{ github.workspace }}"
+
+        bash "${{ github.workspace }}/e2e-tests/.github/scripts/start-backend.sh" \
+          "/tmp/backend-e2e.log" \
+          "/tmp/backend-e2e.pid" \
+          "5" \
+          "CONFIG_PATH='$CONFIG_PATH' GOODMAP_PATH='$GOODMAP_PATH' make run-e2e-env"
+
+    - name: Run e2e tests
+      working-directory: e2e-tests
+      env:
+        NO_COLOR: 1
+      run: |
+        set -o pipefail
+        make e2e-tests | tee /tmp/e2e-tests-output.txt
+
+    - name: Upload test videos on failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-failure-videos
+        path: e2e-tests/test-results/**/*.webm
+        retention-days: 7
+        if-no-files-found: ignore
+
+    - name: Stop backend for e2e tests
+      if: always()
+      shell: bash {0}
+      run: |
+        set +e
+        bash "${{ github.workspace }}/e2e-tests/.github/scripts/stop-backend.sh" \
+          "/tmp/backend-e2e.pid" \
+          "flask.*e2e_test_config"
+        exit 0
+
+    - name: Add e2e test results to summary
+      if: always()
+      run: |
+        if [ -f /tmp/e2e-tests-output.txt ]; then
+          echo "## ✅ Basic E2E Tests Completed" >> $GITHUB_STEP_SUMMARY
+          echo "See workflow logs for details" >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: Generate e2e stress test data
+      working-directory: e2e-tests
+      run: make e2e-stress-tests-generate-data
+
+    - name: Start backend for stress tests
+      working-directory: e2e-tests
+      run: |
+        CONFIG_PATH="${{ github.workspace }}/e2e-tests/e2e_stress_test_config.yml"
+        GOODMAP_PATH="${{ github.workspace }}"
+        bash "${{ github.workspace }}/e2e-tests/.github/scripts/start-backend.sh" \
+          "/tmp/backend-stress.log" \
+          "/tmp/backend-stress.pid" \
+          "5" \
+          "CONFIG_PATH='$CONFIG_PATH' GOODMAP_PATH='$GOODMAP_PATH' make run-e2e-env"
+
+    - name: Run e2e stress tests
+      working-directory: e2e-tests
+      env:
+        NO_COLOR: 1
+      run: |
+        set -o pipefail
+        make e2e-stress-tests | tee /tmp/e2e-stress-tests-output.txt
+
+    - name: Stop backend for stress tests
+      if: always()
+      shell: bash {0}
+      run: |
+        set +e
+        bash "${{ github.workspace }}/e2e-tests/.github/scripts/stop-backend.sh" \
+          "/tmp/backend-stress.pid" \
+          "flask.*e2e_stress_test_config"
+        exit 0
+
+    - name: Add stress test results to summary
+      if: always()
+      run: |
+        PERF_FILE="${{ github.workspace }}/e2e-tests/test-results/stress-test-perf.json"
+        SCRIPT_PATH="${{ github.workspace }}/e2e-tests/.github/scripts/generate-perf-summary.js"
+
+        echo "Checking for script at: $SCRIPT_PATH"
+        if [ ! -f "$SCRIPT_PATH" ]; then
+          echo "ERROR: Script not found at $SCRIPT_PATH"
+          echo "Listing e2e-tests directory:"
+          ls -la "${{ github.workspace }}/e2e-tests/" || true
+          exit 1
+        fi
+
+        node "$SCRIPT_PATH" "$PERF_FILE" --format=github >> $GITHUB_STEP_SUMMARY
+
+    - name: Save PR metadata for comment workflow
+      if: always() && github.event.pull_request.number
+      run: |
+        echo ${{ github.event.pull_request.number }} > /tmp/pr-number.txt
+        echo ${{ github.event.pull_request.head.sha }} > /tmp/pr-sha.txt
+
+    - name: Copy performance data to temp
+      if: always()
+      run: |
+        if [ -f "e2e-tests/test-results/stress-test-perf.json" ]; then
+          cp "e2e-tests/test-results/stress-test-perf.json" /tmp/stress-test-perf.json
+          echo "Copied performance data to /tmp/stress-test-perf.json"
+        else
+          echo "No performance data found"
+        fi
+
+    - name: Upload test results as artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: |
+          /tmp/e2e-tests-output.txt
+          /tmp/e2e-stress-tests-output.txt
+          /tmp/pr-number.txt
+          /tmp/pr-sha.txt
+          /tmp/stress-test-perf.json
+        retention-days: 1
+        if-no-files-found: ignore
+
+    - name: Stop frontend server
+      if: always()
+      run: |
+        if [ -f /tmp/frontend.pid ]; then
+          kill $(cat /tmp/frontend.pid) 2>/dev/null || true
+        fi

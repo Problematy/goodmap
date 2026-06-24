@@ -12,6 +12,7 @@ coverage.lcov
 
 # build specific artifacts
 dist
+goodmap/static/frontend
 
 # documentation build artifacts
 docs/_build
