@@ -90,9 +90,7 @@ jobs:
         poetry install
     - name: Run tests with coverage
       run: make coverage
-    - name: Coveralls
+    - name: Add coverage to job summary
       if: matrix.python-version == '3.14'
-      uses: coverallsapp/github-action@5cbfd81b66ca5d10c19b062c04de0199c215fb6e # v2.3.7
-      with:
-        path-to-lcov: "./coverage.lcov"
+      run: poetry run coverage report >> "$GITHUB_STEP_SUMMARY"
         github-token: ${{ secrets.GITHUB_TOKEN }}

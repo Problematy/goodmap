@@ -101,6 +101,9 @@ markers = [
     "skip_coverage: skip coverage for this test"
 ]
 
+[tool.coverage.report]
+fail_under = 95
+
 [tool.interrogate]
 fail-under = 95
 ignore-init-method = true

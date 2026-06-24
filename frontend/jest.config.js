@@ -4,6 +4,14 @@ module.exports = {
     testEnvironment: 'jsdom',
     setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
     collectCoverageFrom: ['src/components/**/*.jsx'],
+    coverageThreshold: {
+        global: {
+            statements: 75,
+            branches: 60,
+            functions: 70,
+            lines: 75,
+        },
+    },
     transform: {
         '^.+\\.(js|jsx)$': 'babel-jest',
     },
