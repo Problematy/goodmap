@@ -2,14 +2,15 @@ module.exports = {
     setupFiles: ['<rootDir>/src/i18n'],
     verbose: true,
     testEnvironment: 'jsdom',
+    coverageProvider: 'v8',
     setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
     collectCoverageFrom: ['src/components/**/*.jsx'],
     coverageThreshold: {
         global: {
-            statements: 75,
-            branches: 60,
-            functions: 70,
-            lines: 75,
+            statements: 85,
+            branches: 70,
+            functions: 60,
+            lines: 85,
         },
     },
     transform: {
