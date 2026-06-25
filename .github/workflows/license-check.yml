@@ -32,4 +32,15 @@ jobs:
             EPL-1.0,
             EPL-2.0,
             CDDL-1.0,
-            PSF-2.0
+            PSF-2.0,
+            Python-2.0,
+            MPL-2.0,
+            0BSD,
+            Artistic-1.0-Perl
+          # TODO: migrate away from react-leaflet (Hippocratic-2.1) to vanilla Leaflet (BSD-2-Clause)
+          # to make the frontend fully MIT-compatible. Tracked in allow-packages until migration is done.
+          allow-packages: >-
+            pkg:pypi/typing-extensions,
+            pkg:pypi/protobuf,
+            pkg:npm/react-leaflet,
+            pkg:npm/%40react-leaflet%2Fcore
