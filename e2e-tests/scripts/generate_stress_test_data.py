@@ -7,7 +7,7 @@ for testing application performance under load.
 """
 
 import json
-import random
+import random  # NOSONAR: test fixture generation only, not security-sensitive
 import uuid
 
 # Seed for deterministic data generation across runs

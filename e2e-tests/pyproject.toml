@@ -10,8 +10,8 @@ package-mode = false
 python = "^3.10"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^8.3.4"
-pytest-playwright = "^0.6.2"
+pytest = "^9.0.3"
+pytest-playwright = "^0.8.0"
 playwright = "^1.49.1"
 pytest-xdist = "^3.6.1"  # For parallel test execution
 ruff = "^0.8.4"  # Linting and formatting
