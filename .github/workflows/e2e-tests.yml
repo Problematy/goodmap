@@ -79,16 +79,14 @@ jobs:
       run: make setup-test-data
 
     - name: Start backend for e2e tests
-      working-directory: e2e-tests
       run: |
         CONFIG_PATH="${{ github.workspace }}/e2e-tests/e2e_test_config.yml"
-        GOODMAP_PATH="${{ github.workspace }}"
 
-        bash "${{ github.workspace }}/e2e-tests/.github/scripts/start-backend.sh" \
+        bash "${{ github.workspace }}/.github/scripts/start-backend.sh" \
           "/tmp/backend-e2e.log" \
           "/tmp/backend-e2e.pid" \
           "5" \
-          "CONFIG_PATH='$CONFIG_PATH' GOODMAP_PATH='$GOODMAP_PATH' make run-e2e-env"
+          "CONFIG_PATH='$CONFIG_PATH' make run-e2e-env"
 
     - name: Run e2e tests
       working-directory: e2e-tests
@@ -112,7 +110,7 @@ jobs:
       shell: bash {0}
       run: |
         set +e
-        bash "${{ github.workspace }}/e2e-tests/.github/scripts/stop-backend.sh" \
+        bash "${{ github.workspace }}/.github/scripts/stop-backend.sh" \
           "/tmp/backend-e2e.pid" \
           "flask.*e2e_test_config"
         exit 0
@@ -130,15 +128,13 @@ jobs:
       run: make e2e-stress-tests-generate-data
 
     - name: Start backend for stress tests
-      working-directory: e2e-tests
       run: |
         CONFIG_PATH="${{ github.workspace }}/e2e-tests/e2e_stress_test_config.yml"
-        GOODMAP_PATH="${{ github.workspace }}"
-        bash "${{ github.workspace }}/e2e-tests/.github/scripts/start-backend.sh" \
+        bash "${{ github.workspace }}/.github/scripts/start-backend.sh" \
           "/tmp/backend-stress.log" \
           "/tmp/backend-stress.pid" \
           "5" \
-          "CONFIG_PATH='$CONFIG_PATH' GOODMAP_PATH='$GOODMAP_PATH' make run-e2e-env"
+          "CONFIG_PATH='$CONFIG_PATH' make run-e2e-env"
 
     - name: Run e2e stress tests
       working-directory: e2e-tests
@@ -153,7 +149,7 @@ jobs:
       shell: bash {0}
       run: |
         set +e
-        bash "${{ github.workspace }}/e2e-tests/.github/scripts/stop-backend.sh" \
+        bash "${{ github.workspace }}/.github/scripts/stop-backend.sh" \
           "/tmp/backend-stress.pid" \
           "flask.*e2e_stress_test_config"
         exit 0
@@ -161,18 +157,9 @@ jobs:
     - name: Add stress test results to summary
       if: always()
       run: |
-        PERF_FILE="${{ github.workspace }}/e2e-tests/test-results/stress-test-perf.json"
-        SCRIPT_PATH="${{ github.workspace }}/e2e-tests/.github/scripts/generate-perf-summary.js"
-
-        echo "Checking for script at: $SCRIPT_PATH"
-        if [ ! -f "$SCRIPT_PATH" ]; then
-          echo "ERROR: Script not found at $SCRIPT_PATH"
-          echo "Listing e2e-tests directory:"
-          ls -la "${{ github.workspace }}/e2e-tests/" || true
-          exit 1
-        fi
-
-        node "$SCRIPT_PATH" "$PERF_FILE" --format=github >> $GITHUB_STEP_SUMMARY
+        node "${{ github.workspace }}/.github/scripts/generate-perf-summary.js" \
+          "${{ github.workspace }}/e2e-tests/test-results/stress-test-perf.json" \
+          --format=github >> $GITHUB_STEP_SUMMARY
 
     - name: Save PR metadata for comment workflow
       if: always() && github.event.pull_request.number

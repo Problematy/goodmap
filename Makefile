@@ -1,5 +1,5 @@
 CONFIG_PATH ?= examples/e2e_test_config.yml
-RUNNING_DIRECTORY ?= .
+E2E_STRESS_CONFIG_PATH ?= e2e-tests/e2e_stress_test_config.yml
 
 lint-fix:
 	poetry run black goodmap/ tests/
@@ -50,7 +50,13 @@ html-cov: coverage
 	poetry run coverage html
 
 run-example-env:
-	poetry --project '$(RUNNING_DIRECTORY)' run flask --app "goodmap.goodmap:create_app(config_path='$(CONFIG_PATH)')" --debug run
+	poetry run flask --app "goodmap.goodmap:create_app(config_path='$(CONFIG_PATH)')" --debug run
+
+run-e2e-env:
+	poetry run flask --app "goodmap.goodmap:create_app(config_path='$(CONFIG_PATH)')" --debug run
+
+run-e2e-stress-env:
+	poetry run flask --app "goodmap.goodmap:create_app(config_path='$(E2E_STRESS_CONFIG_PATH)')" --debug run
 
 verify-json-data:
 ifndef JSON_DATA_FILE
