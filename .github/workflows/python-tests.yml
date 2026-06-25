@@ -5,28 +5,20 @@ on:
     branches:
       - main
       - next
-    paths-ignore:
+    paths-ignore: &paths-ignore
       - '**.md'
       - '**.rst'
       - 'docs/**'
       - 'LICENSE'
       - '.gitignore'
       - 'CHANGELOG.md'
-      - 'examples/**/*.json'
+      - 'examples/**'
       - 'frontend/**'
   push:
     branches:
       - main
       - next
-    paths-ignore:
-      - '**.md'
-      - '**.rst'
-      - 'docs/**'
-      - 'LICENSE'
-      - '.gitignore'
-      - 'CHANGELOG.md'
-      - 'examples/**/*.json'
-      - 'frontend/**'
+    paths-ignore: *paths-ignore
 
 # Cancel outdated workflow runs when new commits are pushed to the PR
 concurrency:
