@@ -26,6 +26,16 @@ lint-check-all: lint-check
 	cd frontend && $(MAKE) lint
 	cd e2e-tests && $(MAKE) lint-check
 
+dependency-check:
+	poetry run pip-audit
+
+# Approximates the dependency-review-action gate used in CI (license-check.yml)
+# across all three sub-projects, so vulnerable transitive deps can be caught
+# before pushing instead of discovered in a PR check.
+dependency-check-all: dependency-check
+	cd frontend && $(MAKE) audit
+	cd e2e-tests && $(MAKE) audit
+
 unit-tests:
 	poetry run python -m pytest
 

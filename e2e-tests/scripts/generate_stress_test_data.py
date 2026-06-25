@@ -7,7 +7,7 @@ for testing application performance under load.
 """
 
 import json
-import random  # NOSONAR: test fixture generation only, not security-sensitive
+import random
 import uuid
 
 # Seed for deterministic data generation across runs
@@ -29,19 +29,20 @@ ACCESS_OPTIONS = ["pedestrians", "bikes", "cars"]
 
 def generate_marker():
     """Generate a single random marker."""
-    name = f"{random.choice(PLACE_NAMES)} {random.randint(1, 10000)}"
-    lat = round(random.uniform(LAT_MIN, LAT_MAX), 6)
-    lon = round(random.uniform(LON_MIN, LON_MAX), 6)
+    # NOSONAR: test fixture generation only, not security-sensitive
+    name = f"{random.choice(PLACE_NAMES)} {random.randint(1, 10000)}"  # NOSONAR
+    lat = round(random.uniform(LAT_MIN, LAT_MAX), 6)  # NOSONAR
+    lon = round(random.uniform(LON_MIN, LON_MAX), 6)  # NOSONAR
 
     # Random subset of access options (at least 1)
-    num_access = random.randint(1, len(ACCESS_OPTIONS))
-    accessible_by = random.sample(ACCESS_OPTIONS, num_access)
+    num_access = random.randint(1, len(ACCESS_OPTIONS))  # NOSONAR
+    accessible_by = random.sample(ACCESS_OPTIONS, num_access)  # NOSONAR
 
     return {
         "name": name,
         "position": [lat, lon],
         "accessible_by": accessible_by,
-        "type_of_place": random.choice(PLACE_TYPES),
+        "type_of_place": random.choice(PLACE_TYPES),  # NOSONAR
         "uuid": str(uuid.uuid5(uuid.NAMESPACE_DNS, f"stress-test-marker-{name}-{lat}-{lon}")),
     }
 

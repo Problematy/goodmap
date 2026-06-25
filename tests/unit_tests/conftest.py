@@ -112,11 +112,11 @@ def test_app():
     return create_test_app()
 
 
+@pytest.fixture
 @deprecation.deprecated(
     deprecated_in="0.5.3",
     removed_in="0.6.0",
     details="actually categories_help should be integrated as true in future major release",
 )
-@pytest.fixture
 def test_app_without_helpers():
     return create_test_app(feature_flags=make_flag_set(UseLazyLoading, EnableAdminPanel))

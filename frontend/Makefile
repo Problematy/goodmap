@@ -27,6 +27,9 @@ unit-tests: ## Run tests
 coverage: ## Run tests with coverage
 	npm run coverage
 
+audit: ## Check dependencies for known vulnerabilities
+	npm audit --audit-level=low
+
 lint: ## Check code for linting errors
 	npm run lint
 	npm run prettier

@@ -14,6 +14,9 @@ lint-check:
 	poetry run ruff check tests/
 	poetry run black --check tests/
 
+audit:
+	poetry run pip-audit
+
 pytest-run:
 	poetry run pytest $(PYTEST_SPEC) -v
 
