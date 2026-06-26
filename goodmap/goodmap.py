@@ -29,20 +29,12 @@ from goodmap.feature_flags import EnableAdminPanel, UseLazyLoading
 logger = logging.getLogger(__name__)
 
 _PLUGIN_ENTRY_POINT_GROUP = "goodmap.plugins"
-_FALLBACK_FRONTEND_LIB_URL = "https://cdn.jsdelivr.net/npm/@problematy/goodmap@1.6.2"
 
 
-def _resolve_frontend_lib_url(config: GoodmapConfig, frontend_static_dir: str) -> str:
-    """Resolve which frontend bundle URL to embed in rendered templates.
-
-    Resolution order: explicit config override, the bundled static file
-    shipped with this package, then a last-resort CDN URL.
-    """
+def _resolve_frontend_lib_url(config: GoodmapConfig) -> str:
     if config.goodmap_frontend_lib_url:
         return config.goodmap_frontend_lib_url
-    if os.path.isfile(os.path.join(frontend_static_dir, "index.min.js")):
-        return url_for("goodmap_frontend.static", filename="index.min.js")
-    return _FALLBACK_FRONTEND_LIB_URL
+    return url_for("goodmap_frontend.static", filename="index.min.js")
 
 
 def _register_plugin_static_resources(
@@ -150,15 +142,14 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
     app = platzky.create_app_from_config(config)
 
     frontend_static_dir = os.path.join(directory, "static", "frontend")
-    if os.path.isfile(os.path.join(frontend_static_dir, "index.min.js")):
-        app.register_blueprint(
-            Blueprint(
-                "goodmap_frontend",
-                __name__,
-                static_folder=frontend_static_dir,
-                static_url_path="/static/frontend",
-            )
+    app.register_blueprint(
+        Blueprint(
+            "goodmap_frontend",
+            __name__,
+            static_folder=frontend_static_dir,
+            static_url_path="/static/frontend",
         )
+    )
 
     # SECURITY: Set maximum request body size to 100KB (prevents memory exhaustion)
     # This protects against large file uploads and JSON payloads
@@ -266,7 +257,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         return render_template(
             "map.html",
             feature_flags=config.feature_flags,
-            goodmap_frontend_lib_url=_resolve_frontend_lib_url(config, frontend_static_dir),
+            goodmap_frontend_lib_url=_resolve_frontend_lib_url(config),
             location_schema=location_schema,
             plugin_manifest=plugin_manifest,
         )
@@ -294,7 +285,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         return render_template(
             "goodmap-admin.html",
             feature_flags=config.feature_flags,
-            goodmap_frontend_lib_url=_resolve_frontend_lib_url(config, frontend_static_dir),
+            goodmap_frontend_lib_url=_resolve_frontend_lib_url(config),
             user=user,
             cms_modules=app.cms_modules,
         )

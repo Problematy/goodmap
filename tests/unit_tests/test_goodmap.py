@@ -56,25 +56,6 @@ def test_use_lazy_loading_branch(mock_get_location_obligatory_fields):
     mock_get_location_obligatory_fields.assert_called_once_with(app.db)
 
 
-def _bundle_path() -> str:
-    """The fixed on-disk path create_app_from_config checks for a built bundle."""
-    directory = os.path.dirname(os.path.realpath(goodmap.__file__))
-    return os.path.join(directory, "static", "frontend", "index.min.js")
-
-
-def _patch_bundle_isfile(present: bool):
-    """Patch os.path.isfile only for the bundle path, leaving Jinja's own
-    template-file lookups (which also call os.path.isfile) unaffected."""
-    real_isfile = os.path.isfile
-    bundle_path = _bundle_path()
-
-    def fake_isfile(path):
-        if path == bundle_path:
-            return present
-        return real_isfile(path)
-
-    return mock.patch("goodmap.goodmap.os.path.isfile", side_effect=fake_isfile)
-
 
 def test_frontend_lib_url_explicit_override_wins():
     """An explicit GOODMAP_FRONTEND_LIB_URL always takes priority over any bundle."""
@@ -102,32 +83,15 @@ def test_frontend_lib_url_explicit_override_wins():
     assert 'src="https://example.com/custom.js"' in response.data.decode("utf-8")
 
 
-def test_frontend_lib_url_falls_back_to_cdn_when_no_bundle():
-    """With no override and no bundled file, fall back to the CDN URL."""
-    test_config = _make_test_app_config(
-        extra_data={"location_obligatory_fields": [], "categories": {}}
-    )
-    with _patch_bundle_isfile(present=False):
-        app = goodmap.create_app_from_config(test_config)
-        app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
-        client = app.test_client()
-        response = client.get("/map")
-
-    assert 'src="https://cdn.jsdelivr.net/npm/@problematy/goodmap@1.6.2"' in response.data.decode(
-        "utf-8"
-    )
-
-
 def test_frontend_lib_url_uses_bundled_static_when_present():
-    """With no override but a bundled file present, serve it from the local static blueprint."""
+    """With no override, serve the bundled file from the local static blueprint."""
     test_config = _make_test_app_config(
         extra_data={"location_obligatory_fields": [], "categories": {}}
     )
-    with _patch_bundle_isfile(present=True):
-        app = goodmap.create_app_from_config(test_config)
-        app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
-        client = app.test_client()
-        response = client.get("/map")
+    app = goodmap.create_app_from_config(test_config)
+    app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
+    client = app.test_client()
+    response = client.get("/map")
 
     assert 'src="/static/frontend/index.min.js"' in response.data.decode("utf-8")
 
