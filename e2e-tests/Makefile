@@ -1,35 +1,29 @@
-CONFIG_PATH ?= e2e_test_config.yml
-PYTEST_SPEC ?= tests/
+PYTHON = poetry run
 
 lint-fix:
-	poetry run ruff check --fix tests/
-	poetry run black tests/
+	$(PYTHON) ruff check --fix tests/
+	$(PYTHON) black tests/
 
 lint-check:
-	poetry run ruff check tests/
-	poetry run black --check tests/
+	$(PYTHON) ruff check tests/
+	$(PYTHON) black --check tests/
 
 audit:
-	poetry run pip-audit
-
-pytest-run:
-	poetry run pytest $(PYTEST_SPEC) -v
+	$(PYTHON) pip-audit
 
 setup-test-data:
-	cp e2e_test_data_template.json e2e_test_data.json
+	cp e2e_test_data_initial.json e2e_test_data.json
 	sed 's|__E2E_TESTS_DIR__|$(CURDIR)|g' e2e_test_config.template.yml > e2e_test_config.yml
 	$(MAKE) compile-translations
 
 e2e-tests:
-	$(MAKE) pytest-run PYTEST_SPEC="tests/basic"
+	$(PYTHON) pytest tests/basic -v
 
 e2e-stress-tests-generate-data:
-	python scripts/generate_stress_test_data.py
+	$(PYTHON) python scripts/generate_stress_test_data.py
 
 e2e-stress-tests:
-	$(MAKE) pytest-run PYTEST_SPEC="tests/stress"
-
+	$(PYTHON) pytest tests/stress -v
 
 compile-translations:
-	poetry run pybabel compile -d translations
-
+	$(PYTHON) pybabel compile -d translations

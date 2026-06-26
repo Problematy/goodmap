@@ -111,7 +111,7 @@ E2E tests use Playwright and require both the backend and the frontend dev serve
 make run-e2e-backend
 
 # Terminal 2 — webpack dev server
-make run-e2e-frontend
+make run-frontend
 
 # Terminal 3 — run the tests
 make e2e-tests

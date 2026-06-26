@@ -29,20 +29,20 @@ Run `poetry install` in this directory first.
 
 ### Basic E2E Tests
 
-1. Start the frontend server:
-    ```bash
-    cd ../frontend && make serve-prod
-    ```
+From the **repo root**, start each server in its own terminal, then run the tests in a third:
 
-2. Start the Goodmap backend (in a separate terminal, from this directory):
-    ```bash
-    CONFIG_PATH=e2e_test_config.yml GOODMAP_PATH=.. make run-e2e-env
-    ```
+```bash
+# Terminal 1
+make run-e2e-backend
 
-3. Run the tests (in a separate terminal):
-    ```bash
-    make e2e-tests
-    ```
+# Terminal 2
+make run-frontend
+
+# Terminal 3
+make e2e-tests
+```
+
+`make e2e-tests` performs a single-shot check that both servers are reachable and aborts with a helpful message if either is missing.
 
 ### Stress Tests
 

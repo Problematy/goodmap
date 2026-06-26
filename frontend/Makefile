@@ -1,4 +1,4 @@
-.PHONY: help install install-ci build dev-build watch unit-tests coverage lint lint-fix serve serve-network clean all
+.PHONY: help install install-ci build dev-build watch unit-tests coverage audit lint lint-fix serve serve-prod serve-network clean all
 
 help: ## Show this help message
 	@echo 'Usage: make [target]'
