@@ -102,6 +102,23 @@ TODO: `obligatory_fields` is a new subsection, start using it in the actual appl
 
 You can define the fields in all these subsections. Besides these types of fields, there is no restriction on the number of fields a datapoint can have.
 
+## Running E2E Tests
+
+E2E tests use Playwright and require both the backend and the frontend dev server to be running. Start them in separate terminals, then run the tests in a third:
+
+```bash
+# Terminal 1 — Flask backend
+make run-e2e-backend
+
+# Terminal 2 — webpack dev server
+make run-e2e-frontend
+
+# Terminal 3 — run the tests
+make e2e-tests
+```
+
+`make e2e-tests` checks that both servers are reachable before starting and exits with a helpful message if either is missing.
+
 ## Examples
 
 You can find examples of working configuration and database in `examples/` directory:

@@ -66,23 +66,3 @@ export const getCsrfToken = async () => {
     }
 };
 
-/**
- * Creates axios headers object with CSRF token.
- *
- * Convenience function to generate headers with CSRF token
- * for use with axios requests.
- *
- * @param {Object} additionalHeaders - Optional additional headers to merge
- * @returns {Promise<Object>} Promise resolving to headers object with X-CSRFToken
- *
- * @example
- * const headers = await getCsrfHeaders({ 'Content-Type': 'application/json' });
- * axios.post('/api/suggest-new-point', data, { headers });
- */
-export const getCsrfHeaders = async (additionalHeaders = {}) => {
-    const token = await getCsrfToken();
-    return {
-        'X-CSRFToken': token,
-        ...additionalHeaders,
-    };
-};

@@ -1,4 +1,5 @@
 CONFIG_PATH ?= examples/e2e_test_config.yml
+E2E_CONFIG_PATH ?= e2e-tests/e2e_test_config.yml
 E2E_STRESS_CONFIG_PATH ?= e2e-tests/e2e_stress_test_config.yml
 
 lint-fix:
@@ -57,6 +58,19 @@ run-e2e-env:
 
 run-e2e-stress-env:
 	poetry run flask --app "goodmap.goodmap:create_app(config_path='$(E2E_STRESS_CONFIG_PATH)')" --debug run
+
+run-e2e-backend:
+	poetry run flask --app "goodmap.goodmap:create_app(config_path='$(E2E_CONFIG_PATH)')" run
+
+run-e2e-frontend:
+	cd frontend && npm run serve:prod
+
+check-e2e-servers:
+	@curl -sf http://localhost:5000 -o /dev/null || (echo "Backend not running at :5000 — run: make run-e2e-backend" >&2; exit 1)
+	@curl -sf http://localhost:8080/index.min.js -o /dev/null || (echo "Frontend not running at :8080 — run: make run-e2e-frontend" >&2; exit 1)
+
+e2e-tests: check-e2e-servers
+	$(MAKE) -C e2e-tests e2e-tests
 
 verify-json-data:
 ifndef JSON_DATA_FILE

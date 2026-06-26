@@ -44,7 +44,7 @@ export const buttonStyleSmall = {
     color: 'white',
 };
 
-export const zoomButtonStyle = {
+const zoomButtonStyle = {
     ...commonStyle,
     width: '40px',
     height: '40px',

@@ -1,8 +1,5 @@
 import {
-    CATEGORIES,
     CATEGORIES_FULL,
-    CATEGORY,
-    LANGUAGES,
     LOCATION,
     LOCATIONS,
     SEARCH_ADDRESS,
@@ -40,22 +37,6 @@ function filtersToQuery(filters) {
  * Provides methods for fetching categories, locations, languages, and address search.
  */
 export const httpService = {
-    /**
-     * Fetches all available categories.
-     *
-     * @returns {Promise<Object>} Promise resolving to categories data
-     */
-    getCategories: () => fetch(CATEGORIES).then(response => response.json()),
-
-    /**
-     * Fetches subcategories for a specific category.
-     *
-     * @param {string} category - Category name
-     * @returns {Promise<Object>} Promise resolving to subcategories data
-     */
-    getSubcategories: category =>
-        fetch(`${CATEGORY}/${category}`).then(response => response.json()),
-
     /**
      * Fetches complete categories data including subcategories in a single request.
      * Uses the /api/categories-full endpoint to avoid waterfall requests.
@@ -165,13 +146,6 @@ export const httpService = {
             throw error;
         }
     },
-
-    /**
-     * Fetches available languages for the application.
-     *
-     * @returns {Promise<Array>} Promise resolving to array of language objects
-     */
-    getLanguages: () => fetch(LANGUAGES).then(response => response.json()),
 
     /**
      * Searches for addresses using OpenStreetMap Nominatim API.
