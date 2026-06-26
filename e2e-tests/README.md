@@ -61,6 +61,15 @@ Run `poetry install` in this directory first.
     make e2e-stress-tests
     ```
 
+### Running CI Locally
+
+You can run the GitHub Actions workflow locally using [`act`](https://github.com/nektos/act).
+The `.actrc` file in this directory pre-configures the runner image:
+
+```bash
+act -W ../.github/workflows/e2e-tests.yml
+```
+
 ### Continuous Integration
 
 These tests run automatically via `.github/workflows/e2e-tests.yml` at the
