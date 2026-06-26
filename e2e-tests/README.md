@@ -85,7 +85,7 @@ results are posted via `.github/workflows/pr-comment.yml` and
 #### Start Backend Script
 `.github/scripts/start-backend.sh`
 
-Starts the Goodmap Flask backend with automatic health checking.
+Starts the Goodmap backend with automatic health checking.
 
 **Usage:**
 ```bash
@@ -101,7 +101,7 @@ start-backend.sh <log-file> <pid-file> <startup-wait-seconds> <command...>
 #### Stop Backend Script
 `.github/scripts/stop-backend.sh`
 
-Gracefully stops the Goodmap Flask backend.
+Gracefully stops the Goodmap backend.
 
 **Usage:**
 ```bash

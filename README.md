@@ -104,20 +104,15 @@ You can define the fields in all these subsections. Besides these types of field
 
 ## Running E2E Tests
 
-E2E tests use Playwright and require both the backend and the frontend dev server to be running. Start them in separate terminals, then run the tests in a third:
+E2E tests use Playwright and require both servers to be running before invoking `make e2e-tests`:
 
 ```bash
-# Terminal 1 — Flask backend
-make run-e2e-backend
-
-# Terminal 2 — webpack dev server
-make run-frontend
-
-# Terminal 3 — run the tests
-make e2e-tests
+make run-e2e-backend   # goodmap backend on :5000
+make run-frontend      # webpack dev server on :8080
+make e2e-tests         # checks both are up, then runs the tests
 ```
 
-`make e2e-tests` checks that both servers are reachable before starting and exits with a helpful message if either is missing.
+`make e2e-tests` performs a single-shot check and exits with a helpful message if either server is missing.
 
 ## Examples
 
