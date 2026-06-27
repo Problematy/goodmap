@@ -6,7 +6,7 @@ import logging
 import os
 from typing import Any
 
-from flask import Blueprint, redirect, render_template, session, url_for
+from flask import Blueprint, redirect, render_template, session
 from flask_babel import gettext
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from platzky import platzky
@@ -29,14 +29,6 @@ from goodmap.feature_flags import EnableAdminPanel, UseLazyLoading
 logger = logging.getLogger(__name__)
 
 _PLUGIN_ENTRY_POINT_GROUP = "goodmap.plugins"
-
-
-def _resolve_frontend_lib_url(config: GoodmapConfig) -> str:
-    if config.goodmap_frontend_lib_url:
-        return config.goodmap_frontend_lib_url
-    # No override: serve the bundle shipped in the package. Its presence is
-    # guaranteed by the build (`make build`), so there is no runtime check here.
-    return url_for("goodmap_frontend.static", filename="index.min.js")
 
 
 def _register_plugin_static_resources(
@@ -259,7 +251,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         return render_template(
             "map.html",
             feature_flags=config.feature_flags,
-            goodmap_frontend_lib_url=_resolve_frontend_lib_url(config),
+            goodmap_frontend_lib_url=config.goodmap_frontend_lib_url,
             location_schema=location_schema,
             plugin_manifest=plugin_manifest,
         )
@@ -287,7 +279,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         return render_template(
             "goodmap-admin.html",
             feature_flags=config.feature_flags,
-            goodmap_frontend_lib_url=_resolve_frontend_lib_url(config),
+            goodmap_frontend_lib_url=config.goodmap_frontend_lib_url,
             user=user,
             cms_modules=app.cms_modules,
         )

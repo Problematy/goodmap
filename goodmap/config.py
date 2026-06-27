@@ -10,8 +10,11 @@ from pydantic import Field
 class GoodmapConfig(PlatzkyConfig):
     """Extended configuration for Goodmap with additional frontend library URL."""
 
-    goodmap_frontend_lib_url: str | None = Field(
-        default=None,
+    # Defaults to the frontend bundle shipped in the package and served by the
+    # goodmap_frontend blueprint (static_url_path="/static/frontend"). Override
+    # with an external URL (e.g. a CDN) when not serving the bundled build.
+    goodmap_frontend_lib_url: str = Field(
+        default="/static/frontend/index.min.js",
         alias="GOODMAP_FRONTEND_LIB_URL",
     )
 

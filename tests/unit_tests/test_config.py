@@ -9,13 +9,13 @@ from goodmap.config import GoodmapConfig
 
 
 def test_goodmap_config_default_frontend_url():
-    """Test that GoodmapConfig has no frontend library URL override by default."""
+    """Test that GoodmapConfig defaults the frontend library URL to the bundled path."""
     config = GoodmapConfig(
         APP_NAME="test",
         SECRET_KEY="test",
         DB=JsonDbConfig(DATA={}, TYPE="json"),
     )
-    assert config.goodmap_frontend_lib_url is None
+    assert config.goodmap_frontend_lib_url == "/static/frontend/index.min.js"
 
 
 def test_goodmap_config_custom_frontend_url():
@@ -69,7 +69,7 @@ GOODMAP_FRONTEND_LIB_URL: https://example.com/goodmap.js
 
 
 def test_goodmap_config_parse_yaml_with_default_url():
-    """Test that parse_yaml leaves frontend library URL unset when not specified in YAML."""
+    """Test that parse_yaml uses the bundled default URL when not specified in YAML."""
     config_content = """
 APP_NAME: test_app
 SECRET_KEY: test_secret
@@ -83,7 +83,7 @@ DB:
 
     try:
         config = GoodmapConfig.parse_yaml(temp_path)
-        assert config.goodmap_frontend_lib_url is None
+        assert config.goodmap_frontend_lib_url == "/static/frontend/index.min.js"
     finally:
         Path(temp_path).unlink()
 
@@ -110,4 +110,4 @@ def test_goodmap_config_inherits_platzky_config():
     assert config.secret_key == "secret123"
     assert test_flag in config.feature_flags
     # Verify GoodmapConfig specific field
-    assert config.goodmap_frontend_lib_url is None
+    assert config.goodmap_frontend_lib_url == "/static/frontend/index.min.js"
