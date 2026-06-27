@@ -56,7 +56,6 @@ def test_use_lazy_loading_branch(mock_get_location_obligatory_fields):
     mock_get_location_obligatory_fields.assert_called_once_with(app.db)
 
 
-
 def test_frontend_lib_url_explicit_override_wins():
     """An explicit GOODMAP_FRONTEND_LIB_URL always takes priority over any bundle."""
     override_config = GoodmapConfig(

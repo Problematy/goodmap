@@ -5,7 +5,9 @@ description = "Map engine to serve all the people :)"
 authors = ["Krzysztof Kolodzinski <krzysztof.kolodzinski@problematy.pl>"]
 readme = "README.md"
 exclude = ["goodmap/locale/*/LC_MESSAGES/*.po"]
-include = ["goodmap/static/frontend/index.min.js"]
+# format must include "wheel": the bundle is gitignored, so without an explicit
+# format poetry only ships it in the sdist, and `pip install` (wheel) would 404.
+include = [{ path = "goodmap/static/frontend/index.min.js", format = ["sdist", "wheel"] }]
 
 [tool.poetry.dependencies]
 python = "^3.10"

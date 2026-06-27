@@ -107,12 +107,12 @@ You can define the fields in all these subsections. Besides these types of field
 E2E tests use Playwright and require both servers to be running before invoking `make e2e-tests`:
 
 ```bash
-make run-e2e-backend   # goodmap backend on :5000
+make run-e2e-backend   # generates the e2e config/data, then serves the backend on :5000
 make run-frontend      # webpack dev server on :8080
 make e2e-tests         # checks both are up, then runs the tests
 ```
 
-`make e2e-tests` performs a single-shot check and exits with a helpful message if either server is missing.
+`make run-e2e-backend` regenerates the templated config and a fresh copy of the test data before starting, so no separate setup step is needed. `make e2e-tests` performs a single-shot check and exits with a helpful message if either server is missing.
 
 ## Examples
 

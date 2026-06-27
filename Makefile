@@ -57,7 +57,13 @@ run-example-env:
 run-e2e-stress-env:
 	$(PYTHON) flask --app "goodmap.goodmap:create_app(config_path='$(E2E_STRESS_CONFIG_PATH)')" --debug run
 
-run-e2e-backend:
+# Regenerates the templated e2e config (absolute paths) and a fresh copy of the
+# test data. Prerequisite of run-e2e-backend, not e2e-tests, so the json_file DB
+# is reset once when the backend boots rather than mid-session from the tests.
+setup-e2e-data:
+	$(MAKE) -C e2e-tests setup-test-data
+
+run-e2e-backend: setup-e2e-data
 	$(PYTHON) flask --app "goodmap.goodmap:create_app(config_path='$(E2E_CONFIG_PATH)')" run
 
 run-frontend:
@@ -85,8 +91,20 @@ build-frontend:
 	mkdir -p goodmap/static/frontend
 	$(MAKE) -C frontend install-ci
 	OUTPUT_DIR=$(CURDIR)/goodmap/static/frontend $(MAKE) -C frontend build
+	@test -f goodmap/static/frontend/index.min.js \
+		|| (echo "ERROR: build-frontend did not produce goodmap/static/frontend/index.min.js" >&2; exit 1)
+
+# Guards against a missing build output or a packaging misconfiguration (the
+# bundle is gitignored, so it only lands in the wheel via the pyproject include).
+# The backend serves this bundle by default, so a wheel without it ships broken.
+verify-bundle-packaged:
+	@$(PYTHON) python -c "import glob, sys, zipfile; \
+w = max(glob.glob('dist/*.whl')); \
+ok = any(n.endswith('static/frontend/index.min.js') for n in zipfile.ZipFile(w).namelist()); \
+print('OK: frontend bundle present in ' + w) if ok else sys.exit('ERROR: frontend bundle missing from ' + w)"
 
 build:
 	$(PYTHON) pybabel compile -d goodmap/locale
 	$(MAKE) build-frontend
 	poetry build
+	$(MAKE) verify-bundle-packaged

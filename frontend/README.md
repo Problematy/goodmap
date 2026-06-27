@@ -9,11 +9,13 @@ this build is bundled into the published `goodmap` PyPI package (see
 
 To build and run a static version of just the frontend, from this directory:
 
-1. `npm install` -- install all the dependencies,
+1. `make install` -- install all the dependencies,
 2. building:
-   - `npm run build` -- production build,
-   - `npm run dev-build` -- development build,
-3. `npm run serve:local` -- run the development server.
+   - `make build` -- production build,
+   - `make dev-build` -- development build,
+3. `make serve` -- run the development server.
+
+Run `make help` to see all available targets.
 
 To build the frontend the way the backend release does (bundled into
 `goodmap/static/frontend/`), run `make build-frontend` from the repo root

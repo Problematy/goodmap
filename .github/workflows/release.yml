@@ -86,6 +86,9 @@ jobs:
       - name: Build package
         run: poetry build
 
+      - name: Verify frontend bundle is packaged in the wheel
+        run: make verify-bundle-packaged
+
       - name: Attach frontend bundle to GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

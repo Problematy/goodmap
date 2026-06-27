@@ -50,8 +50,9 @@ Each has its own dependency manager and Makefile.
 3. Before submitting a PR, run the linter for whatever you changed:
    - `make lint-check` (backend only), or
    - `make lint-check-all` to check backend, frontend, and e2e-tests together.
-   - `make dev` runs `make lint-fix-all` plus backend type-checking — useful
-     as a one-shot local check-and-fix command.
+   - `make dev` runs `make lint-fix-all`, then `make lint-check-all` (including
+     backend type-checking) and the backend unit tests — a one-shot local
+     check-fix-and-test command.
 4. Follow the repository's coding standards (e.g., line length of 100).
 
 ## Additional Notes

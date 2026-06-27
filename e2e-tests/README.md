@@ -33,7 +33,7 @@ From the **repo root**, start each server in its own terminal, then run the test
 
 ```bash
 # Terminal 1
-make run-e2e-backend
+make run-e2e-backend   # regenerates the config/data, then serves the backend
 
 # Terminal 2
 make run-frontend
@@ -42,7 +42,7 @@ make run-frontend
 make e2e-tests
 ```
 
-`make e2e-tests` performs a single-shot check that both servers are reachable and aborts with a helpful message if either is missing.
+`make run-e2e-backend` runs `setup-test-data` first (templated config + a fresh copy of the test data), so there is no separate setup step. `make e2e-tests` performs a single-shot check that both servers are reachable and aborts with a helpful message if either is missing.
 
 ### Stress Tests
 
