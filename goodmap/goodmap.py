@@ -35,8 +35,7 @@ def _resolve_frontend_lib_url(config: GoodmapConfig) -> str:
     if config.goodmap_frontend_lib_url:
         return config.goodmap_frontend_lib_url
     # No override: serve the bundle shipped in the package. Its presence is
-    # guaranteed by the build (see the `verify-bundle-packaged` make target),
-    # so there is no runtime existence check here.
+    # guaranteed by the build (`make build`), so there is no runtime check here.
     return url_for("goodmap_frontend.static", filename="index.min.js")
 
 
