@@ -1,0 +1,189 @@
+name: E2E tests
+
+on:
+  pull_request:
+    branches:
+      - main
+      - next
+    paths-ignore: &paths-ignore
+      - '**.md'
+      - '**.rst'
+      - 'docs/**'
+      - 'LICENSE'
+      - '.gitignore'
+      - 'CHANGELOG.md'
+      - 'examples/**'
+  push:
+    branches:
+      - main
+      - next
+    paths-ignore: *paths-ignore
+
+# Cancel outdated workflow runs when new commits are pushed to the PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  e2e-tests:
+    name: E2E tests
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+    - name: Install frontend dependencies
+      working-directory: frontend
+      run: npm install
+
+    - name: Set up Python
+      uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+      with:
+        python-version: "3.10"
+
+    - name: Install Poetry
+      uses: snok/install-poetry@a783c322200f0519c7926aa6faa857c4e23e9263 # v1.4.2
+      with:
+        version: 'latest'
+
+    - name: Install python dependencies
+      run: poetry install
+
+    - name: Install e2e dependencies
+      working-directory: e2e-tests
+      run: |
+        poetry install
+        poetry run playwright install chromium --with-deps
+
+    - name: Start frontend server
+      working-directory: frontend
+      run: |
+        make serve-prod &
+        FRONTEND_PID=$!
+        echo $FRONTEND_PID > /tmp/frontend.pid
+        disown $FRONTEND_PID
+        sleep 3
+
+    - name: Setup test data
+      working-directory: e2e-tests
+      run: make setup-test-data
+
+    - name: Start backend for e2e tests
+      run: |
+        bash "${{ github.workspace }}/.github/scripts/start-backend.sh" \
+          "/tmp/backend-e2e.log" \
+          "/tmp/backend-e2e.pid" \
+          "5" \
+          "make run-e2e-backend"
+
+    - name: Run e2e tests
+      working-directory: e2e-tests
+      env:
+        NO_COLOR: 1
+      run: |
+        set -o pipefail
+        make e2e-tests | tee /tmp/e2e-tests-output.txt
+
+    - name: Upload test videos on failure
+      if: failure()
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      with:
+        name: test-failure-videos
+        path: e2e-tests/test-results/**/*.webm
+        retention-days: 7
+        if-no-files-found: ignore
+
+    - name: Stop backend for e2e tests
+      if: always()
+      shell: bash {0}
+      run: |
+        set +e
+        bash "${{ github.workspace }}/.github/scripts/stop-backend.sh" \
+          "/tmp/backend-e2e.pid" \
+          "flask.*e2e_test_config"
+        exit 0
+
+    - name: Add e2e test results to summary
+      if: always()
+      run: |
+        if [ -f /tmp/e2e-tests-output.txt ]; then
+          echo "## ✅ Basic E2E Tests Completed" >> $GITHUB_STEP_SUMMARY
+          echo "See workflow logs for details" >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: Generate e2e stress test data
+      working-directory: e2e-tests
+      run: make e2e-stress-tests-generate-data
+
+    - name: Start backend for stress tests
+      run: |
+        bash "${{ github.workspace }}/.github/scripts/start-backend.sh" \
+          "/tmp/backend-stress.log" \
+          "/tmp/backend-stress.pid" \
+          "5" \
+          "make run-e2e-stress-backend"
+
+    - name: Run e2e stress tests
+      working-directory: e2e-tests
+      env:
+        NO_COLOR: 1
+      run: |
+        set -o pipefail
+        make e2e-stress-tests | tee /tmp/e2e-stress-tests-output.txt
+
+    - name: Stop backend for stress tests
+      if: always()
+      shell: bash {0}
+      run: |
+        set +e
+        bash "${{ github.workspace }}/.github/scripts/stop-backend.sh" \
+          "/tmp/backend-stress.pid" \
+          "flask.*e2e_stress_test_config"
+        exit 0
+
+    - name: Add stress test results to summary
+      if: always()
+      run: |
+        node "${{ github.workspace }}/.github/scripts/generate-perf-summary.js" \
+          "${{ github.workspace }}/e2e-tests/test-results/stress-test-perf.json" \
+          --format=github >> $GITHUB_STEP_SUMMARY
+
+    - name: Save PR metadata for comment workflow
+      if: always() && github.event.pull_request.number
+      run: |
+        echo ${{ github.event.pull_request.number }} > /tmp/pr-number.txt
+        echo ${{ github.event.pull_request.head.sha }} > /tmp/pr-sha.txt
+
+    - name: Copy performance data to temp
+      if: always()
+      run: |
+        if [ -f "e2e-tests/test-results/stress-test-perf.json" ]; then
+          cp "e2e-tests/test-results/stress-test-perf.json" /tmp/stress-test-perf.json
+          echo "Copied performance data to /tmp/stress-test-perf.json"
+        else
+          echo "No performance data found"
+        fi
+
+    - name: Upload test results as artifacts
+      if: always()
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      with:
+        name: test-results
+        path: |
+          /tmp/e2e-tests-output.txt
+          /tmp/e2e-stress-tests-output.txt
+          /tmp/pr-number.txt
+          /tmp/pr-sha.txt
+          /tmp/stress-test-perf.json
+        retention-days: 1
+        if-no-files-found: ignore
+
+    - name: Stop frontend server
+      if: always()
+      run: |
+        if [ -f /tmp/frontend.pid ]; then
+          kill $(cat /tmp/frontend.pid) 2>/dev/null || true
+        fi

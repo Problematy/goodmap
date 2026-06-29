@@ -1,0 +1,98 @@
+#!/usr/bin/env python3
+"""
+Generate stress test data for E2E performance testing.
+
+Creates a JSON file with 100,000 randomly generated map markers
+for testing application performance under load.
+"""
+
+import json
+import random
+import uuid
+
+# Seed for deterministic data generation across runs
+SEED = 42
+
+# Configuration
+NUM_MARKERS = 100_000
+OUTPUT_FILE = "e2e_stress_test_data.json"
+
+# Poland approximate bounds for realistic coordinates
+LAT_MIN, LAT_MAX = 49.0, 54.8
+LON_MIN, LON_MAX = 14.1, 24.2
+
+# Sample data for random generation
+PLACE_NAMES = ["Most", "Kładka", "Zwierzyniecka", "Warszawski", "Jagiełły", "Grunwaldzki"]
+PLACE_TYPES = ["small bridge", "big bridge"]
+ACCESS_OPTIONS = ["pedestrians", "bikes", "cars"]
+
+
+def generate_marker():
+    """Generate a single random marker."""
+    # NOSONAR: test fixture generation only, not security-sensitive
+    name = f"{random.choice(PLACE_NAMES)} {random.randint(1, 10000)}"  # NOSONAR
+    lat = round(random.uniform(LAT_MIN, LAT_MAX), 6)  # NOSONAR
+    lon = round(random.uniform(LON_MIN, LON_MAX), 6)  # NOSONAR
+
+    # Random subset of access options (at least 1)
+    num_access = random.randint(1, len(ACCESS_OPTIONS))  # NOSONAR
+    accessible_by = random.sample(ACCESS_OPTIONS, num_access)  # NOSONAR
+
+    return {
+        "name": name,
+        "position": [lat, lon],
+        "accessible_by": accessible_by,
+        "type_of_place": random.choice(PLACE_TYPES),  # NOSONAR
+        "uuid": str(uuid.uuid5(uuid.NAMESPACE_DNS, f"stress-test-marker-{name}-{lat}-{lon}")),
+    }
+
+
+def main():
+    """Generate stress test data file."""
+    random.seed(SEED)
+    print(f"Generating {NUM_MARKERS:,} markers...")
+
+    markers = [generate_marker() for _ in range(NUM_MARKERS)]
+
+    data = {
+        "map": {
+            "data": markers,
+            "location_obligatory_fields": [
+                ["name", "str"],
+                ["accessible_by", "list"],
+                ["type_of_place", "str"],
+            ],
+            "categories": {
+                "accessible_by": ACCESS_OPTIONS,
+                "type_of_place": PLACE_TYPES,
+            },
+            "visible_data": ["accessible_by", "type_of_place"],
+            "meta_data": ["uuid"],
+        },
+        "site_content": {
+            "home_page_path": "/map",
+            "pages": [],
+            "menu_items": {
+                "en": [{"name": "Map", "url": "/"}],
+                "pl": [{"name": "Mapa", "url": "/"}],
+            },
+            "logo_url": "",
+            "font": {
+                "name": "Poppins",
+                "url": "https://fonts.googleapis.com/css2?family=Poppins",
+            },
+            "primary_color": "#FFFFFF",
+            "secondary_color": "#245466",
+            "left_bar_width": "300px",
+        },
+    }
+
+    print(f"Writing to {OUTPUT_FILE}...")
+    with open(OUTPUT_FILE, "w") as f:
+        json.dump(data, f, indent=2)
+
+    print(f"Done! Generated {len(markers):,} markers.")
+
+
+if __name__ == "__main__":
+    main()

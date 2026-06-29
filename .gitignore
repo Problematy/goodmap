@@ -2,8 +2,6 @@
 data.json
 config.yml
 **/node_modules
-tests/e2e_tests/cypress/screenshots/
-
 
 # coverage based artifacts
 htmlcov
@@ -12,6 +10,7 @@ coverage.lcov
 
 # build specific artifacts
 dist
+goodmap/static/frontend
 
 # documentation build artifacts
 docs/_build
@@ -27,4 +26,7 @@ goodmap/locale/*/LC_MESSAGES/*.mo
 *.pot
 
 # e2e stress test files
-e2e_stress_test_data.json
+e2e-tests/e2e_stress_test_data.json
+
+# playwright artifacts
+.playwright-mcp/

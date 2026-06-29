@@ -56,8 +56,47 @@ def test_use_lazy_loading_branch(mock_get_location_obligatory_fields):
     mock_get_location_obligatory_fields.assert_called_once_with(app.db)
 
 
+def test_frontend_lib_url_explicit_override_wins():
+    """An explicit GOODMAP_FRONTEND_LIB_URL always takes priority over any bundle."""
+    override_config = GoodmapConfig(
+        APP_NAME="test_app",
+        SECRET_KEY="test_secret",
+        USE_WWW=False,
+        BLOG_PREFIX="/blog",
+        DB=JsonDbConfig(
+            DATA={
+                "site_content": {"pages": []},
+                "location_obligatory_fields": [],
+                "categories": {},
+            },
+            TYPE="json",
+        ),
+        GOODMAP_FRONTEND_LIB_URL="https://example.com/custom.js",
+    )
+    app = goodmap.create_app_from_config(override_config)
+    app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
+    client = app.test_client()
+
+    response = client.get("/map")
+
+    assert 'src="https://example.com/custom.js"' in response.data.decode("utf-8")
+
+
+def test_frontend_lib_url_uses_bundled_static_when_present():
+    """With no override, serve the bundled file from the local static blueprint."""
+    test_config = _make_test_app_config(
+        extra_data={"location_obligatory_fields": [], "categories": {}}
+    )
+    app = goodmap.create_app_from_config(test_config)
+    app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
+    client = app.test_client()
+    response = client.get("/map")
+
+    assert 'src="/static/frontend/index.min.js"' in response.data.decode("utf-8")
+
+
 def test_index_route_returns_location_schema():
-    """Test that the index route (/) returns successfully with location_schema"""
+    """Test that the index route (/map) returns successfully with location_schema"""
     config = GoodmapConfig(
         APP_NAME="test_app",
         SECRET_KEY="test_secret",
@@ -80,7 +119,7 @@ def test_index_route_returns_location_schema():
     app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
     client = app.test_client()
 
-    response = client.get("/")
+    response = client.get("/map")
     assert response.status_code == 200
 
     # Verify location_schema is present in the response
@@ -119,7 +158,7 @@ def test_index_route_location_schema_with_lazy_loading():
     app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
     client = app.test_client()
 
-    response = client.get("/")
+    response = client.get("/map")
     assert response.status_code == 200
 
     # Verify location_schema includes obligatory_fields
@@ -293,20 +332,20 @@ def test_field_renderer_shortcodes_collected_from_content_transformer_plugins() 
 
     config = _make_test_app_config(
         extra_data={
-            "plugins": [
-                {
-                    "name": "field_plugin",
+            "plugins": {
+                "field_plugin": {
+                    "is_active": True,
                     "config": {},
                     "allowed_content_types": list(ALL_CONTENT_TYPES),
                     "allowed_topics": ["general", "content", "security"],
                 },
-                {
-                    "name": "post_plugin",
+                "post_plugin": {
+                    "is_active": True,
                     "config": {},
                     "allowed_content_types": list(ALL_CONTENT_TYPES),
                     "allowed_topics": ["general", "content", "security"],
                 },
-            ]
+            }
         }
     )
 

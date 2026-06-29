@@ -1,0 +1,24 @@
+node_modules
+.idea
+.env
+e2e_test_config.yml
+e2e_test_data.json
+e2e_stress_test_data.json
+
+# Playwright/Pytest artifacts
+test-results/
+.playwright-cache/
+playwright/.cache/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Compiled translation files (generated from .po files)
+translations/**/messages.mo
+
+*~
+
+CLAUDE.md
+.playwright-mcp
+.plans

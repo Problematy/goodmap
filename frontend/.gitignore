@@ -1,0 +1,15 @@
+node_modules
+dist
+.npmrc
+coverage
+
+# IDE-specific directories
+.vscode
+.idea
+
+# Backup files
+*.orig
+
+# Webpack cache
+.webpack-cache
+.playwright-mcp

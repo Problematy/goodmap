@@ -1,9 +1,18 @@
 ![Github Actions](https://github.com/problematy/goodmap/actions/workflows/release.yml/badge.svg?event=push&branch=main)
-[![Coverage Status](https://coveralls.io/repos/github/Problematy/goodmap/badge.png)](https://coveralls.io/github/Problematy/goodmap)
 
 # Good Map
 
 Map engine to serve all the people ;) 
+
+## Project Structure
+
+This repository is a monorepo containing three parts:
+
+- **`goodmap/`** (repo root) — the Python backend, built on the [`platzky`](https://pypi.org/project/platzky/) framework, published to PyPI as `goodmap`.
+- **`frontend/`** — the React frontend, built and bundled into the PyPI package (see `make build-frontend`). Not published as a separate npm package.
+- **`e2e-tests/`** — Playwright-based end-to-end tests exercising the backend and frontend together.
+
+Each has its own dependency manager (`poetry` for the backend and e2e-tests, `npm` for the frontend) and is set up independently — see each directory's README for details. The root `Makefile` has convenience targets (`make dev`, `make lint-check-all`) that run across all three.
 
 ## Setup
 
@@ -92,6 +101,18 @@ TODO: `obligatory_fields` is a new subsection, start using it in the actual appl
 ```
 
 You can define the fields in all these subsections. Besides these types of fields, there is no restriction on the number of fields a datapoint can have.
+
+## Running E2E Tests
+
+E2E tests use Playwright and require both servers to be running before invoking `make e2e-tests`:
+
+```bash
+make run-e2e-backend   # generates the e2e config/data, then serves the backend on :5000
+make run-frontend      # webpack dev server on :8080
+make e2e-tests         # checks both are up, then runs the tests
+```
+
+`make run-e2e-backend` regenerates the templated config and a fresh copy of the test data before starting, so no separate setup step is needed. `make e2e-tests` performs a single-shot check and exits with a helpful message if either server is missing.
 
 ## Examples
 

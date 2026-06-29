@@ -84,16 +84,6 @@ class SuccessResponse(BaseModel):
     message: str = Field(..., description="Success message")
 
 
-class BasicLocationInfo(BaseModel):
-    """Basic location information (uuid + position)."""
-
-    uuid: str = Field(..., description="Location UUID")
-    position: tuple[float, float] = Field(
-        ..., description="Location coordinates as (latitude, longitude)"
-    )
-    remark: bool = Field(False, description="Whether location has a remark")
-
-
 class ClusterInfo(BaseModel):
     """Cluster information for map display."""
 

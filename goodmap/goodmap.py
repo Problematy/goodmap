@@ -135,6 +135,16 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
     config.translation_directories.append(locale_dir)
     app = platzky.create_app_from_config(config)
 
+    frontend_static_dir = os.path.join(directory, "static", "frontend")
+    app.register_blueprint(
+        Blueprint(
+            "goodmap_frontend",
+            __name__,
+            static_folder=frontend_static_dir,
+            static_url_path="/static/frontend",
+        )
+    )
+
     # SECURITY: Set maximum request body size to 100KB (prevents memory exhaustion)
     # This protects against large file uploads and JSON payloads
     # Based on calculation: ~6.5KB max legitimate payload + multipart overhead
@@ -197,9 +207,14 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
 
     goodmap = Blueprint("goodmap", __name__, url_prefix="/", template_folder="templates")
 
-    @goodmap.route("/")
+    @goodmap.route("/map")
     def index():
         """Render main map interface with location schema.
+
+        Registered at /map rather than / because platzky (>=2.0.0a8) reserves
+        the root path for its own homepage dispatch (see
+        db.get_home_page_path()). Deployments set site_content.home_page_path
+        to "/map" so visiting / still renders this view, with no redirect.
 
         Prepares and passes location schema including obligatory fields and
         categories to the frontend for dynamic form generation.

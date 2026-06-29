@@ -1,0 +1,29 @@
+APP_NAME: Bridges in Wroclaw
+SECRET_KEY: SECRET
+BLOG_PREFIX: "/blog"
+DB:
+  TYPE: json_file
+  # Relative to the repo root, where the backend is launched (make run-e2e-stress-backend)
+  # and where the dataset is generated (e2e-tests/e2e_stress_test_data.json).
+  PATH: e2e-tests/e2e_stress_test_data.json
+
+#TODO this should not be necessary argument
+LANGUAGES:
+  en:
+    name: English
+    flag: gb
+    country: GB
+  pl:
+    name: polski
+    flag: pl
+    country: PL
+
+FEATURE_FLAGS:
+  USE_LAZY_LOADING: True
+  SHOW_ACCESSIBILITY_TABLE: True
+  USE_SERVER_SIDE_CLUSTERING: False
+  CATEGORIES_HELP: True
+
+
+#GOODMAP_FRONTEND_LIB_URL: "https://cdn.jsdelivr.net/npm/@problematy/goodmap@0.4.4"
+GOODMAP_FRONTEND_LIB_URL: "http://localhost:8080/index.min.js"

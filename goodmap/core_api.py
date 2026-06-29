@@ -357,14 +357,18 @@ def core_pages(
             logger.exception("Clustering operation failed: %s", e)
             return make_response(jsonify({"message": "An error occurred during clustering"}), 500)
 
-    @core_api_blueprint.route("/location/<location_id>", methods=["GET"])
+    @core_api_blueprint.route("/location/<uuid:location_id>", methods=["GET"])
     @spec.validate(resp=Response(HTTP_404=ErrorResponse))
     def get_location(location_id):
         """Get detailed information for a single location.
 
+        The ``<uuid:...>`` converter accepts only valid UUIDs; non-UUID ids 404
+        at routing. goodmap 2.0.0 dropped support for non-UUID location ids.
+
         Returns full location data including all custom fields,
         formatted for display in the location details view.
         """
+        location_id = str(location_id)
         location = database.get_location(location_id)
         if location is None:
             logger.info(ERROR_LOCATION_NOT_FOUND, extra={"uuid": location_id})

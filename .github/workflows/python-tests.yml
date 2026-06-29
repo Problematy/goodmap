@@ -1,28 +1,24 @@
-name: Testing pipeline
+name: Python tests
 
 on:
   pull_request:
     branches:
       - main
-    paths-ignore:
+      - next
+    paths-ignore: &paths-ignore
       - '**.md'
       - '**.rst'
       - 'docs/**'
       - 'LICENSE'
       - '.gitignore'
       - 'CHANGELOG.md'
-      - 'examples/**/*.json'
+      - 'examples/**'
+      - 'frontend/**'
   push:
     branches:
       - main
-    paths-ignore:
-      - '**.md'
-      - '**.rst'
-      - 'docs/**'
-      - 'LICENSE'
-      - '.gitignore'
-      - 'CHANGELOG.md'
-      - 'examples/**/*.json'
+      - next
+    paths-ignore: *paths-ignore
 
 # Cancel outdated workflow runs when new commits are pushed to the PR
 concurrency:
@@ -86,20 +82,7 @@ jobs:
         poetry install
     - name: Run tests with coverage
       run: make coverage
-    - name: Coveralls
+    - name: Add coverage to job summary
       if: matrix.python-version == '3.14'
-      uses: coverallsapp/github-action@5cbfd81b66ca5d10c19b062c04de0199c215fb6e # v2.3.7
-      with:
-        path-to-lcov: "./coverage.lcov"
+      run: poetry run coverage report >> "$GITHUB_STEP_SUMMARY"
         github-token: ${{ secrets.GITHUB_TOKEN }}
-
-  e2e-tests:
-    needs: [lint, test]
-    permissions:
-      contents: read
-      actions: read
-      pull-requests: write
-    uses: problematy/goodmap-e2e-tests/.github/workflows/e2e-tests.yml@cac4085419b27dfa74062cab5f2f2fcc43ffa230
-    with:
-      goodmap-version: ${{ github.sha }}
-      goodmap-frontend-version: 'main'
