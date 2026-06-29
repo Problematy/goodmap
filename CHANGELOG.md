@@ -2,6 +2,17 @@
 
 <!-- version list -->
 
+## [2.0.0](https://github.com/Problematy/goodmap/compare/1.8.1...2.0.0) (2026-06-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* aligned with breaking changes on platzky ([#365](https://github.com/Problematy/goodmap/issues/365))
+
+### Code Refactoring
+
+* aligned with breaking changes on platzky ([#365](https://github.com/Problematy/goodmap/issues/365)) ([549a5a4](https://github.com/Problematy/goodmap/commit/549a5a47ba21c264f81a91d76cfbc29927bf4c2f))
+
 ## v1.8.1 (2026-06-14)
 
 ### Bug Fixes
