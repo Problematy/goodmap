@@ -12,7 +12,7 @@
           "cars"
         ],
         "type_of_place": "big bridge",
-        "uuid": "hidden",
+        "uuid": "9264286a-5d33-4e38-ab11-c8e179a7754a",
         "CTA": {
           "type": "CTA",
           "value": "https://www.example.com",
@@ -30,7 +30,7 @@
           "pedestrians"
         ],
         "type_of_place": "small bridge",
-        "uuid": "dattarro",
+        "uuid": "c8ecf476-5968-40da-ba5c-e810ad9ff203",
         "remark": "very old bridge"
       }
     ],

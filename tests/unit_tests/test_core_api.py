@@ -246,8 +246,8 @@ def test_get_locations(test_app):
     response = test_app.get("/api/locations")
     assert response.status_code == 200
     assert response.json == [
-        {"uuid": "1", "position": [50, 50], "remark": True},
-        {"uuid": "2", "position": [60, 60], "remark": False},
+        {"uuid": "11111111-1111-1111-1111-111111111111", "position": [50, 50], "remark": True},
+        {"uuid": "22222222-2222-2222-2222-222222222222", "position": [60, 60], "remark": False},
     ]
 
 
@@ -255,7 +255,7 @@ def test_get_locations(test_app):
 @mock.patch("goodmap.formatter.gettext", fake_translation)
 @mock.patch("flask_babel.gettext", fake_translation)
 def test_get_location(test_app):
-    response = test_app.get("/api/location/1")
+    response = test_app.get("/api/location/11111111-1111-1111-1111-111111111111")
     assert response.status_code == 200
     assert response.json == {
         "data": [
@@ -263,7 +263,7 @@ def test_get_location(test_app):
             ["test_category-translated", ["test-translated"]],
             ["type_of_place-translated", "test-place-translated"],
         ],
-        "metadata": {"uuid-translated": "1-translated"},
+        "metadata": {"uuid-translated": "11111111-1111-1111-1111-111111111111-translated"},
         "position": [50.0, 50.0],
         "subtitle": "test-place-translated",
         "title": "test",
@@ -271,9 +271,16 @@ def test_get_location(test_app):
 
 
 def test_get_location_not_found(test_app):
-    response = test_app.get("/api/location/non-existent-uuid")
+    # Valid UUID that is absent from the fixture: routes through, then 404s.
+    response = test_app.get("/api/location/99999999-9999-9999-9999-999999999999")
     assert response.status_code == 404
     assert response.json["message"] == "Location not found"
+
+
+def test_get_location_rejects_non_uuid(test_app):
+    """goodmap 2.0.0 accepts UUID location ids only; non-UUIDs 404 at routing."""
+    response = test_app.get("/api/location/not-a-uuid")
+    assert response.status_code == 404
 
 
 # --- Report location tests ---

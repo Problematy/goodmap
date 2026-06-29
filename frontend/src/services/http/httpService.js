@@ -5,6 +5,7 @@ import {
     SEARCH_ADDRESS,
     LOCATIONS_CLUSTERED,
 } from './endpoints';
+import { validate as isUuid } from 'uuid';
 import { useMapStore } from '../../components/Map/store/map.store';
 
 /**
@@ -117,7 +118,15 @@ export const httpService = {
      * @returns {Promise<Object>} Promise resolving to location details object
      */
     getLocation: async locationId => {
-        const response = await fetch(`${LOCATION}/${locationId}`, {
+        // SECURITY: locationId can come from a user-controlled URL param (see
+        // GoToLocation). Require a valid UUID and encode it before building the
+        // request URL, to prevent request-URL injection.
+        const id = String(locationId);
+        if (!isUuid(id)) {
+            throw new Error('Invalid locationId: expected a UUID');
+        }
+
+        const response = await fetch(`${LOCATION}/${encodeURIComponent(id)}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',

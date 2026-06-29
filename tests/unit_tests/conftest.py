@@ -41,7 +41,7 @@ def get_test_config_data() -> dict[str, Any]:
                         "position": [50, 50],
                         "test_category": ["test"],
                         "type_of_place": "test-place",
-                        "uuid": "1",
+                        "uuid": "11111111-1111-1111-1111-111111111111",
                         "remark": "this is a remark",
                     },
                     {
@@ -49,7 +49,7 @@ def get_test_config_data() -> dict[str, Any]:
                         "position": [60, 60],
                         "test_category": ["second-category"],
                         "type_of_place": "test-place2",
-                        "uuid": "2",
+                        "uuid": "22222222-2222-2222-2222-222222222222",
                     },
                 ],
                 "meta_data": ["uuid"],
