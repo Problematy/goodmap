@@ -2,6 +2,22 @@
 
 <!-- version list -->
 
+## [2.0.0-alpha](https://github.com/Problematy/goodmap/compare/1.8.1...2.0.0-alpha) (2026-06-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* aligned with breaking changes on platzky ([#365](https://github.com/Problematy/goodmap/issues/365))
+
+### Bug Fixes
+
+* next branch release as alpha ([#367](https://github.com/Problematy/goodmap/issues/367)) ([fc44360](https://github.com/Problematy/goodmap/commit/fc443602c4bb5b6d077dbda4aa8ec968cb88c487))
+
+
+### Code Refactoring
+
+* aligned with breaking changes on platzky ([#365](https://github.com/Problematy/goodmap/issues/365)) ([549a5a4](https://github.com/Problematy/goodmap/commit/549a5a47ba21c264f81a91d76cfbc29927bf4c2f))
+
 ## v1.8.1 (2026-06-14)
 
 ### Bug Fixes
