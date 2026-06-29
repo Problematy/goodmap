@@ -85,4 +85,3 @@ jobs:
     - name: Add coverage to job summary
       if: matrix.python-version == '3.14'
       run: poetry run coverage report >> "$GITHUB_STEP_SUMMARY"
-        github-token: ${{ secrets.GITHUB_TOKEN }}
