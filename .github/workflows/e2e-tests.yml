@@ -73,13 +73,11 @@ jobs:
 
     - name: Start backend for e2e tests
       run: |
-        CONFIG_PATH="${{ github.workspace }}/e2e-tests/e2e_test_config.yml"
-
         bash "${{ github.workspace }}/.github/scripts/start-backend.sh" \
           "/tmp/backend-e2e.log" \
           "/tmp/backend-e2e.pid" \
           "5" \
-          "CONFIG_PATH='$CONFIG_PATH' make run-e2e-env"
+          "make run-e2e-backend"
 
     - name: Run e2e tests
       working-directory: e2e-tests
@@ -122,12 +120,11 @@ jobs:
 
     - name: Start backend for stress tests
       run: |
-        CONFIG_PATH="${{ github.workspace }}/e2e-tests/e2e_stress_test_config.yml"
         bash "${{ github.workspace }}/.github/scripts/start-backend.sh" \
           "/tmp/backend-stress.log" \
           "/tmp/backend-stress.pid" \
           "5" \
-          "CONFIG_PATH='$CONFIG_PATH' make run-e2e-env"
+          "make run-e2e-stress-backend"
 
     - name: Run e2e stress tests
       working-directory: e2e-tests

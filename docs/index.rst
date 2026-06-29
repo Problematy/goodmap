@@ -10,7 +10,6 @@ Goodmap is a map engine designed to serve all the people :)
    :caption: Contents:
 
    installation
-   upgrading
    quickstart
    plugins
    api

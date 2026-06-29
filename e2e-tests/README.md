@@ -29,16 +29,19 @@ Run `poetry install` in this directory first.
 
 ### Basic E2E Tests
 
-From the **repo root**, start each server in its own terminal, then run the tests in a third:
+From the **repo root**, both servers must be running concurrently while the
+tests run — `make e2e-tests` only checks they are reachable, it does not start
+them. Run each in its own terminal, or background them in one:
 
 ```bash
-# Terminal 1
+# Separate terminals
 make run-e2e-backend   # regenerates the config/data, then serves the backend
-
-# Terminal 2
 make run-frontend
+make e2e-tests
 
-# Terminal 3
+# Or backgrounded in a single terminal
+make run-e2e-backend &
+make run-frontend &
 make e2e-tests
 ```
 
@@ -46,20 +49,17 @@ make e2e-tests
 
 ### Stress Tests
 
-1. Generate stress test data:
-    ```bash
-    make e2e-stress-tests-generate-data
-    ```
+Same flow as the basic suite, but with the stress backend and a larger generated
+dataset. From the **repo root**, with both servers running concurrently:
 
-2. Start the stress test environment:
-    ```bash
-    CONFIG_PATH=e2e_stress_test_config.yml GOODMAP_PATH=.. make run-e2e-env
-    ```
+```bash
+make run-e2e-stress-backend   # generates the stress dataset (if missing), then serves the backend
+make run-frontend
+make e2e-stress-tests
+```
 
-3. Run stress tests (in a separate terminal):
-    ```bash
-    make e2e-stress-tests
-    ```
+`make run-e2e-stress-backend` runs `e2e-stress-tests-generate-data` only when the
+dataset is missing; run that target directly to force a rebuild.
 
 ### Running CI Locally
 

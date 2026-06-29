@@ -54,9 +54,6 @@ html-cov: coverage
 run-example-env:
 	$(PYTHON) flask --app "goodmap.goodmap:create_app(config_path='$(CONFIG_PATH)')" --debug run
 
-run-e2e-stress-env:
-	$(PYTHON) flask --app "goodmap.goodmap:create_app(config_path='$(E2E_STRESS_CONFIG_PATH)')" --debug run
-
 # Regenerates the templated e2e config (absolute paths) and a fresh copy of the
 # test data. Prerequisite of run-e2e-backend, not e2e-tests, so the json_file DB
 # is reset once when the backend boots rather than mid-session from the tests.
@@ -65,6 +62,16 @@ setup-e2e-data:
 
 run-e2e-backend: setup-e2e-data
 	$(PYTHON) flask --app "goodmap.goodmap:create_app(config_path='$(E2E_CONFIG_PATH)')" run
+
+# Generates the stress dataset only when missing — unlike the basic data it is
+# large and read-only, so there's no need to rebuild it on every backend start.
+# Run `make -C e2e-tests e2e-stress-tests-generate-data` to force a rebuild.
+setup-e2e-stress-data:
+	@test -f e2e-tests/e2e_stress_test_data.json \
+		|| $(MAKE) -C e2e-tests e2e-stress-tests-generate-data
+
+run-e2e-stress-backend: setup-e2e-stress-data
+	$(PYTHON) flask --app "goodmap.goodmap:create_app(config_path='$(E2E_STRESS_CONFIG_PATH)')" --debug run
 
 run-frontend:
 	$(MAKE) -C frontend serve-prod
@@ -75,6 +82,9 @@ check-e2e-servers:
 
 e2e-tests: check-e2e-servers
 	$(MAKE) -C e2e-tests e2e-tests
+
+e2e-stress-tests: check-e2e-servers
+	$(MAKE) -C e2e-tests e2e-stress-tests
 
 verify-json-data:
 ifndef JSON_DATA_FILE
