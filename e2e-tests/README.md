@@ -21,7 +21,6 @@ The test environment uses several configuration files:
 
 - `e2e_test_config.yml`: Main configuration for the test instance
 - `e2e_test_data.json`: Test data for the test suite
-- `pyproject.toml`: Python dependencies and pytest configuration
 
 ## Getting Started
 
