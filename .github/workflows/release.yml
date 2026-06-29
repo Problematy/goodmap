@@ -83,6 +83,10 @@ jobs:
       - name: Build package
         run: make build
 
+      # TODO: also publish the frontend bundle to a CDN as part of the release,
+      # so deployments can opt out of serving it from Flask via
+      # GOODMAP_FRONTEND_LIB_URL. Until then it ships bundled in the wheel and is
+      # only attached to the GitHub Release below.
       - name: Attach frontend bundle to GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
