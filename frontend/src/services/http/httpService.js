@@ -5,8 +5,13 @@ import {
     SEARCH_ADDRESS,
     LOCATIONS_CLUSTERED,
 } from './endpoints';
-import { validate as isUuid } from 'uuid';
 import { useMapStore } from '../../components/Map/store/map.store';
+
+// UUID allowlist used to validate location ids before they are placed in a
+// request URL. An inline regex (not uuid.validate()) is used deliberately:
+// SonarQube's taint analysis only recognises regex/allowlist checks as
+// sanitizers for request-URL construction, not third-party validators.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Converts filter object to URL query string parameters.
@@ -122,7 +127,7 @@ export const httpService = {
         // GoToLocation). Require a valid UUID and encode it before building the
         // request URL, to prevent request-URL injection.
         const id = String(locationId);
-        if (!isUuid(id)) {
+        if (!UUID_RE.test(id)) {
             throw new Error('Invalid locationId: expected a UUID');
         }
 
