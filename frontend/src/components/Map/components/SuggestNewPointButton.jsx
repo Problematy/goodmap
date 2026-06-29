@@ -30,6 +30,38 @@ import { getCsrfToken } from '../../../utils/csrf';
 import { useLocation } from '../context/LocationContext';
 import { httpService } from '../../../services/http/httpService';
 
+// Map a category's options to a { key: translation } object.
+// Options come as [[key, translation], ...] or [key, ...].
+const mapCategoryOptions = categoryOptions => {
+    const optionMap = {};
+    categoryOptions.forEach(opt => {
+        if (Array.isArray(opt)) {
+            optionMap[opt[0]] = opt[1];
+        } else {
+            optionMap[opt] = opt;
+        }
+    });
+    return optionMap;
+};
+
+// Build { fieldNames, options } translation maps from the categories API shape.
+const buildCategoryTranslations = categoriesData => {
+    const fieldNames = {};
+    const options = {};
+
+    categoriesData.forEach(categoryData => {
+        const [categoryKey, categoryName] = categoryData[0];
+        fieldNames[categoryKey] = categoryName;
+
+        const categoryOptions = categoryData[1];
+        if (categoryOptions && categoryOptions.length > 0) {
+            options[categoryKey] = mapCategoryOptions(categoryOptions);
+        }
+    });
+
+    return { fieldNames, options };
+};
+
 /**
  * Button component that allows users to suggest new map points/locations.
  * Opens a dialog form with dynamically generated fields based on window.LOCATION_SCHEMA.
@@ -57,31 +89,7 @@ export const SuggestNewPointButton = () => {
         const fetchCategories = async () => {
             try {
                 const categoriesData = await httpService.getCategoriesData();
-                const fieldNames = {};
-                const options = {};
-
-                categoriesData.forEach(categoryData => {
-                    const [categoryKey, categoryName] = categoryData[0];
-                    fieldNames[categoryKey] = categoryName;
-
-                    // Build options translation map
-                    // Options come as [[key, translation], ...] or [key, ...]
-                    const categoryOptions = categoryData[1];
-                    if (categoryOptions && categoryOptions.length > 0) {
-                        options[categoryKey] = {};
-                        categoryOptions.forEach(opt => {
-                            if (Array.isArray(opt)) {
-                                // [key, translation] format
-                                options[categoryKey][opt[0]] = opt[1];
-                            } else {
-                                // Just key, use as-is
-                                options[categoryKey][opt] = opt;
-                            }
-                        });
-                    }
-                });
-
-                setCategoryTranslations({ fieldNames, options });
+                setCategoryTranslations(buildCategoryTranslations(categoriesData));
             } catch (error) {
                 console.error('Failed to fetch category translations:', error);
             }
