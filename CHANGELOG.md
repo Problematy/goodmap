@@ -2,6 +2,13 @@
 
 <!-- version list -->
 
+## [2.0.0-alpha.1](https://github.com/Problematy/goodmap/compare/2.0.0-alpha...2.0.0-alpha.1) (2026-06-29)
+
+
+### Bug Fixes
+
+* stopped uploading frontend to gh release ([#369](https://github.com/Problematy/goodmap/issues/369)) ([45c4f0c](https://github.com/Problematy/goodmap/commit/45c4f0c19ef2b5440a4ebd7e9eb57e8eefeaadd2))
+
 ## [2.0.0-alpha](https://github.com/Problematy/goodmap/compare/1.8.1...2.0.0-alpha) (2026-06-29)
 
 
