@@ -83,15 +83,11 @@ jobs:
       - name: Build package
         run: make build
 
-      # TODO: also publish the frontend bundle to a CDN as part of the release,
-      # so deployments can opt out of serving it from Flask via
-      # GOODMAP_FRONTEND_LIB_URL. Until then it ships bundled in the wheel and is
-      # only attached to the GitHub Release below.
-      - name: Attach frontend bundle to GitHub Release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "${{ needs.release-please.outputs.tag_name }}" goodmap/static/frontend/index.min.js --clobber
-
+      # TODO: publish the frontend bundle to a CDN as part of the release, so
+      # deployments can opt out of serving it from Flask via
+      # GOODMAP_FRONTEND_LIB_URL. The bundle ships inside the wheel (pyproject
+      # include); it is intentionally NOT attached to the GitHub Release because
+      # published releases are immutable and reject post-publish asset uploads.
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b
         with:
