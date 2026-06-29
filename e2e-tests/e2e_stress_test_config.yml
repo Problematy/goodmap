@@ -3,7 +3,9 @@ SECRET_KEY: SECRET
 BLOG_PREFIX: "/blog"
 DB:
   TYPE: json_file
-  PATH: e2e_stress_test_data.json
+  # Relative to the repo root, where the backend is launched (make run-e2e-stress-backend)
+  # and where the dataset is generated (e2e-tests/e2e_stress_test_data.json).
+  PATH: e2e-tests/e2e_stress_test_data.json
 
 #TODO this should not be necessary argument
 LANGUAGES:
