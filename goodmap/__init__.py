@@ -1,3 +1,3 @@
-from goodmap.plugin import GoodmapPluginBase
+from goodmap.plugin import GoodmapPluginBase, MapOverlayPluginBase
 
-__all__ = ["GoodmapPluginBase"]
+__all__ = ["GoodmapPluginBase", "MapOverlayPluginBase"]

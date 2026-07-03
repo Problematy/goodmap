@@ -15,7 +15,7 @@ import { Markers } from './components/Markers';
 import { MapLoadingOverlay } from './components/MapLoadingOverlay';
 import { LocationProvider, useLocation } from './context/LocationContext';
 import { GoToLocation } from './components/GoToLocation';
-import GlobalPlugins from '../../plugins/GlobalPlugins';
+import MapOverlays from '../../plugins/MapOverlays';
 
 /**
  * Inner map component that uses the shared location context.
@@ -47,7 +47,7 @@ const MapComponentInner = () => {
             <AppToaster />
             <LocationPermissionBanner />
             <MapLoadingOverlay isLoading={isMapLoading} />
-            <GlobalPlugins />
+            <MapOverlays isMapLoading={isMapLoading} />
             <MapContainer
                 center={mapConfig.initialMapCoordinates}
                 zoom={mapConfig.initialMapZoom}

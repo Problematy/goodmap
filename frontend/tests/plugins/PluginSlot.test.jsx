@@ -14,7 +14,7 @@ describe('PluginSlot', () => {
     it('renders the registered component with given props', () => {
         const TestComponent = ({ message }) => <span>{message}</span>;
         TestComponent.propTypes = { message: PropTypes.string.isRequired };
-        act(() => registerPlugin('test-scope', TestComponent));
+        act(() => registerPlugin('test-scope', TestComponent, {}, 'field'));
 
         render(<PluginSlot scope="test-scope" props={{ message: 'hello plugin' }} />);
         expect(screen.getByText('hello plugin')).toBeInTheDocument();

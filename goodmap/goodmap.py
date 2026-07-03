@@ -25,6 +25,7 @@ from goodmap.db import (
     get_location_obligatory_fields,
 )
 from goodmap.feature_flags import EnableAdminPanel, UseLazyLoading
+from goodmap.plugin import MapOverlayPluginBase
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +48,8 @@ def _register_plugin_static_resources(
         has no static directory or loading fails.
     """
     try:
-        mod_path = os.path.dirname(os.path.realpath(inspect.getfile(ep.load())))
+        plugin_class = ep.load()
+        mod_path = os.path.dirname(os.path.realpath(inspect.getfile(plugin_class)))
         static_dir = os.path.join(mod_path, "static")
         if not os.path.isdir(static_dir):
             return None, None
@@ -65,10 +67,16 @@ def _register_plugin_static_resources(
             response.headers["Access-Control-Allow-Origin"] = "*"
             return response
 
+        # "kind" tells the frontend how to render the component: map overlays mount once
+        # over the map (MapOverlays); everything else renders in a marker field (PluginSlot).
+        is_overlay = isinstance(plugin_class, type) and issubclass(
+            plugin_class, MapOverlayPluginBase
+        )
         manifest_entry = {
             "scope": ep.name,
             "url": f"/plugins/{ep.name}/static/remoteEntry.js",
-            "module": "./Button",
+            "module": "./Plugin",
+            "kind": "overlay" if is_overlay else "field",
         }
         return bp, manifest_entry
     except Exception:
@@ -133,7 +141,15 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
 
     locale_dir = os.path.join(directory, "locale")
     config.translation_directories.append(locale_dir)
-    app = platzky.create_app_from_config(config)
+    # Register goodmap's own plugin ecosystem with platzky: MapOverlayPluginBase is a
+    # host-defined capability, and goodmap plugins are discovered from the
+    # "goodmap.plugins" entry-point group. This makes them config-gated (is_active)
+    # through platzky's normal plugin loader, alongside platzky's own plugins.
+    app = platzky.create_app_from_config(
+        config,
+        extra_plugin_bases=[MapOverlayPluginBase],
+        extra_plugins_entrypoints=[_PLUGIN_ENTRY_POINT_GROUP],
+    )
 
     frontend_static_dir = os.path.join(directory, "static", "frontend")
     app.register_blueprint(
@@ -160,11 +176,24 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
 
     app.extensions["goodmap"] = {"location_obligatory_fields": location_obligatory_fields}
 
+    try:
+        plugins_data = app.db.get_plugins_data()
+    except Exception:
+        logger.warning("Could not read plugin config data; frontend plugins get empty config")
+        plugins_data = {}
+
     plugin_manifest = []
     for ep in importlib.metadata.entry_points(group=_PLUGIN_ENTRY_POINT_GROUP):
+        plugin_cfg = plugins_data.get(ep.name)
+        # Only serve the frontend for plugins that are explicitly enabled in config.
+        # platzky's loader has already instantiated the active ones (gated identically),
+        # so the manifest stays in lockstep with the loaded backend plugins.
+        if plugin_cfg is None or not plugin_cfg.is_active:
+            continue
         bp, entry = _register_plugin_static_resources(ep)
-        if bp is not None:
+        if bp is not None and entry is not None:
             app.register_blueprint(bp)
+            entry["config"] = plugin_cfg.config
             plugin_manifest.append(entry)
 
     app.config["PLUGIN_MANIFEST"] = plugin_manifest
