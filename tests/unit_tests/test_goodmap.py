@@ -195,7 +195,6 @@ def _overlay_ep(name: str, plugin_dir: str | None):
 
     cls = type("Plugin", (MapOverlayPluginBase,), {})
     cls.__module__ = name
-    module.Plugin = cls
 
     ep = mock.MagicMock(spec=importlib.metadata.EntryPoint)
     ep.name = name
@@ -211,7 +210,10 @@ def _patch_entry_points(groups: dict[str, list[Any]]):
     """
 
     def _fake_entry_points(*_args: Any, **kwargs: Any) -> list[Any]:
-        return list(groups.get(kwargs.get("group"), []))
+        group = kwargs.get("group")
+        if group is None:
+            return []
+        return list(groups.get(group, []))
 
     return patch("importlib.metadata.entry_points", side_effect=_fake_entry_points)
 
