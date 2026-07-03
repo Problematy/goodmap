@@ -1,12 +1,23 @@
 """Base class for goodmap map plugins."""
 
-from typing import Any
+from typing import Any, ClassVar
 
 from platzky.plugin.plugin import PluginBase
 
 
 class GoodmapPluginBase(PluginBase):
-    """Base class for goodmap map plugins."""
+    """Base class (family root) for goodmap plugin capabilities.
+
+    Each concrete subclass declares ``capability`` — a stable identifier for the
+    integration point the plugin provides (recorded in ``PLUGIN_MANIFEST`` and
+    used by the frontend to route the plugin to its handler). Some capabilities
+    mount a component at a location (e.g. ``overlay`` over the map, ``field`` in
+    a marker); others alter behaviour with no fixed placement (e.g. swapping the
+    tile engine). ``capability`` names *what the plugin is*, independent of where
+    — or whether — it renders.
+    """
+
+    capability: ClassVar[str]
 
     def __init__(self, config: dict[str, Any]) -> None:
         super().__init__(config)
@@ -23,6 +34,8 @@ class MapOverlayPluginBase(GoodmapPluginBase):
     goodmap registers this capability with platzky (via ``extra_plugin_bases``)
     so overlay plugins are config-gated through the standard plugin loader.
     """
+
+    capability: ClassVar[str] = "overlay"
 
     def __init__(self, config: dict[str, Any]) -> None:
         super().__init__(config)

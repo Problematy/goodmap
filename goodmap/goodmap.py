@@ -67,16 +67,16 @@ def _register_plugin_static_resources(
             response.headers["Access-Control-Allow-Origin"] = "*"
             return response
 
-        # "kind" tells the frontend how to render the component: map overlays mount once
-        # over the map (MapOverlays); everything else renders in a marker field (PluginSlot).
-        is_overlay = isinstance(plugin_class, type) and issubclass(
-            plugin_class, MapOverlayPluginBase
-        )
+        # "capability" tells the frontend which integration point the plugin provides,
+        # so it can route to the right handler (e.g. mount an "overlay" over the map via
+        # MapOverlays, a "field" in a marker via PluginSlot). Each goodmap capability base
+        # declares its own value; reading it off the class keeps this open to new
+        # capabilities without a per-type branch here.
         manifest_entry = {
             "scope": ep.name,
             "url": f"/plugins/{ep.name}/static/remoteEntry.js",
             "module": "./Plugin",
-            "kind": "overlay" if is_overlay else "field",
+            "capability": plugin_class.capability,
         }
         return bp, manifest_entry
     except Exception:

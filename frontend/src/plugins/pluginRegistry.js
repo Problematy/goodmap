@@ -1,8 +1,8 @@
 const registry = new Map();
 const listeners = new Set();
 
-export function registerPlugin(scope, Component, config, kind) {
-    registry.set(scope, { Component, config, kind });
+export function registerPlugin(scope, Component, config, capability) {
+    registry.set(scope, { Component, config, capability });
     listeners.forEach(fn => fn());
 }
 
@@ -18,7 +18,7 @@ export function getPluginConfig(scope) {
 // plugins are mounted per marker via PluginSlot and are excluded here.
 export function getOverlayPlugins() {
     return Array.from(registry.entries())
-        .filter(([, entry]) => entry.kind === 'overlay')
+        .filter(([, entry]) => entry.capability === 'overlay')
         .map(([scope, { Component, config }]) => [scope, Component, config]);
 }
 

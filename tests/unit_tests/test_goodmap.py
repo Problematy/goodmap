@@ -242,7 +242,7 @@ def test_plugin_with_static_dir():
             "scope": "my_plugin",
             "url": "/plugins/my_plugin/static/remoteEntry.js",
             "module": "./Plugin",
-            "kind": "overlay",
+            "capability": "overlay",
             "config": {"foo": "bar"},
         }
     ]
