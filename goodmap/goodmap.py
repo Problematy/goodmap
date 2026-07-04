@@ -179,7 +179,10 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
     try:
         plugins_data = app.db.get_plugins_data()
     except Exception:
-        logger.warning("Could not read plugin config data; frontend plugins get empty config")
+        logger.warning(
+            "Could not read plugin config data; frontend plugins get empty config",
+            exc_info=True,
+        )
         plugins_data = {}
 
     plugin_manifest = []

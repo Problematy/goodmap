@@ -45,10 +45,11 @@ const FieldRenderer = ({ value }) => {
     const type = value?.type;
     const [Renderer, setRenderer] = useState(() => (type ? resolveFieldRenderer(type) : undefined));
 
-    useEffect(
-        () => subscribe(() => setRenderer(() => (type ? resolveFieldRenderer(type) : undefined))),
-        [type],
-    );
+    useEffect(() => {
+        const resolve = () => setRenderer(() => (type ? resolveFieldRenderer(type) : undefined));
+        resolve(); // re-resolve when `type` changes, not only on later registry events
+        return subscribe(resolve);
+    }, [type]);
 
     if (!Renderer) {
         return getContentAsString(type ? value.displayValue ?? value.value ?? '' : value);

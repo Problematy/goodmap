@@ -46,11 +46,10 @@ HyperlinkField.propTypes = {
  * URL in a new tab.
  */
 export const CTAButtonField = ({ value, displayValue = null }) => {
-    const handleRedirect = () => {
-        const safe = sanitizeUrl(value);
-        if (!safe) return;
-        globalThis.open(safe, '_blank');
-    };
+    const text = displayValue || value;
+    const safe = sanitizeUrl(value);
+    if (!safe) return text;
+    const handleRedirect = () => globalThis.open(safe, '_blank');
     return (
         <button
             type="button"
@@ -58,7 +57,7 @@ export const CTAButtonField = ({ value, displayValue = null }) => {
             style={MarkerCTAButtonStyle}
             data-variant="contained"
         >
-            {displayValue || value}
+            {text}
         </button>
     );
 };

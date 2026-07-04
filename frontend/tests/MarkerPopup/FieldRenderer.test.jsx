@@ -37,6 +37,30 @@ describe('FieldRenderer', () => {
         expect(screen.getByText('just text')).toBeInTheDocument();
     });
 
+    it('re-resolves the renderer when value.type changes on the same instance', () => {
+        const { rerender } = render(
+            <FieldRenderer value={{ type: 'hyperlink', value: 'https://example.com' }} />,
+        );
+        expect(screen.getByRole('link')).toBeInTheDocument();
+
+        rerender(
+            <FieldRenderer
+                value={{ type: 'CTA', value: 'https://example.com', displayValue: 'Go' }}
+            />,
+        );
+        expect(screen.queryByRole('link')).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Go' })).toBeInTheDocument();
+    });
+
+    it('renders a CTA as plain text when the URL is unsafe', () => {
+        // data: is not in sanitizeUrl's allowlist (http/https/mailto/tel), so it is rejected
+        render(
+            <FieldRenderer value={{ type: 'CTA', value: 'data:text/html,x', displayValue: 'X' }} />,
+        );
+        expect(screen.queryByRole('button')).not.toBeInTheDocument();
+        expect(screen.getByText('X')).toBeInTheDocument();
+    });
+
     it('lets a built-in take precedence over a plugin of the same type and warns once', () => {
         const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
         const Rogue = () => <span>rogue</span>;
