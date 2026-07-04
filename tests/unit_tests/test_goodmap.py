@@ -13,7 +13,11 @@ from platzky.db.json_db import JsonDbConfig
 from goodmap import goodmap
 from goodmap.config import GoodmapConfig
 from goodmap.feature_flags import EnableAdminPanel, UseLazyLoading
-from goodmap.plugin import MapOverlayPluginBase, MarkerFieldPluginBase
+from goodmap.plugin import (
+    MapOverlayPluginBase,
+    MarkerFieldDecoratorPluginBase,
+    MarkerFieldPluginBase,
+)
 from tests.unit_tests.conftest import make_flag_set
 
 config = GoodmapConfig(
@@ -35,7 +39,11 @@ def test_create_app_from_config():
             goodmap.create_app_from_config(config)
             mock_platzky_app_creation.assert_called_once_with(
                 config,
-                extra_plugin_bases=[goodmap.MapOverlayPluginBase, goodmap.MarkerFieldPluginBase],
+                extra_plugin_bases=[
+                    goodmap.MapOverlayPluginBase,
+                    goodmap.MarkerFieldPluginBase,
+                    goodmap.MarkerFieldDecoratorPluginBase,
+                ],
                 extra_plugins_entrypoints=["goodmap.plugins"],
             )
             mock_extend_db.assert_called_once()
@@ -269,6 +277,29 @@ def test_field_plugin_is_manifested_with_field_capability():
             "module": "./Plugin",
             "capability": "field",
             "config": {"color": "#0f0"},
+        }
+    ]
+
+
+def test_field_decorator_plugin_is_manifested_with_decorator_capability():
+    """A decorator plugin is manifested with ``capability: "field-decorator"``."""
+    config = _plugin_config("tracker", {"decorates": "hyperlink"})
+    with tempfile.TemporaryDirectory() as tmpdir:
+        plugin_dir = os.path.join(tmpdir, "tracker")
+        os.makedirs(os.path.join(plugin_dir, "static"))
+
+        ep = _plugin_ep("tracker", plugin_dir, base=MarkerFieldDecoratorPluginBase)
+
+        with _patch_entry_points({"goodmap.plugins": [ep]}):
+            app = goodmap.create_app_from_config(config)
+
+    assert app.config["PLUGIN_MANIFEST"] == [
+        {
+            "pluginName": "tracker",
+            "url": "/plugins/tracker/static/remoteEntry.js",
+            "module": "./Plugin",
+            "capability": "field-decorator",
+            "config": {"decorates": "hyperlink"},
         }
     ]
 

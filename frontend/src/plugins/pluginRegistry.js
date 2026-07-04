@@ -22,6 +22,15 @@ export function getOverlayPlugins() {
         .map(([pluginName, { Plugin, config }]) => [pluginName, Plugin, config]);
 }
 
+// Field decorators (capability "field-decorator") wrap the rendered output of the
+// renderer for their target `type`, declared via `config.decorates`. Returned in
+// registration order so multiple decorators compose predictably.
+export function getFieldDecorators(type) {
+    return Array.from(registry.values())
+        .filter(entry => entry.capability === 'field-decorator' && entry.config?.decorates === type)
+        .map(entry => ({ Decorator: entry.Plugin, config: entry.config }));
+}
+
 export function subscribe(fn) {
     listeners.add(fn);
     return () => listeners.delete(fn);

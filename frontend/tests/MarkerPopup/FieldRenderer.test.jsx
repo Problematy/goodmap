@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import '@testing-library/jest-dom';
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, act, within } from '@testing-library/react';
 import FieldRenderer from '../../src/components/MarkerPopup/FieldRenderer';
 import { registerPlugin } from '../../src/plugins/pluginRegistry';
 
@@ -71,5 +71,26 @@ describe('FieldRenderer', () => {
         expect(screen.getByRole('link')).toBeInTheDocument();
         expect(warn).toHaveBeenCalledWith(expect.stringContaining('hyperlink'));
         warn.mockRestore();
+    });
+
+    it('wraps the base renderer output with a decorator matching the type', () => {
+        const Badge = ({ children }) => <div data-testid="badge">{children}</div>;
+        Badge.propTypes = { children: PropTypes.node.isRequired };
+        act(() => registerPlugin('badge', Badge, { decorates: 'hyperlink' }, 'field-decorator'));
+
+        render(<FieldRenderer value={{ type: 'hyperlink', value: 'https://example.com' }} />);
+
+        // The base (sanitizing) renderer still runs, inside the decorator wrapper.
+        const badge = screen.getByTestId('badge');
+        expect(within(badge).getByRole('link')).toHaveAttribute('href', 'https://example.com/');
+    });
+
+    it('does not apply a decorator registered for a different type', () => {
+        const Badge = ({ children }) => <div data-testid="cta-badge">{children}</div>;
+        Badge.propTypes = { children: PropTypes.node.isRequired };
+        act(() => registerPlugin('cta-badge', Badge, { decorates: 'CTA' }, 'field-decorator'));
+
+        render(<FieldRenderer value={{ type: 'hyperlink', value: 'https://example.com' }} />);
+        expect(screen.queryByTestId('cta-badge')).not.toBeInTheDocument();
     });
 });

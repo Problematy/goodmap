@@ -57,3 +57,22 @@ class MarkerFieldPluginBase(GoodmapPluginBase):
 
     def __init__(self, config: dict[str, Any]) -> None:
         super().__init__(config)
+
+
+class MarkerFieldDecoratorPluginBase(GoodmapPluginBase):
+    """Capability: a plugin that decorates (wraps) another field renderer's output.
+
+    A decorator's frontend component receives the base renderer's already-rendered
+    output as ``children`` and composes around it (icon, badge, tracking wrapper,
+    styling). The base renderer still runs, so first-party behaviour — e.g. the URL
+    sanitization in the built-in link/button — cannot be bypassed. The field ``type``
+    a decorator wraps is taken from its ``config`` (``{"decorates": "<type>"}``).
+
+    goodmap registers this capability with platzky (via ``extra_plugin_bases``) so
+    decorator plugins are config-gated through the standard plugin loader.
+    """
+
+    capability: ClassVar[str] = "field-decorator"
+
+    def __init__(self, config: dict[str, Any]) -> None:
+        super().__init__(config)

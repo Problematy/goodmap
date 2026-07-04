@@ -25,7 +25,11 @@ from goodmap.db import (
     get_location_obligatory_fields,
 )
 from goodmap.feature_flags import EnableAdminPanel, UseLazyLoading
-from goodmap.plugin import MapOverlayPluginBase, MarkerFieldPluginBase
+from goodmap.plugin import (
+    MapOverlayPluginBase,
+    MarkerFieldDecoratorPluginBase,
+    MarkerFieldPluginBase,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -147,7 +151,11 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
     # through platzky's normal plugin loader, alongside platzky's own plugins.
     app = platzky.create_app_from_config(
         config,
-        extra_plugin_bases=[MapOverlayPluginBase, MarkerFieldPluginBase],
+        extra_plugin_bases=[
+            MapOverlayPluginBase,
+            MarkerFieldPluginBase,
+            MarkerFieldDecoratorPluginBase,
+        ],
         extra_plugins_entrypoints=[_PLUGIN_ENTRY_POINT_GROUP],
     )
 
