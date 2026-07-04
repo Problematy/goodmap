@@ -8,6 +8,8 @@ import { builtinFieldRenderers } from './builtinFieldRenderers';
 // is visible to the author instead of silently shadowed.
 const shadowedPlugins = new Set();
 
+// TODO: add decorator capability to types.
+
 /**
  * Resolves a field `type` to its renderer component: first-party built-ins take
  * precedence, then field-capability plugins (looked up by name in the registry).
