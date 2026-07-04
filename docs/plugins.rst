@@ -13,13 +13,14 @@ through platzky's normal plugin loader — see :doc:`platzky's plugin docs
 Two kinds of Goodmap frontend plugins
 -------------------------------------
 
-The capability a plugin subclasses determines *how* its frontend renders:
+The capability a plugin provides determines *how* its frontend renders:
 
-**Field renderers** (``platzky.plugin.ContentTransformerPluginBase`` + shortcodes)
-    Render a single location field inside a marker popup. When a plugin-contributed
-    field appears in a location's ``visible_data`` and the plugin is active, the API
-    wraps the field value as ``{"scope": "<shortcode_name>", ...}``; the frontend
-    detects the ``scope`` key and mounts the plugin component there (``PluginSlot``).
+**Field renderers** (:class:`goodmap.plugin.MarkerFieldPluginBase` + a platzky shortcode)
+    Render a single location field inside a marker popup. The plugin's shortcode
+    transforms the field value into ``{"type": "<name>", ...}`` on the backend; its
+    frontend component (capability ``"field"``) is resolved by ``type`` and mounted by
+    ``FieldRenderer``. The built-in field types ``hyperlink`` and ``CTA`` resolve through
+    the same mechanism and take precedence over a plugin of the same name.
 
 **Map overlays** (:class:`goodmap.plugin.MapOverlayPluginBase`)
     Render a component once *over the whole map*, not tied to any marker — e.g. a
@@ -66,18 +67,20 @@ changes:
     }
 
 Goodmap serves the bundle at ``/plugins/<name>/static/remoteEntry.js`` and adds a
-manifest entry ``{scope, url, module: "./Plugin", kind, config}``. ``kind`` is
-``"overlay"`` for :class:`~goodmap.plugin.MapOverlayPluginBase` plugins and ``"field"``
-otherwise; the frontend uses it to route overlays to ``MapOverlays`` and field
-renderers to ``PluginSlot``.
+manifest entry ``{pluginName, url, module: "./Plugin", capability, config}``. Each
+Goodmap capability base class declares its own ``capability`` value —
+:class:`~goodmap.plugin.MapOverlayPluginBase` declares ``"overlay"`` and
+:class:`~goodmap.plugin.MarkerFieldPluginBase` declares ``"field"`` — and the frontend
+uses it to mount the component at the right place (overlays over the map by
+``MapOverlays``; field renderers in a marker by ``FieldRenderer``).
 
 Field renderers and ``visible_data``
 ------------------------------------
 
 ``visible_data`` is a list of field names displayed in location markers (see
 :ref:`data-model-visible_data`). When a field is contributed by an active field-renderer
-plugin, the API wraps its value with ``{"scope": "<shortcode_name>", ...}`` and the
-frontend renders the matching plugin component in the marker popup.
+plugin, its shortcode transforms the value into ``{"type": "<name>", ...}`` and the
+frontend renders the matching component (resolved by ``type``) in the marker popup.
 
 Configuration
 -------------
@@ -107,17 +110,3 @@ Each plugin defines its own ``config`` schema — refer to the plugin's document
 for available fields.
 
 After adding or removing a plugin, restart the Flask server.
-
-If a field-renderer plugin is removed from the configuration while a location still
-has fields referencing it, those fields are silently dropped from the API response. A
-debug message is logged:
-
-.. code-block:: text
-
-   DEBUG:goodmap.formatter:Dropping field 'promocode': unconfigured plugin data ...
-
-To see these messages, enable debug logging:
-
-.. code-block:: bash
-
-   export FLASK_DEBUG=1

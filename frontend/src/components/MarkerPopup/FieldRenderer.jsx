@@ -33,26 +33,37 @@ export const resolveFieldRenderer = type => {
 };
 
 /**
- * Renders a marker field value through its resolved renderer. Built-ins resolve
- * synchronously; field plugins may load asynchronously, so this subscribes to the
- * registry and re-renders when a matching plugin arrives. Falls back to a string
- * representation while no renderer is available.
+ * Renders a marker field value.
+ *
+ * A value carrying a `type` is dispatched to its renderer — a built-in (hyperlink,
+ * CTA) or a field plugin. Built-ins resolve synchronously; field plugins may load
+ * asynchronously, so this subscribes to the registry and re-renders when a matching
+ * plugin arrives. Anything with no resolvable renderer — a typeless object, a
+ * primitive, or a not-yet-loaded plugin — falls back to a string representation.
  */
-const FieldRenderer = ({ type, props }) => {
-    const [Renderer, setRenderer] = useState(() => resolveFieldRenderer(type));
+const FieldRenderer = ({ value }) => {
+    const type = value?.type;
+    const [Renderer, setRenderer] = useState(() => (type ? resolveFieldRenderer(type) : undefined));
 
-    useEffect(() => subscribe(() => setRenderer(() => resolveFieldRenderer(type))), [type]);
+    useEffect(
+        () => subscribe(() => setRenderer(() => (type ? resolveFieldRenderer(type) : undefined))),
+        [type],
+    );
 
     if (!Renderer) {
-        return getContentAsString(props.displayValue ?? props.value ?? '');
+        return getContentAsString(type ? value.displayValue ?? value.value ?? '' : value);
     }
     // eslint-disable-next-line react/jsx-props-no-spreading
-    return <Renderer {...props} />;
+    return <Renderer {...value} />;
 };
 
 FieldRenderer.propTypes = {
-    type: PropTypes.string.isRequired,
-    props: PropTypes.object.isRequired, // eslint-disable-line react/forbid-prop-types
+    value: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.number,
+        PropTypes.array,
+        PropTypes.object,
+    ]).isRequired,
 };
 
 export default FieldRenderer;

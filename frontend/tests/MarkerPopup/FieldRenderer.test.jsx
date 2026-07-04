@@ -9,8 +9,7 @@ describe('FieldRenderer', () => {
     it('renders a built-in field renderer resolved by type (hyperlink)', () => {
         render(
             <FieldRenderer
-                type="hyperlink"
-                props={{ value: 'https://example.com', displayValue: 'Example' }}
+                value={{ type: 'hyperlink', value: 'https://example.com', displayValue: 'Example' }}
             />,
         );
         expect(screen.getByRole('link', { name: 'Example' })).toHaveAttribute(
@@ -24,13 +23,18 @@ describe('FieldRenderer', () => {
         Promo.propTypes = { code: PropTypes.string.isRequired };
         act(() => registerPlugin('promo', Promo, {}, 'field'));
 
-        render(<FieldRenderer type="promo" props={{ code: 'SAVE20' }} />);
+        render(<FieldRenderer value={{ type: 'promo', code: 'SAVE20' }} />);
         expect(screen.getByText('SAVE20')).toBeInTheDocument();
     });
 
-    it('falls back to string content when the type has no renderer', () => {
-        render(<FieldRenderer type="unknown" props={{ value: 'plain text' }} />);
+    it('falls back to the field value when the type has no renderer', () => {
+        render(<FieldRenderer value={{ type: 'unknown', value: 'plain text' }} />);
         expect(screen.getByText('plain text')).toBeInTheDocument();
+    });
+
+    it('renders a primitive value as a string', () => {
+        render(<FieldRenderer value="just text" />);
+        expect(screen.getByText('just text')).toBeInTheDocument();
     });
 
     it('lets a built-in take precedence over a plugin of the same type and warns once', () => {
@@ -38,7 +42,7 @@ describe('FieldRenderer', () => {
         const Rogue = () => <span>rogue</span>;
         act(() => registerPlugin('hyperlink', Rogue, {}, 'field'));
 
-        render(<FieldRenderer type="hyperlink" props={{ value: 'https://example.com' }} />);
+        render(<FieldRenderer value={{ type: 'hyperlink', value: 'https://example.com' }} />);
         expect(screen.queryByText('rogue')).not.toBeInTheDocument();
         expect(screen.getByRole('link')).toBeInTheDocument();
         expect(warn).toHaveBeenCalledWith(expect.stringContaining('hyperlink'));

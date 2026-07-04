@@ -13,7 +13,7 @@ from platzky.db.json_db import JsonDbConfig
 from goodmap import goodmap
 from goodmap.config import GoodmapConfig
 from goodmap.feature_flags import EnableAdminPanel, UseLazyLoading
-from goodmap.plugin import MapOverlayPluginBase
+from goodmap.plugin import MapOverlayPluginBase, MarkerFieldPluginBase
 from tests.unit_tests.conftest import make_flag_set
 
 config = GoodmapConfig(
@@ -35,7 +35,7 @@ def test_create_app_from_config():
             goodmap.create_app_from_config(config)
             mock_platzky_app_creation.assert_called_once_with(
                 config,
-                extra_plugin_bases=[goodmap.MapOverlayPluginBase],
+                extra_plugin_bases=[goodmap.MapOverlayPluginBase, goodmap.MarkerFieldPluginBase],
                 extra_plugins_entrypoints=["goodmap.plugins"],
             )
             mock_extend_db.assert_called_once()
@@ -175,12 +175,14 @@ def test_index_route_location_schema_with_lazy_loading():
     assert "test_category" in response_text
 
 
-def _overlay_ep(name: str, plugin_dir: str | None):
-    """Create a mock EntryPoint whose load() returns a real MapOverlayPluginBase subclass.
+def _plugin_ep(name: str, plugin_dir: str | None, base: type = MapOverlayPluginBase):
+    """Create a mock EntryPoint whose load() returns a real ``base`` subclass.
 
-    The class's module file resolves to ``plugin_dir/__init__.py`` so the static-resource
-    lookup points at ``plugin_dir/static``. Pass ``plugin_dir=None`` to make the module
-    file unresolvable, exercising the static-registration failure path.
+    ``base`` is the goodmap capability base the plugin subclasses (its ``capability`` is
+    read straight off the class into the manifest). The class's module file resolves to
+    ``plugin_dir/__init__.py`` so the static-resource lookup points at ``plugin_dir/static``.
+    Pass ``plugin_dir=None`` to make the module file unresolvable, exercising the
+    static-registration failure path.
     """
     module = types.ModuleType(name)
     if plugin_dir is not None:
@@ -193,7 +195,7 @@ def _overlay_ep(name: str, plugin_dir: str | None):
         module.__file__ = None
     sys.modules[name] = module
 
-    cls = type("Plugin", (MapOverlayPluginBase,), {})
+    cls = type("Plugin", (base,), {})
     cls.__module__ = name
 
     ep = mock.MagicMock(spec=importlib.metadata.EntryPoint)
@@ -218,7 +220,7 @@ def _patch_entry_points(groups: dict[str, list[Any]]):
     return patch("importlib.metadata.entry_points", side_effect=_fake_entry_points)
 
 
-def _overlay_plugin_config(name: str, plugin_config: dict[str, Any] | None = None) -> GoodmapConfig:
+def _plugin_config(name: str, plugin_config: dict[str, Any] | None = None) -> GoodmapConfig:
     return _make_test_app_config(
         extra_data={"plugins": {name: {"is_active": True, "config": plugin_config or {}}}}
     )
@@ -226,12 +228,12 @@ def _overlay_plugin_config(name: str, plugin_config: dict[str, Any] | None = Non
 
 def test_plugin_with_static_dir():
     """Active overlay plugin with a static dir gets a blueprint + manifest entry incl. config."""
-    config = _overlay_plugin_config("my_plugin", {"foo": "bar"})
+    config = _plugin_config("my_plugin", {"foo": "bar"})
     with tempfile.TemporaryDirectory() as tmpdir:
         plugin_dir = os.path.join(tmpdir, "my_plugin")
         os.makedirs(os.path.join(plugin_dir, "static"))
 
-        ep = _overlay_ep("my_plugin", plugin_dir)
+        ep = _plugin_ep("my_plugin", plugin_dir)
 
         with _patch_entry_points({"goodmap.plugins": [ep]}):
             app = goodmap.create_app_from_config(config)
@@ -248,6 +250,29 @@ def test_plugin_with_static_dir():
     ]
 
 
+def test_field_plugin_is_manifested_with_field_capability():
+    """A MarkerFieldPluginBase plugin is manifested with ``capability: "field"``."""
+    config = _plugin_config("promo", {"color": "#0f0"})
+    with tempfile.TemporaryDirectory() as tmpdir:
+        plugin_dir = os.path.join(tmpdir, "promo")
+        os.makedirs(os.path.join(plugin_dir, "static"))
+
+        ep = _plugin_ep("promo", plugin_dir, base=MarkerFieldPluginBase)
+
+        with _patch_entry_points({"goodmap.plugins": [ep]}):
+            app = goodmap.create_app_from_config(config)
+
+    assert app.config["PLUGIN_MANIFEST"] == [
+        {
+            "pluginName": "promo",
+            "url": "/plugins/promo/static/remoteEntry.js",
+            "module": "./Plugin",
+            "capability": "field",
+            "config": {"color": "#0f0"},
+        }
+    ]
+
+
 def test_plugin_inactive_is_not_served():
     """A plugin that is installed but not active in config gets no frontend manifest entry."""
     config = _make_test_app_config()  # no plugins configured -> inactive
@@ -255,7 +280,7 @@ def test_plugin_inactive_is_not_served():
         plugin_dir = os.path.join(tmpdir, "off_plugin")
         os.makedirs(os.path.join(plugin_dir, "static"))
 
-        ep = _overlay_ep("off_plugin", plugin_dir)
+        ep = _plugin_ep("off_plugin", plugin_dir)
 
         with _patch_entry_points({"goodmap.plugins": [ep]}):
             app = goodmap.create_app_from_config(config)
@@ -266,10 +291,10 @@ def test_plugin_inactive_is_not_served():
 
 def test_plugin_without_static_dir():
     """Active overlay plugin without a static dir gets no blueprint/manifest entry."""
-    config = _overlay_plugin_config("no_static_plugin")
+    config = _plugin_config("no_static_plugin")
     with tempfile.TemporaryDirectory() as tmpdir:
         plugin_dir = os.path.join(tmpdir, "no_static_plugin")
-        ep = _overlay_ep("no_static_plugin", plugin_dir)
+        ep = _plugin_ep("no_static_plugin", plugin_dir)
 
         with _patch_entry_points({"goodmap.plugins": [ep]}):
             app = goodmap.create_app_from_config(config)
@@ -280,8 +305,8 @@ def test_plugin_without_static_dir():
 
 def test_plugin_static_registration_failure_is_skipped():
     """An active plugin whose static resources can't be resolved is skipped with a warning."""
-    config = _overlay_plugin_config("weird_plugin")
-    ep = _overlay_ep("weird_plugin", plugin_dir=None)  # module file unresolvable
+    config = _plugin_config("weird_plugin")
+    ep = _plugin_ep("weird_plugin", plugin_dir=None)  # module file unresolvable
 
     with _patch_entry_points({"goodmap.plugins": [ep]}):
         with patch.object(goodmap.logger, "warning") as mock_warning:
@@ -424,7 +449,7 @@ def test_field_renderer_shortcodes_collected_from_content_transformer_plugins() 
 
 def test_plugin_blueprint_sets_cors_header():
     """Should set Access-Control-Allow-Origin on plugin blueprint responses."""
-    config = _overlay_plugin_config("cors_plugin")
+    config = _plugin_config("cors_plugin")
     with tempfile.TemporaryDirectory() as tmpdir:
         plugin_dir = os.path.join(tmpdir, "cors_plugin")
         static_dir = os.path.join(plugin_dir, "static")
@@ -433,7 +458,7 @@ def test_plugin_blueprint_sets_cors_header():
         # Create a test file in the static dir
         open(os.path.join(static_dir, "test.js"), "w").close()
 
-        ep = _overlay_ep("cors_plugin", plugin_dir)
+        ep = _plugin_ep("cors_plugin", plugin_dir)
 
         with _patch_entry_points({"goodmap.plugins": [ep]}):
             app = goodmap.create_app_from_config(config)

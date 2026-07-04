@@ -26,3 +26,14 @@ API Endpoints
    :members:
    :undoc-members:
    :show-inheritance:
+
+Plugin Capabilities
+-------------------
+
+Base classes a Goodmap plugin subclasses to declare its capability (see
+:doc:`plugins`).
+
+.. automodule:: goodmap.plugin
+   :members:
+   :undoc-members:
+   :show-inheritance:

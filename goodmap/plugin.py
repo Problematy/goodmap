@@ -39,3 +39,21 @@ class MapOverlayPluginBase(GoodmapPluginBase):
 
     def __init__(self, config: dict[str, Any]) -> None:
         super().__init__(config)
+
+
+class MarkerFieldPluginBase(GoodmapPluginBase):
+    """Capability: a plugin that renders a single location field inside a marker popup.
+
+    Field plugins contribute a frontend component (served via Module Federation) that
+    renders a marker field whose ``type`` matches the plugin. The field's value is
+    produced by the plugin's platzky shortcode as ``{"type": "<name>", ...}`` and mounted
+    by ``FieldRenderer`` on the frontend, which resolves ``type`` to the component.
+
+    goodmap registers this capability with platzky (via ``extra_plugin_bases``) so field
+    plugins are config-gated through the standard plugin loader.
+    """
+
+    capability: ClassVar[str] = "field"
+
+    def __init__(self, config: dict[str, Any]) -> None:
+        super().__init__(config)
