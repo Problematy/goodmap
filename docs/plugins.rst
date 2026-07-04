@@ -95,8 +95,8 @@ to the React component as the ``config`` prop:
          "is_active": true,
          "config": {
            "messages": {
-             "pl": "Nie ma nic w pobliżu. Zobacz <a href='https://partner.example.com'>naszych partnerów</a>",
-             "en": "Nothing nearby. See <a href='https://partner.example.com'>our partners</a>"
+             "pl": "Nie ma nic w pobliżu",
+             "en": "Nothing nearby"
            }
          }
        }
