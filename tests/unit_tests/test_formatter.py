@@ -24,7 +24,7 @@ class _FakeShortcode(Shortcode):
         self._defaults = defaults or {}
 
     def transform_field_value(self, value: object) -> dict[str, object]:
-        return {**self._defaults, "value": value, "pluginName": self.name}
+        return {**self._defaults, "value": value, "type": self.name}
 
     def render(self, attrs: ShortcodeAttrs, content: str) -> str:
         return content
@@ -33,7 +33,7 @@ class _FakeShortcode(Shortcode):
 def test_field_plugin_transforms_value():
     place = {**test_place, "promo_code": "SAVE20"}
     result = prepare_pin(place, ["promo_code"], [], shortcodes={"promo_code": _FakeShortcode()})
-    assert result["data"] == [["promo_code", {"pluginName": "promo_code", "value": "SAVE20"}]]
+    assert result["data"] == [["promo_code", {"type": "promo_code", "value": "SAVE20"}]]
 
 
 def test_field_plugin_merges_defaults():
@@ -43,7 +43,7 @@ def test_field_plugin_merges_defaults():
     assert result["data"] == [
         [
             "promo_code",
-            {"pluginName": "promo_code", "value": "SAVE20", "color": "#4caf50", "text": "Reveal"},
+            {"type": "promo_code", "value": "SAVE20", "color": "#4caf50", "text": "Reveal"},
         ]
     ]
 

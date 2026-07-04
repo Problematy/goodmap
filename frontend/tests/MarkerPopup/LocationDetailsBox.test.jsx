@@ -95,9 +95,7 @@ describe('should render marker popup correctly', () => {
             it('renders the field label for a plugin field even when plugin is not loaded', () => {
                 const placeWithPlugin = {
                     ...correctMarkerData,
-                    data: [
-                        ['promocode', { pluginName: 'promocode', code: 'U1VN', text: 'Get it' }],
-                    ],
+                    data: [['promocode', { type: 'promocode', code: 'U1VN', text: 'Get it' }]],
                     metadata: { uuid: 'test-uuid' },
                 };
                 render(<LocationDetailsBox place={placeWithPlugin} />);

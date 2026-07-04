@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { getOverlayPlugins, subscribe } from './pluginRegistry';
 
 // Renders map-overlay plugins (MapOverlayPluginBase): components mounted once over the
-// map, not tied to any marker. Field-renderer plugins are mounted per marker by PluginSlot.
+// map, not tied to any marker. Field-renderer plugins are mounted per marker by FieldRenderer.
 // Each overlay receives `config` and `isMapLoading` so it can defer rendering until the
 // map's data has loaded (e.g. avoid flashing a "no points" message during the first fetch).
 const MapOverlays = ({ isMapLoading }) => {

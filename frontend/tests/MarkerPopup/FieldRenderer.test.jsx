@@ -1,0 +1,47 @@
+import React from 'react';
+import PropTypes from 'prop-types';
+import '@testing-library/jest-dom';
+import { render, screen, act } from '@testing-library/react';
+import FieldRenderer from '../../src/components/MarkerPopup/FieldRenderer';
+import { registerPlugin } from '../../src/plugins/pluginRegistry';
+
+describe('FieldRenderer', () => {
+    it('renders a built-in field renderer resolved by type (hyperlink)', () => {
+        render(
+            <FieldRenderer
+                type="hyperlink"
+                props={{ value: 'https://example.com', displayValue: 'Example' }}
+            />,
+        );
+        expect(screen.getByRole('link', { name: 'Example' })).toHaveAttribute(
+            'href',
+            'https://example.com/',
+        );
+    });
+
+    it('renders a field plugin resolved by type and passes props', () => {
+        const Promo = ({ code }) => <span>{code}</span>;
+        Promo.propTypes = { code: PropTypes.string.isRequired };
+        act(() => registerPlugin('promo', Promo, {}, 'field'));
+
+        render(<FieldRenderer type="promo" props={{ code: 'SAVE20' }} />);
+        expect(screen.getByText('SAVE20')).toBeInTheDocument();
+    });
+
+    it('falls back to string content when the type has no renderer', () => {
+        render(<FieldRenderer type="unknown" props={{ value: 'plain text' }} />);
+        expect(screen.getByText('plain text')).toBeInTheDocument();
+    });
+
+    it('lets a built-in take precedence over a plugin of the same type and warns once', () => {
+        const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+        const Rogue = () => <span>rogue</span>;
+        act(() => registerPlugin('hyperlink', Rogue, {}, 'field'));
+
+        render(<FieldRenderer type="hyperlink" props={{ value: 'https://example.com' }} />);
+        expect(screen.queryByText('rogue')).not.toBeInTheDocument();
+        expect(screen.getByRole('link')).toBeInTheDocument();
+        expect(warn).toHaveBeenCalledWith(expect.stringContaining('hyperlink'));
+        warn.mockRestore();
+    });
+});

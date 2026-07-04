@@ -15,7 +15,7 @@ export function getPluginConfig(pluginName) {
 }
 
 // Map-overlay plugins mount once over the map (see MapOverlays); field-renderer
-// plugins are mounted per marker via PluginSlot and are excluded here.
+// plugins are mounted per marker via FieldRenderer and are excluded here.
 export function getOverlayPlugins() {
     return Array.from(registry.entries())
         .filter(([, entry]) => entry.capability === 'overlay')
