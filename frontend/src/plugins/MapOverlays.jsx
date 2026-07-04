@@ -13,8 +13,8 @@ const MapOverlays = ({ isMapLoading }) => {
 
     return (
         <>
-            {plugins.map(([scope, Component, config]) => (
-                <Component key={scope} config={config} isMapLoading={isMapLoading} />
+            {plugins.map(([pluginName, Plugin, config]) => (
+                <Plugin key={pluginName} config={config} isMapLoading={isMapLoading} />
             ))}
         </>
     );

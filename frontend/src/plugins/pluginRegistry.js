@@ -1,17 +1,17 @@
 const registry = new Map();
 const listeners = new Set();
 
-export function registerPlugin(scope, Component, config, capability) {
-    registry.set(scope, { Component, config, capability });
+export function registerPlugin(pluginName, Plugin, config, capability) {
+    registry.set(pluginName, { Plugin, config, capability });
     listeners.forEach(fn => fn());
 }
 
-export function getPlugin(scope) {
-    return registry.get(scope)?.Component;
+export function getPlugin(pluginName) {
+    return registry.get(pluginName)?.Plugin;
 }
 
-export function getPluginConfig(scope) {
-    return registry.get(scope)?.config ?? {};
+export function getPluginConfig(pluginName) {
+    return registry.get(pluginName)?.config ?? {};
 }
 
 // Map-overlay plugins mount once over the map (see MapOverlays); field-renderer
@@ -19,7 +19,7 @@ export function getPluginConfig(scope) {
 export function getOverlayPlugins() {
     return Array.from(registry.entries())
         .filter(([, entry]) => entry.capability === 'overlay')
-        .map(([scope, { Component, config }]) => [scope, Component, config]);
+        .map(([pluginName, { Plugin, config }]) => [pluginName, Plugin, config]);
 }
 
 export function subscribe(fn) {

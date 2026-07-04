@@ -2,20 +2,20 @@ import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { getPlugin, subscribe } from './pluginRegistry';
 
-const PluginSlot = ({ scope, props: componentProps }) => {
-    const [Component, setComponent] = useState(() => getPlugin(scope));
+const PluginSlot = ({ pluginName, props: componentProps }) => {
+    const [Plugin, setPlugin] = useState(() => getPlugin(pluginName));
 
-    useEffect(() => subscribe(() => setComponent(() => getPlugin(scope))), [scope]);
+    useEffect(() => subscribe(() => setPlugin(() => getPlugin(pluginName))), [pluginName]);
 
-    if (!Component) {
+    if (!Plugin) {
         return null;
     }
     // eslint-disable-next-line react/jsx-props-no-spreading
-    return <Component {...componentProps} />;
+    return <Plugin {...componentProps} />;
 };
 
 PluginSlot.propTypes = {
-    scope: PropTypes.string.isRequired,
+    pluginName: PropTypes.string.isRequired,
     props: PropTypes.object.isRequired, // eslint-disable-line react/forbid-prop-types
 };
 

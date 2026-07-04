@@ -73,7 +73,7 @@ def _register_plugin_static_resources(
         # declares its own value; reading it off the class keeps this open to new
         # capabilities without a per-type branch here.
         manifest_entry = {
-            "scope": ep.name,
+            "pluginName": ep.name,
             "url": f"/plugins/{ep.name}/static/remoteEntry.js",
             "module": "./Plugin",
             "capability": plugin_class.capability,

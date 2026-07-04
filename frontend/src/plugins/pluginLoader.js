@@ -18,16 +18,16 @@ export async function loadPlugins() {
 
     await __webpack_init_sharing__('default');
 
-    for (const { scope, url, module: moduleName, config, capability } of manifest) {
+    for (const { pluginName, url, module: moduleName, config, capability } of manifest) {
         try {
             await loadRemoteScript(url);
-            const container = window[scope];
+            const container = window[pluginName];
             await container.init(__webpack_share_scopes__.default);
             const factory = await container.get(moduleName);
             const Module = factory();
-            registerPlugin(scope, Module.default, config, capability);
+            registerPlugin(pluginName, Module.default, config, capability);
         } catch (e) {
-            console.warn(`Failed to load plugin "${scope}":`, e);
+            console.warn(`Failed to load plugin "${pluginName}":`, e);
         }
     }
 }

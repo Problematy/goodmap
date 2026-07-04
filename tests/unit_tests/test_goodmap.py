@@ -239,7 +239,7 @@ def test_plugin_with_static_dir():
     assert "plugin_my_plugin" in app.blueprints
     assert app.config["PLUGIN_MANIFEST"] == [
         {
-            "scope": "my_plugin",
+            "pluginName": "my_plugin",
             "url": "/plugins/my_plugin/static/remoteEntry.js",
             "module": "./Plugin",
             "capability": "overlay",

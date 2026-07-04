@@ -42,9 +42,9 @@ const sanitizeUrl = raw => {
  * @returns {React.ReactElement|string} React component for the custom type or string content
  */
 export const mapCustomTypeToReactComponent = customValue => {
-    if (customValue.scope) {
-        const { scope, ...props } = customValue;
-        return <PluginSlot scope={scope} props={props} />;
+    if (customValue.pluginName) {
+        const { pluginName, ...props } = customValue;
+        return <PluginSlot pluginName={pluginName} props={props} />;
     }
 
     if (!customValue.type || !customValue.value) {

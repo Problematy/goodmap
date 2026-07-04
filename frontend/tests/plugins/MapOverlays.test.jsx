@@ -10,7 +10,7 @@ describe('MapOverlays', () => {
         const Overlay = ({ config }) => <span>{config.message}</span>;
         Overlay.propTypes = { config: PropTypes.shape({ message: PropTypes.string }).isRequired };
         act(() =>
-            registerPlugin('overlay-scope', Overlay, { message: 'nothing nearby' }, 'overlay'),
+            registerPlugin('overlay-plugin', Overlay, { message: 'nothing nearby' }, 'overlay'),
         );
 
         render(<MapOverlays isMapLoading={false} />);
@@ -20,7 +20,7 @@ describe('MapOverlays', () => {
 
     it('does not render field-renderer plugins', () => {
         const Field = () => <span>field plugin</span>;
-        act(() => registerPlugin('field-scope', Field, {}, 'field'));
+        act(() => registerPlugin('field-plugin', Field, {}, 'field'));
 
         render(<MapOverlays isMapLoading={false} />);
 
