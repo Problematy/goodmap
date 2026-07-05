@@ -20,7 +20,6 @@ silly-gif/
     ├── package.json
     ├── webpack.config.js       # Module Federation: exposes ./MapOverlay and ./MarkerField
     └── src/
-        ├── index.js            # empty MF bootstrap
         ├── MapOverlay.jsx      # the MapOverlay component
         └── MarkerField.jsx     # the MarkerField component
 ```

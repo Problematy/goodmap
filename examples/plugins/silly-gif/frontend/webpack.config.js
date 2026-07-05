@@ -5,7 +5,9 @@ const { ModuleFederationPlugin } = require('webpack').container;
 // (goodmap's own webpack.config.js): one container, React shared as a singleton, and one
 // exposed module per capability the plugin provides.
 module.exports = {
-    entry: './src/index.js',
+    // A federation-only remote has no app to run; ModuleFederationPlugin emits the
+    // useful output (remoteEntry.js), so no entry chunk is needed.
+    entry: {},
     mode: 'production',
     output: {
         // Build into the Python package's `static/` dir. goodmap serves it at
