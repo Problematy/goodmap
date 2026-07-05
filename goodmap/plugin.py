@@ -1,6 +1,6 @@
 """Base class for goodmap map plugins."""
 
-from typing import Any, ClassVar
+from typing import Any
 
 from platzky.plugin.plugin import PluginBase
 
@@ -8,17 +8,12 @@ from platzky.plugin.plugin import PluginBase
 class GoodmapPluginBase(PluginBase):
     """Base class (family root) for goodmap plugin capabilities.
 
-    Each concrete subclass declares a ``capability`` — a stable identifier for the
-    integration point the plugin provides (recorded in ``PLUGIN_MANIFEST`` and used
-    by the frontend to route the plugin to its handler) — and the ``module``, the
-    Module Federation key under which the frontend component for that capability is
-    exposed. A plugin may subclass **several** capability bases; goodmap emits one
-    manifest entry per capability, each pointing at that capability's ``module``, all
-    served from the plugin's single ``remoteEntry.js``.
+    A goodmap plugin declares its frontend capabilities by subclassing the concrete
+    capability bases below (one or more). goodmap derives each capability's manifest
+    token and Module Federation module from the base class name — ``MapOverlayPluginBase``
+    -> capability ``"MapOverlay"`` exposed as ``"./MapOverlay"`` — so the class is the
+    single source of truth and there is no separate identifier to keep in sync.
     """
-
-    capability: ClassVar[str]
-    module: ClassVar[str]
 
     def __init__(self, config: dict[str, Any]) -> None:
         super().__init__(config)
@@ -34,10 +29,9 @@ class MapOverlayPluginBase(GoodmapPluginBase):
 
     goodmap registers this capability with platzky (via ``extra_plugin_bases``)
     so overlay plugins are config-gated through the standard plugin loader.
-    """
 
-    capability: ClassVar[str] = "overlay"
-    module: ClassVar[str] = "./MapOverlay"
+    Manifest capability ``"MapOverlay"``; component exposed as ``"./MapOverlay"``.
+    """
 
     def __init__(self, config: dict[str, Any]) -> None:
         super().__init__(config)
@@ -53,10 +47,9 @@ class MarkerFieldPluginBase(GoodmapPluginBase):
 
     goodmap registers this capability with platzky (via ``extra_plugin_bases``) so field
     plugins are config-gated through the standard plugin loader.
-    """
 
-    capability: ClassVar[str] = "field"
-    module: ClassVar[str] = "./MarkerField"
+    Manifest capability ``"MarkerField"``; component exposed as ``"./MarkerField"``.
+    """
 
     def __init__(self, config: dict[str, Any]) -> None:
         super().__init__(config)
@@ -73,10 +66,10 @@ class MarkerFieldDecoratorPluginBase(GoodmapPluginBase):
 
     goodmap registers this capability with platzky (via ``extra_plugin_bases``) so
     decorator plugins are config-gated through the standard plugin loader.
-    """
 
-    capability: ClassVar[str] = "field-decorator"
-    module: ClassVar[str] = "./MarkerFieldDecorator"
+    Manifest capability ``"MarkerFieldDecorator"``; component exposed as
+    ``"./MarkerFieldDecorator"``.
+    """
 
     def __init__(self, config: dict[str, Any]) -> None:
         super().__init__(config)

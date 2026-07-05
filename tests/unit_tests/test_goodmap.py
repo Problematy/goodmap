@@ -183,8 +183,8 @@ def test_index_route_location_schema_with_lazy_loading():
 def _plugin_ep(name: str, plugin_dir: str | None, base: type = MapOverlayPluginBase):
     """Create a mock EntryPoint whose load() returns a real ``base`` subclass.
 
-    ``base`` is the goodmap capability base the plugin subclasses (its ``capability`` is
-    read straight off the class into the manifest). The class's module file resolves to
+    ``base`` is the goodmap capability base the plugin subclasses (its manifest capability
+    is derived from the base class name). The class's module file resolves to
     ``plugin_dir/__init__.py`` so the static-resource lookup points at ``plugin_dir/static``.
     Pass ``plugin_dir=None`` to make the module file unresolvable, exercising the
     static-registration failure path.
@@ -249,7 +249,7 @@ def test_plugin_with_static_dir():
             "pluginName": "my_plugin",
             "url": "/plugins/my_plugin/static/remoteEntry.js",
             "module": "./MapOverlay",
-            "capability": "overlay",
+            "capability": "MapOverlay",
             "config": {"foo": "bar"},
         }
     ]
@@ -272,7 +272,7 @@ def test_field_plugin_is_manifested_with_field_capability():
             "pluginName": "promo",
             "url": "/plugins/promo/static/remoteEntry.js",
             "module": "./MarkerField",
-            "capability": "field",
+            "capability": "MarkerField",
             "config": {"color": "#0f0"},
         }
     ]
@@ -295,7 +295,7 @@ def test_field_decorator_plugin_is_manifested_with_decorator_capability():
             "pluginName": "tracker",
             "url": "/plugins/tracker/static/remoteEntry.js",
             "module": "./MarkerFieldDecorator",
-            "capability": "field-decorator",
+            "capability": "MarkerFieldDecorator",
             "config": {"decorates": "hyperlink"},
         }
     ]
@@ -318,9 +318,9 @@ def test_plugin_with_multiple_frontend_capabilities_gets_one_entry_per_capabilit
             app = goodmap.create_app_from_config(config)
 
     by_capability = {e["capability"]: e for e in app.config["PLUGIN_MANIFEST"]}
-    assert set(by_capability) == {"overlay", "field"}
-    assert by_capability["overlay"]["module"] == "./MapOverlay"
-    assert by_capability["field"]["module"] == "./MarkerField"
+    assert set(by_capability) == {"MapOverlay", "MarkerField"}
+    assert by_capability["MapOverlay"]["module"] == "./MapOverlay"
+    assert by_capability["MarkerField"]["module"] == "./MarkerField"
     # Same plugin, same bundle URL, same config across both entries.
     assert all(
         e["pluginName"] == "silly"

@@ -8,8 +8,8 @@ describe('pluginRegistry multi-capability', () => {
     it('keeps a plugin’s overlay and field entries under separate capabilities', () => {
         const Overlay = () => null;
         const Field = () => null;
-        registerPlugin('silly', Overlay, { gif: 'x' }, 'overlay');
-        registerPlugin('silly', Field, { gif: 'x' }, 'field');
+        registerPlugin('silly', Overlay, { gif: 'x' }, 'MapOverlay');
+        registerPlugin('silly', Field, { gif: 'x' }, 'MarkerField');
 
         // The field lookup resolves the field component, not the overlay one.
         expect(getFieldPlugin('silly')).toBe(Field);

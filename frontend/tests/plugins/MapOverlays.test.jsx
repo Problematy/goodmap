@@ -10,7 +10,7 @@ describe('MapOverlays', () => {
         const Overlay = ({ config }) => <span>{config.message}</span>;
         Overlay.propTypes = { config: PropTypes.shape({ message: PropTypes.string }).isRequired };
         act(() =>
-            registerPlugin('overlay-plugin', Overlay, { message: 'nothing nearby' }, 'overlay'),
+            registerPlugin('overlay-plugin', Overlay, { message: 'nothing nearby' }, 'MapOverlay'),
         );
 
         render(<MapOverlays isMapLoading={false} />);
@@ -20,7 +20,7 @@ describe('MapOverlays', () => {
 
     it('does not render field-renderer plugins', () => {
         const Field = () => <span>field plugin</span>;
-        act(() => registerPlugin('field-plugin', Field, {}, 'field'));
+        act(() => registerPlugin('field-plugin', Field, {}, 'MarkerField'));
 
         render(<MapOverlays isMapLoading={false} />);
 
@@ -29,8 +29,8 @@ describe('MapOverlays', () => {
 
     it('exposes the registered config via getPluginConfig and defaults to {}', () => {
         const Noop = () => null;
-        act(() => registerPlugin('with-config', Noop, { a: 1 }, 'overlay'));
-        act(() => registerPlugin('without-config', Noop, undefined, 'overlay'));
+        act(() => registerPlugin('with-config', Noop, { a: 1 }, 'MapOverlay'));
+        act(() => registerPlugin('without-config', Noop, undefined, 'MapOverlay'));
 
         expect(getPluginConfig('with-config')).toEqual({ a: 1 });
         expect(getPluginConfig('without-config')).toEqual({});

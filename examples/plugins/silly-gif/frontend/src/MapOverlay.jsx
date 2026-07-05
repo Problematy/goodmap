@@ -1,6 +1,6 @@
 import React from 'react';
 
-// The "overlay" capability's component. goodmap's MapOverlays mounts it once over the map
+// The "MapOverlay" capability's component. goodmap's MapOverlays mounts it once over the map
 // and passes the plugin `config` plus `isMapLoading`. Here we show the gif (from config)
 // only while the map's data is loading.
 export default function SillyGifOverlay({ config, isMapLoading }) {

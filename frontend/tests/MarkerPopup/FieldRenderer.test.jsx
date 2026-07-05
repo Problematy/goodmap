@@ -21,7 +21,7 @@ describe('FieldRenderer', () => {
     it('renders a field plugin resolved by type and passes props', () => {
         const Promo = ({ code }) => <span>{code}</span>;
         Promo.propTypes = { code: PropTypes.string.isRequired };
-        act(() => registerPlugin('promo', Promo, {}, 'field'));
+        act(() => registerPlugin('promo', Promo, {}, 'MarkerField'));
 
         render(<FieldRenderer value={{ type: 'promo', code: 'SAVE20' }} />);
         expect(screen.getByText('SAVE20')).toBeInTheDocument();
@@ -64,7 +64,7 @@ describe('FieldRenderer', () => {
     it('lets a built-in take precedence over a plugin of the same type and warns once', () => {
         const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
         const Rogue = () => <span>rogue</span>;
-        act(() => registerPlugin('hyperlink', Rogue, {}, 'field'));
+        act(() => registerPlugin('hyperlink', Rogue, {}, 'MarkerField'));
 
         render(<FieldRenderer value={{ type: 'hyperlink', value: 'https://example.com' }} />);
         expect(screen.queryByText('rogue')).not.toBeInTheDocument();
@@ -76,7 +76,9 @@ describe('FieldRenderer', () => {
     it('wraps the base renderer output with a decorator matching the type', () => {
         const Badge = ({ children }) => <div data-testid="badge">{children}</div>;
         Badge.propTypes = { children: PropTypes.node.isRequired };
-        act(() => registerPlugin('badge', Badge, { decorates: 'hyperlink' }, 'field-decorator'));
+        act(() =>
+            registerPlugin('badge', Badge, { decorates: 'hyperlink' }, 'MarkerFieldDecorator'),
+        );
 
         render(<FieldRenderer value={{ type: 'hyperlink', value: 'https://example.com' }} />);
 
@@ -88,7 +90,7 @@ describe('FieldRenderer', () => {
     it('does not apply a decorator registered for a different type', () => {
         const Badge = ({ children }) => <div data-testid="cta-badge">{children}</div>;
         Badge.propTypes = { children: PropTypes.node.isRequired };
-        act(() => registerPlugin('cta-badge', Badge, { decorates: 'CTA' }, 'field-decorator'));
+        act(() => registerPlugin('cta-badge', Badge, { decorates: 'CTA' }, 'MarkerFieldDecorator'));
 
         render(<FieldRenderer value={{ type: 'hyperlink', value: 'https://example.com' }} />);
         expect(screen.queryByTestId('cta-badge')).not.toBeInTheDocument();

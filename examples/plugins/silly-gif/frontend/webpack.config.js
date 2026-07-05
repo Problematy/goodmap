@@ -24,8 +24,8 @@ module.exports = {
             // goodmap host looks up as window['silly_gif'].
             name: 'silly_gif',
             filename: 'remoteEntry.js',
-            // One expose per capability, keyed by the capability's `module` (see the goodmap
-            // capability base classes: MapOverlayPluginBase.module === "./MapOverlay", etc.).
+            // One expose per capability, keyed by the module goodmap derives from the
+            // capability base name (MapOverlayPluginBase -> "./MapOverlay", etc.).
             exposes: {
                 './MapOverlay': './src/MapOverlay',
                 './MarkerField': './src/MarkerField',

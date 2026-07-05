@@ -4,9 +4,9 @@
 per capability (see ``PLUGIN_MANIFEST``), both served from the plugin's single
 ``remoteEntry.js``:
 
-- :class:`~goodmap.plugin.MapOverlayPluginBase` -> capability ``"overlay"``, component
+- :class:`~goodmap.plugin.MapOverlayPluginBase` -> capability ``"MapOverlay"``, component
   ``./MapOverlay``: a gif shown over the map while it loads.
-- :class:`~goodmap.plugin.MarkerFieldPluginBase` -> capability ``"field"``, component
+- :class:`~goodmap.plugin.MarkerFieldPluginBase` -> capability ``"MarkerField"``, component
   ``./MarkerField``: a gif rendered for marker fields valued
   ``{"type": "silly_gif", "gif": "<url>"}``.
 

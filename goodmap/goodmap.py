@@ -88,15 +88,20 @@ def _register_plugin_static_resources(
             response.headers["Access-Control-Allow-Origin"] = "*"
             return response
 
-        entries = [
-            {
-                "pluginName": ep.name,
-                "url": f"/plugins/{ep.name}/static/remoteEntry.js",
-                "module": base.module,
-                "capability": base.capability,
-            }
-            for base in bases
-        ]
+        entries = []
+        for base in bases:
+            # The capability token and its Module Federation key are derived from the base
+            # class name (MapOverlayPluginBase -> "MapOverlay" / "./MapOverlay"), so the
+            # class is the single source of truth — no separate identifier to keep in sync.
+            capability = base.__name__.removesuffix("PluginBase")
+            entries.append(
+                {
+                    "pluginName": ep.name,
+                    "url": f"/plugins/{ep.name}/static/remoteEntry.js",
+                    "module": f"./{capability}",
+                    "capability": capability,
+                }
+            )
         return bp, entries
     except Exception:
         logger.warning("Failed to serve static files for plugin '%s'", ep.name)

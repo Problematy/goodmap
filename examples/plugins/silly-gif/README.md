@@ -2,8 +2,8 @@
 
 A minimal, complete goodmap plugin that shows a silly gif in **two** places at once:
 
-- as a **map-loading overlay** (the `overlay` capability), and
-- inside **marker fields** (the `field` capability).
+- as a **map-loading overlay** (the `MapOverlay` capability), and
+- inside **marker fields** (the `MarkerField` capability).
 
 It exists to show how a plugin is put together — especially that **one plugin can provide
 several frontend capabilities** — so you can copy it as a starting point.
@@ -21,8 +21,8 @@ silly-gif/
     ├── webpack.config.js       # Module Federation: exposes ./MapOverlay and ./MarkerField
     └── src/
         ├── index.js            # empty MF bootstrap
-        ├── MapOverlay.jsx      # the "overlay" component
-        └── MarkerField.jsx     # the "field" component
+        ├── MapOverlay.jsx      # the MapOverlay component
+        └── MarkerField.jsx     # the MarkerField component
 ```
 
 ## How the pieces connect
@@ -33,11 +33,11 @@ per capability** — both pointing at the same `remoteEntry.js`, each at its own
 
 | capability | base class | module | mounted by |
 |---|---|---|---|
-| `overlay` | `MapOverlayPluginBase` | `./MapOverlay` | `MapOverlays` (once, over the map) |
-| `field` | `MarkerFieldPluginBase` | `./MarkerField` | `FieldRenderer` (per marker field) |
+| `MapOverlay` | `MapOverlayPluginBase` | `./MapOverlay` | `MapOverlays` (once, over the map) |
+| `MarkerField` | `MarkerFieldPluginBase` | `./MarkerField` | `FieldRenderer` (per marker field) |
 
-**The frontend build exposes one component per capability**, under the module names the
-capability bases declare (`MapOverlayPluginBase.module === "./MapOverlay"`, etc.). The
+**The frontend build exposes one component per capability**, under the module names goodmap
+derives from each capability base name (`MapOverlayPluginBase` → `./MapOverlay`). The
 Module Federation `name` (`silly_gif`) must equal the entry-point name.
 
 **Mind the differing prop contracts** — this trips people up:

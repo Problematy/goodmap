@@ -18,7 +18,7 @@ The capability a plugin provides determines *how* its frontend renders:
 **Field renderers** (:class:`goodmap.plugin.MarkerFieldPluginBase` + a platzky shortcode)
     Render a single location field inside a marker popup. The plugin's shortcode
     transforms the field value into ``{"type": "<name>", ...}`` on the backend; its
-    frontend component (capability ``"field"``) is resolved by ``type`` and mounted by
+    frontend component (capability ``"MarkerField"``) is resolved by ``type`` and mounted by
     ``FieldRenderer``. The built-in field types ``hyperlink`` and ``CTA`` resolve through
     the same mechanism and take precedence over a plugin of the same name.
 
@@ -28,7 +28,7 @@ The capability a plugin provides determines *how* its frontend renders:
     (icon, badge, tracking wrapper, styling), so the base renderer — and its behaviour,
     e.g. the built-in link/button URL sanitization — still runs. The ``type`` it wraps is
     taken from its ``config`` (``{"decorates": "<type>"}``); decorators (capability
-    ``"field-decorator"``) are applied by ``FieldRenderer``.
+    ``"MarkerFieldDecorator"``) are applied by ``FieldRenderer``.
 
 **Map overlays** (:class:`goodmap.plugin.MapOverlayPluginBase`)
     Render a component once *over the whole map*, not tied to any marker — e.g. a
@@ -43,7 +43,7 @@ plugin's single ``remoteEntry.js``.
 
 A single plugin may provide **several** capabilities by subclassing more than one base;
 goodmap then emits one manifest entry per capability, each pointing at that capability's
-module. See ``examples/silly-gif`` for a plugin that is both a map overlay *and* a marker
+module. See ``examples/plugins/silly-gif`` for a plugin that is both a map overlay *and* a marker
 field renderer.
 
 Map overlay plugins
@@ -83,12 +83,12 @@ changes:
 
 Goodmap serves the bundle at ``/plugins/<name>/static/remoteEntry.js`` and adds a manifest
 entry ``{pluginName, url, module, capability, config}`` for each capability the plugin
-provides. Each Goodmap capability base class declares its own ``capability`` value and
-``module`` —
-:class:`~goodmap.plugin.MapOverlayPluginBase` (``"overlay"`` / ``./MapOverlay``),
-:class:`~goodmap.plugin.MarkerFieldPluginBase` (``"field"`` / ``./MarkerField``), and
+provides. The ``capability`` token and its ``module`` are derived from the capability base
+class name (``PluginBase`` stripped) —
+:class:`~goodmap.plugin.MapOverlayPluginBase` (``"MapOverlay"`` / ``./MapOverlay``),
+:class:`~goodmap.plugin.MarkerFieldPluginBase` (``"MarkerField"`` / ``./MarkerField``), and
 :class:`~goodmap.plugin.MarkerFieldDecoratorPluginBase`
-(``"field-decorator"`` / ``./MarkerFieldDecorator``) — and the frontend uses ``capability``
+(``"MarkerFieldDecorator"`` / ``./MarkerFieldDecorator``) — and the frontend uses ``capability``
 to mount the component at the right place (overlays over the map by ``MapOverlays``; field
 renderers and decorators in a marker by ``FieldRenderer``).
 
