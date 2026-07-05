@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { getPlugin, getFieldDecorators, subscribe } from '../../plugins/pluginRegistry';
+import { getFieldPlugin, getFieldDecorators, subscribe } from '../../plugins/pluginRegistry';
 import getContentAsString from './fieldContent';
 import { builtinFieldRenderers } from './builtinFieldRenderers';
 
@@ -22,7 +22,7 @@ const shadowedPlugins = new Set();
 export const resolveFieldRenderer = type => {
     const builtin = builtinFieldRenderers[type];
     if (builtin) {
-        if (getPlugin(type) && !shadowedPlugins.has(type)) {
+        if (getFieldPlugin(type) && !shadowedPlugins.has(type)) {
             shadowedPlugins.add(type);
             console.warn(
                 `Field plugin "${type}" is shadowed by a built-in renderer of the same name; ` +
@@ -31,7 +31,7 @@ export const resolveFieldRenderer = type => {
         }
         return builtin;
     }
-    return getPlugin(type);
+    return getFieldPlugin(type);
 };
 
 // Resolves the renderer plus any decorators registered for a `type` in one shot, so

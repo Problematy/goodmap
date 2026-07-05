@@ -14,6 +14,7 @@ from goodmap import goodmap
 from goodmap.config import GoodmapConfig
 from goodmap.feature_flags import EnableAdminPanel, UseLazyLoading
 from goodmap.plugin import (
+    CAPABILITY_BASES,
     MapOverlayPluginBase,
     MarkerFieldDecoratorPluginBase,
     MarkerFieldPluginBase,
@@ -39,11 +40,7 @@ def test_create_app_from_config():
             goodmap.create_app_from_config(config)
             mock_platzky_app_creation.assert_called_once_with(
                 config,
-                extra_plugin_bases=[
-                    goodmap.MapOverlayPluginBase,
-                    goodmap.MarkerFieldPluginBase,
-                    goodmap.MarkerFieldDecoratorPluginBase,
-                ],
+                extra_plugin_bases=list(CAPABILITY_BASES),
                 extra_plugins_entrypoints=["goodmap.plugins"],
             )
             mock_extend_db.assert_called_once()
@@ -251,7 +248,7 @@ def test_plugin_with_static_dir():
         {
             "pluginName": "my_plugin",
             "url": "/plugins/my_plugin/static/remoteEntry.js",
-            "module": "./Plugin",
+            "module": "./MapOverlay",
             "capability": "overlay",
             "config": {"foo": "bar"},
         }
@@ -274,7 +271,7 @@ def test_field_plugin_is_manifested_with_field_capability():
         {
             "pluginName": "promo",
             "url": "/plugins/promo/static/remoteEntry.js",
-            "module": "./Plugin",
+            "module": "./MarkerField",
             "capability": "field",
             "config": {"color": "#0f0"},
         }
@@ -297,11 +294,40 @@ def test_field_decorator_plugin_is_manifested_with_decorator_capability():
         {
             "pluginName": "tracker",
             "url": "/plugins/tracker/static/remoteEntry.js",
-            "module": "./Plugin",
+            "module": "./MarkerFieldDecorator",
             "capability": "field-decorator",
             "config": {"decorates": "hyperlink"},
         }
     ]
+
+
+def test_plugin_with_multiple_frontend_capabilities_gets_one_entry_per_capability():
+    """A plugin subclassing two capability bases is manifested once per capability."""
+
+    class _OverlayAndField(MapOverlayPluginBase, MarkerFieldPluginBase):
+        pass
+
+    config = _plugin_config("silly", {"gif": "cat.gif"})
+    with tempfile.TemporaryDirectory() as tmpdir:
+        plugin_dir = os.path.join(tmpdir, "silly")
+        os.makedirs(os.path.join(plugin_dir, "static"))
+
+        ep = _plugin_ep("silly", plugin_dir, base=_OverlayAndField)
+
+        with _patch_entry_points({"goodmap.plugins": [ep]}):
+            app = goodmap.create_app_from_config(config)
+
+    by_capability = {e["capability"]: e for e in app.config["PLUGIN_MANIFEST"]}
+    assert set(by_capability) == {"overlay", "field"}
+    assert by_capability["overlay"]["module"] == "./MapOverlay"
+    assert by_capability["field"]["module"] == "./MarkerField"
+    # Same plugin, same bundle URL, same config across both entries.
+    assert all(
+        e["pluginName"] == "silly"
+        and e["url"] == "/plugins/silly/static/remoteEntry.js"
+        and e["config"] == {"gif": "cat.gif"}
+        for e in app.config["PLUGIN_MANIFEST"]
+    )
 
 
 def test_plugin_inactive_is_not_served():

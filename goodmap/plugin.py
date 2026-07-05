@@ -8,16 +8,17 @@ from platzky.plugin.plugin import PluginBase
 class GoodmapPluginBase(PluginBase):
     """Base class (family root) for goodmap plugin capabilities.
 
-    Each concrete subclass declares ``capability`` — a stable identifier for the
-    integration point the plugin provides (recorded in ``PLUGIN_MANIFEST`` and
-    used by the frontend to route the plugin to its handler). Some capabilities
-    mount a component at a location (e.g. ``overlay`` over the map, ``field`` in
-    a marker); others alter behaviour with no fixed placement (e.g. swapping the
-    tile engine). ``capability`` names *what the plugin is*, independent of where
-    — or whether — it renders.
+    Each concrete subclass declares a ``capability`` — a stable identifier for the
+    integration point the plugin provides (recorded in ``PLUGIN_MANIFEST`` and used
+    by the frontend to route the plugin to its handler) — and the ``module``, the
+    Module Federation key under which the frontend component for that capability is
+    exposed. A plugin may subclass **several** capability bases; goodmap emits one
+    manifest entry per capability, each pointing at that capability's ``module``, all
+    served from the plugin's single ``remoteEntry.js``.
     """
 
     capability: ClassVar[str]
+    module: ClassVar[str]
 
     def __init__(self, config: dict[str, Any]) -> None:
         super().__init__(config)
@@ -36,6 +37,7 @@ class MapOverlayPluginBase(GoodmapPluginBase):
     """
 
     capability: ClassVar[str] = "overlay"
+    module: ClassVar[str] = "./MapOverlay"
 
     def __init__(self, config: dict[str, Any]) -> None:
         super().__init__(config)
@@ -54,6 +56,7 @@ class MarkerFieldPluginBase(GoodmapPluginBase):
     """
 
     capability: ClassVar[str] = "field"
+    module: ClassVar[str] = "./MarkerField"
 
     def __init__(self, config: dict[str, Any]) -> None:
         super().__init__(config)
@@ -73,6 +76,17 @@ class MarkerFieldDecoratorPluginBase(GoodmapPluginBase):
     """
 
     capability: ClassVar[str] = "field-decorator"
+    module: ClassVar[str] = "./MarkerFieldDecorator"
 
     def __init__(self, config: dict[str, Any]) -> None:
         super().__init__(config)
+
+
+# The frontend plugin capabilities goodmap defines: registered with platzky (so plugins
+# subclassing them are recognised and config-gated) and used to derive each plugin's
+# manifest entries. A plugin may subclass one or more of these.
+CAPABILITY_BASES: tuple[type[GoodmapPluginBase], ...] = (
+    MapOverlayPluginBase,
+    MarkerFieldPluginBase,
+    MarkerFieldDecoratorPluginBase,
+)

@@ -35,9 +35,16 @@ The capability a plugin provides determines *how* its frontend renders:
     banner shown when no points are visible in the current view. Overlay components
     are mounted by ``MapOverlays``. They do not transform point/location data.
 
-Both kinds are discovered from the ``goodmap.plugins`` entry-point group and must
-expose their React component under the Module Federation key ``./Plugin`` (the module
-name Goodmap requests from each plugin's ``remoteEntry.js``).
+All kinds are discovered from the ``goodmap.plugins`` entry-point group. Each capability
+exposes its React component under that capability's Module Federation module key —
+``./MapOverlay`` for overlays, ``./MarkerField`` for field renderers, ``./MarkerFieldDecorator``
+for decorators (the ``module`` declared on the capability base) — all served from the
+plugin's single ``remoteEntry.js``.
+
+A single plugin may provide **several** capabilities by subclassing more than one base;
+goodmap then emits one manifest entry per capability, each pointing at that capability's
+module. See ``examples/silly-gif`` for a plugin that is both a map overlay *and* a marker
+field renderer.
 
 Map overlay plugins
 -------------------
@@ -69,19 +76,21 @@ changes:
 
 .. code-block:: jsx
 
-    // frontend/src/Plugin.jsx  (exposed as "./Plugin")
+    // frontend/src/MapOverlay.jsx  (exposed as "./MapOverlay")
     export default function MyOverlayPlugin({ config }) {
         return <div>{config.message}</div>;
     }
 
-Goodmap serves the bundle at ``/plugins/<name>/static/remoteEntry.js`` and adds a
-manifest entry ``{pluginName, url, module: "./Plugin", capability, config}``. Each
-Goodmap capability base class declares its own ``capability`` value —
-:class:`~goodmap.plugin.MapOverlayPluginBase` declares ``"overlay"``,
-:class:`~goodmap.plugin.MarkerFieldPluginBase` declares ``"field"``, and
-:class:`~goodmap.plugin.MarkerFieldDecoratorPluginBase` declares ``"field-decorator"`` —
-and the frontend uses it to mount the component at the right place (overlays over the map
-by ``MapOverlays``; field renderers and decorators in a marker by ``FieldRenderer``).
+Goodmap serves the bundle at ``/plugins/<name>/static/remoteEntry.js`` and adds a manifest
+entry ``{pluginName, url, module, capability, config}`` for each capability the plugin
+provides. Each Goodmap capability base class declares its own ``capability`` value and
+``module`` —
+:class:`~goodmap.plugin.MapOverlayPluginBase` (``"overlay"`` / ``./MapOverlay``),
+:class:`~goodmap.plugin.MarkerFieldPluginBase` (``"field"`` / ``./MarkerField``), and
+:class:`~goodmap.plugin.MarkerFieldDecoratorPluginBase`
+(``"field-decorator"`` / ``./MarkerFieldDecorator``) — and the frontend uses ``capability``
+to mount the component at the right place (overlays over the map by ``MapOverlays``; field
+renderers and decorators in a marker by ``FieldRenderer``).
 
 Field renderers and ``visible_data``
 ------------------------------------
@@ -115,7 +124,7 @@ already-sanitized output, it cannot bypass the base renderer's behaviour:
 
 .. code-block:: jsx
 
-    // frontend/src/Plugin.jsx  (exposed as "./Plugin")
+    // frontend/src/MarkerFieldDecorator.jsx  (exposed as "./MarkerFieldDecorator")
     export default function HyperlinkBadge({ config, children }) {
         return (
             <span className="hyperlink-badge">
