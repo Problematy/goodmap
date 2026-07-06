@@ -27,10 +27,11 @@ The capability a plugin provides determines *how* its frontend renders:
     - ``order`` (optional): position in the stack — lower is more innermost; ties keep
       registration order.
 
-    Every field plugin is the same kind of wrapper, receiving ``{ value, children, config }``.
-    A **renderer** ignores ``children`` and renders from ``value``; a **decorator** composes
-    around ``children`` (icon, badge, tracking wrapper). There is no separate role — the
-    innermost plugin is simply the one whose ``children`` is the seed.
+    Every field plugin is the same kind of thing — a wrapper receiving ``{ value, children,
+    config }``. What a component does with those props is up to it: render from ``value``
+    (ignoring ``children``), or compose around ``children`` (a badge, a tracking wrapper, …).
+    The innermost plugin is simply the one whose ``children`` is the seed; there is no
+    renderer-vs-decorator distinction.
 
 **Map overlays** (:class:`goodmap.plugin.MapOverlayPluginBase`)
     Render a component once *over the whole map*, not tied to any marker — e.g. a
@@ -39,13 +40,13 @@ The capability a plugin provides determines *how* its frontend renders:
 
 All kinds are discovered from the ``goodmap.plugins`` entry-point group. Each capability
 exposes its React component under that capability's Module Federation module key —
-``./MapOverlay`` for overlays and ``./MarkerField`` for field plugins (renderers and
-decorators alike) — all served from the plugin's single ``remoteEntry.js``.
+``./MapOverlay`` for overlays and ``./MarkerField`` for field plugins — all served from the
+plugin's single ``remoteEntry.js``.
 
 A single plugin may provide **several** capabilities by subclassing more than one base;
 goodmap then emits one manifest entry per capability, each pointing at that capability's
-module. See ``examples/plugins/silly-gif`` for a plugin that is both a map overlay *and* a marker
-field renderer.
+module. See ``examples/plugins/silly-gif`` for a plugin that is both a map overlay *and* a
+field plugin.
 
 Map overlay plugins
 -------------------
@@ -92,34 +93,40 @@ the frontend uses ``capability`` to mount the component at the right place (over
 map by ``MapOverlays``; field plugins in a marker by ``FieldRenderer``, which folds them by
 ``config.field`` and ``config.order``).
 
-Field renderers and ``visible_data``
-------------------------------------
+Field plugins
+-------------
 
 ``visible_data`` is a list of field names displayed in location markers (see
-:ref:`data-model-visible_data`). When a field is contributed by an active field-renderer
-plugin, its shortcode transforms the value into ``{"type": "<name>", ...}`` and the
-frontend renders the matching component (resolved by ``type``) in the marker popup.
+:ref:`data-model-visible_data`). ``FieldRenderer`` renders each such field as a fold: a
+seed (the built-in for the field ``type``, or a string) wrapped by every field plugin that
+attaches to that ``type`` via ``config.field``, innermost-first by ``config.order``.
 
-Field plugins as decorators
----------------------------
+A field plugin is a :class:`~goodmap.plugin.MarkerFieldPluginBase` whose component receives
+``{ value, children, config }``. There's one kind of field plugin; what a component *does*
+with its props is what makes it read as a "renderer" or a "decorator":
 
-A field plugin that wraps an existing field's rendering (rather than rendering the value
-itself) is just an ordinary :class:`~goodmap.plugin.MarkerFieldPluginBase` that attaches to
-that ``type`` — the way to customize a built-in (``hyperlink``, ``CTA``). It needs no
-shortcode (it augments rendering, it does not produce field values):
+**Render from the value** — produces a field's rendering; ignores ``children`` and reads
+``value``. Its platzky shortcode turns the raw value into ``{"type": "<field>", ...}``:
 
 .. code-block:: python
 
-    # hyperlink_badge/plugin.py
+    # promo/plugin.py
     from typing import Any
     from goodmap.plugin import MarkerFieldPluginBase
 
-    class HyperlinkBadgePlugin(MarkerFieldPluginBase):
+    class PromoPlugin(MarkerFieldPluginBase):
         def __init__(self, config: dict[str, Any]) -> None:
             super().__init__(config)
 
-The React component receives ``{ value, children, config }``. Acting as a decorator, it
-composes around ``children`` (the current rendering) and ignores ``value``:
+.. code-block:: jsx
+
+    // frontend/src/MarkerField.jsx  (exposed as "./MarkerField")
+    export default function Promo({ value }) {
+        return <code>{value.code}</code>;
+    }
+
+**Wrap the current rendering** — customizes an existing field (e.g. a built-in ``hyperlink``
+/``CTA``); composes around ``children`` and ignores ``value``. Needs no shortcode:
 
 .. code-block:: jsx
 
@@ -133,8 +140,8 @@ composes around ``children`` (the current rendering) and ignores ``value``:
         );
     }
 
-The plugin sets ``config.field`` to the type it attaches to (below) and, optionally,
-``config.order`` for its position in the fold; higher order wraps further out.
+Both are the same plugin kind. Each sets ``config.field`` to the type it attaches to and,
+optionally, ``config.order``; lower order is more innermost, higher order wraps further out.
 
 Configuration
 -------------
