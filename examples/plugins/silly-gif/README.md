@@ -44,9 +44,9 @@ Module Federation `name` (`silly_gif`) must equal the entry-point name.
 - An **overlay** component receives the plugin **`config`** plus `isMapLoading`.
   (One gif for the whole map, taken from config.)
 - A **field** component receives **`{ value, children, config }`** — `FieldRenderer` folds
-  field plugins around a marker field. This one is a *renderer*: it uses `value` (the field
-  data — so each marker carries its own gif) and ignores `children`. It attaches to the
-  `silly_gif` field type via `config.field`.
+  field plugins around a marker field. This one renders from `value` (the field data — so
+  each marker carries its own gif) and ignores `children`. It attaches to the `silly_gif`
+  field type via `config.field`.
 
 ## Build
 

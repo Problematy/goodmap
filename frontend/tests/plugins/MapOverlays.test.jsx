@@ -18,7 +18,7 @@ describe('MapOverlays', () => {
         expect(screen.getByText('nothing nearby')).toBeInTheDocument();
     });
 
-    it('does not render field-renderer plugins', () => {
+    it('does not render field plugins', () => {
         const Field = () => <span>field plugin</span>;
         act(() => registerPlugin('field-plugin', Field, {}, 'MarkerField'));
 

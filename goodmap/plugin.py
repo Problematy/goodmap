@@ -50,10 +50,9 @@ class MarkerFieldPluginBase(GoodmapPluginBase):
 
     ``FieldRenderer`` seeds the rendering with the built-in for the type (or a string) and
     folds every plugin for that ``field`` around it, innermost-first. Each plugin's component
-    receives ``{ value, children, config }``: a "renderer" ignores ``children`` and renders
-    from ``value``; a "decorator" composes around ``children``. (There is no separate
-    renderer vs decorator role — the innermost is simply the one whose ``children`` is the
-    seed.)
+    receives ``{ value, children, config }`` — it may render from ``value`` (ignoring
+    ``children``) or compose around ``children``. The innermost plugin is simply the one
+    whose ``children`` is the seed.
 
     goodmap registers this capability with platzky (via ``extra_plugin_bases``) so field
     plugins are config-gated through the standard plugin loader.

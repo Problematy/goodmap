@@ -18,7 +18,7 @@ export function getPluginConfig(pluginName) {
     return {};
 }
 
-// Map-overlay plugins mount once over the map (see MapOverlays); field-renderer
+// Map-overlay plugins mount once over the map (see MapOverlays); field
 // plugins are mounted per marker via FieldRenderer and are excluded here.
 export function getOverlayPlugins() {
     return Array.from(registry.values())
@@ -28,8 +28,8 @@ export function getOverlayPlugins() {
 
 // The field plugins that attach to a field `type` (via `config.field`), as an ordered stack.
 // FieldRenderer folds them around the seed rendering, innermost (lowest `config.order`) first;
-// ties keep registration order (a stable sort). Each is a wrapper — a "renderer" ignores its
-// children and renders from the value, a "decorator" composes around them.
+// ties keep registration order (a stable sort). Each is a wrapper receiving
+// `{ value, children, config }` — it may render from the value or compose around its children.
 export function getFieldPlugins(type) {
     return Array.from(registry.values())
         .filter(entry => entry.capability === 'MarkerField' && entry.config?.field === type)

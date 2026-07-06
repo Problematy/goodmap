@@ -13,9 +13,9 @@ import { builtinFieldRenderers } from './builtinFieldRenderers';
  * innermost-first by `config.order`.
  *
  * Every field plugin is the same kind of thing: a wrapper receiving `{ value, children,
- * config }`. A "renderer" ignores `children` and renders from `value`; a "decorator"
- * composes around `children`. Plugins load asynchronously, so this subscribes to the
- * registry and re-renders as they arrive (and re-resolves when `type` changes).
+ * config }` — it may render from `value` (ignoring `children`) or compose around
+ * `children`. Plugins load asynchronously, so this subscribes to the registry and
+ * re-renders as they arrive (and re-resolves when `type` changes).
  */
 const FieldRenderer = ({ value }) => {
     const type = value?.type;

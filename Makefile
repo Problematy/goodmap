@@ -82,6 +82,18 @@ lint-check-all: lint-check
 	$(MAKE) -C frontend lint
 	$(MAKE) -C e2e-tests lint-check
 
+# Backend + frontend unit tests (e2e is excluded - it needs running servers).
+# Convenience target for local use only; each sub-project's CI tests itself.
+test-all: unit-tests
+	$(MAKE) -C frontend unit-tests
+
+# Full local verification of backend + frontend (lint + tests) without modifying files.
+# e2e is excluded (separate sub-project, needs running servers). Convenience target only.
+check:
+	$(MAKE) lint-check
+	$(MAKE) -C frontend lint
+	$(MAKE) test-all
+
 # Approximates the dependency-review-action gate used in CI (license-check.yml)
 # across all three sub-projects, so vulnerable transitive deps can be caught
 # before pushing instead of discovered in a PR check.
