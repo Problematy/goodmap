@@ -2,14 +2,6 @@
 
 <!-- version list -->
 
-## v1.8.2 (2026-07-06)
-
-### Bug Fixes
-
-- Disable wrong e2e tests temporarily ([#381](https://github.com/Problematy/goodmap/pull/381),
-  [`e73c849`](https://github.com/Problematy/goodmap/commit/e73c8496a9dbc36499614640d208865d9e8a1cf9))
-
-
 ## v1.8.1 (2026-06-14)
 
 ### Bug Fixes
