@@ -1,47 +1,47 @@
-import React, { useState, useEffect } from 'react';
+import React, { useReducer, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { getFieldPlugins, subscribe } from '../../plugins/pluginRegistry';
 import getContentAsString from './fieldContent';
 import { builtinFieldRenderers } from './builtinFieldRenderers';
 
 /**
- * Renders a marker field value as a fold.
+ * Renders a marker field value as a pipe.
  *
- * A *seed* rendering is produced first — the first-party built-in for the field `type`
- * (rendered from the value), or a string rendering of the value when there is none. Then
- * every field plugin that attaches to that `type` (via `config.field`) wraps the result,
- * innermost-first by `config.order`.
+ * The raw `value` flows through a chain of stages: the built-in for the field `type` (if
+ * any) renders it into an element, then each field plugin attached to that `type` (by
+ * `config.field`) transforms the result, innermost-first by `config.order`. Every stage is
+ * `({ input, config }) => element`, receiving the previous stage's output as `input` — so
+ * the innermost gets the raw value and renders from it, and each later stage gets the
+ * current element and wraps it.
  *
- * Every field plugin is the same kind of thing: a wrapper receiving `{ value, children,
- * config }` — it may render from `value` (ignoring `children`) or compose around
- * `children`. Plugins load asynchronously, so this subscribes to the registry and
- * re-renders as they arrive (and re-resolves when `type` changes).
+ * A wrapper therefore presupposes that something renders the type (a built-in, or a renderer
+ * plugin it ships with / depends on); a type with only wrappers and no renderer is a
+ * misconfiguration. With no stage at all, the value falls back to a string.
+ *
+ * Everything is computed during render, so a changed `value`/`type` is always reflected;
+ * plugins load asynchronously, so this subscribes to the registry and forces a re-render as
+ * they arrive.
  */
 const FieldRenderer = ({ value }) => {
+    const [, forceRender] = useReducer(count => count + 1, 0);
+    useEffect(() => subscribe(forceRender), []);
+
     const type = value?.type;
-    const [plugins, setPlugins] = useState(() => (type ? getFieldPlugins(type) : []));
-
-    useEffect(() => {
-        const update = () => setPlugins(type ? getFieldPlugins(type) : []);
-        update(); // re-resolve when `type` changes, not only on later registry events
-        return subscribe(update);
-    }, [type]);
-
     const Builtin = type ? builtinFieldRenderers[type] : undefined;
-    const seed = Builtin ? (
-        // eslint-disable-next-line react/jsx-props-no-spreading
-        <Builtin {...value} />
-    ) : (
-        getContentAsString(type ? value.displayValue ?? value.value ?? '' : value)
-    );
+    const plugins = type ? getFieldPlugins(type) : [];
 
-    return plugins.reduce(
-        (children, { Plugin, config }) => (
-            <Plugin value={value} config={config}>
-                {children}
-            </Plugin>
-        ),
-        seed,
+    const stages = [
+        ...(Builtin ? [{ Stage: Builtin, config: undefined }] : []),
+        ...plugins.map(({ Plugin, config }) => ({ Stage: Plugin, config })),
+    ];
+
+    if (stages.length === 0) {
+        return getContentAsString(type ? value.displayValue ?? value.value ?? '' : value);
+    }
+
+    return stages.reduce(
+        (input, { Stage, config }) => <Stage input={input} config={config} />,
+        value,
     );
 };
 

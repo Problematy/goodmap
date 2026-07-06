@@ -17,21 +17,23 @@ The capability a plugin provides determines *how* its frontend renders:
 
 **Marker fields** (:class:`goodmap.plugin.MarkerFieldPluginBase`)
     Render a single location field inside a marker popup (capability ``"MarkerField"``,
-    mounted by ``FieldRenderer``). ``FieldRenderer`` renders a field as a **fold**: a *seed*
-    (the built-in for the field ``type`` rendered from the value, e.g. ``hyperlink``/``CTA``,
-    or a string when there is none), wrapped by every field plugin that attaches to that
-    ``type``. A plugin's ``config`` declares which field it attaches to and where it sits:
+    mounted by ``FieldRenderer``). ``FieldRenderer`` renders a field as a **pipe**: the raw
+    value flows through a chain of stages — the built-in for the field ``type`` (e.g.
+    ``hyperlink``/``CTA``) renders it, then each field plugin attached to that ``type``
+    transforms the result. A plugin's ``config`` declares which field it attaches to and
+    where it sits:
 
     - ``field``: the field ``type`` it applies to. For a custom type, the plugin's platzky
       shortcode transforms the value into ``{"type": "<field>", ...}``.
-    - ``order`` (optional): position in the stack — lower is more innermost; ties keep
+    - ``order`` (optional): position in the pipe — lower is more innermost; ties keep
       registration order.
 
-    Every field plugin is the same kind of thing — a wrapper receiving ``{ value, children,
-    config }``. What a component does with those props is up to it: render from ``value``
-    (ignoring ``children``), or compose around ``children`` (a badge, a tracking wrapper, …).
-    The innermost plugin is simply the one whose ``children`` is the seed; there is no
-    renderer-vs-decorator distinction.
+    Every field plugin is the same kind of thing — a stage ``({ input, config }) => element``.
+    Each receives the previous stage's output as ``input``: the innermost stage gets the raw
+    value (and renders from it), every later stage gets the current element (and wraps it). So
+    a plugin either renders a field or wraps one, with no separate role. A wrapping plugin
+    presupposes something renders the type — a built-in, or a renderer it ships with or
+    depends on; a type with only wrappers and no renderer is a misconfiguration.
 
 **Map overlays** (:class:`goodmap.plugin.MapOverlayPluginBase`)
     Render a component once *over the whole map*, not tied to any marker — e.g. a
@@ -97,16 +99,17 @@ Field plugins
 -------------
 
 ``visible_data`` is a list of field names displayed in location markers (see
-:ref:`data-model-visible_data`). ``FieldRenderer`` renders each such field as a fold: a
-seed (the built-in for the field ``type``, or a string) wrapped by every field plugin that
-attaches to that ``type`` via ``config.field``, innermost-first by ``config.order``.
+:ref:`data-model-visible_data`). ``FieldRenderer`` renders each such field as a pipe: the raw
+value flows through the built-in for the field ``type`` (if any) and then each field plugin
+attached to that ``type`` via ``config.field``, innermost-first by ``config.order``.
 
-A field plugin is a :class:`~goodmap.plugin.MarkerFieldPluginBase` whose component receives
-``{ value, children, config }``. There's one kind of field plugin; what a component *does*
-with its props is what makes it read as a "renderer" or a "decorator":
+A field plugin is a :class:`~goodmap.plugin.MarkerFieldPluginBase` whose component is a stage
+``({ input, config }) => element`` — it receives the previous stage's output as ``input``.
+There's one kind of field plugin; what it does with ``input`` is what makes it read as a
+"renderer" or a "decorator":
 
-**Render from the value** — produces a field's rendering; ignores ``children`` and reads
-``value``. Its platzky shortcode turns the raw value into ``{"type": "<field>", ...}``:
+**Render from the input** — the innermost stage receives the raw value and produces the
+rendering. Its platzky shortcode turns the raw value into ``{"type": "<field>", ...}``:
 
 .. code-block:: python
 
@@ -121,20 +124,20 @@ with its props is what makes it read as a "renderer" or a "decorator":
 .. code-block:: jsx
 
     // frontend/src/MarkerField.jsx  (exposed as "./MarkerField")
-    export default function Promo({ value }) {
-        return <code>{value.code}</code>;
+    export default function Promo({ input }) {
+        return <code>{input.code}</code>;
     }
 
-**Wrap the current rendering** — customizes an existing field (e.g. a built-in ``hyperlink``
-/``CTA``); composes around ``children`` and ignores ``value``. Needs no shortcode:
+**Wrap the input** — a later stage receives the current element and composes around it (e.g.
+to customize a built-in ``hyperlink``/``CTA``). Needs no shortcode:
 
 .. code-block:: jsx
 
     // frontend/src/MarkerField.jsx  (exposed as "./MarkerField")
-    export default function HyperlinkBadge({ config, children }) {
+    export default function HyperlinkBadge({ input, config }) {
         return (
             <span className="hyperlink-badge">
-                {children}
+                {input}
                 {config.label && <sup> {config.label}</sup>}
             </span>
         );
@@ -142,6 +145,7 @@ with its props is what makes it read as a "renderer" or a "decorator":
 
 Both are the same plugin kind. Each sets ``config.field`` to the type it attaches to and,
 optionally, ``config.order``; lower order is more innermost, higher order wraps further out.
+A wrapper must have a renderer beneath it (a built-in, or one it depends on).
 
 Configuration
 -------------

@@ -27,9 +27,9 @@ export function getOverlayPlugins() {
 }
 
 // The field plugins that attach to a field `type` (via `config.field`), as an ordered stack.
-// FieldRenderer folds them around the seed rendering, innermost (lowest `config.order`) first;
-// ties keep registration order (a stable sort). Each is a wrapper receiving
-// `{ value, children, config }` — it may render from the value or compose around its children.
+// FieldRenderer pipes them from the seed, innermost (lowest `config.order`) first; ties keep
+// registration order (a stable sort). Each stage is `({ input, config }) => element` — the
+// innermost gets the raw value and renders it, each later stage gets the element and wraps it.
 export function getFieldPlugins(type) {
     return Array.from(registry.values())
         .filter(entry => entry.capability === 'MarkerField' && entry.config?.field === type)

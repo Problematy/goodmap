@@ -48,11 +48,13 @@ class MarkerFieldPluginBase(GoodmapPluginBase):
     - ``order`` (optional): its position in the stack — lower is more innermost; ties keep
       registration order.
 
-    ``FieldRenderer`` seeds the rendering with the built-in for the type (or a string) and
-    folds every plugin for that ``field`` around it, innermost-first. Each plugin's component
-    receives ``{ value, children, config }`` — it may render from ``value`` (ignoring
-    ``children``) or compose around ``children``. The innermost plugin is simply the one
-    whose ``children`` is the seed.
+    ``FieldRenderer`` pipes the field's raw value through a chain of stages: the built-in for
+    the type (if any) renders it, then each plugin for that ``field`` transforms the result,
+    innermost-first. Each stage is ``({ input, config }) => element`` and receives the previous
+    stage's output as ``input`` — so the innermost stage gets the raw value and renders from
+    it, and every later stage gets the current element and wraps it. (A wrapping plugin thus
+    requires something to render the type: a built-in, or a renderer it ships with or depends
+    on; a type with only wrappers and no renderer is a misconfiguration.)
 
     goodmap registers this capability with platzky (via ``extra_plugin_bases``) so field
     plugins are config-gated through the standard plugin loader.

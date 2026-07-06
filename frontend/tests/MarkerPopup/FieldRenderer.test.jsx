@@ -18,9 +18,9 @@ describe('FieldRenderer', () => {
         );
     });
 
-    it('renders a field plugin that renders from the value', () => {
-        const Promo = ({ value }) => <span>{value.code}</span>;
-        Promo.propTypes = { value: PropTypes.shape({ code: PropTypes.string }).isRequired };
+    it('renders a field plugin that renders from the input value', () => {
+        const Promo = ({ input }) => <span>{input.code}</span>;
+        Promo.propTypes = { input: PropTypes.shape({ code: PropTypes.string }).isRequired };
         act(() => registerPlugin('promo', Promo, { field: 'promo' }, 'MarkerField'));
 
         render(<FieldRenderer value={{ type: 'promo', code: 'SAVE20' }} />);
@@ -62,8 +62,8 @@ describe('FieldRenderer', () => {
     });
 
     it('wraps a built-in with a field plugin, preserving the base rendering', () => {
-        const Badge = ({ children }) => <div data-testid="badge">{children}</div>;
-        Badge.propTypes = { children: PropTypes.node.isRequired };
+        const Badge = ({ input }) => <div data-testid="badge">{input}</div>;
+        Badge.propTypes = { input: PropTypes.node.isRequired };
         act(() => registerPlugin('badge', Badge, { field: 'hyperlink', order: 1 }, 'MarkerField'));
 
         render(<FieldRenderer value={{ type: 'hyperlink', value: 'https://example.com' }} />);
@@ -74,24 +74,24 @@ describe('FieldRenderer', () => {
     });
 
     it('does not apply a field plugin registered for a different type', () => {
-        const Badge = ({ children }) => <div data-testid="cta-badge">{children}</div>;
-        Badge.propTypes = { children: PropTypes.node.isRequired };
+        const Badge = ({ input }) => <div data-testid="cta-badge">{input}</div>;
+        Badge.propTypes = { input: PropTypes.node.isRequired };
         act(() => registerPlugin('cta-badge', Badge, { field: 'CTA', order: 1 }, 'MarkerField'));
 
         render(<FieldRenderer value={{ type: 'hyperlink', value: 'https://example.com' }} />);
         expect(screen.queryByTestId('cta-badge')).not.toBeInTheDocument();
     });
 
-    it('folds multiple field plugins innermost-first by order', () => {
-        const Inner = ({ children }) => <div data-testid="inner">{children}</div>;
-        Inner.propTypes = { children: PropTypes.node.isRequired };
-        const Outer = ({ children }) => <section data-testid="outer">{children}</section>;
-        Outer.propTypes = { children: PropTypes.node.isRequired };
+    it('pipes field plugins innermost-first by order', () => {
+        // Innermost (lowest order) renders from the raw value; the outer one wraps it.
+        const Inner = ({ input }) => <div data-testid="inner">{input.value}</div>;
+        Inner.propTypes = { input: PropTypes.shape({ value: PropTypes.string }).isRequired };
+        const Outer = ({ input }) => <section data-testid="outer">{input}</section>;
+        Outer.propTypes = { input: PropTypes.node.isRequired };
         act(() => registerPlugin('outer', Outer, { field: 'ordered', order: 2 }, 'MarkerField'));
         act(() => registerPlugin('inner', Inner, { field: 'ordered', order: 1 }, 'MarkerField'));
 
         render(<FieldRenderer value={{ type: 'ordered', value: 'x' }} />);
-        // Lower order is innermost, so the higher-order 'outer' wraps 'inner'.
-        expect(within(screen.getByTestId('outer')).getByTestId('inner')).toBeInTheDocument();
+        expect(within(screen.getByTestId('outer')).getByTestId('inner')).toHaveTextContent('x');
     });
 });

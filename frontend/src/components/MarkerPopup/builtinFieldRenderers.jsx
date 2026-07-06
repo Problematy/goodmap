@@ -21,11 +21,19 @@ const sanitizeUrl = raw => {
     }
 };
 
+// Built-ins are the innermost stage of the field fold: they receive the field's raw value
+// as `input` (`{ value, displayValue, ... }`) and render it into an element.
+const fieldInputShape = PropTypes.shape({
+    value: PropTypes.string.isRequired,
+    displayValue: PropTypes.string,
+});
+
 /**
  * Built-in field renderer: a safe external hyperlink.
  * Falls back to plain text when the URL is unsafe.
  */
-export const HyperlinkField = ({ value, displayValue = null }) => {
+export const HyperlinkField = ({ input }) => {
+    const { value, displayValue } = input;
     const text = displayValue || value;
     const safe = sanitizeUrl(value);
     if (!safe) return text;
@@ -36,16 +44,14 @@ export const HyperlinkField = ({ value, displayValue = null }) => {
     );
 };
 
-HyperlinkField.propTypes = {
-    value: PropTypes.string.isRequired,
-    displayValue: PropTypes.string,
-};
+HyperlinkField.propTypes = { input: fieldInputShape.isRequired };
 
 /**
  * Built-in field renderer: a call-to-action button that opens the (sanitized)
  * URL in a new tab.
  */
-export const CTAButtonField = ({ value, displayValue = null }) => {
+export const CTAButtonField = ({ input }) => {
+    const { value, displayValue } = input;
     const text = displayValue || value;
     const safe = sanitizeUrl(value);
     if (!safe) return text;
@@ -62,10 +68,7 @@ export const CTAButtonField = ({ value, displayValue = null }) => {
     );
 };
 
-CTAButtonField.propTypes = {
-    value: PropTypes.string.isRequired,
-    displayValue: PropTypes.string,
-};
+CTAButtonField.propTypes = { input: fieldInputShape.isRequired };
 
 // Built-in field renderers, keyed by field `type`. Resolved before plugins so a
 // plugin cannot shadow a first-party renderer (e.g. the URL-sanitizing link/button).
