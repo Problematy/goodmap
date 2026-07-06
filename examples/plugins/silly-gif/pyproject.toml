@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "goodmap-silly-gif"
+version = "0.1.0"
+description = "Example goodmap plugin: a silly gif shown as a map-loading overlay and inside marker fields."
+authors = ["you <you@example.com>"]
+packages = [{ include = "silly_gif" }]
+# Ship the built Module Federation bundle (frontend/webpack.config.js writes it here).
+include = ["silly_gif/static/**/*"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+goodmap = "*"
+
+# Register the plugin in goodmap's entry-point group. The key ("silly_gif") is the plugin's
+# identity everywhere: the Module Federation container name (webpack `name`), the manifest
+# `pluginName`, and — for the field capability — the field `type` this plugin renders.
+[tool.poetry.plugins."goodmap.plugins"]
+silly_gif = "silly_gif:SillyGifPlugin"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

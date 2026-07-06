@@ -25,32 +25,55 @@ from goodmap.db import (
     get_location_obligatory_fields,
 )
 from goodmap.feature_flags import EnableAdminPanel, UseLazyLoading
+from goodmap.plugin import CAPABILITY_BASES, GoodmapPluginBase
 
 logger = logging.getLogger(__name__)
 
 _PLUGIN_ENTRY_POINT_GROUP = "goodmap.plugins"
 
 
+def _frontend_capability_bases(plugin_class: Any) -> list[type[GoodmapPluginBase]]:
+    """The goodmap frontend capability bases a plugin subclasses (may be several).
+
+    Derived by class-based recognition, the same way platzky matches plugins against its
+    capability bases. A plugin can provide multiple frontend capabilities (e.g. an overlay
+    and a marker field) by subclassing more than one base.
+    """
+    if not isinstance(plugin_class, type):
+        return []
+    return [base for base in CAPABILITY_BASES if issubclass(plugin_class, base)]
+
+
 def _register_plugin_static_resources(
     ep: importlib.metadata.EntryPoint,
-) -> tuple[Blueprint | None, dict[str, Any] | None]:
-    """Load a plugin's static resources and return its blueprint and manifest entry.
+) -> tuple[Blueprint | None, list[dict[str, Any]]]:
+    """Load a plugin's static resources and return its blueprint and manifest entries.
 
-    Loads the plugin module, checks for a 'static' directory, and if found
-    creates a Flask blueprint and a manifest entry for the frontend.
+    Loads the plugin module, checks for a 'static' directory, and if found creates a Flask
+    blueprint plus one manifest entry per frontend capability the plugin provides. Each
+    capability points at its own Module Federation ``module``, all served from the plugin's
+    single ``remoteEntry.js``.
 
     Args:
         ep: The entry point for the plugin.
 
     Returns:
-        A tuple of (blueprint, manifest_entry). Both are None if the plugin
-        has no static directory or loading fails.
+        A tuple of (blueprint, manifest_entries). The blueprint is None and the list empty
+        if the plugin has no static directory, no frontend capability, or loading fails.
     """
     try:
-        mod_path = os.path.dirname(os.path.realpath(inspect.getfile(ep.load())))
+        plugin_class = ep.load()
+        mod_path = os.path.dirname(os.path.realpath(inspect.getfile(plugin_class)))
         static_dir = os.path.join(mod_path, "static")
         if not os.path.isdir(static_dir):
-            return None, None
+            return None, []
+
+        # One manifest entry per capability the plugin provides. "capability" tells the
+        # frontend which handler mounts the component (overlay via MapOverlays, field via
+        # FieldRenderer, …) and "module" is that capability's Module Federation key.
+        bases = _frontend_capability_bases(plugin_class)
+        if not bases:
+            return None, []
 
         bp = Blueprint(
             f"plugin_{ep.name}",
@@ -65,15 +88,24 @@ def _register_plugin_static_resources(
             response.headers["Access-Control-Allow-Origin"] = "*"
             return response
 
-        manifest_entry = {
-            "scope": ep.name,
-            "url": f"/plugins/{ep.name}/static/remoteEntry.js",
-            "module": "./Button",
-        }
-        return bp, manifest_entry
+        entries = []
+        for base in bases:
+            # The capability token and its Module Federation key are derived from the base
+            # class name (MapOverlayPluginBase -> "MapOverlay" / "./MapOverlay"), so the
+            # class is the single source of truth — no separate identifier to keep in sync.
+            capability = base.__name__.removesuffix("PluginBase")
+            entries.append(
+                {
+                    "pluginName": ep.name,
+                    "url": f"/plugins/{ep.name}/static/remoteEntry.js",
+                    "module": f"./{capability}",
+                    "capability": capability,
+                }
+            )
+        return bp, entries
     except Exception:
         logger.warning("Failed to serve static files for plugin '%s'", ep.name)
-        return None, None
+        return None, []
 
 
 def _setup_location_model(
@@ -133,7 +165,15 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
 
     locale_dir = os.path.join(directory, "locale")
     config.translation_directories.append(locale_dir)
-    app = platzky.create_app_from_config(config)
+    # Register goodmap's own plugin ecosystem with platzky: MapOverlayPluginBase is a
+    # host-defined capability, and goodmap plugins are discovered from the
+    # "goodmap.plugins" entry-point group. This makes them config-gated (is_active)
+    # through platzky's normal plugin loader, alongside platzky's own plugins.
+    app = platzky.create_app_from_config(
+        config,
+        extra_plugin_bases=list(CAPABILITY_BASES),
+        extra_plugins_entrypoints=[_PLUGIN_ENTRY_POINT_GROUP],
+    )
 
     frontend_static_dir = os.path.join(directory, "static", "frontend")
     app.register_blueprint(
@@ -160,12 +200,29 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
 
     app.extensions["goodmap"] = {"location_obligatory_fields": location_obligatory_fields}
 
+    try:
+        plugins_data = app.db.get_plugins_data()
+    except Exception:
+        logger.warning(
+            "Could not read plugin config data; frontend plugins get empty config",
+            exc_info=True,
+        )
+        plugins_data = {}
+
     plugin_manifest = []
     for ep in importlib.metadata.entry_points(group=_PLUGIN_ENTRY_POINT_GROUP):
-        bp, entry = _register_plugin_static_resources(ep)
-        if bp is not None:
+        plugin_cfg = plugins_data.get(ep.name)
+        # Only serve the frontend for plugins that are explicitly enabled in config.
+        # platzky's loader has already instantiated the active ones (gated identically),
+        # so the manifest stays in lockstep with the loaded backend plugins.
+        if plugin_cfg is None or not plugin_cfg.is_active:
+            continue
+        bp, entries = _register_plugin_static_resources(ep)
+        if bp is not None and entries:
             app.register_blueprint(bp)
-            plugin_manifest.append(entry)
+            for entry in entries:
+                entry["config"] = plugin_cfg.config
+                plugin_manifest.append(entry)
 
     app.config["PLUGIN_MANIFEST"] = plugin_manifest
 

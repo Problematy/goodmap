@@ -6,7 +6,8 @@ import ShareIcon from '@mui/icons-material/Share';
 import { useTranslation } from 'react-i18next';
 import { isMobile } from 'react-device-detect';
 import { buttonStyleSmall } from '../../styles/buttonStyle';
-import { getContentAsString, mapCustomTypeToReactComponent } from './mapCustomTypeToReactComponent';
+import getContentAsString from './fieldContent';
+import FieldRenderer from './FieldRenderer';
 import { ReportProblemForm } from './ReportProblemForm';
 import { toast } from '../../utils/toast';
 
@@ -95,12 +96,15 @@ const isCustomValue = value => value !== null && typeof value === 'object' && !A
  * @param {string|number|Array|Object} props.valueToDisplay - Value to display, can be primitive or custom type object
  * @returns {React.ReactElement} Paragraph element containing the formatted value
  */
-const LocationDetailsValue = ({ valueToDisplay }) => {
-    const value = isCustomValue(valueToDisplay)
-        ? mapCustomTypeToReactComponent(valueToDisplay)
-        : valueToDisplay;
-    return <span>{isCustomValue(valueToDisplay) ? value : getContentAsString(value)}</span>;
-};
+const LocationDetailsValue = ({ valueToDisplay }) => (
+    <span>
+        {isCustomValue(valueToDisplay) ? (
+            <FieldRenderer value={valueToDisplay} />
+        ) : (
+            getContentAsString(valueToDisplay)
+        )}
+    </span>
+);
 
 LocationDetailsValue.propTypes = {
     valueToDisplay: PropTypes.oneOfType([

@@ -18,16 +18,22 @@ export async function loadPlugins() {
 
     await __webpack_init_sharing__('default');
 
-    for (const { scope, url, module: moduleName } of manifest) {
+    // A plugin may appear in several manifest entries (one per capability), all sharing one
+    // remoteEntry.js. Load and initialize each plugin's container once, then pull the
+    // per-capability module from it.
+    const initialized = new Set();
+
+    for (const { pluginName, url, module: moduleName, config, capability } of manifest) {
         try {
-            await loadRemoteScript(url);
-            const container = window[scope];
-            await container.init(__webpack_share_scopes__.default);
-            const factory = await container.get(moduleName);
-            const Module = factory();
-            registerPlugin(scope, Module.default);
+            if (!initialized.has(pluginName)) {
+                await loadRemoteScript(url);
+                await window[pluginName].init(__webpack_share_scopes__.default);
+                initialized.add(pluginName);
+            }
+            const factory = await window[pluginName].get(moduleName);
+            registerPlugin(pluginName, factory().default, config, capability);
         } catch (e) {
-            console.warn(`Failed to load plugin "${scope}":`, e);
+            console.warn(`Failed to load plugin "${pluginName}" (${capability}):`, e);
         }
     }
 }

@@ -77,7 +77,10 @@ class TestShareOnDesktop:
         Verify navigating to a URL with ?locationId= auto-opens the popup
         with the correct location content.
         """
-        page.goto(f"{BASE_URL}/?locationId=c8ecf476-5968-40da-ba5c-e810ad9ff203", wait_until="domcontentloaded")
+        page.goto(
+            f"{BASE_URL}/?locationId=c8ecf476-5968-40da-ba5c-e810ad9ff203",
+            wait_until="domcontentloaded",
+        )
 
         # Verify popup is visible
         popup = page.locator(".leaflet-popup-content")
@@ -162,7 +165,10 @@ class TestShareOnMobile:
 
         Tests on all mobile devices: iphone-x, iphone-6, ipad-2, samsung-s10
         """
-        mobile_page.goto(f"{BASE_URL}/?locationId=c8ecf476-5968-40da-ba5c-e810ad9ff203", wait_until="domcontentloaded")
+        mobile_page.goto(
+            f"{BASE_URL}/?locationId=c8ecf476-5968-40da-ba5c-e810ad9ff203",
+            wait_until="domcontentloaded",
+        )
 
         # On mobile, popup appears as Material-UI Dialog
         dialog_content = mobile_page.locator(".MuiDialogContent-root")

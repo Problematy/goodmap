@@ -1,5 +1,6 @@
 import importlib.metadata
 import os
+import sys
 import tempfile
 import types
 from typing import Any
@@ -12,6 +13,11 @@ from platzky.db.json_db import JsonDbConfig
 from goodmap import goodmap
 from goodmap.config import GoodmapConfig
 from goodmap.feature_flags import EnableAdminPanel, UseLazyLoading
+from goodmap.plugin import (
+    CAPABILITY_BASES,
+    MapOverlayPluginBase,
+    MarkerFieldPluginBase,
+)
 from tests.unit_tests.conftest import make_flag_set
 
 config = GoodmapConfig(
@@ -31,7 +37,11 @@ def test_create_app_from_config():
         mock_platzky_app_creation.return_value.is_enabled.return_value = False
         with patch("goodmap.goodmap.extend_db_with_goodmap_queries", MagicMock()) as mock_extend_db:
             goodmap.create_app_from_config(config)
-            mock_platzky_app_creation.assert_called_once_with(config)
+            mock_platzky_app_creation.assert_called_once_with(
+                config,
+                extra_plugin_bases=list(CAPABILITY_BASES),
+                extra_plugins_entrypoints=["goodmap.plugins"],
+            )
             mock_extend_db.assert_called_once()
 
 
@@ -169,77 +179,199 @@ def test_index_route_location_schema_with_lazy_loading():
     assert "test_category" in response_text
 
 
-def make_mock_entry_point(name: str, module_path: str):
-    """Create a mock EntryPoint that loads a module from the given path.
+def _plugin_ep(name: str, plugin_dir: str | None, base: type = MapOverlayPluginBase):
+    """Create a mock EntryPoint whose load() returns a real ``base`` subclass.
 
-    Creates a real module file so inspect.getfile resolves correctly.
+    ``base`` is the goodmap capability base the plugin subclasses (its manifest capability
+    is derived from the base class name). The class's module file resolves to
+    ``plugin_dir/__init__.py`` so the static-resource lookup points at ``plugin_dir/static``.
+    Pass ``plugin_dir=None`` to make the module file unresolvable, exercising the
+    static-registration failure path.
     """
-    os.makedirs(module_path, exist_ok=True)
-    init_file = os.path.join(module_path, "__init__.py")
-    if not os.path.exists(init_file):
-        open(init_file, "w").close()
+    module = types.ModuleType(name)
+    if plugin_dir is not None:
+        os.makedirs(plugin_dir, exist_ok=True)
+        init_file = os.path.join(plugin_dir, "__init__.py")
+        if not os.path.exists(init_file):
+            open(init_file, "w").close()
+        module.__file__ = init_file
+    else:
+        module.__file__ = None
+    sys.modules[name] = module
 
-    real_module = types.ModuleType(name)
-    real_module.__file__ = init_file
+    cls = type("Plugin", (base,), {})
+    cls.__module__ = name
 
-    spec = mock.MagicMock(spec=importlib.metadata.EntryPoint)
-    spec.name = name
-    spec.load.return_value = real_module
-    return spec
+    ep = mock.MagicMock(spec=importlib.metadata.EntryPoint)
+    ep.name = name
+    ep.load.return_value = cls
+    return ep
+
+
+def _patch_entry_points(groups: dict[str, list[Any]]):
+    """Patch importlib.metadata.entry_points to return per-group entry points.
+
+    Production resolves a distinct list per group; the global patch must mirror that so
+    cross-group discovery (platzky + goodmap) doesn't see spurious duplicates.
+    """
+
+    def _fake_entry_points(*_args: Any, **kwargs: Any) -> list[Any]:
+        group = kwargs.get("group")
+        if group is None:
+            return []
+        return list(groups.get(group, []))
+
+    return patch("importlib.metadata.entry_points", side_effect=_fake_entry_points)
+
+
+def _plugin_config(name: str, plugin_config: dict[str, Any] | None = None) -> GoodmapConfig:
+    return _make_test_app_config(
+        extra_data={"plugins": {name: {"is_active": True, "config": plugin_config or {}}}}
+    )
 
 
 def test_plugin_with_static_dir():
-    """Should register blueprint and manifest entry when plugin has a static directory."""
-    config = _make_test_app_config()
+    """Active overlay plugin with a static dir gets a blueprint + manifest entry incl. config."""
+    config = _plugin_config("my_plugin", {"foo": "bar"})
     with tempfile.TemporaryDirectory() as tmpdir:
         plugin_dir = os.path.join(tmpdir, "my_plugin")
-        static_dir = os.path.join(plugin_dir, "static")
-        os.makedirs(static_dir)
+        os.makedirs(os.path.join(plugin_dir, "static"))
 
-        ep = make_mock_entry_point("my_plugin", plugin_dir)
+        ep = _plugin_ep("my_plugin", plugin_dir)
 
-        with patch("importlib.metadata.entry_points", return_value=[ep]):
+        with _patch_entry_points({"goodmap.plugins": [ep]}):
             app = goodmap.create_app_from_config(config)
 
     assert "plugin_my_plugin" in app.blueprints
     assert app.config["PLUGIN_MANIFEST"] == [
         {
-            "scope": "my_plugin",
+            "pluginName": "my_plugin",
             "url": "/plugins/my_plugin/static/remoteEntry.js",
-            "module": "./Button",
+            "module": "./MapOverlay",
+            "capability": "MapOverlay",
+            "config": {"foo": "bar"},
         }
     ]
 
 
-def test_plugin_without_static_dir():
-    """Should not register blueprint when plugin has no static directory."""
-    config = _make_test_app_config()
+def test_field_plugin_is_manifested_with_field_capability():
+    """A MarkerFieldPluginBase plugin is manifested with ``capability: "field"``."""
+    config = _plugin_config("promo", {"color": "#0f0"})
     with tempfile.TemporaryDirectory() as tmpdir:
-        ep = make_mock_entry_point("no_static_plugin", tmpdir)
+        plugin_dir = os.path.join(tmpdir, "promo")
+        os.makedirs(os.path.join(plugin_dir, "static"))
 
-        with patch("importlib.metadata.entry_points", return_value=[ep]):
+        ep = _plugin_ep("promo", plugin_dir, base=MarkerFieldPluginBase)
+
+        with _patch_entry_points({"goodmap.plugins": [ep]}):
+            app = goodmap.create_app_from_config(config)
+
+    assert app.config["PLUGIN_MANIFEST"] == [
+        {
+            "pluginName": "promo",
+            "url": "/plugins/promo/static/remoteEntry.js",
+            "module": "./MarkerField",
+            "capability": "MarkerField",
+            "config": {"color": "#0f0"},
+        }
+    ]
+
+
+def test_field_plugin_config_is_passed_through_to_the_manifest():
+    """A field plugin is manifested as ``"MarkerField"``; its ``config`` (``field``/``order``,
+    which the frontend uses to place it in the fold) is passed through untouched."""
+    config = _plugin_config("tracker", {"field": "hyperlink", "order": 1})
+    with tempfile.TemporaryDirectory() as tmpdir:
+        plugin_dir = os.path.join(tmpdir, "tracker")
+        os.makedirs(os.path.join(plugin_dir, "static"))
+
+        ep = _plugin_ep("tracker", plugin_dir, base=MarkerFieldPluginBase)
+
+        with _patch_entry_points({"goodmap.plugins": [ep]}):
+            app = goodmap.create_app_from_config(config)
+
+    assert app.config["PLUGIN_MANIFEST"] == [
+        {
+            "pluginName": "tracker",
+            "url": "/plugins/tracker/static/remoteEntry.js",
+            "module": "./MarkerField",
+            "capability": "MarkerField",
+            "config": {"field": "hyperlink", "order": 1},
+        }
+    ]
+
+
+def test_plugin_with_multiple_frontend_capabilities_gets_one_entry_per_capability():
+    """A plugin subclassing two capability bases is manifested once per capability."""
+
+    class _OverlayAndField(MapOverlayPluginBase, MarkerFieldPluginBase):
+        pass
+
+    config = _plugin_config("silly", {"gif": "cat.gif"})
+    with tempfile.TemporaryDirectory() as tmpdir:
+        plugin_dir = os.path.join(tmpdir, "silly")
+        os.makedirs(os.path.join(plugin_dir, "static"))
+
+        ep = _plugin_ep("silly", plugin_dir, base=_OverlayAndField)
+
+        with _patch_entry_points({"goodmap.plugins": [ep]}):
+            app = goodmap.create_app_from_config(config)
+
+    by_capability = {e["capability"]: e for e in app.config["PLUGIN_MANIFEST"]}
+    assert set(by_capability) == {"MapOverlay", "MarkerField"}
+    assert by_capability["MapOverlay"]["module"] == "./MapOverlay"
+    assert by_capability["MarkerField"]["module"] == "./MarkerField"
+    # Same plugin, same bundle URL, same config across both entries.
+    assert all(
+        e["pluginName"] == "silly"
+        and e["url"] == "/plugins/silly/static/remoteEntry.js"
+        and e["config"] == {"gif": "cat.gif"}
+        for e in app.config["PLUGIN_MANIFEST"]
+    )
+
+
+def test_plugin_inactive_is_not_served():
+    """A plugin that is installed but not active in config gets no frontend manifest entry."""
+    config = _make_test_app_config()  # no plugins configured -> inactive
+    with tempfile.TemporaryDirectory() as tmpdir:
+        plugin_dir = os.path.join(tmpdir, "off_plugin")
+        os.makedirs(os.path.join(plugin_dir, "static"))
+
+        ep = _plugin_ep("off_plugin", plugin_dir)
+
+        with _patch_entry_points({"goodmap.plugins": [ep]}):
+            app = goodmap.create_app_from_config(config)
+
+    assert "plugin_off_plugin" not in app.blueprints
+    assert app.config["PLUGIN_MANIFEST"] == []
+
+
+def test_plugin_without_static_dir():
+    """Active overlay plugin without a static dir gets no blueprint/manifest entry."""
+    config = _plugin_config("no_static_plugin")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        plugin_dir = os.path.join(tmpdir, "no_static_plugin")
+        ep = _plugin_ep("no_static_plugin", plugin_dir)
+
+        with _patch_entry_points({"goodmap.plugins": [ep]}):
             app = goodmap.create_app_from_config(config)
 
     assert "plugin_no_static_plugin" not in app.blueprints
     assert app.config["PLUGIN_MANIFEST"] == []
 
 
-def test_plugin_load_failure():
-    """Should log warning and skip plugin when loading fails."""
-    config = _make_test_app_config()
-    ep = mock.MagicMock(spec=importlib.metadata.EntryPoint)
-    ep.name = "broken_plugin"
-    ep.load.side_effect = ImportError("Module not found")
+def test_plugin_static_registration_failure_is_skipped():
+    """An active plugin whose static resources can't be resolved is skipped with a warning."""
+    config = _plugin_config("weird_plugin")
+    ep = _plugin_ep("weird_plugin", plugin_dir=None)  # module file unresolvable
 
-    with patch("importlib.metadata.entry_points", return_value=[ep]):
+    with _patch_entry_points({"goodmap.plugins": [ep]}):
         with patch.object(goodmap.logger, "warning") as mock_warning:
             app = goodmap.create_app_from_config(config)
 
-    assert "plugin_broken_plugin" not in app.blueprints
+    assert "plugin_weird_plugin" not in app.blueprints
     assert app.config["PLUGIN_MANIFEST"] == []
-    mock_warning.assert_called_once_with(
-        "Failed to serve static files for plugin '%s'", "broken_plugin"
-    )
+    mock_warning.assert_any_call("Failed to serve static files for plugin '%s'", "weird_plugin")
 
 
 def _make_test_app_config(feature_flags: Any = None, extra_data: Any = None) -> GoodmapConfig:
@@ -365,7 +497,7 @@ def test_field_renderer_shortcodes_collected_from_content_transformer_plugins() 
     post_ep.load.return_value = _PluginB
 
     with mock.patch("goodmap.goodmap.core_pages", side_effect=_spy_core_pages):
-        with mock.patch("importlib.metadata.entry_points", return_value=[field_ep, post_ep]):
+        with _patch_entry_points({"platzky.plugins": [field_ep, post_ep]}):
             goodmap.create_app_from_config(config)
 
     assert "testfieldsc" in captured["shortcodes"]
@@ -374,7 +506,7 @@ def test_field_renderer_shortcodes_collected_from_content_transformer_plugins() 
 
 def test_plugin_blueprint_sets_cors_header():
     """Should set Access-Control-Allow-Origin on plugin blueprint responses."""
-    config = _make_test_app_config()
+    config = _plugin_config("cors_plugin")
     with tempfile.TemporaryDirectory() as tmpdir:
         plugin_dir = os.path.join(tmpdir, "cors_plugin")
         static_dir = os.path.join(plugin_dir, "static")
@@ -383,9 +515,9 @@ def test_plugin_blueprint_sets_cors_header():
         # Create a test file in the static dir
         open(os.path.join(static_dir, "test.js"), "w").close()
 
-        ep = make_mock_entry_point("cors_plugin", plugin_dir)
+        ep = _plugin_ep("cors_plugin", plugin_dir)
 
-        with patch("importlib.metadata.entry_points", return_value=[ep]):
+        with _patch_entry_points({"goodmap.plugins": [ep]}):
             app = goodmap.create_app_from_config(config)
 
         app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR

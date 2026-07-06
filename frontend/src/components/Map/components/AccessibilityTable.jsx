@@ -11,7 +11,7 @@ import Arrow from '@mui/icons-material/ArrowLeftRounded';
 import { IconButton } from '@mui/material';
 import PropTypes from 'prop-types';
 import { httpService } from '../../../services/http/httpService';
-import { mapCustomTypeToReactComponent } from '../../MarkerPopup/mapCustomTypeToReactComponent';
+import FieldRenderer from '../../MarkerPopup/FieldRenderer';
 import { useCategories } from '../../Categories/CategoriesContext';
 
 /**
@@ -132,7 +132,7 @@ const AccessibilityTable = ({ userPosition, setIsAccessibilityTableOpen }) => {
                             >
                                 {row.map((cell, index) => (
                                     <TableCell key={`${cell.toString()}-${index}`} align="center">
-                                        {cell.type ? mapCustomTypeToReactComponent(cell) : cell}
+                                        {cell.type ? <FieldRenderer value={cell} /> : cell}
                                     </TableCell>
                                 ))}
                             </TableRow>
