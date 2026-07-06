@@ -2,6 +2,13 @@
 
 <!-- version list -->
 
+## [2.0.0-alpha.2](https://github.com/Problematy/goodmap/compare/2.0.0-alpha.1...2.0.0-alpha.2) (2026-07-06)
+
+
+### Features
+
+* allow goodmaps plugins ([#379](https://github.com/Problematy/goodmap/issues/379)) ([b676411](https://github.com/Problematy/goodmap/commit/b67641111c1c9483005e7215afff7216145a4d3f))
+
 ## [2.0.0-alpha.1](https://github.com/Problematy/goodmap/compare/2.0.0-alpha...2.0.0-alpha.1) (2026-06-29)
 
 
