@@ -95,7 +95,6 @@ jobs:
 
   e2e-tests:
     needs: [lint, test]
-    continue-on-error: true
     permissions:
       contents: read
       actions: read
