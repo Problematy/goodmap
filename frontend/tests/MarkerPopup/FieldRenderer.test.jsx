@@ -18,16 +18,16 @@ describe('FieldRenderer', () => {
         );
     });
 
-    it('renders a field plugin resolved by type and passes props', () => {
-        const Promo = ({ code }) => <span>{code}</span>;
-        Promo.propTypes = { code: PropTypes.string.isRequired };
-        act(() => registerPlugin('promo', Promo, {}, 'MarkerField'));
+    it('renders a field plugin that renders from the value', () => {
+        const Promo = ({ value }) => <span>{value.code}</span>;
+        Promo.propTypes = { value: PropTypes.shape({ code: PropTypes.string }).isRequired };
+        act(() => registerPlugin('promo', Promo, { field: 'promo' }, 'MarkerField'));
 
         render(<FieldRenderer value={{ type: 'promo', code: 'SAVE20' }} />);
         expect(screen.getByText('SAVE20')).toBeInTheDocument();
     });
 
-    it('falls back to the field value when the type has no renderer', () => {
+    it('falls back to the field value when nothing renders the type', () => {
         render(<FieldRenderer value={{ type: 'unknown', value: 'plain text' }} />);
         expect(screen.getByText('plain text')).toBeInTheDocument();
     });
@@ -37,7 +37,7 @@ describe('FieldRenderer', () => {
         expect(screen.getByText('just text')).toBeInTheDocument();
     });
 
-    it('re-resolves the renderer when value.type changes on the same instance', () => {
+    it('re-resolves when value.type changes on the same instance', () => {
         const { rerender } = render(
             <FieldRenderer value={{ type: 'hyperlink', value: 'https://example.com' }} />,
         );
@@ -61,36 +61,37 @@ describe('FieldRenderer', () => {
         expect(screen.getByText('X')).toBeInTheDocument();
     });
 
-    it('lets a built-in take precedence over a plugin of the same type and warns once', () => {
-        const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
-        const Rogue = () => <span>rogue</span>;
-        act(() => registerPlugin('hyperlink', Rogue, {}, 'MarkerField'));
-
-        render(<FieldRenderer value={{ type: 'hyperlink', value: 'https://example.com' }} />);
-        expect(screen.queryByText('rogue')).not.toBeInTheDocument();
-        expect(screen.getByRole('link')).toBeInTheDocument();
-        expect(warn).toHaveBeenCalledWith(expect.stringContaining('hyperlink'));
-        warn.mockRestore();
-    });
-
-    it('wraps the base renderer output with a decorator matching the type', () => {
+    it('wraps a built-in with a field plugin, preserving the base rendering', () => {
         const Badge = ({ children }) => <div data-testid="badge">{children}</div>;
         Badge.propTypes = { children: PropTypes.node.isRequired };
-        act(() => registerPlugin('badge', Badge, { decorates: 'hyperlink' }, 'MarkerField'));
+        act(() => registerPlugin('badge', Badge, { field: 'hyperlink', order: 1 }, 'MarkerField'));
 
         render(<FieldRenderer value={{ type: 'hyperlink', value: 'https://example.com' }} />);
 
-        // The base (sanitizing) renderer still runs, inside the decorator wrapper.
+        // The built-in (sanitizing) renderer still runs, inside the wrapper.
         const badge = screen.getByTestId('badge');
         expect(within(badge).getByRole('link')).toHaveAttribute('href', 'https://example.com/');
     });
 
-    it('does not apply a decorator registered for a different type', () => {
+    it('does not apply a field plugin registered for a different type', () => {
         const Badge = ({ children }) => <div data-testid="cta-badge">{children}</div>;
         Badge.propTypes = { children: PropTypes.node.isRequired };
-        act(() => registerPlugin('cta-badge', Badge, { decorates: 'CTA' }, 'MarkerField'));
+        act(() => registerPlugin('cta-badge', Badge, { field: 'CTA', order: 1 }, 'MarkerField'));
 
         render(<FieldRenderer value={{ type: 'hyperlink', value: 'https://example.com' }} />);
         expect(screen.queryByTestId('cta-badge')).not.toBeInTheDocument();
+    });
+
+    it('folds multiple field plugins innermost-first by order', () => {
+        const Inner = ({ children }) => <div data-testid="inner">{children}</div>;
+        Inner.propTypes = { children: PropTypes.node.isRequired };
+        const Outer = ({ children }) => <section data-testid="outer">{children}</section>;
+        Outer.propTypes = { children: PropTypes.node.isRequired };
+        act(() => registerPlugin('outer', Outer, { field: 'ordered', order: 2 }, 'MarkerField'));
+        act(() => registerPlugin('inner', Inner, { field: 'ordered', order: 1 }, 'MarkerField'));
+
+        render(<FieldRenderer value={{ type: 'ordered', value: 'x' }} />);
+        // Lower order is innermost, so the higher-order 'outer' wraps 'inner'.
+        expect(within(screen.getByTestId('outer')).getByTestId('inner')).toBeInTheDocument();
     });
 });

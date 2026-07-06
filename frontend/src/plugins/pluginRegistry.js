@@ -10,13 +10,6 @@ export function registerPlugin(pluginName, Plugin, config, capability) {
     listeners.forEach(fn => fn());
 }
 
-// The base field renderer for a type: the MarkerField plugin registered under that name
-// that is a renderer (no `config.decorates`) rather than a decorator of another type.
-export function getFieldPlugin(pluginName) {
-    const entry = registry.get(entryKey(pluginName, 'MarkerField'));
-    return entry && !entry.config?.decorates ? entry.Plugin : undefined;
-}
-
 // A plugin's config is shared across its capability entries; return it from any of them.
 export function getPluginConfig(pluginName) {
     for (const entry of registry.values()) {
@@ -33,13 +26,15 @@ export function getOverlayPlugins() {
         .map(entry => [entry.pluginName, entry.Plugin, entry.config]);
 }
 
-// Field decorators: MarkerField plugins acting as decorators (they declare `config.decorates`)
-// wrap the rendered output of the renderer for their target `type`. Returned in registration
-// order so multiple decorators compose predictably.
-export function getFieldDecorators(type) {
+// The field plugins that attach to a field `type` (via `config.field`), as an ordered stack.
+// FieldRenderer folds them around the seed rendering, innermost (lowest `config.order`) first;
+// ties keep registration order (a stable sort). Each is a wrapper — a "renderer" ignores its
+// children and renders from the value, a "decorator" composes around them.
+export function getFieldPlugins(type) {
     return Array.from(registry.values())
-        .filter(entry => entry.capability === 'MarkerField' && entry.config?.decorates === type)
-        .map(entry => ({ Decorator: entry.Plugin, config: entry.config }));
+        .filter(entry => entry.capability === 'MarkerField' && entry.config?.field === type)
+        .sort((a, b) => (a.config?.order ?? 0) - (b.config?.order ?? 0))
+        .map(entry => ({ Plugin: entry.Plugin, config: entry.config }));
 }
 
 export function subscribe(fn) {

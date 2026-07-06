@@ -17,18 +17,20 @@ The capability a plugin provides determines *how* its frontend renders:
 
 **Marker fields** (:class:`goodmap.plugin.MarkerFieldPluginBase`)
     Render a single location field inside a marker popup (capability ``"MarkerField"``,
-    mounted by ``FieldRenderer``). A field plugin plays one of two roles, chosen by its
-    ``config``:
+    mounted by ``FieldRenderer``). ``FieldRenderer`` renders a field as a **fold**: a *seed*
+    (the built-in for the field ``type`` rendered from the value, e.g. ``hyperlink``/``CTA``,
+    or a string when there is none), wrapped by every field plugin that attaches to that
+    ``type``. A plugin's ``config`` declares which field it attaches to and where it sits:
 
-    - **Renderer** (no ``config.decorates``): it *is* the component for the field ``type``
-      matching its name — its shortcode transforms the value into ``{"type": "<name>", ...}``
-      and it receives that value spread as props. The built-in field types ``hyperlink`` and
-      ``CTA`` resolve the same way and take precedence over a plugin of the same name.
-    - **Decorator** (``config.decorates`` set to a field ``type``): it *wraps* that type's
-      rendering, receiving the base's rendered output as ``children`` (not the value) and
-      composing around it (icon, badge, tracking wrapper, styling). Because it only sees the
-      already-rendered output, it cannot bypass the base's behaviour, e.g. the built-in
-      link/button URL sanitization. A renderer is simply the innermost/base decorator.
+    - ``field``: the field ``type`` it applies to. For a custom type, the plugin's platzky
+      shortcode transforms the value into ``{"type": "<field>", ...}``.
+    - ``order`` (optional): position in the stack — lower is more innermost; ties keep
+      registration order.
+
+    Every field plugin is the same kind of wrapper, receiving ``{ value, children, config }``.
+    A **renderer** ignores ``children`` and renders from ``value``; a **decorator** composes
+    around ``children`` (icon, badge, tracking wrapper). There is no separate role — the
+    innermost plugin is simply the one whose ``children`` is the seed.
 
 **Map overlays** (:class:`goodmap.plugin.MapOverlayPluginBase`)
     Render a component once *over the whole map*, not tied to any marker — e.g. a
@@ -87,8 +89,8 @@ class name (``PluginBase`` stripped) —
 :class:`~goodmap.plugin.MapOverlayPluginBase` (``"MapOverlay"`` / ``./MapOverlay``) and
 :class:`~goodmap.plugin.MarkerFieldPluginBase` (``"MarkerField"`` / ``./MarkerField``) — and
 the frontend uses ``capability`` to mount the component at the right place (overlays over the
-map by ``MapOverlays``; field renderers and decorators in a marker by ``FieldRenderer``, which
-tells them apart by ``config.decorates``).
+map by ``MapOverlays``; field plugins in a marker by ``FieldRenderer``, which folds them by
+``config.field`` and ``config.order``).
 
 Field renderers and ``visible_data``
 ------------------------------------
@@ -98,15 +100,13 @@ Field renderers and ``visible_data``
 plugin, its shortcode transforms the value into ``{"type": "<name>", ...}`` and the
 frontend renders the matching component (resolved by ``type``) in the marker popup.
 
-Field decorator plugins
------------------------
+Field plugins as decorators
+---------------------------
 
-A decorator wraps an existing field renderer's output instead of replacing it — the way
-to customize a built-in (``hyperlink``, ``CTA``) safely, since the base renderer still
-runs. It is an ordinary :class:`~goodmap.plugin.MarkerFieldPluginBase` (there is no separate
-decorator capability); setting ``config.decorates`` is what makes it act as a decorator
-rather than a renderer. It needs no shortcode (it augments rendering, it does not produce
-field values):
+A field plugin that wraps an existing field's rendering (rather than rendering the value
+itself) is just an ordinary :class:`~goodmap.plugin.MarkerFieldPluginBase` that attaches to
+that ``type`` — the way to customize a built-in (``hyperlink``, ``CTA``). It needs no
+shortcode (it augments rendering, it does not produce field values):
 
 .. code-block:: python
 
@@ -118,9 +118,8 @@ field values):
         def __init__(self, config: dict[str, Any]) -> None:
             super().__init__(config)
 
-The React component receives the base renderer's rendered output as ``children`` (plus
-its own ``config``) and composes around it. Because it only sees the already-rendered,
-already-sanitized output, it cannot bypass the base renderer's behaviour:
+The React component receives ``{ value, children, config }``. Acting as a decorator, it
+composes around ``children`` (the current rendering) and ignores ``value``:
 
 .. code-block:: jsx
 
@@ -134,8 +133,8 @@ already-sanitized output, it cannot bypass the base renderer's behaviour:
         );
     }
 
-The field ``type`` a decorator wraps is set in its ``config`` via ``decorates`` (below).
-Multiple decorators on the same type compose in registration order.
+The plugin sets ``config.field`` to the type it attaches to (below) and, optionally,
+``config.order`` for its position in the fold; higher order wraps further out.
 
 Configuration
 -------------
@@ -161,8 +160,8 @@ to the React component as the ``config`` prop:
      }
    }
 
-A field-decorator plugin additionally sets ``decorates`` in its ``config`` to target the
-field ``type`` it wraps:
+A field plugin sets ``field`` in its ``config`` to the field ``type`` it attaches to (and,
+optionally, ``order`` for its place in the fold):
 
 .. code-block:: json
 
@@ -170,7 +169,7 @@ field ``type`` it wraps:
      "plugins": {
        "hyperlink_badge": {
          "is_active": true,
-         "config": { "decorates": "hyperlink", "label": "↗" }
+         "config": { "field": "hyperlink", "order": 1, "label": "↗" }
        }
      }
    }

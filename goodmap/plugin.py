@@ -38,24 +38,22 @@ class MapOverlayPluginBase(GoodmapPluginBase):
 
 
 class MarkerFieldPluginBase(GoodmapPluginBase):
-    """Capability: a plugin that renders a marker-popup field — as the base renderer or as
-    a decorator that wraps one.
+    """Capability: a plugin that renders (or wraps) a marker-popup field.
 
-    A field plugin's component is mounted by ``FieldRenderer`` and plays one of two roles,
-    chosen by its ``config``:
+    Every field plugin is the same kind of thing — a *wrapper* in the field's rendering
+    fold, mounted by ``FieldRenderer``. Its ``config`` declares:
 
-    - **Renderer** (no ``config.decorates``): it *is* the component for the field ``type``
-      matching its name. It receives the field value spread as props and renders it — the
-      base of the field's rendering. The value comes from the plugin's platzky shortcode as
-      ``{"type": "<name>", ...}``.
-    - **Decorator** (``config.decorates`` set to a field ``type``): it *wraps* that type's
-      rendering. It receives the base's rendered output as ``children`` — not the value — and
-      composes around it (icon, badge, tracking wrapper, styling). Because it only sees the
-      already-rendered output, it cannot bypass the base's behaviour (e.g. the built-in
-      link/button URL sanitization). Multiple decorators compose in registration order.
+    - ``field``: the field ``type`` it attaches to (e.g. ``"hyperlink"``, or a custom type
+      whose value the plugin's platzky shortcode produces as ``{"type": "<field>", ...}``).
+    - ``order`` (optional): its position in the stack — lower is more innermost; ties keep
+      registration order.
 
-    A renderer is simply the innermost/base decorator: it decorates the raw value into an
-    element, and the wrappers decorate that. Only the base sees the value.
+    ``FieldRenderer`` seeds the rendering with the built-in for the type (or a string) and
+    folds every plugin for that ``field`` around it, innermost-first. Each plugin's component
+    receives ``{ value, children, config }``: a "renderer" ignores ``children`` and renders
+    from ``value``; a "decorator" composes around ``children``. (There is no separate
+    renderer vs decorator role — the innermost is simply the one whose ``children`` is the
+    seed.)
 
     goodmap registers this capability with platzky (via ``extra_plugin_bases``) so field
     plugins are config-gated through the standard plugin loader.

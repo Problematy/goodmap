@@ -43,9 +43,10 @@ Module Federation `name` (`silly_gif`) must equal the entry-point name.
 
 - An **overlay** component receives the plugin **`config`** plus `isMapLoading`.
   (One gif for the whole map, taken from config.)
-- A **field** component receives the **field value** spread as props — not `config` —
-  because `FieldRenderer` renders `<Component {...value} />`. So each marker can carry its
-  own gif in its data.
+- A **field** component receives **`{ value, children, config }`** — `FieldRenderer` folds
+  field plugins around a marker field. This one is a *renderer*: it uses `value` (the field
+  data — so each marker carries its own gif) and ignores `children`. It attaches to the
+  `silly_gif` field type via `config.field`.
 
 ## Build
 
@@ -61,14 +62,15 @@ npm run build          # writes ../silly_gif/static/remoteEntry.js
 pip install -e .        # or: poetry add ./examples/silly-gif  in your goodmap app
 ```
 
-Then enable it in your data source's `plugins` config (the `overlay` gif comes from here):
+Then enable it in your data source's `plugins` config. `gif` feeds the overlay; `field`
+tells the field component which field `type` it renders:
 
 ```json
 {
   "plugins": {
     "silly_gif": {
       "is_active": true,
-      "config": { "gif": "https://example.com/loading.gif" }
+      "config": { "gif": "https://example.com/loading.gif", "field": "silly_gif" }
     }
   }
 }

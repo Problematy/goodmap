@@ -277,13 +277,10 @@ def test_field_plugin_is_manifested_with_field_capability():
     ]
 
 
-def test_field_decorator_is_a_marker_field_plugin_with_decorates_config():
-    """A decorator is a MarkerField plugin; its decorator role is carried by ``config.decorates``.
-
-    There is no separate decorator capability — the manifest capability is ``"MarkerField"``,
-    and the frontend treats a MarkerField plugin with ``config.decorates`` as a decorator.
-    """
-    config = _plugin_config("tracker", {"decorates": "hyperlink"})
+def test_field_plugin_config_is_passed_through_to_the_manifest():
+    """A field plugin is manifested as ``"MarkerField"``; its ``config`` (``field``/``order``,
+    which the frontend uses to place it in the fold) is passed through untouched."""
+    config = _plugin_config("tracker", {"field": "hyperlink", "order": 1})
     with tempfile.TemporaryDirectory() as tmpdir:
         plugin_dir = os.path.join(tmpdir, "tracker")
         os.makedirs(os.path.join(plugin_dir, "static"))
@@ -299,7 +296,7 @@ def test_field_decorator_is_a_marker_field_plugin_with_decorates_config():
             "url": "/plugins/tracker/static/remoteEntry.js",
             "module": "./MarkerField",
             "capability": "MarkerField",
-            "config": {"decorates": "hyperlink"},
+            "config": {"field": "hyperlink", "order": 1},
         }
     ]
 

@@ -1,6 +1,6 @@
 import {
     registerPlugin,
-    getFieldPlugin,
+    getFieldPlugins,
     getOverlayPlugins,
 } from '../../src/plugins/pluginRegistry';
 
@@ -9,10 +9,12 @@ describe('pluginRegistry multi-capability', () => {
         const Overlay = () => null;
         const Field = () => null;
         registerPlugin('silly', Overlay, { gif: 'x' }, 'MapOverlay');
-        registerPlugin('silly', Field, { gif: 'x' }, 'MarkerField');
+        registerPlugin('silly', Field, { gif: 'x', field: 'silly' }, 'MarkerField');
 
-        // The field lookup resolves the field component, not the overlay one.
-        expect(getFieldPlugin('silly')).toBe(Field);
+        // The field lookup finds the field component attached to that type.
+        const fieldPlugins = getFieldPlugins('silly');
+        expect(fieldPlugins).toHaveLength(1);
+        expect(fieldPlugins[0].Plugin).toBe(Field);
 
         // The overlay listing surfaces the overlay component for the same plugin.
         const overlays = getOverlayPlugins().filter(([name]) => name === 'silly');
