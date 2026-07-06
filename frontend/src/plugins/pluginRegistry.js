@@ -10,9 +10,11 @@ export function registerPlugin(pluginName, Plugin, config, capability) {
     listeners.forEach(fn => fn());
 }
 
-// The field-renderer component a plugin registered for its own name (the MarkerField capability).
+// The base field renderer for a type: the MarkerField plugin registered under that name
+// that is a renderer (no `config.decorates`) rather than a decorator of another type.
 export function getFieldPlugin(pluginName) {
-    return registry.get(entryKey(pluginName, 'MarkerField'))?.Plugin;
+    const entry = registry.get(entryKey(pluginName, 'MarkerField'));
+    return entry && !entry.config?.decorates ? entry.Plugin : undefined;
 }
 
 // A plugin's config is shared across its capability entries; return it from any of them.
@@ -31,14 +33,12 @@ export function getOverlayPlugins() {
         .map(entry => [entry.pluginName, entry.Plugin, entry.config]);
 }
 
-// Field decorators (the MarkerFieldDecorator capability) wrap the rendered output of the
-// renderer for their target `type`, declared via `config.decorates`. Returned in
-// registration order so multiple decorators compose predictably.
+// Field decorators: MarkerField plugins acting as decorators (they declare `config.decorates`)
+// wrap the rendered output of the renderer for their target `type`. Returned in registration
+// order so multiple decorators compose predictably.
 export function getFieldDecorators(type) {
     return Array.from(registry.values())
-        .filter(
-            entry => entry.capability === 'MarkerFieldDecorator' && entry.config?.decorates === type,
-        )
+        .filter(entry => entry.capability === 'MarkerField' && entry.config?.decorates === type)
         .map(entry => ({ Decorator: entry.Plugin, config: entry.config }));
 }
 

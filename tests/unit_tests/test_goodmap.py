@@ -16,7 +16,6 @@ from goodmap.feature_flags import EnableAdminPanel, UseLazyLoading
 from goodmap.plugin import (
     CAPABILITY_BASES,
     MapOverlayPluginBase,
-    MarkerFieldDecoratorPluginBase,
     MarkerFieldPluginBase,
 )
 from tests.unit_tests.conftest import make_flag_set
@@ -278,14 +277,18 @@ def test_field_plugin_is_manifested_with_field_capability():
     ]
 
 
-def test_field_decorator_plugin_is_manifested_with_decorator_capability():
-    """A decorator plugin is manifested with ``capability: "field-decorator"``."""
+def test_field_decorator_is_a_marker_field_plugin_with_decorates_config():
+    """A decorator is a MarkerField plugin; its decorator role is carried by ``config.decorates``.
+
+    There is no separate decorator capability — the manifest capability is ``"MarkerField"``,
+    and the frontend treats a MarkerField plugin with ``config.decorates`` as a decorator.
+    """
     config = _plugin_config("tracker", {"decorates": "hyperlink"})
     with tempfile.TemporaryDirectory() as tmpdir:
         plugin_dir = os.path.join(tmpdir, "tracker")
         os.makedirs(os.path.join(plugin_dir, "static"))
 
-        ep = _plugin_ep("tracker", plugin_dir, base=MarkerFieldDecoratorPluginBase)
+        ep = _plugin_ep("tracker", plugin_dir, base=MarkerFieldPluginBase)
 
         with _patch_entry_points({"goodmap.plugins": [ep]}):
             app = goodmap.create_app_from_config(config)
@@ -294,8 +297,8 @@ def test_field_decorator_plugin_is_manifested_with_decorator_capability():
         {
             "pluginName": "tracker",
             "url": "/plugins/tracker/static/remoteEntry.js",
-            "module": "./MarkerFieldDecorator",
-            "capability": "MarkerFieldDecorator",
+            "module": "./MarkerField",
+            "capability": "MarkerField",
             "config": {"decorates": "hyperlink"},
         }
     ]

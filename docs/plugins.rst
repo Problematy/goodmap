@@ -15,20 +15,20 @@ Kinds of Goodmap frontend plugins
 
 The capability a plugin provides determines *how* its frontend renders:
 
-**Field renderers** (:class:`goodmap.plugin.MarkerFieldPluginBase` + a platzky shortcode)
-    Render a single location field inside a marker popup. The plugin's shortcode
-    transforms the field value into ``{"type": "<name>", ...}`` on the backend; its
-    frontend component (capability ``"MarkerField"``) is resolved by ``type`` and mounted by
-    ``FieldRenderer``. The built-in field types ``hyperlink`` and ``CTA`` resolve through
-    the same mechanism and take precedence over a plugin of the same name.
+**Marker fields** (:class:`goodmap.plugin.MarkerFieldPluginBase`)
+    Render a single location field inside a marker popup (capability ``"MarkerField"``,
+    mounted by ``FieldRenderer``). A field plugin plays one of two roles, chosen by its
+    ``config``:
 
-**Field decorators** (:class:`goodmap.plugin.MarkerFieldDecoratorPluginBase`)
-    Wrap the rendered output of a field renderer instead of replacing it. The decorator
-    component receives the base's rendered element as ``children`` and composes around it
-    (icon, badge, tracking wrapper, styling), so the base renderer — and its behaviour,
-    e.g. the built-in link/button URL sanitization — still runs. The ``type`` it wraps is
-    taken from its ``config`` (``{"decorates": "<type>"}``); decorators (capability
-    ``"MarkerFieldDecorator"``) are applied by ``FieldRenderer``.
+    - **Renderer** (no ``config.decorates``): it *is* the component for the field ``type``
+      matching its name — its shortcode transforms the value into ``{"type": "<name>", ...}``
+      and it receives that value spread as props. The built-in field types ``hyperlink`` and
+      ``CTA`` resolve the same way and take precedence over a plugin of the same name.
+    - **Decorator** (``config.decorates`` set to a field ``type``): it *wraps* that type's
+      rendering, receiving the base's rendered output as ``children`` (not the value) and
+      composing around it (icon, badge, tracking wrapper, styling). Because it only sees the
+      already-rendered output, it cannot bypass the base's behaviour, e.g. the built-in
+      link/button URL sanitization. A renderer is simply the innermost/base decorator.
 
 **Map overlays** (:class:`goodmap.plugin.MapOverlayPluginBase`)
     Render a component once *over the whole map*, not tied to any marker — e.g. a
@@ -37,9 +37,8 @@ The capability a plugin provides determines *how* its frontend renders:
 
 All kinds are discovered from the ``goodmap.plugins`` entry-point group. Each capability
 exposes its React component under that capability's Module Federation module key —
-``./MapOverlay`` for overlays, ``./MarkerField`` for field renderers, ``./MarkerFieldDecorator``
-for decorators (the ``module`` declared on the capability base) — all served from the
-plugin's single ``remoteEntry.js``.
+``./MapOverlay`` for overlays and ``./MarkerField`` for field plugins (renderers and
+decorators alike) — all served from the plugin's single ``remoteEntry.js``.
 
 A single plugin may provide **several** capabilities by subclassing more than one base;
 goodmap then emits one manifest entry per capability, each pointing at that capability's
@@ -85,12 +84,11 @@ Goodmap serves the bundle at ``/plugins/<name>/static/remoteEntry.js`` and adds 
 entry ``{pluginName, url, module, capability, config}`` for each capability the plugin
 provides. The ``capability`` token and its ``module`` are derived from the capability base
 class name (``PluginBase`` stripped) —
-:class:`~goodmap.plugin.MapOverlayPluginBase` (``"MapOverlay"`` / ``./MapOverlay``),
-:class:`~goodmap.plugin.MarkerFieldPluginBase` (``"MarkerField"`` / ``./MarkerField``), and
-:class:`~goodmap.plugin.MarkerFieldDecoratorPluginBase`
-(``"MarkerFieldDecorator"`` / ``./MarkerFieldDecorator``) — and the frontend uses ``capability``
-to mount the component at the right place (overlays over the map by ``MapOverlays``; field
-renderers and decorators in a marker by ``FieldRenderer``).
+:class:`~goodmap.plugin.MapOverlayPluginBase` (``"MapOverlay"`` / ``./MapOverlay``) and
+:class:`~goodmap.plugin.MarkerFieldPluginBase` (``"MarkerField"`` / ``./MarkerField``) — and
+the frontend uses ``capability`` to mount the component at the right place (overlays over the
+map by ``MapOverlays``; field renderers and decorators in a marker by ``FieldRenderer``, which
+tells them apart by ``config.decorates``).
 
 Field renderers and ``visible_data``
 ------------------------------------
@@ -105,16 +103,18 @@ Field decorator plugins
 
 A decorator wraps an existing field renderer's output instead of replacing it — the way
 to customize a built-in (``hyperlink``, ``CTA``) safely, since the base renderer still
-runs. It subclasses :class:`~goodmap.plugin.MarkerFieldDecoratorPluginBase` and needs no
-shortcode (it augments rendering, it does not produce field values):
+runs. It is an ordinary :class:`~goodmap.plugin.MarkerFieldPluginBase` (there is no separate
+decorator capability); setting ``config.decorates`` is what makes it act as a decorator
+rather than a renderer. It needs no shortcode (it augments rendering, it does not produce
+field values):
 
 .. code-block:: python
 
     # hyperlink_badge/plugin.py
     from typing import Any
-    from goodmap.plugin import MarkerFieldDecoratorPluginBase
+    from goodmap.plugin import MarkerFieldPluginBase
 
-    class HyperlinkBadgePlugin(MarkerFieldDecoratorPluginBase):
+    class HyperlinkBadgePlugin(MarkerFieldPluginBase):
         def __init__(self, config: dict[str, Any]) -> None:
             super().__init__(config)
 
@@ -124,7 +124,7 @@ already-sanitized output, it cannot bypass the base renderer's behaviour:
 
 .. code-block:: jsx
 
-    // frontend/src/MarkerFieldDecorator.jsx  (exposed as "./MarkerFieldDecorator")
+    // frontend/src/MarkerField.jsx  (exposed as "./MarkerField")
     export default function HyperlinkBadge({ config, children }) {
         return (
             <span className="hyperlink-badge">

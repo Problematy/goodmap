@@ -76,9 +76,7 @@ describe('FieldRenderer', () => {
     it('wraps the base renderer output with a decorator matching the type', () => {
         const Badge = ({ children }) => <div data-testid="badge">{children}</div>;
         Badge.propTypes = { children: PropTypes.node.isRequired };
-        act(() =>
-            registerPlugin('badge', Badge, { decorates: 'hyperlink' }, 'MarkerFieldDecorator'),
-        );
+        act(() => registerPlugin('badge', Badge, { decorates: 'hyperlink' }, 'MarkerField'));
 
         render(<FieldRenderer value={{ type: 'hyperlink', value: 'https://example.com' }} />);
 
@@ -90,7 +88,7 @@ describe('FieldRenderer', () => {
     it('does not apply a decorator registered for a different type', () => {
         const Badge = ({ children }) => <div data-testid="cta-badge">{children}</div>;
         Badge.propTypes = { children: PropTypes.node.isRequired };
-        act(() => registerPlugin('cta-badge', Badge, { decorates: 'CTA' }, 'MarkerFieldDecorator'));
+        act(() => registerPlugin('cta-badge', Badge, { decorates: 'CTA' }, 'MarkerField'));
 
         render(<FieldRenderer value={{ type: 'hyperlink', value: 'https://example.com' }} />);
         expect(screen.queryByTestId('cta-badge')).not.toBeInTheDocument();
