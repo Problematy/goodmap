@@ -158,7 +158,7 @@ const LoadingSkeleton = () => (
 );
 
 export const FiltersForm = () => {
-    const { setCategories } = useCategories();
+    const { categories: selectedFilters, setCategories } = useCategories();
     const [categoriesData, setCategoriesData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -188,8 +188,11 @@ export const FiltersForm = () => {
     useEffect(() => {
         const fetchCategories = async () => {
             setIsLoading(true);
-            const categoriesData = await httpService.getCategoriesData();
-            setCategoriesData(categoriesData);
+            const { categories, defaultChecked } = await httpService.getCategoriesData();
+            setCategoriesData(categories);
+            if (Object.keys(defaultChecked).length > 0) {
+                setCategories(defaultChecked);
+            }
             setIsLoading(false);
         };
         fetchCategories();
@@ -208,6 +211,7 @@ export const FiltersForm = () => {
                         type="checkbox"
                         id={name}
                         value={name}
+                        checked={Boolean(selectedFilters[category]?.includes(name))}
                     />
                     <OptionText>{translation}</OptionText>
                     {tooltipData && (

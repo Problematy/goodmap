@@ -19,7 +19,7 @@ const categories = [
     ],
 ];
 
-httpService.getCategoriesData.mockResolvedValue(categories);
+httpService.getCategoriesData.mockResolvedValue({ categories, defaultChecked: {} });
 
 describe('Creates good filter_form box', () => {
     beforeAll(() => {
@@ -88,5 +88,31 @@ describe('Creates good filter_form box', () => {
         const filterHeader = form.querySelector('#filter-label-types-typy').parentElement;
         const { queryByLabelText } = within(filterHeader);
         expect(queryByLabelText(/Help: Inaczej rodzaje/i)).toBeInTheDocument();
+    });
+});
+
+describe('Pre-checks options configured as default-checked', () => {
+    beforeEach(() => {
+        httpService.getCategoriesData.mockResolvedValueOnce({
+            categories,
+            defaultChecked: { types: ['shoes'] },
+        });
+        return act(() =>
+            render(
+                <CategoriesProvider>
+                    <FiltersForm />
+                </CategoriesProvider>,
+            ),
+        );
+    });
+
+    it('renders the default-checked option as checked', () => {
+        const shoesCheckbox = document.querySelector('#shoes');
+        expect(shoesCheckbox.checked).toBe(true);
+    });
+
+    it('leaves options not listed as default-checked unchecked', () => {
+        const clothesCheckbox = document.querySelector('#clothes');
+        expect(clothesCheckbox.checked).toBe(false);
     });
 });

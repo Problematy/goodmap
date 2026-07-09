@@ -440,12 +440,14 @@ def core_pages(
         result = []
 
         categories_options_help = categories_data.get("categories_options_help", {})
+        categories_default_checked = categories_data.get("categories_default_checked", {})
 
         for key, options in categories_data["categories"].items():
             category_entry = {
                 "key": key,
                 "name": gettext(key),
                 "options": make_tuple_translation(options),
+                "default_checked": categories_default_checked.get(key, []),
             }
 
             if CategoriesHelp in feature_flags:
