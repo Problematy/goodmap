@@ -134,6 +134,25 @@ const TooltipWrapper = styled.span`
     margin-left: auto;
 `;
 
+const ErrorMessage = styled.p`
+    font-size: 14px;
+    margin-bottom: 12px;
+`;
+
+const RetryButton = styled.button`
+    font-size: 14px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+
+    &:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+`;
+
 /**
  * Filters form component that allows users to filter map locations by categories.
  * Fetches category data from the API and renders checkboxes for each filter option.
@@ -161,6 +180,7 @@ export const FiltersForm = () => {
     const { categories: selectedFilters, setCategories, setIsInitialized } = useCategories();
     const [categoriesData, setCategoriesData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [hasError, setHasError] = useState(false);
 
     const handleCheckboxChange = event => {
         const { value, checked } = event.target;
@@ -181,20 +201,28 @@ export const FiltersForm = () => {
         });
     };
 
-    useEffect(() => {
-        const fetchCategories = async () => {
-            setIsLoading(true);
-            try {
-                const { categories, defaultChecked } = await httpService.getCategoriesData();
-                setCategoriesData(categories);
-                if (Object.keys(defaultChecked).length > 0) {
-                    setCategories(defaultChecked);
-                }
-            } finally {
-                setIsInitialized(true);
-                setIsLoading(false);
+    const fetchCategories = async () => {
+        setIsLoading(true);
+        setHasError(false);
+        try {
+            const { categories, defaultChecked } = await httpService.getCategoriesData();
+            setCategoriesData(categories);
+            if (Object.keys(defaultChecked).length > 0) {
+                setCategories(defaultChecked);
             }
-        };
+            setIsInitialized(true);
+        } catch (error) {
+            console.error('Failed to load categories:', error);
+            // Establish an explicit fallback (no filters) instead of silently
+            // signaling initialization with unknown/missing category data.
+            setCategoriesData([]);
+            setHasError(true);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
         fetchCategories();
     }, []);
 
@@ -246,6 +274,17 @@ export const FiltersForm = () => {
         return (
             <form>
                 <LoadingSkeleton />
+            </form>
+        );
+    }
+
+    if (hasError) {
+        return (
+            <form>
+                <ErrorMessage>Failed to load filters.</ErrorMessage>
+                <RetryButton type="button" onClick={fetchCategories}>
+                    Retry
+                </RetryButton>
             </form>
         );
     }
