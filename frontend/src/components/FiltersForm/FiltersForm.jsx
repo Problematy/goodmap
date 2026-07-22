@@ -158,7 +158,7 @@ const LoadingSkeleton = () => (
 );
 
 export const FiltersForm = () => {
-    const { categories: selectedFilters, setCategories } = useCategories();
+    const { categories: selectedFilters, setCategories, setIsInitialized } = useCategories();
     const [categoriesData, setCategoriesData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -170,11 +170,7 @@ export const FiltersForm = () => {
             const newSelectedFilters = { ...prevSelectedFilters };
 
             if (checked) {
-                if (newSelectedFilters[category]) {
-                    newSelectedFilters[category].push(value);
-                } else {
-                    newSelectedFilters[category] = [value];
-                }
+                newSelectedFilters[category] = [...(newSelectedFilters[category] ?? []), value];
             } else {
                 newSelectedFilters[category] = newSelectedFilters[category].filter(
                     filter => filter !== value,
@@ -188,12 +184,16 @@ export const FiltersForm = () => {
     useEffect(() => {
         const fetchCategories = async () => {
             setIsLoading(true);
-            const { categories, defaultChecked } = await httpService.getCategoriesData();
-            setCategoriesData(categories);
-            if (Object.keys(defaultChecked).length > 0) {
-                setCategories(defaultChecked);
+            try {
+                const { categories, defaultChecked } = await httpService.getCategoriesData();
+                setCategoriesData(categories);
+                if (Object.keys(defaultChecked).length > 0) {
+                    setCategories(defaultChecked);
+                }
+            } finally {
+                setIsInitialized(true);
+                setIsLoading(false);
             }
-            setIsLoading(false);
         };
         fetchCategories();
     }, []);

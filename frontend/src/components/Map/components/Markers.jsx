@@ -44,11 +44,16 @@ const getMarkers = locations => {
  * @returns {React.ReactElement|Array} MarkerClusterGroup containing location markers, or empty array while loading
  */
 export const Markers = ({ onLoadingChange = null }) => {
-    const { categories } = useCategories();
+    const { categories, isInitialized } = useCategories();
     const [markers, setMarkers] = useState([]);
     const [areMarkersLoaded, setAreMarkersLoaded] = useState(false);
     const map = useMap();
     useEffect(() => {
+        // Wait until the initial filter state (including default-checked options)
+        // is known, so the first locations fetch is already filtered.
+        if (!isInitialized) {
+            return undefined;
+        }
         setAreMarkersLoaded(false);
 
         const fetchMarkers = async () => {
@@ -87,7 +92,7 @@ export const Markers = ({ onLoadingChange = null }) => {
         return () => {
             setMarkers([]);
         };
-    }, [categories]);
+    }, [categories, isInitialized]);
 
     useEffect(() => {
         const mapContainer = map.getContainer();

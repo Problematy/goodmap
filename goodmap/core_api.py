@@ -447,7 +447,11 @@ def core_pages(
                 "key": key,
                 "name": gettext(key),
                 "options": make_tuple_translation(options),
-                "default_checked": categories_default_checked.get(key, []),
+                "default_checked": [
+                    option
+                    for option in categories_default_checked.get(key, [])
+                    if option in options
+                ],
             }
 
             if CategoriesHelp in feature_flags:

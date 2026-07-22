@@ -16,8 +16,12 @@ CategoriesContext.displayName = 'CategoriesContext';
  * @returns {React.ReactElement} Context provider with categories state
  */
 export const CategoriesProvider = ({ children }) => {
-    const [categories, setCategories] = useState([]);
-    const value = useMemo(() => ({ categories, setCategories }), [categories]);
+    const [categories, setCategories] = useState({});
+    const [isInitialized, setIsInitialized] = useState(false);
+    const value = useMemo(
+        () => ({ categories, setCategories, isInitialized, setIsInitialized }),
+        [categories, isInitialized],
+    );
 
     return <CategoriesContext.Provider value={value}>{children}</CategoriesContext.Provider>;
 };
@@ -27,9 +31,12 @@ export const CategoriesProvider = ({ children }) => {
  * Must be used within a CategoriesProvider component.
  *
  * @throws {Error} If used outside of CategoriesProvider
- * @returns {Object} Object containing categories array and setCategories function
- * @returns {Array} return.categories - Current categories data
+ * @returns {Object} Object containing categories map and setCategories function
+ * @returns {Object} return.categories - Currently selected filter values keyed by category
  * @returns {Function} return.setCategories - Function to update categories
+ * @returns {boolean} return.isInitialized - True once initial filter state (including
+ *   default-checked options) has been loaded, so consumers can wait before fetching
+ * @returns {Function} return.setIsInitialized - Marks the initial filter state as loaded
  */
 export const useCategories = () => {
     const context = useContext(CategoriesContext);

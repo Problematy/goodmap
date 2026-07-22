@@ -70,12 +70,11 @@ export const httpService = {
             return [categoryTuple, options];
         });
 
-        const defaultChecked = {};
-        for (const category of response.categories) {
-            if (category.default_checked?.length) {
-                defaultChecked[category.key] = category.default_checked;
-            }
-        }
+        const defaultChecked = Object.fromEntries(
+            response.categories
+                .filter(category => category.default_checked?.length)
+                .map(category => [category.key, category.default_checked]),
+        );
 
         return { categories, defaultChecked };
     },
