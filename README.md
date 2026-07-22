@@ -91,7 +91,7 @@ TODO: `obligatory_fields` is a new subsection, start using it in the actual appl
 "accessible_by": ["bikes", "cars", "pedestrians"]
 ```
 - `categories_default_checked` - for a given category, the options that should be pre-checked in the filter panel when the app first loads. E.g.
-```
+```json
 "accessible_by": ["cars", "pedestrians"]
 ```
 - `visible_data` - when a datapoint will be rendered as a pin on a map, these fields will be shown in the box when clicking on a pin. E.g.
