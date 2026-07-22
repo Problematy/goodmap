@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, act, screen } from '@testing-library/react';
+import { render, waitFor, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 import { MapComponent } from '../../src/components/Map/MapComponent';
 import { FiltersForm } from '../../src/components/FiltersForm/FiltersForm';
@@ -40,12 +40,10 @@ describe('MapComponent', () => {
         jest.spyOn(globalThis, 'fetch').mockResolvedValue({
             json: jest.fn().mockResolvedValue(categories),
         });
-        return act(() =>
-            render(
-                <CategoriesProvider>
-                    <MapComponent />
-                </CategoriesProvider>,
-            ),
+        render(
+            <CategoriesProvider>
+                <MapComponent />
+            </CategoriesProvider>,
         );
     });
 
@@ -63,7 +61,7 @@ describe('MapComponent with FiltersForm', () => {
         globalThis.FEATURE_FLAGS = {};
     });
 
-    // eslint-disable-next-line es-x/no-async-functions -- needed to await the fetch chain
+    // eslint-disable-next-line es-x/no-async-functions -- needed to await waitFor
     it('fetches locations once, already filtered by default-checked options', async () => {
         httpService.getLocations.mockClear();
         httpService.getCategoriesData.mockResolvedValueOnce({
@@ -71,17 +69,14 @@ describe('MapComponent with FiltersForm', () => {
             defaultChecked: { types: ['shoes'] },
         });
 
-        // eslint-disable-next-line es-x/no-async-functions -- async act flushes effects
-        await act(async () => {
-            render(
-                <CategoriesProvider>
-                    <FiltersForm />
-                    <MapComponent />
-                </CategoriesProvider>,
-            );
-        });
+        render(
+            <CategoriesProvider>
+                <FiltersForm />
+                <MapComponent />
+            </CategoriesProvider>,
+        );
 
-        expect(httpService.getLocations).toHaveBeenCalledTimes(1);
+        await waitFor(() => expect(httpService.getLocations).toHaveBeenCalledTimes(1));
         expect(httpService.getLocations).toHaveBeenCalledWith({ types: ['shoes'] });
     });
 });

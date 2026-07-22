@@ -1,6 +1,6 @@
 import React from 'react';
 import '@testing-library/jest-dom';
-import { render, act, within } from '@testing-library/react';
+import { render, waitFor, within } from '@testing-library/react';
 import { FiltersForm } from '../src/components/FiltersForm/FiltersForm';
 import { CategoriesProvider } from '../src/components/Categories/CategoriesContext';
 import { httpService } from '../src/services/http/httpService';
@@ -25,16 +25,17 @@ describe('Creates good filter_form box', () => {
     beforeAll(() => {
         globalThis.FEATURE_FLAGS = { CATEGORIES_HELP: true };
     });
-    beforeEach(() => {
+    beforeEach(async () => {
         jest.spyOn(globalThis, 'fetch').mockResolvedValue({
             json: jest.fn().mockResolvedValue(categories),
         });
-        return act(() =>
-            render(
-                <CategoriesProvider>
-                    <FiltersForm />
-                </CategoriesProvider>,
-            ),
+        render(
+            <CategoriesProvider>
+                <FiltersForm />
+            </CategoriesProvider>,
+        );
+        await waitFor(() =>
+            expect(document.querySelector('#filter-label-types-typy')).not.toBeNull(),
         );
     });
 
@@ -92,18 +93,17 @@ describe('Creates good filter_form box', () => {
 });
 
 describe('Pre-checks options configured as default-checked', () => {
-    beforeEach(() => {
+    beforeEach(async () => {
         httpService.getCategoriesData.mockResolvedValueOnce({
             categories,
             defaultChecked: { types: ['shoes'] },
         });
-        return act(() =>
-            render(
-                <CategoriesProvider>
-                    <FiltersForm />
-                </CategoriesProvider>,
-            ),
+        render(
+            <CategoriesProvider>
+                <FiltersForm />
+            </CategoriesProvider>,
         );
+        await waitFor(() => expect(document.querySelector('#shoes')).not.toBeNull());
     });
 
     it('renders the default-checked option as checked', () => {
