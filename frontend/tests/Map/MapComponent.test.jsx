@@ -63,6 +63,7 @@ describe('MapComponent with FiltersForm', () => {
         globalThis.FEATURE_FLAGS = {};
     });
 
+    // eslint-disable-next-line es-x/no-async-functions -- needed to await the fetch chain
     it('fetches locations once, already filtered by default-checked options', async () => {
         httpService.getLocations.mockClear();
         httpService.getCategoriesData.mockResolvedValueOnce({
@@ -70,6 +71,7 @@ describe('MapComponent with FiltersForm', () => {
             defaultChecked: { types: ['shoes'] },
         });
 
+        // eslint-disable-next-line es-x/no-async-functions -- async act flushes effects
         await act(async () => {
             render(
                 <CategoriesProvider>
