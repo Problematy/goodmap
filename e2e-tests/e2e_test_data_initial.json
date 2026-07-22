@@ -76,6 +76,11 @@
         "pedestrians"
       ]
     },
+    "categories_default_checked": {
+      "accessible_by": [
+        "cars"
+      ]
+    },
     "visible_data": [
       "remark",
       "accessible_by",
