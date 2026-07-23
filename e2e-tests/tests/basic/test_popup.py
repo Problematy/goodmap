@@ -6,7 +6,7 @@ Tests popup functionality including content display, CTA buttons, and problem fo
 
 from playwright.sync_api import Page, expect
 
-from tests.conftest import BASE_URL, MARKER_LOAD_TIMEOUT
+from tests.conftest import BASE_URL, MARKER_LOAD_TIMEOUT, clear_default_category_filters
 from tests.helpers import EXPECTED_PLACE_ZWIERZYNIECKA, verify_popup_content, verify_problem_form
 
 
@@ -21,6 +21,10 @@ class TestPopupOnDesktop:
         skipped because the close button may be hidden when form is opened on desktop.
         """
         page.goto(BASE_URL, wait_until="domcontentloaded")
+
+        # "accessible_by: cars" is checked by default, which excludes Zwierzyniecka
+        # (bikes/pedestrians only). Clear it so both seeded locations are visible.
+        clear_default_category_filters(page)
 
         # Click first marker to trigger cluster expansion
         first_marker = page.locator(".leaflet-marker-icon").first
@@ -77,6 +81,10 @@ class TestPopupOnDesktop:
         - Form submission works
         """
         page.goto(BASE_URL, wait_until="domcontentloaded")
+
+        # "accessible_by: cars" is checked by default, which excludes Zwierzyniecka
+        # (bikes/pedestrians only). Clear it so both seeded locations are visible.
+        clear_default_category_filters(page)
 
         # Click first marker to trigger cluster expansion
         first_marker = page.locator(".leaflet-marker-icon").first

@@ -10,7 +10,12 @@ Tests the share button functionality in marker popups:
 import pytest
 from playwright.sync_api import Page, expect
 
-from tests.conftest import ALL_MOBILE_DEVICES, BASE_URL, MARKER_LOAD_TIMEOUT
+from tests.conftest import (
+    ALL_MOBILE_DEVICES,
+    BASE_URL,
+    MARKER_LOAD_TIMEOUT,
+    clear_default_category_filters,
+)
 
 
 class TestShareOnDesktop:
@@ -25,6 +30,10 @@ class TestShareOnDesktop:
 
         # Grant clipboard permissions
         page.context.grant_permissions(["clipboard-read", "clipboard-write"])
+
+        # "accessible_by: cars" is checked by default, which excludes Zwierzyniecka
+        # (bikes/pedestrians only). Clear it so both seeded locations are visible.
+        clear_default_category_filters(page)
 
         # Click first marker to trigger cluster expansion
         first_marker = page.locator(".leaflet-marker-icon").first
@@ -82,6 +91,11 @@ class TestShareOnDesktop:
             wait_until="domcontentloaded",
         )
 
+        # Zwierzyniecka (the shared location) isn't accessible by cars, so it's
+        # excluded by the "accessible_by: cars" default filter. Clear it so the
+        # marker renders and the pending shared-location popup can open.
+        clear_default_category_filters(page)
+
         # Verify popup is visible
         popup = page.locator(".leaflet-popup-content")
         expect(popup).to_be_visible(timeout=MARKER_LOAD_TIMEOUT)
@@ -114,6 +128,10 @@ class TestShareOnMobile:
         """)
 
         mobile_page.goto(BASE_URL, wait_until="domcontentloaded")
+
+        # "accessible_by: cars" is checked by default, which excludes Zwierzyniecka
+        # (bikes/pedestrians only). Clear it so both seeded locations are visible.
+        clear_default_category_filters(mobile_page)
 
         # Click first marker to expand cluster
         first_marker = mobile_page.locator(".leaflet-marker-icon").first
@@ -169,6 +187,11 @@ class TestShareOnMobile:
             f"{BASE_URL}/?locationId=c8ecf476-5968-40da-ba5c-e810ad9ff203",
             wait_until="domcontentloaded",
         )
+
+        # Zwierzyniecka (the shared location) isn't accessible by cars, so it's
+        # excluded by the "accessible_by: cars" default filter. Clear it so the
+        # marker renders and the pending shared-location popup can open.
+        clear_default_category_filters(mobile_page)
 
         # On mobile, popup appears as Material-UI Dialog
         dialog_content = mobile_page.locator(".MuiDialogContent-root")

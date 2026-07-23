@@ -10,7 +10,7 @@ Tests that changing the language:
 import pytest
 from playwright.sync_api import Page, expect
 
-from tests.conftest import BASE_URL, MARKER_LOAD_TIMEOUT
+from tests.conftest import BASE_URL, MARKER_LOAD_TIMEOUT, clear_default_category_filters
 
 
 def get_language_button(page: Page):
@@ -70,6 +70,10 @@ class TestLanguageSwitching:
         get_language_button(page).click()
         page.get_by_role("link", name="polski").click()
         page.wait_for_load_state("domcontentloaded")
+
+        # "accessible_by: cars" is checked by default, which excludes Zwierzyniecka
+        # (bikes/pedestrians only). Clear it so both seeded locations are visible.
+        clear_default_category_filters(page)
 
         # Click marker cluster to expand
         page.locator(".leaflet-marker-icon").first.click()

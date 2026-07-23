@@ -70,6 +70,30 @@ TEST_LOCATIONS = {
 }
 
 
+def clear_default_category_filters(page: Page) -> None:
+    """
+    Uncheck the "cars" accessible_by filter that's checked by default (see
+    categories_default_checked in the e2e test data). Several tests rely on
+    both seeded locations (Grunwaldzki and Zwierzyniecka) being visible,
+    which requires clearing this default filter first.
+
+    Opens the mobile filter panel (if collapsed) to reach the checkbox, and
+    closes it again afterwards so it doesn't obscure subsequent interactions.
+    """
+    toggle_button = page.locator('button[aria-label="Toggle left panel"]')
+    opened_dialog = toggle_button.is_visible()
+    if opened_dialog:
+        toggle_button.click()
+
+    page.wait_for_selector("#filter-form", timeout=MARKER_LOAD_TIMEOUT)
+    cars_checkbox = page.locator("#filter-form input#cars")
+    if cars_checkbox.is_checked():
+        cars_checkbox.uncheck()
+
+    if opened_dialog:
+        page.locator('button[aria-label="Close left panel"]').click()
+
+
 def _block_hmr(page: Page) -> None:
     """Block HMR/hot reload requests to prevent page refreshes during tests."""
     page.route("**/ws", lambda route: route.abort())
