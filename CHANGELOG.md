@@ -2,6 +2,13 @@
 
 <!-- version list -->
 
+## [2.0.0-alpha.3](https://github.com/Problematy/goodmap/compare/2.0.0-alpha.2...2.0.0-alpha.3) (2026-07-24)
+
+
+### Features
+
+* add default showed categories and reset filters button ([#384](https://github.com/Problematy/goodmap/issues/384)) ([49348b8](https://github.com/Problematy/goodmap/commit/49348b849c69c79a201c221dfb5daccea7a608e6))
+
 ## [2.0.0-alpha.2](https://github.com/Problematy/goodmap/compare/2.0.0-alpha.1...2.0.0-alpha.2) (2026-07-06)
 
 
