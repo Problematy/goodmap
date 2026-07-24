@@ -79,6 +79,13 @@ def clear_default_category_filters(page: Page) -> None:
 
     Opens the mobile filter panel (if collapsed) to reach the checkbox, and
     closes it again afterwards so it doesn't obscure subsequent interactions.
+
+    Unchecking the filter can trigger a marker refetch that mounts a location
+    whose popup auto-opens (e.g. a pending ?locationId= shared link). That
+    popup dialog can stack on top of the filter panel before the close button
+    is clicked, so the close is dispatched via JS: it fires the same click
+    event Bootstrap listens for, but skips Playwright's hit-testing, which
+    would otherwise block on the overlapping dialog.
     """
     toggle_button = page.locator('button[aria-label="Toggle left panel"]')
     opened_dialog = toggle_button.is_visible()
@@ -91,7 +98,7 @@ def clear_default_category_filters(page: Page) -> None:
         cars_checkbox.uncheck()
 
     if opened_dialog:
-        page.locator('button[aria-label="Close left panel"]').click()
+        page.locator('button[aria-label="Close left panel"]').evaluate("el => el.click()")
 
 
 def _block_hmr(page: Page) -> None:
