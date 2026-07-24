@@ -32,8 +32,6 @@ class TestPopupOnMobile:
         # Navigate to the page (device emulation already configured by mobile_page fixture)
         mobile_page.goto(BASE_URL, wait_until="domcontentloaded")
 
-        # "accessible_by: cars" is checked by default, which excludes Zwierzyniecka
-        # (bikes/pedestrians only). Clear it so both seeded locations are visible.
         clear_default_category_filters(mobile_page)
 
         # Click first marker to expand cluster

@@ -71,8 +71,6 @@ class TestLanguageSwitching:
         page.get_by_role("link", name="polski").click()
         page.wait_for_load_state("domcontentloaded")
 
-        # "accessible_by: cars" is checked by default, which excludes Zwierzyniecka
-        # (bikes/pedestrians only). Clear it so both seeded locations are visible.
         clear_default_category_filters(page)
 
         # Click marker cluster to expand

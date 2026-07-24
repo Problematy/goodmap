@@ -22,8 +22,6 @@ class TestPopupOnDesktop:
         """
         page.goto(BASE_URL, wait_until="domcontentloaded")
 
-        # "accessible_by: cars" is checked by default, which excludes Zwierzyniecka
-        # (bikes/pedestrians only). Clear it so both seeded locations are visible.
         clear_default_category_filters(page)
 
         # Click first marker to trigger cluster expansion
@@ -82,8 +80,6 @@ class TestPopupOnDesktop:
         """
         page.goto(BASE_URL, wait_until="domcontentloaded")
 
-        # "accessible_by: cars" is checked by default, which excludes Zwierzyniecka
-        # (bikes/pedestrians only). Clear it so both seeded locations are visible.
         clear_default_category_filters(page)
 
         # Click first marker to trigger cluster expansion

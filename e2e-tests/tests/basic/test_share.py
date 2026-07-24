@@ -31,8 +31,6 @@ class TestShareOnDesktop:
         # Grant clipboard permissions
         page.context.grant_permissions(["clipboard-read", "clipboard-write"])
 
-        # "accessible_by: cars" is checked by default, which excludes Zwierzyniecka
-        # (bikes/pedestrians only). Clear it so both seeded locations are visible.
         clear_default_category_filters(page)
 
         # Click first marker to trigger cluster expansion
@@ -91,9 +89,6 @@ class TestShareOnDesktop:
             wait_until="domcontentloaded",
         )
 
-        # Zwierzyniecka (the shared location) isn't accessible by cars, so it's
-        # excluded by the "accessible_by: cars" default filter. Clear it so the
-        # marker renders and the pending shared-location popup can open.
         clear_default_category_filters(page)
 
         # Verify popup is visible
@@ -129,8 +124,6 @@ class TestShareOnMobile:
 
         mobile_page.goto(BASE_URL, wait_until="domcontentloaded")
 
-        # "accessible_by: cars" is checked by default, which excludes Zwierzyniecka
-        # (bikes/pedestrians only). Clear it so both seeded locations are visible.
         clear_default_category_filters(mobile_page)
 
         # Click first marker to expand cluster
@@ -188,9 +181,6 @@ class TestShareOnMobile:
             wait_until="domcontentloaded",
         )
 
-        # Zwierzyniecka (the shared location) isn't accessible by cars, so it's
-        # excluded by the "accessible_by: cars" default filter. Clear it so the
-        # marker renders and the pending shared-location popup can open.
         clear_default_category_filters(mobile_page)
 
         # On mobile, popup appears as Material-UI Dialog
