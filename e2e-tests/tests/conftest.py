@@ -143,7 +143,7 @@ def window_open_stub(page: Page) -> Callable[[], list[str]]:
 
 
 @pytest.fixture
-def mobile_page(browser, request) -> Generator[Page, None, None]:
+def mobile_page(new_context, request) -> Generator[Page, None, None]:
     """
     Create a page with proper mobile device emulation.
 
@@ -153,6 +153,11 @@ def mobile_page(browser, request) -> Generator[Page, None, None]:
     Supports two parametrization styles:
     1. Indirect: @pytest.mark.parametrize("mobile_page", ALL_MOBILE_DEVICES, indirect=True)
     2. Legacy: @pytest.mark.parametrize("device_name", ALL_MOBILE_DEVICES)
+
+    Uses pytest-playwright's new_context factory fixture (rather than calling
+    browser.new_context() directly) so CLI-driven options like
+    --video=retain-on-failure still apply, and so failures on mobile tests
+    produce the same video/trace artifacts as desktop tests.
     """
     if hasattr(request, "param"):
         device_name = request.param
@@ -166,7 +171,7 @@ def mobile_page(browser, request) -> Generator[Page, None, None]:
 
     device_config = MOBILE_DEVICES[device_name]
 
-    context = browser.new_context(
+    context = new_context(
         viewport=device_config["viewport"],
         user_agent=device_config["user_agent"],
         has_touch=True,
