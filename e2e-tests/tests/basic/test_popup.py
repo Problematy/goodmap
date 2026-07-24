@@ -6,7 +6,7 @@ Tests popup functionality including content display, CTA buttons, and problem fo
 
 from playwright.sync_api import Page, expect
 
-from tests.conftest import BASE_URL, MARKER_LOAD_TIMEOUT, clear_default_category_filters
+from tests.conftest import BASE_URL, MARKER_LOAD_TIMEOUT, clear_all_checkboxes
 from tests.helpers import EXPECTED_PLACE_ZWIERZYNIECKA, verify_popup_content, verify_problem_form
 
 
@@ -22,7 +22,7 @@ class TestPopupOnDesktop:
         """
         page.goto(BASE_URL, wait_until="domcontentloaded")
 
-        clear_default_category_filters(page)
+        clear_all_checkboxes(page)
 
         # Click first marker to trigger cluster expansion
         first_marker = page.locator(".leaflet-marker-icon").first
@@ -80,7 +80,7 @@ class TestPopupOnDesktop:
         """
         page.goto(BASE_URL, wait_until="domcontentloaded")
 
-        clear_default_category_filters(page)
+        clear_all_checkboxes(page)
 
         # Click first marker to trigger cluster expansion
         first_marker = page.locator(".leaflet-marker-icon").first

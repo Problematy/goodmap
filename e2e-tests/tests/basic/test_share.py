@@ -14,7 +14,7 @@ from tests.conftest import (
     ALL_MOBILE_DEVICES,
     BASE_URL,
     MARKER_LOAD_TIMEOUT,
-    clear_default_category_filters,
+    clear_all_checkboxes,
 )
 
 
@@ -31,7 +31,7 @@ class TestShareOnDesktop:
         # Grant clipboard permissions
         page.context.grant_permissions(["clipboard-read", "clipboard-write"])
 
-        clear_default_category_filters(page)
+        clear_all_checkboxes(page)
 
         # Click first marker to trigger cluster expansion
         first_marker = page.locator(".leaflet-marker-icon").first
@@ -89,7 +89,7 @@ class TestShareOnDesktop:
             wait_until="domcontentloaded",
         )
 
-        clear_default_category_filters(page)
+        clear_all_checkboxes(page)
 
         # Verify popup is visible
         popup = page.locator(".leaflet-popup-content")
@@ -124,7 +124,7 @@ class TestShareOnMobile:
 
         mobile_page.goto(BASE_URL, wait_until="domcontentloaded")
 
-        clear_default_category_filters(mobile_page)
+        clear_all_checkboxes(mobile_page)
 
         # Click first marker to expand cluster
         first_marker = mobile_page.locator(".leaflet-marker-icon").first
@@ -181,7 +181,7 @@ class TestShareOnMobile:
             wait_until="domcontentloaded",
         )
 
-        clear_default_category_filters(mobile_page)
+        clear_all_checkboxes(mobile_page)
 
         # On mobile, popup appears as Material-UI Dialog
         dialog_content = mobile_page.locator(".MuiDialogContent-root")

@@ -153,6 +153,22 @@ const RetryButton = styled.button`
     }
 `;
 
+const ClearFiltersButton = styled.button`
+    font-size: 14px;
+    padding: 8px 12px;
+    margin-top: 8px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    width: 100%;
+
+    &:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+`;
+
 /**
  * Filters form component that allows users to filter map locations by categories.
  * Fetches category data from the API and renders checkboxes for each filter option.
@@ -199,6 +215,10 @@ export const FiltersForm = () => {
 
             return newSelectedFilters;
         });
+    };
+
+    const handleClearFilters = () => {
+        setCategories({});
     };
 
     const fetchCategories = async () => {
@@ -289,5 +309,16 @@ export const FiltersForm = () => {
         );
     }
 
-    return <form>{sections}</form>;
+    return (
+        <form>
+            {sections}
+            <ClearFiltersButton
+                type="button"
+                aria-label="Clear all filters"
+                onClick={handleClearFilters}
+            >
+                Clear filters
+            </ClearFiltersButton>
+        </form>
+    );
 };

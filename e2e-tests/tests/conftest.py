@@ -70,17 +70,18 @@ TEST_LOCATIONS = {
 }
 
 
-def clear_default_category_filters(page: Page) -> None:
+def clear_all_checkboxes(page: Page) -> None:
     """
-    Uncheck the "cars" accessible_by filter that's checked by default (see
-    categories_default_checked in the e2e test data). Several tests rely on
-    both seeded locations (Grunwaldzki and Zwierzyniecka) being visible,
-    which requires clearing this default filter first.
+    Click the "Clear filters" button to reset all selected category filters.
 
-    Opens the mobile filter panel (if collapsed) to reach the checkbox, and
+    Several tests rely on all seeded locations being visible, which requires
+    clearing any filters checked by default (see categories_default_checked
+    in the e2e test data) before asserting on marker/location counts.
+
+    Opens the mobile filter panel (if collapsed) to reach the button, and
     closes it again afterwards so it doesn't obscure subsequent interactions.
 
-    Unchecking the filter can trigger a marker refetch that mounts a location
+    Clearing filters can trigger a marker refetch that mounts a location
     whose popup auto-opens (e.g. a pending ?locationId= shared link). That
     popup dialog can stack on top of the filter panel before the close button
     is clicked, so the close is dispatched via JS: it fires the same click
@@ -93,9 +94,7 @@ def clear_default_category_filters(page: Page) -> None:
         toggle_button.click()
 
     page.wait_for_selector("#filter-form", timeout=MARKER_LOAD_TIMEOUT)
-    cars_checkbox = page.locator("#filter-form input#cars")
-    if cars_checkbox.is_checked():
-        cars_checkbox.uncheck()
+    page.locator('#filter-form button[aria-label="Clear all filters"]').click()
 
     if opened_dialog:
         page.locator('button[aria-label="Close left panel"]').evaluate("el => el.click()")

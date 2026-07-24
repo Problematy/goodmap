@@ -9,7 +9,7 @@ information as a bottom sheet that slides up from the bottom.
 import pytest
 from playwright.sync_api import Page, expect
 
-from tests.conftest import ALL_MOBILE_DEVICES, BASE_URL, clear_default_category_filters
+from tests.conftest import ALL_MOBILE_DEVICES, BASE_URL, clear_all_checkboxes
 from tests.helpers import EXPECTED_PLACE_ZWIERZYNIECKA, verify_popup_content, verify_problem_form
 
 
@@ -32,7 +32,7 @@ class TestPopupOnMobile:
         # Navigate to the page (device emulation already configured by mobile_page fixture)
         mobile_page.goto(BASE_URL, wait_until="domcontentloaded")
 
-        clear_default_category_filters(mobile_page)
+        clear_all_checkboxes(mobile_page)
 
         # Click first marker to expand cluster
         # Use JavaScript click to bypass webpack overlay that may intercept clicks on CI
