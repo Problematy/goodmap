@@ -608,11 +608,17 @@ def json_db_get_category_data(self, category_type=None):
             "categories_options_help": {
                 category_type: self.data.get("categories_options_help", {}).get(category_type, [])
             },
+            "categories_default_checked": {
+                category_type: self.data.get("categories_default_checked", {}).get(
+                    category_type, []
+                )
+            },
         }
     return {
         "categories": self.data["categories"],
         "categories_help": self.data.get("categories_help", []),
         "categories_options_help": self.data.get("categories_options_help", {}),
+        "categories_default_checked": self.data.get("categories_default_checked", {}),
     }
 
 
@@ -627,11 +633,15 @@ def json_file_db_get_category_data(self, category_type=None):
                 "categories_options_help": {
                     category_type: data.get("categories_options_help", {}).get(category_type, [])
                 },
+                "categories_default_checked": {
+                    category_type: data.get("categories_default_checked", {}).get(category_type, [])
+                },
             }
         return {
             "categories": data["categories"],
             "categories_help": data.get("categories_help", []),
             "categories_options_help": data.get("categories_options_help", {}),
+            "categories_default_checked": data.get("categories_default_checked", {}),
         }
 
 
@@ -645,11 +655,15 @@ def google_json_db_get_category_data(self, category_type=None):
             "categories_options_help": {
                 category_type: data.get("categories_options_help", {}).get(category_type, [])
             },
+            "categories_default_checked": {
+                category_type: data.get("categories_default_checked", {}).get(category_type, [])
+            },
         }
     return {
         "categories": data.get("categories", {}),
         "categories_help": data.get("categories_help", []),
         "categories_options_help": data.get("categories_options_help", {}),
+        "categories_default_checked": data.get("categories_default_checked", {}),
     }
 
 
@@ -668,13 +682,24 @@ def mongodb_db_get_category_data(self, category_type=None):
                         category_type, []
                     )
                 },
+                "categories_default_checked": {
+                    category_type: config_doc.get("categories_default_checked", {}).get(
+                        category_type, []
+                    )
+                },
             }
         return {
             "categories": config_doc.get("categories", {}),
             "categories_help": config_doc.get("categories_help", []),
             "categories_options_help": config_doc.get("categories_options_help", {}),
+            "categories_default_checked": config_doc.get("categories_default_checked", {}),
         }
-    return {"categories": {}, "categories_help": [], "categories_options_help": {}}
+    return {
+        "categories": {},
+        "categories_help": [],
+        "categories_options_help": {},
+        "categories_default_checked": {},
+    }
 
 
 def get_category_data(db):

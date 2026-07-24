@@ -1,7 +1,8 @@
 import React from 'react';
-import { render, act, screen } from '@testing-library/react';
+import { render, waitFor, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 import { MapComponent } from '../../src/components/Map/MapComponent';
+import { FiltersForm } from '../../src/components/FiltersForm/FiltersForm';
 import { CategoriesProvider } from '../../src/components/Categories/CategoriesContext';
 import { httpService } from '../../src/services/http/httpService';
 
@@ -39,16 +40,43 @@ describe('MapComponent', () => {
         jest.spyOn(globalThis, 'fetch').mockResolvedValue({
             json: jest.fn().mockResolvedValue(categories),
         });
-        return act(() =>
-            render(
-                <CategoriesProvider>
-                    <MapComponent />
-                </CategoriesProvider>,
-            ),
+        render(
+            <CategoriesProvider>
+                <MapComponent />
+            </CategoriesProvider>,
         );
     });
 
     it('renders without crashing', () => {
         expect(screen.getAllByRole('presentation').length).toBeGreaterThan(0);
+    });
+
+    it('does not fetch locations before filter state is initialized', () => {
+        expect(httpService.getLocations).not.toHaveBeenCalled();
+    });
+});
+
+describe('MapComponent with FiltersForm', () => {
+    beforeAll(() => {
+        globalThis.FEATURE_FLAGS = {};
+    });
+
+    // eslint-disable-next-line es-x/no-async-functions -- needed to await waitFor
+    it('fetches locations once, already filtered by default-checked options', async () => {
+        httpService.getLocations.mockClear();
+        httpService.getCategoriesData.mockResolvedValueOnce({
+            categories,
+            defaultChecked: { types: ['shoes'] },
+        });
+
+        render(
+            <CategoriesProvider>
+                <FiltersForm />
+                <MapComponent />
+            </CategoriesProvider>,
+        );
+
+        await waitFor(() => expect(httpService.getLocations).toHaveBeenCalledTimes(1));
+        expect(httpService.getLocations).toHaveBeenCalledWith({ types: ['shoes'] });
     });
 });

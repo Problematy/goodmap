@@ -170,6 +170,59 @@ def test_categories_full_endpoint(test_app):
     assert category["options"][0] == ["test", "test-translated"]
     assert category["options"][1] == ["test2", "test2-translated"]
 
+    # No default-checked options configured for this category
+    assert category["default_checked"] == []
+
+
+@mock.patch("goodmap.core_api.gettext", fake_translation)
+def test_categories_full_endpoint_with_default_checked():
+    test_app = create_test_app(
+        db_overrides={
+            "categories": {"test-category": ["opt1", "opt2"]},
+            "categories_default_checked": {"test-category": ["opt1"]},
+        }
+    )
+    response = test_app.get("/api/categories-full")
+    assert response.status_code == 200
+    data = response.json
+    assert data is not None
+
+    category = data["categories"][0]
+    assert category["default_checked"] == ["opt1"]
+
+
+@mock.patch("goodmap.core_api.gettext", fake_translation)
+def test_categories_full_endpoint_drops_default_checked_not_in_options():
+    test_app = create_test_app(
+        db_overrides={
+            "categories": {"test-category": ["opt1", "opt2"]},
+            "categories_default_checked": {"test-category": ["opt1", "not-an-option"]},
+        }
+    )
+    response = test_app.get("/api/categories-full")
+    assert response.status_code == 200
+    data = response.json
+    assert data is not None
+
+    category = data["categories"][0]
+    assert category["default_checked"] == ["opt1"]
+
+
+@mock.patch("goodmap.core_api.gettext", fake_translation)
+def test_categories_full_endpoint_without_default_checked():
+    test_app = create_test_app(
+        db_overrides={
+            "categories": {"test-category": ["opt1", "opt2"]},
+        }
+    )
+    response = test_app.get("/api/categories-full")
+    assert response.status_code == 200
+    data = response.json
+    assert data is not None
+
+    category = data["categories"][0]
+    assert category["default_checked"] == []
+
 
 @mock.patch("goodmap.core_api.gettext", fake_translation)
 def test_categories_full_endpoint_with_multiple_categories():

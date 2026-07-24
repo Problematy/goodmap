@@ -47,13 +47,15 @@ export const httpService = {
      * Fetches complete categories data including subcategories in a single request.
      * Uses the /api/categories-full endpoint to avoid waterfall requests.
      *
-     * @returns {Promise<Array>} Promise resolving to array of category data tuples
+     * @returns {Promise<{categories: Array, defaultChecked: Object}>} Promise resolving to
+     *   the array of category data tuples plus a map of category key to the option values
+     *   that should be pre-checked by default.
      */
     getCategoriesData: async () => {
         const response = await fetch(CATEGORIES_FULL).then(res => res.json());
 
         // Transform to expected format: [[key, name], options, help?, optionsHelp?]
-        return response.categories.map(category => {
+        const categories = response.categories.map(category => {
             const categoryTuple = [category.key, category.name];
             const options = category.options;
 
@@ -67,6 +69,14 @@ export const httpService = {
             }
             return [categoryTuple, options];
         });
+
+        const defaultChecked = Object.fromEntries(
+            response.categories
+                .filter(category => category.default_checked?.length)
+                .map(category => [category.key, category.default_checked]),
+        );
+
+        return { categories, defaultChecked };
     },
 
     /**

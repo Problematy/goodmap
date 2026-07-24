@@ -70,6 +70,36 @@ TEST_LOCATIONS = {
 }
 
 
+def clear_all_checkboxes(page: Page) -> None:
+    """
+    Click the "Clear filters" button to reset all selected category filters.
+
+    Several tests rely on all seeded locations being visible, which requires
+    clearing any filters checked by default (see categories_default_checked
+    in the e2e test data) before asserting on marker/location counts.
+
+    Opens the mobile filter panel (if collapsed) to reach the button, and
+    closes it again afterwards so it doesn't obscure subsequent interactions.
+
+    Clearing filters can trigger a marker refetch that mounts a location
+    whose popup auto-opens (e.g. a pending ?locationId= shared link). That
+    popup dialog can stack on top of the filter panel before the close button
+    is clicked, so the close is dispatched via JS: it fires the same click
+    event Bootstrap listens for, but skips Playwright's hit-testing, which
+    would otherwise block on the overlapping dialog.
+    """
+    toggle_button = page.locator('button[aria-label="Toggle left panel"]')
+    opened_dialog = toggle_button.is_visible()
+    if opened_dialog:
+        toggle_button.click()
+
+    page.wait_for_selector("#filter-form", timeout=MARKER_LOAD_TIMEOUT)
+    page.locator('#filter-form button[aria-label="Clear all filters"]').click()
+
+    if opened_dialog:
+        page.locator('button[aria-label="Close left panel"]').evaluate("el => el.click()")
+
+
 def _block_hmr(page: Page) -> None:
     """Block HMR/hot reload requests to prevent page refreshes during tests."""
     page.route("**/ws", lambda route: route.abort())
@@ -113,7 +143,7 @@ def window_open_stub(page: Page) -> Callable[[], list[str]]:
 
 
 @pytest.fixture
-def mobile_page(browser, request) -> Generator[Page, None, None]:
+def mobile_page(new_context, request) -> Generator[Page, None, None]:
     """
     Create a page with proper mobile device emulation.
 
@@ -123,6 +153,11 @@ def mobile_page(browser, request) -> Generator[Page, None, None]:
     Supports two parametrization styles:
     1. Indirect: @pytest.mark.parametrize("mobile_page", ALL_MOBILE_DEVICES, indirect=True)
     2. Legacy: @pytest.mark.parametrize("device_name", ALL_MOBILE_DEVICES)
+
+    Uses pytest-playwright's new_context factory fixture (rather than calling
+    browser.new_context() directly) so CLI-driven options like
+    --video=retain-on-failure still apply, and so failures on mobile tests
+    produce the same video/trace artifacts as desktop tests.
     """
     if hasattr(request, "param"):
         device_name = request.param
@@ -136,7 +171,7 @@ def mobile_page(browser, request) -> Generator[Page, None, None]:
 
     device_config = MOBILE_DEVICES[device_name]
 
-    context = browser.new_context(
+    context = new_context(
         viewport=device_config["viewport"],
         user_agent=device_config["user_agent"],
         has_touch=True,

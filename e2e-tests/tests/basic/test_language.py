@@ -10,7 +10,7 @@ Tests that changing the language:
 import pytest
 from playwright.sync_api import Page, expect
 
-from tests.conftest import BASE_URL, MARKER_LOAD_TIMEOUT
+from tests.conftest import BASE_URL, MARKER_LOAD_TIMEOUT, clear_all_checkboxes
 
 
 def get_language_button(page: Page):
@@ -70,6 +70,8 @@ class TestLanguageSwitching:
         get_language_button(page).click()
         page.get_by_role("link", name="polski").click()
         page.wait_for_load_state("domcontentloaded")
+
+        clear_all_checkboxes(page)
 
         # Click marker cluster to expand
         page.locator(".leaflet-marker-icon").first.click()

@@ -26,6 +26,13 @@ class TestAccessibilityTable:
         # Navigate to the page
         page.goto(BASE_URL, wait_until="domcontentloaded")
 
+        # "accessible_by: cars" is checked by default (see categories_default_checked
+        # in the test data), which excludes Zwierzyniecka (bikes/pedestrians only,
+        # no cars). Uncheck it so both seeded locations are visible, matching what
+        # these tests assert.
+        page.wait_for_selector("#filter-form", timeout=MARKER_LOAD_TIMEOUT)
+        page.locator("#filter-form input#cars").uncheck()
+
         # Wait for map markers to load before clicking list view button
         markers = page.locator(".leaflet-marker-icon")
         expect(markers.first).to_be_visible(timeout=MARKER_LOAD_TIMEOUT)

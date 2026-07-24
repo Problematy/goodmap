@@ -6,7 +6,7 @@ Tests popup functionality including content display, CTA buttons, and problem fo
 
 from playwright.sync_api import Page, expect
 
-from tests.conftest import BASE_URL, MARKER_LOAD_TIMEOUT
+from tests.conftest import BASE_URL, MARKER_LOAD_TIMEOUT, clear_all_checkboxes
 from tests.helpers import EXPECTED_PLACE_ZWIERZYNIECKA, verify_popup_content, verify_problem_form
 
 
@@ -21,6 +21,8 @@ class TestPopupOnDesktop:
         skipped because the close button may be hidden when form is opened on desktop.
         """
         page.goto(BASE_URL, wait_until="domcontentloaded")
+
+        clear_all_checkboxes(page)
 
         # Click first marker to trigger cluster expansion
         first_marker = page.locator(".leaflet-marker-icon").first
@@ -77,6 +79,8 @@ class TestPopupOnDesktop:
         - Form submission works
         """
         page.goto(BASE_URL, wait_until="domcontentloaded")
+
+        clear_all_checkboxes(page)
 
         # Click first marker to trigger cluster expansion
         first_marker = page.locator(".leaflet-marker-icon").first

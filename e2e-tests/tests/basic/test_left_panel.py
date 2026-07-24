@@ -347,6 +347,37 @@ class TestLeftPanelFilterHelpers:
         expect(tooltip).to_contain_text("A smaller pedestrian or bike bridge")
 
 
+class TestLeftPanelDefaultCheckedFilters:
+    """Test suite for the categories_default_checked config option"""
+
+    def test_configured_option_is_checked_by_default(self, page: Page):
+        """
+        The 'cars' option of the accessible_by category is configured as
+        default-checked (see categories_default_checked in the test data),
+        so it should be pre-checked when the filter form loads.
+        """
+        page.set_viewport_size({"width": 1200, "height": 800})
+        page.goto(BASE_URL, wait_until="domcontentloaded")
+
+        page.wait_for_selector("#filter-form", timeout=10000)
+
+        cars_checkbox = page.locator("#filter-form input#cars")
+        expect(cars_checkbox).to_be_checked()
+
+    def test_other_options_are_not_checked_by_default(self, page: Page):
+        """
+        Options not listed in categories_default_checked should remain
+        unchecked when the filter form loads.
+        """
+        page.set_viewport_size({"width": 1200, "height": 800})
+        page.goto(BASE_URL, wait_until="domcontentloaded")
+
+        page.wait_for_selector("#filter-form", timeout=10000)
+
+        pedestrians_checkbox = page.locator("#filter-form input#pedestrians")
+        expect(pedestrians_checkbox).not_to_be_checked()
+
+
 class TestLeftPanelScrollbar:
     """Test suite for panel scrollbar styling"""
 

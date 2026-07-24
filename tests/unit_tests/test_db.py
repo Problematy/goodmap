@@ -112,6 +112,7 @@ data = {
     "location_obligatory_fields": [["name", "str"]],
     "categories_help": ["Help text for categories"],
     "categories_options_help": {"test-category": ["Help for test category"]},
+    "categories_default_checked": {"test-category": ["searchable"]},
 }
 data_json = json.dumps({"map": data})
 
@@ -1422,6 +1423,7 @@ def test_json_db_get_category_data():
         "categories": {"test-category": ["searchable", "unsearchable"]},
         "categories_help": ["Help text for categories"],
         "categories_options_help": {"test-category": ["Help for test category"]},
+        "categories_default_checked": {"test-category": ["searchable"]},
     }
     assert category_data == expected
 
@@ -1434,6 +1436,7 @@ def test_json_db_get_category_data_specific_category():
         "categories": {"test-category": ["searchable", "unsearchable"]},
         "categories_help": ["Help text for categories"],
         "categories_options_help": {"test-category": ["Help for test category"]},
+        "categories_default_checked": {"test-category": ["searchable"]},
     }
     assert category_data == expected
 
@@ -1449,6 +1452,7 @@ def test_json_file_db_get_category_data(tmp_path):
         "categories": {"test-category": ["searchable", "unsearchable"]},
         "categories_help": ["Help text for categories"],
         "categories_options_help": {"test-category": ["Help for test category"]},
+        "categories_default_checked": {"test-category": ["searchable"]},
     }
     assert category_data == expected
 
@@ -1464,6 +1468,7 @@ def test_json_file_db_get_category_data_specific_category(tmp_path):
         "categories": {"test-category": ["searchable", "unsearchable"]},
         "categories_help": ["Help text for categories"],
         "categories_options_help": {"test-category": ["Help for test category"]},
+        "categories_default_checked": {"test-category": ["searchable"]},
     }
     assert category_data == expected
 
@@ -1480,6 +1485,7 @@ def test_google_json_db_get_category_data(mock_cli):
         "categories": {"test-category": ["searchable", "unsearchable"]},
         "categories_help": ["Help text for categories"],
         "categories_options_help": {"test-category": ["Help for test category"]},
+        "categories_default_checked": {"test-category": ["searchable"]},
     }
     assert category_data == expected
 
@@ -1496,6 +1502,7 @@ def test_google_json_db_get_category_data_specific_category(mock_cli):
         "categories": {"test-category": ["searchable", "unsearchable"]},
         "categories_help": ["Help text for categories"],
         "categories_options_help": {"test-category": ["Help for test category"]},
+        "categories_default_checked": {"test-category": ["searchable"]},
     }
     assert category_data == expected
 
@@ -1509,6 +1516,7 @@ def test_mongodb_db_get_category_data(mock_client):
         "categories": {"test-category": ["searchable", "unsearchable"]},
         "categories_help": ["Help text for categories"],
         "categories_options_help": {"test-category": ["Help for test category"]},
+        "categories_default_checked": {"test-category": ["searchable"]},
     }
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
@@ -1518,6 +1526,7 @@ def test_mongodb_db_get_category_data(mock_client):
         "categories": {"test-category": ["searchable", "unsearchable"]},
         "categories_help": ["Help text for categories"],
         "categories_options_help": {"test-category": ["Help for test category"]},
+        "categories_default_checked": {"test-category": ["searchable"]},
     }
     assert category_data == expected
 
@@ -1531,6 +1540,7 @@ def test_mongodb_db_get_category_data_specific_category(mock_client):
         "categories": {"test-category": ["searchable", "unsearchable"]},
         "categories_help": ["Help text for categories"],
         "categories_options_help": {"test-category": ["Help for test category"]},
+        "categories_default_checked": {"test-category": ["searchable"]},
     }
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
@@ -1540,6 +1550,7 @@ def test_mongodb_db_get_category_data_specific_category(mock_client):
         "categories": {"test-category": ["searchable", "unsearchable"]},
         "categories_help": ["Help text for categories"],
         "categories_options_help": {"test-category": ["Help for test category"]},
+        "categories_default_checked": {"test-category": ["searchable"]},
     }
     assert category_data == expected
 
@@ -1553,7 +1564,12 @@ def test_mongodb_db_get_category_data_no_config(mock_client):
     db = MongoDB("mongodb://localhost:27017", "test_db")
     extend_db_with_goodmap_queries(db, LocationBase)
     category_data = mongodb_db_get_category_data(db)
-    expected = {"categories": {}, "categories_help": [], "categories_options_help": {}}
+    expected = {
+        "categories": {},
+        "categories_help": [],
+        "categories_options_help": {},
+        "categories_default_checked": {},
+    }
     assert category_data == expected
 
 
@@ -1565,6 +1581,7 @@ def test_get_category_data():
         "categories": {"test-category": ["searchable", "unsearchable"]},
         "categories_help": ["Help text for categories"],
         "categories_options_help": {"test-category": ["Help for test category"]},
+        "categories_default_checked": {"test-category": ["searchable"]},
     }
     assert category_data == expected
 

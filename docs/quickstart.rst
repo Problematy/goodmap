@@ -70,6 +70,46 @@ Example configuration in your data source:
      ]
    }
 
+Categories and Filtering
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+``categories`` is a dict of field name to the list of allowed values for that
+field. Each category is rendered in the frontend as a group of filter
+checkboxes, one per allowed value.
+
+``categories_help``
+   List of category keys that should show a help tooltip next to the
+   category's title. The tooltip text is looked up via the translation key
+   ``categories_help_<category_key>``.
+
+``categories_options_help``
+   Dict of category key to the list of option values within that category
+   that should show a help tooltip. The tooltip text is looked up via the
+   translation key ``categories_options_help_<option_value>``.
+
+``categories_default_checked``
+   Dict of category key to the list of option values that should be
+   pre-checked in the filter panel when the app first loads, before the user
+   has made any selection.
+
+Example configuration in your data source:
+
+.. code-block:: json
+
+   {
+     "categories": {
+       "accessible_by": ["bikes", "cars", "pedestrians"],
+       "type_of_place": ["big bridge", "small bridge"]
+     },
+     "categories_help": ["accessible_by"],
+     "categories_options_help": {
+       "accessible_by": ["cars", "pedestrians"]
+     },
+     "categories_default_checked": {
+       "accessible_by": ["cars"]
+     }
+   }
+
 .. _data-model-visible_data:
 
 Database Types

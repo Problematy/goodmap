@@ -134,6 +134,41 @@ const TooltipWrapper = styled.span`
     margin-left: auto;
 `;
 
+const ErrorMessage = styled.p`
+    font-size: 14px;
+    margin-bottom: 12px;
+`;
+
+const RetryButton = styled.button`
+    font-size: 14px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+
+    &:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+`;
+
+const ClearFiltersButton = styled.button`
+    font-size: 14px;
+    padding: 8px 12px;
+    margin-top: 8px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    width: 100%;
+
+    &:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+`;
+
 /**
  * Filters form component that allows users to filter map locations by categories.
  * Fetches category data from the API and renders checkboxes for each filter option.
@@ -158,9 +193,10 @@ const LoadingSkeleton = () => (
 );
 
 export const FiltersForm = () => {
-    const { setCategories } = useCategories();
+    const { categories: selectedFilters, setCategories, setIsInitialized } = useCategories();
     const [categoriesData, setCategoriesData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [hasError, setHasError] = useState(false);
 
     const handleCheckboxChange = event => {
         const { value, checked } = event.target;
@@ -170,11 +206,7 @@ export const FiltersForm = () => {
             const newSelectedFilters = { ...prevSelectedFilters };
 
             if (checked) {
-                if (newSelectedFilters[category]) {
-                    newSelectedFilters[category].push(value);
-                } else {
-                    newSelectedFilters[category] = [value];
-                }
+                newSelectedFilters[category] = [...(newSelectedFilters[category] ?? []), value];
             } else {
                 newSelectedFilters[category] = newSelectedFilters[category].filter(
                     filter => filter !== value,
@@ -185,13 +217,32 @@ export const FiltersForm = () => {
         });
     };
 
-    useEffect(() => {
-        const fetchCategories = async () => {
-            setIsLoading(true);
-            const categoriesData = await httpService.getCategoriesData();
-            setCategoriesData(categoriesData);
+    const handleClearFilters = () => {
+        setCategories({});
+    };
+
+    const fetchCategories = async () => {
+        setIsLoading(true);
+        setHasError(false);
+        try {
+            const { categories, defaultChecked } = await httpService.getCategoriesData();
+            setCategoriesData(categories);
+            if (Object.keys(defaultChecked).length > 0) {
+                setCategories(defaultChecked);
+            }
+            setIsInitialized(true);
+        } catch (error) {
+            console.error('Failed to load categories:', error);
+            // Establish an explicit fallback (no filters) instead of silently
+            // signaling initialization with unknown/missing category data.
+            setCategoriesData([]);
+            setHasError(true);
+        } finally {
             setIsLoading(false);
-        };
+        }
+    };
+
+    useEffect(() => {
         fetchCategories();
     }, []);
 
@@ -208,6 +259,7 @@ export const FiltersForm = () => {
                         type="checkbox"
                         id={name}
                         value={name}
+                        checked={Boolean(selectedFilters[category]?.includes(name))}
                     />
                     <OptionText>{translation}</OptionText>
                     {tooltipData && (
@@ -246,5 +298,27 @@ export const FiltersForm = () => {
         );
     }
 
-    return <form>{sections}</form>;
+    if (hasError) {
+        return (
+            <form>
+                <ErrorMessage>Failed to load filters.</ErrorMessage>
+                <RetryButton type="button" onClick={fetchCategories}>
+                    Retry
+                </RetryButton>
+            </form>
+        );
+    }
+
+    return (
+        <form>
+            {sections}
+            <ClearFiltersButton
+                type="button"
+                aria-label="Clear all filters"
+                onClick={handleClearFilters}
+            >
+                Clear filters
+            </ClearFiltersButton>
+        </form>
+    );
 };
