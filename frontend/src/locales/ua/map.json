@@ -37,5 +37,7 @@
     "loadFiltersError": "Не вдалося завантажити фільтри.",
     "retry": "Спробувати ще раз",
     "clearFilters": "Очистити фільтри",
-    "clearAllFiltersAriaLabel": "Очистити всі фільтри"
+    "clearAllFiltersAriaLabel": "Очистити всі фільтри",
+    "otherFilters": "Інше",
+    "filterModeAndHint": "(усі одразу)"
 }

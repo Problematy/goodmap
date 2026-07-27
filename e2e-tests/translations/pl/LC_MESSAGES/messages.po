@@ -21,6 +21,15 @@ msgstr "dostępny dla"
 msgid "type_of_place"
 msgstr "typ miejsca"
 
+msgid "is_free"
+msgstr "tylko bezpłatne"
+
+msgid "speed_limit"
+msgstr "ograniczenie prędkości"
+
+msgid "amenities"
+msgstr "udogodnienia"
+
 msgid "remark"
 msgstr "uwaga"
 
@@ -41,6 +50,33 @@ msgstr "duży most"
 msgid "small bridge"
 msgstr "mały most"
 
+# Category values - is_free
+msgid "true"
+msgstr "tak"
+
+msgid "false"
+msgstr "nie"
+
+# Category values - speed_limit (km/h)
+msgid "10"
+msgstr "10 km/h"
+
+msgid "30"
+msgstr "30 km/h"
+
+msgid "50"
+msgstr "50 km/h"
+
+# Category values - amenities
+msgid "lighting"
+msgstr "oświetlenie"
+
+msgid "benches"
+msgstr "ławki"
+
+msgid "toilets"
+msgstr "toalety"
+
 # Reported issue types
 msgid "under construction"
 msgstr "w budowie"
@@ -51,6 +87,12 @@ msgstr "ma dziurę"
 # Help texts - category headers
 msgid "categories_help_accessible_by"
 msgstr "Kto może korzystać z tego mostu"
+
+msgid "categories_help_speed_limit"
+msgstr "Wybranie limitu prędkości pokazuje też mosty z niższym limitem"
+
+msgid "categories_help_amenities"
+msgstr "Wybranie kilku pokazuje tylko mosty, które mają je wszystkie"
 
 # Help texts - category options
 msgid "categories_options_help_small bridge"

@@ -54,10 +54,11 @@ export const httpService = {
     getCategoriesData: async () => {
         const response = await fetch(CATEGORIES_FULL).then(res => res.json());
 
-        // Transform to expected format: [[key, name], options, help?, optionsHelp?]
+        // Transform to expected format: [[key, name], options, help?, optionsHelp?, filterMode]
         const categories = response.categories.map(category => {
             const categoryTuple = [category.key, category.name];
             const options = category.options;
+            const filterMode = category.filter_mode ?? 'or';
 
             if (globalThis.FEATURE_FLAGS?.CATEGORIES_HELP) {
                 return [
@@ -65,9 +66,10 @@ export const httpService = {
                     category.options_with_help ?? options,
                     response.categories_help ?? [],
                     category.options_help ?? [],
+                    filterMode,
                 ];
             }
-            return [categoryTuple, options];
+            return [categoryTuple, options, undefined, undefined, filterMode];
         });
 
         const defaultChecked = Object.fromEntries(

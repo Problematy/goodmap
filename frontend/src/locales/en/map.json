@@ -38,5 +38,7 @@
     "loadFiltersError": "Failed to load filters.",
     "retry": "Retry",
     "clearFilters": "Clear filters",
-    "clearAllFiltersAriaLabel": "Clear all filters"
+    "clearAllFiltersAriaLabel": "Clear all filters",
+    "otherFilters": "Others",
+    "filterModeAndHint": "(match all)"
 }

@@ -70,6 +70,8 @@ Example configuration in your data source:
      ]
    }
 
+.. _categories-filter-mode:
+
 Categories and Filtering
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -92,14 +94,54 @@ checkboxes, one per allowed value.
    pre-checked in the filter panel when the app first loads, before the user
    has made any selection.
 
-Example configuration in your data source:
+``categories_filter_mode``
+   Dict of category key to how *multiple selected values within that
+   category* are combined when filtering locations. Categories not listed
+   here default to ``"or"``. This only affects combination **within** one
+   category - across different categories, selections are always combined
+   with AND (a location must match every category that has an active
+   selection).
+
+   ``"or"`` (default)
+      A location matches if it has **any** of the selected values. This is
+      the usual "check more boxes to broaden results" behavior - e.g.
+      checking both ``bikes`` and ``cars`` on ``accessible_by`` shows
+      locations that allow bikes *or* cars, not only locations that allow
+      both (which would often be zero results).
+
+   ``"exclusive"``
+      Single-select: the frontend renders the options as radio buttons
+      instead of checkboxes, so only one value can be active at a time. Use
+      this for categories with three or more mutually-exclusive states,
+      e.g. a toll tier: ``free`` / ``discounted`` / ``full_price``.
+
+   ``"boolean"``
+      For a field with exactly the two values ``"true"`` and ``"false"``.
+      Only the ``"true"`` option is rendered, as a single checkbox; leaving
+      it unchecked already means "show everything" (both true and false
+      locations), so there's no separate control for isolating ``"false"``
+      alone. Use this when nobody would deliberately filter for the
+      negative case - e.g. a "free only" checkbox for an ``is_free`` field,
+      since drivers care about "free" or "all", not "paid only".
+
+   ``"threshold"``
+      For an ordered, numeric-valued category, e.g. a speed limit in km/h.
+      Selecting a value matches any location whose value is **at or below**
+      the highest selected value - e.g. selecting ``30`` also matches
+      locations with ``10`` or ``30``, but not ``50``. The frontend renders
+      this as radio buttons too, since selecting more than one option would
+      be redundant: the highest selection alone determines the cutoff.
+
+Example configuration combining all four modes:
 
 .. code-block:: json
 
    {
      "categories": {
        "accessible_by": ["bikes", "cars", "pedestrians"],
-       "type_of_place": ["big bridge", "small bridge"]
+       "type_of_place": ["big bridge", "small bridge"],
+       "is_free": ["true", "false"],
+       "speed_limit": ["10", "30", "50"]
      },
      "categories_help": ["accessible_by"],
      "categories_options_help": {
@@ -107,8 +149,18 @@ Example configuration in your data source:
      },
      "categories_default_checked": {
        "accessible_by": ["cars"]
+     },
+     "categories_filter_mode": {
+       "accessible_by": "or",
+       "type_of_place": "or",
+       "is_free": "boolean",
+       "speed_limit": "threshold"
      }
    }
+
+The active mode for each category is also exposed as ``filter_mode`` in the
+``/api/categories-full`` response, so a custom frontend can render the
+right control (checkbox vs. radio) without hardcoding category names.
 
 .. _data-model-visible_data:
 

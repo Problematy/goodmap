@@ -613,12 +613,18 @@ def json_db_get_category_data(self, category_type=None):
                     category_type, []
                 )
             },
+            "categories_filter_mode": {
+                category_type: self.data.get("categories_filter_mode", {}).get(
+                    category_type, "or"
+                )
+            },
         }
     return {
         "categories": self.data["categories"],
         "categories_help": self.data.get("categories_help", []),
         "categories_options_help": self.data.get("categories_options_help", {}),
         "categories_default_checked": self.data.get("categories_default_checked", {}),
+        "categories_filter_mode": self.data.get("categories_filter_mode", {}),
     }
 
 
@@ -636,12 +642,16 @@ def json_file_db_get_category_data(self, category_type=None):
                 "categories_default_checked": {
                     category_type: data.get("categories_default_checked", {}).get(category_type, [])
                 },
+                "categories_filter_mode": {
+                    category_type: data.get("categories_filter_mode", {}).get(category_type, "or")
+                },
             }
         return {
             "categories": data["categories"],
             "categories_help": data.get("categories_help", []),
             "categories_options_help": data.get("categories_options_help", {}),
             "categories_default_checked": data.get("categories_default_checked", {}),
+            "categories_filter_mode": data.get("categories_filter_mode", {}),
         }
 
 
@@ -658,12 +668,16 @@ def google_json_db_get_category_data(self, category_type=None):
             "categories_default_checked": {
                 category_type: data.get("categories_default_checked", {}).get(category_type, [])
             },
+            "categories_filter_mode": {
+                category_type: data.get("categories_filter_mode", {}).get(category_type, "or")
+            },
         }
     return {
         "categories": data.get("categories", {}),
         "categories_help": data.get("categories_help", []),
         "categories_options_help": data.get("categories_options_help", {}),
         "categories_default_checked": data.get("categories_default_checked", {}),
+        "categories_filter_mode": data.get("categories_filter_mode", {}),
     }
 
 
@@ -687,18 +701,25 @@ def mongodb_db_get_category_data(self, category_type=None):
                         category_type, []
                     )
                 },
+                "categories_filter_mode": {
+                    category_type: config_doc.get("categories_filter_mode", {}).get(
+                        category_type, "or"
+                    )
+                },
             }
         return {
             "categories": config_doc.get("categories", {}),
             "categories_help": config_doc.get("categories_help", []),
             "categories_options_help": config_doc.get("categories_options_help", {}),
             "categories_default_checked": config_doc.get("categories_default_checked", {}),
+            "categories_filter_mode": config_doc.get("categories_filter_mode", {}),
         }
     return {
         "categories": {},
         "categories_help": [],
         "categories_options_help": {},
         "categories_default_checked": {},
+        "categories_filter_mode": {},
     }
 
 
@@ -769,7 +790,12 @@ def get_locations_list_from_raw_data(map_data, query, location_model):
     Returns:
         List of validated location model instances.
     """
-    filtered_locations = get_queried_data(map_data["data"], map_data["categories"], query)
+    filtered_locations = get_queried_data(
+        map_data["data"],
+        map_data["categories"],
+        query,
+        map_data.get("categories_filter_mode", {}),
+    )
     return [location_model.model_validate(point) for point in filtered_locations]
 
 
@@ -791,9 +817,23 @@ def json_db_get_locations(self, query, location_model):
 
 def mongodb_db_get_locations(self, query, location_model):
     """Retrieve filtered locations from MongoDB."""
+    config_doc = self.db.config.find_one({"_id": "map_config"}) or {}
+    filter_modes = config_doc.get("categories_filter_mode", {})
+
     mongo_query = {}
     for key, values in query.items():
-        if values:
+        if not values:
+            continue
+        if filter_modes.get(key) == "threshold":
+            # Threshold categories (e.g. speed limits) are numeric and ordered:
+            # selecting a value also matches any stored value at or below it.
+            # Assumes the field is stored numerically in MongoDB.
+            try:
+                mongo_query[key] = {"$lte": max(float(value) for value in values)}
+            except (TypeError, ValueError):
+                continue
+        else:
+            # "or" and "exclusive" both match any of the selected values.
             mongo_query[key] = {"$in": values}
 
     projection = {"_id": 0, "uuid": 1, "position": 1, "remark": 1}

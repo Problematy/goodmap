@@ -13,7 +13,7 @@ from collections.abc import Callable, Generator
 from pathlib import Path
 
 import pytest
-from playwright.sync_api import BrowserContext, Page
+from playwright.sync_api import BrowserContext, Page, expect
 
 BASE_URL = "http://localhost:5000"
 
@@ -66,7 +66,9 @@ TEST_LOCATIONS = {
         "lon": 20.088,
         "tile_pattern": r"https://[abc]\.tile\.openstreetmap\.org/1[3-6]/\d+/\d+\.png",
     },
-    "WROCLAW_CENTER": {"lat": 51.10655, "lon": 17.0555},
+    # Matches Zwierzyniecka's seeded position exactly, so it's guaranteed to
+    # sort first by distance in tests that rely on that ordering.
+    "WROCLAW_CENTER": {"lat": 51.108056, "lon": 17.07},
 }
 
 
@@ -98,6 +100,39 @@ def clear_all_checkboxes(page: Page) -> None:
 
     if opened_dialog:
         page.locator('button[aria-label="Close left panel"]').evaluate("el => el.click()")
+
+
+def open_zwierzyniecka_popup(page: Page) -> None:
+    """
+    Filter down to exactly the Zwierzyniecka bridge and click its marker to
+    open its popup.
+
+    Clicking into a multi-marker cluster spiderfies it into a layout whose
+    on-screen ordering isn't guaranteed to match geographic position
+    (especially on narrow mobile viewports) or to be stable as more
+    locations are seeded, so tests that need a specific, known location's
+    popup should isolate it first rather than reaching into an expanded
+    cluster by pixel position (e.g. "rightmost marker").
+
+    "bikes" uniquely identifies Zwierzyniecka among the seeded e2e bridges
+    (the only accessible_by option no other bridge has), so checking it
+    leaves exactly one marker on the map.
+    """
+    toggle_button = page.locator('button[aria-label="Toggle left panel"]')
+    opened_dialog = toggle_button.is_visible()
+    if opened_dialog:
+        toggle_button.click()
+
+    page.wait_for_selector("#filter-form", timeout=MARKER_LOAD_TIMEOUT)
+    page.locator("#clear-filters-button").click()
+    page.locator("#filter-form input#bikes").check()
+
+    if opened_dialog:
+        page.locator('button[aria-label="Close left panel"]').evaluate("el => el.click()")
+
+    markers = page.locator(".leaflet-marker-icon")
+    expect(markers).to_have_count(1, timeout=MARKER_LOAD_TIMEOUT)
+    markers.first.click()
 
 
 def _block_hmr(page: Page) -> None:

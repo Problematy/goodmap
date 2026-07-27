@@ -19,6 +19,17 @@ Database Module
    :undoc-members:
    :show-inheritance:
 
+Filtering Module
+----------------
+
+Category filter combination logic (see :ref:`categories-filter-mode` in
+:doc:`quickstart` for the config-level guide).
+
+.. automodule:: goodmap.core
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 API Endpoints
 -------------
 

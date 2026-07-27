@@ -38,5 +38,7 @@
     "loadFiltersError": "Nie udało się załadować filtrów.",
     "retry": "Spróbuj ponownie",
     "clearFilters": "Wyczyść filtry",
-    "clearAllFiltersAriaLabel": "Wyczyść wszystkie filtry"
+    "clearAllFiltersAriaLabel": "Wyczyść wszystkie filtry",
+    "otherFilters": "Inne",
+    "filterModeAndHint": "(wszystkie naraz)"
 }

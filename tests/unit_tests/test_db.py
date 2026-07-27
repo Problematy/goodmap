@@ -122,13 +122,15 @@ def initialize_and_assert_db(db, data):
     location_model = create_location_model(location_obligatory_fields, {})
     extend_db_with_goodmap_queries(db, location_model)
 
-    query = {"test-category": "searchable"}
+    # Query values arrive as lists in production (request.args.to_dict(flat=False));
+    # a single selected value exactly matches one entry's scalar category field.
+    query = {"test-category": ["searchable"]}
 
     location = db.get_location("1")
     assert location.position == (50, 50)
     assert location.uuid == "1"
 
-    assert len(db.get_locations(query)) == 2
+    assert len(db.get_locations(query)) == 1
     assert db.get_data() == data
 
 
@@ -1424,6 +1426,7 @@ def test_json_db_get_category_data():
         "categories_help": ["Help text for categories"],
         "categories_options_help": {"test-category": ["Help for test category"]},
         "categories_default_checked": {"test-category": ["searchable"]},
+        "categories_filter_mode": {},
     }
     assert category_data == expected
 
@@ -1437,6 +1440,7 @@ def test_json_db_get_category_data_specific_category():
         "categories_help": ["Help text for categories"],
         "categories_options_help": {"test-category": ["Help for test category"]},
         "categories_default_checked": {"test-category": ["searchable"]},
+        "categories_filter_mode": {"test-category": "or"},
     }
     assert category_data == expected
 
@@ -1453,6 +1457,7 @@ def test_json_file_db_get_category_data(tmp_path):
         "categories_help": ["Help text for categories"],
         "categories_options_help": {"test-category": ["Help for test category"]},
         "categories_default_checked": {"test-category": ["searchable"]},
+        "categories_filter_mode": {},
     }
     assert category_data == expected
 
@@ -1469,6 +1474,7 @@ def test_json_file_db_get_category_data_specific_category(tmp_path):
         "categories_help": ["Help text for categories"],
         "categories_options_help": {"test-category": ["Help for test category"]},
         "categories_default_checked": {"test-category": ["searchable"]},
+        "categories_filter_mode": {"test-category": "or"},
     }
     assert category_data == expected
 
@@ -1486,6 +1492,7 @@ def test_google_json_db_get_category_data(mock_cli):
         "categories_help": ["Help text for categories"],
         "categories_options_help": {"test-category": ["Help for test category"]},
         "categories_default_checked": {"test-category": ["searchable"]},
+        "categories_filter_mode": {},
     }
     assert category_data == expected
 
@@ -1503,6 +1510,7 @@ def test_google_json_db_get_category_data_specific_category(mock_cli):
         "categories_help": ["Help text for categories"],
         "categories_options_help": {"test-category": ["Help for test category"]},
         "categories_default_checked": {"test-category": ["searchable"]},
+        "categories_filter_mode": {"test-category": "or"},
     }
     assert category_data == expected
 
@@ -1527,6 +1535,7 @@ def test_mongodb_db_get_category_data(mock_client):
         "categories_help": ["Help text for categories"],
         "categories_options_help": {"test-category": ["Help for test category"]},
         "categories_default_checked": {"test-category": ["searchable"]},
+        "categories_filter_mode": {},
     }
     assert category_data == expected
 
@@ -1551,6 +1560,7 @@ def test_mongodb_db_get_category_data_specific_category(mock_client):
         "categories_help": ["Help text for categories"],
         "categories_options_help": {"test-category": ["Help for test category"]},
         "categories_default_checked": {"test-category": ["searchable"]},
+        "categories_filter_mode": {"test-category": "or"},
     }
     assert category_data == expected
 
@@ -1569,6 +1579,7 @@ def test_mongodb_db_get_category_data_no_config(mock_client):
         "categories_help": [],
         "categories_options_help": {},
         "categories_default_checked": {},
+        "categories_filter_mode": {},
     }
     assert category_data == expected
 
@@ -1582,6 +1593,7 @@ def test_get_category_data():
         "categories_help": ["Help text for categories"],
         "categories_options_help": {"test-category": ["Help for test category"]},
         "categories_default_checked": {"test-category": ["searchable"]},
+        "categories_filter_mode": {},
     }
     assert category_data == expected
 

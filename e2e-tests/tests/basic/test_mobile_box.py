@@ -9,7 +9,7 @@ information as a bottom sheet that slides up from the bottom.
 import pytest
 from playwright.sync_api import Page, expect
 
-from tests.conftest import ALL_MOBILE_DEVICES, BASE_URL, clear_all_checkboxes
+from tests.conftest import ALL_MOBILE_DEVICES, BASE_URL, open_zwierzyniecka_popup
 from tests.helpers import EXPECTED_PLACE_ZWIERZYNIECKA, verify_popup_content, verify_problem_form
 
 
@@ -32,37 +32,9 @@ class TestPopupOnMobile:
         # Navigate to the page (device emulation already configured by mobile_page fixture)
         mobile_page.goto(BASE_URL, wait_until="domcontentloaded")
 
-        clear_all_checkboxes(mobile_page)
-
-        # Click first marker to expand cluster
-        # Use JavaScript click to bypass webpack overlay that may intercept clicks on CI
-        first_marker = mobile_page.locator(".leaflet-marker-icon").first
-        first_marker.evaluate("el => el.click()")
-
-        # Wait for markers to appear (should be 2 after expansion)
-        markers = mobile_page.locator(".leaflet-marker-icon")
-        expect(markers).to_have_count(2)
-
-        # Click the rightmost marker
-        mobile_page.evaluate("""
-            () => {
-                const markers = document.querySelectorAll('.leaflet-marker-icon');
-                let rightmostMarker = null;
-                let maxX = -Infinity;
-
-                markers.forEach(marker => {
-                    const rect = marker.getBoundingClientRect();
-                    if (rect.x > maxX) {
-                        maxX = rect.x;
-                        rightmostMarker = marker;
-                    }
-                });
-
-                if (rightmostMarker) {
-                    rightmostMarker.click();
-                }
-            }
-        """)
+        # Isolate Zwierzyniecka's marker and click it directly, rather than
+        # expanding a multi-marker cluster and guessing at its layout.
+        open_zwierzyniecka_popup(mobile_page)
 
         # On mobile, popup appears as Material-UI Dialog (bottom sheet)
         dialog_content = mobile_page.locator(".MuiDialogContent-root")

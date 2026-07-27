@@ -28,8 +28,8 @@ class TestAccessibilityTable:
 
         # "accessible_by: cars" is checked by default (see categories_default_checked
         # in the test data), which excludes Zwierzyniecka (bikes/pedestrians only,
-        # no cars). Uncheck it so both seeded locations are visible, matching what
-        # these tests assert.
+        # no cars). Uncheck it so all ten seeded locations are visible, matching
+        # what these tests assert.
         page.wait_for_selector("#filter-form", timeout=MARKER_LOAD_TIMEOUT)
         page.locator("#filter-form input#cars").uncheck()
 
@@ -51,10 +51,10 @@ class TestAccessibilityTable:
     def test_should_properly_display_places(self, page: Page):
         """
         Verify table displays correct number of rows.
-        Should have 1 header row + 2 data rows = 3 total rows.
+        Should have 1 header row + 10 data rows = 11 total rows.
         """
         rows = page.locator("tr")
-        expect(rows).to_have_count(3)
+        expect(rows).to_have_count(11)
 
     def test_zwierzyniecka_should_be_first_row(self, page: Page):
         """

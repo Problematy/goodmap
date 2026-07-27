@@ -173,6 +173,23 @@ def test_categories_full_endpoint(test_app):
     # No default-checked options configured for this category
     assert category["default_checked"] == []
 
+    # Categories without an explicit filter mode default to "or"
+    assert category["filter_mode"] == "or"
+
+
+@mock.patch("goodmap.core_api.gettext", fake_translation)
+def test_categories_full_endpoint_reports_configured_filter_mode():
+    test_app = create_test_app(
+        db_overrides={
+            "categories": {"test-category": ["opt1", "opt2"]},
+            "categories_filter_mode": {"test-category": "exclusive"},
+        }
+    )
+    response = test_app.get("/api/categories-full")
+    assert response.status_code == 200
+    category = response.json["categories"][0]
+    assert category["filter_mode"] == "exclusive"
+
 
 @mock.patch("goodmap.core_api.gettext", fake_translation)
 def test_categories_full_endpoint_with_default_checked():
@@ -302,6 +319,128 @@ def test_get_locations(test_app):
         {"uuid": "11111111-1111-1111-1111-111111111111", "position": [50, 50], "remark": True},
         {"uuid": "22222222-2222-2222-2222-222222222222", "position": [60, 60], "remark": False},
     ]
+
+
+def test_get_locations_multi_value_same_category_uses_or_semantics():
+    """Selecting several checkboxes within one category should return the union
+    of matches, not only entries that have every selected value."""
+    client = create_test_app(
+        db_overrides={
+            "categories": {"tags": ["red", "blue", "green"]},
+            "location_obligatory_fields": [("tags", "list"), ("name", "str")],
+            "data": [
+                {
+                    "name": "red-only",
+                    "position": [50, 50],
+                    "tags": ["red"],
+                    "uuid": "11111111-1111-1111-1111-111111111111",
+                },
+                {
+                    "name": "blue-only",
+                    "position": [60, 60],
+                    "tags": ["blue"],
+                    "uuid": "22222222-2222-2222-2222-222222222222",
+                },
+                {
+                    "name": "green-only",
+                    "position": [70, 70],
+                    "tags": ["green"],
+                    "uuid": "33333333-3333-3333-3333-333333333333",
+                },
+            ],
+            "visible_data": ["name", "tags"],
+        }
+    )
+
+    response = client.get("/api/locations?tags=red&tags=blue")
+
+    assert response.status_code == 200
+    uuids = {loc["uuid"] for loc in response.json}
+    assert uuids == {
+        "11111111-1111-1111-1111-111111111111",
+        "22222222-2222-2222-2222-222222222222",
+    }
+
+
+def test_get_locations_and_filter_mode_requires_every_selected_value():
+    """An "and" category (e.g. amenities) narrows to entries that have every
+    selected value, not just any of them - the opposite of "or"."""
+    client = create_test_app(
+        db_overrides={
+            "categories": {"amenities": ["lighting", "benches", "toilets"]},
+            "categories_filter_mode": {"amenities": "and"},
+            "location_obligatory_fields": [("amenities", "list"), ("name", "str")],
+            "data": [
+                {
+                    "name": "lighting-and-benches",
+                    "position": [50, 50],
+                    "amenities": ["lighting", "benches"],
+                    "uuid": "11111111-1111-1111-1111-111111111111",
+                },
+                {
+                    "name": "lighting-only",
+                    "position": [60, 60],
+                    "amenities": ["lighting"],
+                    "uuid": "22222222-2222-2222-2222-222222222222",
+                },
+                {
+                    "name": "benches-only",
+                    "position": [70, 70],
+                    "amenities": ["benches"],
+                    "uuid": "33333333-3333-3333-3333-333333333333",
+                },
+            ],
+            "visible_data": ["name", "amenities"],
+        }
+    )
+
+    response = client.get("/api/locations?amenities=lighting&amenities=benches")
+
+    assert response.status_code == 200
+    uuids = {loc["uuid"] for loc in response.json}
+    assert uuids == {"11111111-1111-1111-1111-111111111111"}
+
+
+def test_get_locations_threshold_filter_mode():
+    """A "threshold" category (e.g. speed limit) matches any stored value at or
+    below the highest selected value."""
+    client = create_test_app(
+        db_overrides={
+            "categories": {"speed_limit": ["10", "30", "50"]},
+            "categories_filter_mode": {"speed_limit": "threshold"},
+            "location_obligatory_fields": [("speed_limit", "str"), ("name", "str")],
+            "data": [
+                {
+                    "name": "slow",
+                    "position": [50, 50],
+                    "speed_limit": "10",
+                    "uuid": "11111111-1111-1111-1111-111111111111",
+                },
+                {
+                    "name": "medium",
+                    "position": [60, 60],
+                    "speed_limit": "30",
+                    "uuid": "22222222-2222-2222-2222-222222222222",
+                },
+                {
+                    "name": "fast",
+                    "position": [70, 70],
+                    "speed_limit": "50",
+                    "uuid": "33333333-3333-3333-3333-333333333333",
+                },
+            ],
+            "visible_data": ["name", "speed_limit"],
+        }
+    )
+
+    response = client.get("/api/locations?speed_limit=30")
+
+    assert response.status_code == 200
+    uuids = {loc["uuid"] for loc in response.json}
+    assert uuids == {
+        "11111111-1111-1111-1111-111111111111",
+        "22222222-2222-2222-2222-222222222222",
+    }
 
 
 @mock.patch("goodmap.core_api.gettext", fake_translation)

@@ -441,6 +441,7 @@ def core_pages(
 
         categories_options_help = categories_data.get("categories_options_help", {})
         categories_default_checked = categories_data.get("categories_default_checked", {})
+        categories_filter_mode = categories_data.get("categories_filter_mode", {})
 
         for key, options in categories_data["categories"].items():
             category_entry = {
@@ -452,6 +453,7 @@ def core_pages(
                     for option in categories_default_checked.get(key, [])
                     if option in options
                 ],
+                "filter_mode": categories_filter_mode.get(key, "or"),
             }
 
             if CategoriesHelp in feature_flags:

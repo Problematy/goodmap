@@ -7,27 +7,60 @@ Tests basic map functionality including filter list and layout.
 import pytest
 from playwright.sync_api import Page, expect
 
-from tests.conftest import BASE_URL
+from tests.conftest import BASE_URL, TABLE_LOAD_TIMEOUT, TEST_LOCATIONS
 
 
 class TestMap:
     """Test suite for map functionality"""
 
     @pytest.fixture(autouse=True)
-    def setup(self, page: Page):
-        """Navigate to home page before each test"""
+    def setup(self, page: Page, geolocation):
+        """Navigate to home page before each test.
+
+        Also grants geolocation (set to WROCLAW_CENTER), since several tests
+        below use the List View table to verify filter results - it's a
+        clustering-independent read of exactly what's currently filtered in,
+        unlike counting `.leaflet-marker-icon` elements on the map, which
+        depends on Leaflet.markercluster's zoom-dependent grouping and isn't a
+        reliable way to assert result counts once bridges are spread across
+        realistic real-world distances (a single cluster can require multiple
+        zoom-in clicks to fully expand, rather than one click).
+        """
+        location = TEST_LOCATIONS["WROCLAW_CENTER"]
+        geolocation(location["lat"], location["lon"])
         page.goto(BASE_URL, wait_until="domcontentloaded")
         return
 
-    def test_displays_filter_list_with_two_categories_with_5_items(self, page: Page):
-        """Verify filter list has correct number of checkboxes and category groups"""
-        # Check number of checkboxes (5 filter options)
-        checkboxes = page.get_by_role("checkbox")
-        expect(checkboxes).to_have_count(5)
+    def _open_list_view(self, page: Page):
+        """Switch to List View and return the results table locator."""
+        list_view_button = page.locator('button[id="listViewButton"]')
+        expect(list_view_button).to_be_visible(timeout=5000)
+        list_view_button.click()
 
-        # Check that both category groups are present (using translated names)
+        table = page.locator("table")
+        expect(table).to_be_visible(timeout=TABLE_LOAD_TIMEOUT)
+        return table
+
+    def test_displays_filter_list_with_four_categories(self, page: Page):
+        """Verify filter list has correct number of checkboxes/radios and category groups"""
+        # accessible_by (3) + type_of_place (2) = 5 "or" checkboxes, plus
+        # is_free ("boolean") contributes 1 more checkbox (only its "true"
+        # option is rendered; "false" is hidden - see FiltersForm.jsx).
+        checkboxes = page.get_by_role("checkbox")
+        expect(checkboxes).to_have_count(6)
+
+        # speed_limit ("threshold") is single-select, rendered as radios.
+        radios = page.get_by_role("radio")
+        expect(radios).to_have_count(3)
+
+        # Check that all category groups are present (using translated names).
+        # is_free doesn't get its own header - it's grouped into "Others"
+        # (see FiltersForm.jsx), labeled with its own translated name.
         expect(page.get_by_text("accessible by")).to_be_visible()
         expect(page.get_by_text("type of place")).to_be_visible()
+        expect(page.get_by_text("speed limit")).to_be_visible()
+        expect(page.get_by_text("Others")).to_be_visible()
+        expect(page.get_by_text("Free only")).to_be_visible()
 
     def test_should_not_have_scrollbars(self, page: Page):
         """Verify the page has no horizontal or vertical scrollbars"""
@@ -57,34 +90,90 @@ class TestMap:
         )
 
     def test_filter_checkbox_filters_markers(self, page: Page):
-        """Verify clicking filter checkbox actually filters the markers on the map"""
-        # On desktop, filter panel is already visible (no toggle needed).
+        """Verify clicking filter checkbox actually filters the results"""
         # "accessible_by: cars" is checked by default (see categories_default_checked
-        # in the test data), so start by clearing it to see both seeded locations.
+        # in the test data), so start by clearing it to see all ten seeded locations.
         cars_checkbox = page.get_by_role("checkbox", name="cars", exact=False)
         expect(cars_checkbox).to_be_checked()
         cars_checkbox.click()
 
-        # Wait for markers to load
-        first_marker = page.locator(".leaflet-marker-icon").first
-        expect(first_marker).to_be_visible(timeout=5000)
-
-        # Click marker cluster to expand it
-        first_marker.click()
-
-        # Wait for markers to expand - should be 2 markers after expansion
-        markers = page.locator(".leaflet-marker-icon")
-        expect(markers).to_have_count(2)
+        table = self._open_list_view(page)
+        rows = table.locator("tr")
+        # 1 header + 10 data rows
+        expect(rows).to_have_count(11)
 
         # Re-check the "cars" filter checkbox - this should filter to only show
-        # places accessible by cars (1 marker instead of 2)
+        # the 6 bridges accessible by cars (1 header + 6 data rows)
+        cars_checkbox.click()
+        expect(rows).to_have_count(7)
+
+        # Uncheck to restore all results
+        cars_checkbox.click()
+        expect(rows).to_have_count(11)
+
+    def test_or_filter_within_category_broadens_results(self, page: Page):
+        """Selecting multiple checkboxes within one category (accessible_by) should
+        return the union of matches (OR semantics), not only bridges that satisfy
+        every selected option at once (which would incorrectly return nothing here,
+        since no bridge allows both bikes and cars)."""
+        cars_checkbox = page.get_by_role("checkbox", name="cars", exact=False)
+        expect(cars_checkbox).to_be_checked()
         cars_checkbox.click()
 
-        # After filtering, only 1 marker should be visible (the one accessible by cars)
-        expect(markers).to_have_count(1)
+        bikes_checkbox = page.get_by_role("checkbox", name="bikes", exact=False)
 
-        # Uncheck to restore all markers
+        table = self._open_list_view(page)
+        rows = table.locator("tr")
+        expect(rows).to_have_count(11)
+
+        # bikes alone -> only Zwierzyniecka (1 header + 1 data row)
+        bikes_checkbox.click()
+        expect(rows).to_have_count(2)
+
+        # bikes OR cars -> union of both (1 + 6, no overlap since no bridge
+        # allows both bikes and cars): 1 header + 7 data rows
+        cars_checkbox.click()
+        expect(rows).to_have_count(8)
+
+    def test_is_free_boolean_filter_toggles_free_only(self, page: Page):
+        """is_free is a "boolean" filter: a single checkbox for "free only".
+        Unchecked shows both free and paid bridges (drivers care about "free"
+        or "all", not "paid only", so there's no separate option for that);
+        checking it narrows down to free bridges."""
+        cars_checkbox = page.get_by_role("checkbox", name="cars", exact=False)
         cars_checkbox.click()
 
-        # Both markers should be visible again
-        expect(markers).to_have_count(2)
+        free_checkbox = page.get_by_role("checkbox", name="Free only", exact=False)
+        expect(free_checkbox).not_to_be_checked()
+
+        table = self._open_list_view(page)
+        rows = table.locator("tr")
+        expect(rows).to_have_count(11)
+
+        free_checkbox.click()
+        expect(free_checkbox).to_be_checked()
+        # 1 header + 8 free bridges
+        expect(rows).to_have_count(9)
+
+        # Unchecking goes back to showing both free and paid bridges.
+        free_checkbox.click()
+        expect(free_checkbox).not_to_be_checked()
+        expect(rows).to_have_count(11)
+
+    def test_speed_limit_threshold_filter_includes_lower_values(self, page: Page):
+        """Selecting a speed limit should also match bridges with a lower limit
+        (cumulative/threshold semantics), not only an exact match. speed_limit is
+        single-select (radio), since picking "30" already implies "30 or lower"."""
+        cars_checkbox = page.get_by_role("checkbox", name="cars", exact=False)
+        cars_checkbox.click()
+
+        speed_30_radio = page.get_by_role("radio", name="30 km/h", exact=False)
+
+        table = self._open_list_view(page)
+        rows = table.locator("tr")
+        expect(rows).to_have_count(11)
+
+        # 30 km/h also matches the three 10 km/h bridges, but not the 50 km/h
+        # ones: 1 header + 6 data rows
+        speed_30_radio.click()
+        expect(rows).to_have_count(7)

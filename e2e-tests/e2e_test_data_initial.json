@@ -4,7 +4,7 @@
       {
         "name": "Grunwaldzki",
         "position": [
-          51.1095,
+          51.109444,
           17.0525
         ],
         "accessible_by": [
@@ -12,6 +12,12 @@
           "cars"
         ],
         "type_of_place": "big bridge",
+        "is_free": "true",
+        "speed_limit": "50",
+        "amenities": [
+          "lighting",
+          "benches"
+        ],
         "uuid": "9264286a-5d33-4e38-ab11-c8e179a7754a",
         "CTA": {
           "type": "CTA",
@@ -22,16 +28,166 @@
       {
         "name": "Zwierzyniecka",
         "position": [
-          51.10655,
-          17.0555
+          51.108056,
+          17.07
         ],
         "accessible_by": [
           "bikes",
           "pedestrians"
         ],
         "type_of_place": "small bridge",
+        "is_free": "true",
+        "speed_limit": "10",
+        "amenities": [
+          "lighting"
+        ],
         "uuid": "c8ecf476-5968-40da-ba5c-e810ad9ff203",
         "remark": "very old bridge"
+      },
+      {
+        "name": "Milenijny",
+        "position": [
+          51.133692,
+          16.993103
+        ],
+        "accessible_by": [
+          "cars"
+        ],
+        "type_of_place": "big bridge",
+        "is_free": "false",
+        "speed_limit": "30",
+        "amenities": [],
+        "uuid": "1a8f9a2e-4b6d-4a1a-9a8e-2f6c7d0b3e9a",
+        "remark": "toll bridge, cars only"
+      },
+      {
+        "name": "Pokoju",
+        "position": [
+          51.111739,
+          17.049236
+        ],
+        "accessible_by": [
+          "cars",
+          "pedestrians"
+        ],
+        "type_of_place": "big bridge",
+        "is_free": "true",
+        "speed_limit": "50",
+        "amenities": [
+          "lighting",
+          "benches",
+          "toilets"
+        ],
+        "uuid": "f03afca0-4ef8-45bf-a176-dd477ce48d92"
+      },
+      {
+        "name": "Tumski",
+        "position": [
+          51.114708,
+          17.042319
+        ],
+        "accessible_by": [
+          "pedestrians"
+        ],
+        "type_of_place": "small bridge",
+        "is_free": "true",
+        "speed_limit": "10",
+        "amenities": [
+          "lighting",
+          "benches"
+        ],
+        "uuid": "e8b8a5b2-91e1-49f9-821b-5c7fa9eceb4b",
+        "remark": "connects the cathedral island"
+      },
+      {
+        "name": "Piaskowy",
+        "position": [
+          51.113542,
+          17.039806
+        ],
+        "accessible_by": [
+          "pedestrians"
+        ],
+        "type_of_place": "small bridge",
+        "is_free": "true",
+        "speed_limit": "10",
+        "amenities": [
+          "benches"
+        ],
+        "uuid": "5986e755-1eaa-4121-a01c-4fef1d5d1da1"
+      },
+      {
+        "name": "Uniwersytecki",
+        "position": [
+          51.11525,
+          17.033694
+        ],
+        "accessible_by": [
+          "pedestrians"
+        ],
+        "type_of_place": "small bridge",
+        "is_free": "true",
+        "speed_limit": "30",
+        "amenities": [
+          "lighting"
+        ],
+        "uuid": "043dd6ed-1b70-40a1-a7ad-dbfa3424ed8e"
+      },
+      {
+        "name": "Redzinski",
+        "position": [
+          51.155556,
+          16.958889
+        ],
+        "accessible_by": [
+          "cars"
+        ],
+        "type_of_place": "big bridge",
+        "is_free": "false",
+        "speed_limit": "50",
+        "amenities": [
+          "lighting"
+        ],
+        "uuid": "66847536-4ffb-452d-b03d-874831abb233",
+        "remark": "highway bridge, cars only"
+      },
+      {
+        "name": "Osobowicki",
+        "position": [
+          51.131389,
+          17.027778
+        ],
+        "accessible_by": [
+          "cars",
+          "pedestrians"
+        ],
+        "type_of_place": "big bridge",
+        "is_free": "true",
+        "speed_limit": "30",
+        "amenities": [
+          "lighting",
+          "benches"
+        ],
+        "uuid": "1d7ff5c0-ea4d-4701-bf53-49295333e176"
+      },
+      {
+        "name": "Warszawski",
+        "position": [
+          51.130256,
+          17.059375
+        ],
+        "accessible_by": [
+          "cars",
+          "pedestrians"
+        ],
+        "type_of_place": "big bridge",
+        "is_free": "true",
+        "speed_limit": "50",
+        "amenities": [
+          "lighting",
+          "toilets"
+        ],
+        "uuid": "e77cac7f-78ba-4a6d-8d99-8018c5057de6"
       }
     ],
     "location_obligatory_fields": [
@@ -46,6 +202,18 @@
       [
         "type_of_place",
         "str"
+      ],
+      [
+        "is_free",
+        "str"
+      ],
+      [
+        "speed_limit",
+        "str"
+      ],
+      [
+        "amenities",
+        "list"
       ]
     ],
     "reported_issue_types": [
@@ -62,10 +230,33 @@
       "type_of_place": [
         "big bridge",
         "small bridge"
+      ],
+      "is_free": [
+        "true",
+        "false"
+      ],
+      "speed_limit": [
+        "10",
+        "30",
+        "50"
+      ],
+      "amenities": [
+        "lighting",
+        "benches",
+        "toilets"
       ]
     },
+    "categories_filter_mode": {
+      "accessible_by": "or",
+      "type_of_place": "or",
+      "is_free": "boolean",
+      "speed_limit": "threshold",
+      "amenities": "and"
+    },
     "categories_help": [
-      "accessible_by"
+      "accessible_by",
+      "speed_limit",
+      "amenities"
     ],
     "categories_options_help": {
       "type_of_place": [
@@ -85,6 +276,9 @@
       "remark",
       "accessible_by",
       "type_of_place",
+      "is_free",
+      "speed_limit",
+      "amenities",
       "CTA"
     ],
     "meta_data": [
