@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled, { keyframes } from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { useCategories } from '../Categories/CategoriesContext';
 import { httpService } from '../../services/http/httpService';
 import FiltersTooltip from './FiltersTooltip';
@@ -193,6 +194,7 @@ const LoadingSkeleton = () => (
 );
 
 export const FiltersForm = () => {
+    const { t } = useTranslation();
     const { categories: selectedFilters, setCategories, setIsInitialized } = useCategories();
     const [categoriesData, setCategoriesData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -301,9 +303,9 @@ export const FiltersForm = () => {
     if (hasError) {
         return (
             <form>
-                <ErrorMessage>Failed to load filters.</ErrorMessage>
+                <ErrorMessage>{t('loadFiltersError')}</ErrorMessage>
                 <RetryButton type="button" onClick={fetchCategories}>
-                    Retry
+                    {t('retry')}
                 </RetryButton>
             </form>
         );
@@ -313,11 +315,12 @@ export const FiltersForm = () => {
         <form>
             {sections}
             <ClearFiltersButton
+                id="clear-filters-button"
                 type="button"
-                aria-label="Clear all filters"
+                aria-label={t('clearAllFiltersAriaLabel')}
                 onClick={handleClearFilters}
             >
-                Clear filters
+                {t('clearFilters')}
             </ClearFiltersButton>
         </form>
     );

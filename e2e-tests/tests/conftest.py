@@ -94,7 +94,7 @@ def clear_all_checkboxes(page: Page) -> None:
         toggle_button.click()
 
     page.wait_for_selector("#filter-form", timeout=MARKER_LOAD_TIMEOUT)
-    page.locator('#filter-form button[aria-label="Clear all filters"]').click()
+    page.locator("#clear-filters-button").click()
 
     if opened_dialog:
         page.locator('button[aria-label="Close left panel"]').evaluate("el => el.click()")
