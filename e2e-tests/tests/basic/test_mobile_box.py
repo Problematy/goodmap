@@ -32,8 +32,6 @@ class TestPopupOnMobile:
         # Navigate to the page (device emulation already configured by mobile_page fixture)
         mobile_page.goto(BASE_URL, wait_until="domcontentloaded")
 
-        # Isolate Zwierzyniecka's marker and click it directly, rather than
-        # expanding a multi-marker cluster and guessing at its layout.
         open_test_popup(mobile_page)
 
         # On mobile, popup appears as Material-UI Dialog (bottom sheet)

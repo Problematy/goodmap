@@ -108,7 +108,7 @@ class TestMap:
     def test_filter_checkbox_filters_markers(self, page: Page):
         """Verify clicking filter checkbox actually filters the results"""
         # "accessible_by: cars" is checked by default (see categories_default_checked
-        # in the test data), so start by clearing it to see all ten seeded locations.
+        # in the test data), so start by clearing it to see all seeded locations.
         cars_checkbox = page.get_by_role("checkbox", name="cars", exact=False)
         expect(cars_checkbox).to_be_checked()
         cars_checkbox.click()
