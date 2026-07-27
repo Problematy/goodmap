@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled, { keyframes } from 'styled-components';
 import { useTranslation } from 'react-i18next';
+import { Tooltip } from '@mui/material';
 import { useCategories } from '../Categories/CategoriesContext';
 import { httpService } from '../../services/http/httpService';
 import FiltersTooltip from './FiltersTooltip';
@@ -68,20 +69,41 @@ const FilterHeader = styled.div`
 `;
 
 const FilterTitle = styled.span`
+    flex: 1;
     font-size: 13px;
     font-weight: 600;
     letter-spacing: 0.3px;
     line-height: 16px;
 `;
 
-// Visually distinguishes "and" (match-all) categories from the default "or"
-// (match-any) ones, the same way "exclusive"/"threshold" are distinguished by
-// rendering as radio buttons instead of checkboxes.
-const ModeHint = styled.span`
-    font-size: 11px;
-    font-weight: 400;
-    font-style: italic;
-    opacity: 0.65;
+// Every filter mode gets a small badge next to its category title, so "or"
+// and "and" (both checkboxes, otherwise visually identical at rest) are as
+// distinguishable as "exclusive"/"threshold" already are via their radio
+// shape. Kept to a single subtle character rather than a word, with the
+// full explanation one hover/focus away in the tooltip.
+const MODE_BADGES = {
+    or: { badge: 'filterModeOrBadge', tooltip: 'filterModeOrTooltip' },
+    and: { badge: 'filterModeAndBadge', tooltip: 'filterModeAndTooltip' },
+    exclusive: { badge: 'filterModeExclusiveBadge', tooltip: 'filterModeExclusiveTooltip' },
+    boolean: { badge: 'filterModeBooleanBadge', tooltip: 'filterModeBooleanTooltip' },
+    threshold: { badge: 'filterModeThresholdBadge', tooltip: 'filterModeThresholdTooltip' },
+};
+
+const ModeBadge = styled.span`
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 15px;
+    height: 15px;
+    padding: 0 3px;
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    background-color: rgba(79, 195, 247, 0.18);
+    color: #4fc3f7;
+    border: 1px solid rgba(79, 195, 247, 0.45);
+    cursor: help;
 `;
 
 const FilterOption = styled.label`
@@ -285,10 +307,37 @@ export const FiltersForm = () => {
         fetchCategories();
     }, []);
 
+    const renderModeBadge = mode => {
+        const keys = MODE_BADGES[mode] ?? MODE_BADGES.or;
+        const tooltipText = t(keys.tooltip);
+        return (
+            <Tooltip
+                title={tooltipText}
+                placement="top"
+                arrow
+                enterTouchDelay={0}
+                leaveTouchDelay={3000}
+            >
+                <ModeBadge aria-label={`Help: ${tooltipText}`}>{t(keys.badge)}</ModeBadge>
+            </Tooltip>
+        );
+    };
+
     const renderFilterOptions = (filters, category) => {
         // "exclusive" (pick one) and "threshold" (pick a cumulative upper bound,
         // e.g. speed limit) are both single-select: rendered as radio buttons so
         // only one option can be active at a time.
+        //
+        // TODO: "threshold" categories would read more naturally as an MUI
+        // <Slider> with discrete `marks` at each option value - the filled
+        // track from min to the thumb is a direct visual match for "everything
+        // up to here is included," better than a radio group. Needs a design
+        // decision first: sliders have no natural "nothing selected" state (the
+        // thumb always sits somewhere), but "no filter" must stay distinct from
+        // "lowest value selected" - e.g. an explicit "Any" mark left of the
+        // lowest real value, or relying on the existing "Clear filters" button
+        // as the only way back to unset. Also needs keyboard/screen-reader
+        // slider accessibility and updated frontend/e2e tests.
         const isSingleSelect = filters[4] === 'exclusive' || filters[4] === 'threshold';
         return filters[1].map(([name, translation]) => {
             const tooltipData = globalThis.FEATURE_FLAGS?.CATEGORIES_HELP
@@ -346,6 +395,7 @@ export const FiltersForm = () => {
                     checked={Boolean(selectedFilters[categoryKey]?.includes(name))}
                 />
                 <OptionText>{categoryName}</OptionText>
+                {renderModeBadge('boolean')}
                 {tooltipData && (
                     <TooltipWrapper>
                         <FiltersTooltip text={tooltipData[name]} />
@@ -366,7 +416,7 @@ export const FiltersForm = () => {
             <FilterSection key={sectionKey} aria-labelledby={`filter-label-${sectionKey}`}>
                 <FilterHeader>
                     <FilterTitle id={`filter-label-${sectionKey}`}>{categoryName}</FilterTitle>
-                    {filtersData[4] === 'and' && <ModeHint>{t('filterModeAndHint')}</ModeHint>}
+                    {renderModeBadge(filtersData[4] ?? 'or')}
                     {categoryTooltip && <FiltersTooltip text={categoryTooltip[categoryKey]} />}
                 </FilterHeader>
                 {renderFilterOptions(filtersData, categoryKey)}

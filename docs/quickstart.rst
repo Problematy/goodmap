@@ -109,6 +109,17 @@ checkboxes, one per allowed value.
       locations that allow bikes *or* cars, not only locations that allow
       both (which would often be zero results).
 
+   ``"and"``
+      A location matches only if it has **every** one of the selected
+      values - narrowing rather than broadening. Only meaningful for
+      list-valued categories (a location can have several simultaneous
+      values); for a single-valued category it behaves like ``"or"``
+      restricted to one selection at a time. Still rendered as checkboxes
+      (it's still multi-select), but with a "(match all)" hint next to the
+      category title so it reads differently from the default "or"
+      behavior - e.g. an ``amenities`` field where checking ``lighting``
+      and ``benches`` should show only bridges that have both, not either.
+
    ``"exclusive"``
       Single-select: the frontend renders the options as radio buttons
       instead of checkboxes, so only one value can be active at a time. Use
@@ -132,7 +143,7 @@ checkboxes, one per allowed value.
       this as radio buttons too, since selecting more than one option would
       be redundant: the highest selection alone determines the cutoff.
 
-Example configuration combining all four modes:
+Example configuration combining all five modes:
 
 .. code-block:: json
 
@@ -141,7 +152,8 @@ Example configuration combining all four modes:
        "accessible_by": ["bikes", "cars", "pedestrians"],
        "type_of_place": ["big bridge", "small bridge"],
        "is_free": ["true", "false"],
-       "speed_limit": ["10", "30", "50"]
+       "speed_limit": ["10", "30", "50"],
+       "amenities": ["lighting", "benches", "toilets"]
      },
      "categories_help": ["accessible_by"],
      "categories_options_help": {
@@ -154,7 +166,8 @@ Example configuration combining all four modes:
        "accessible_by": "or",
        "type_of_place": "or",
        "is_free": "boolean",
-       "speed_limit": "threshold"
+       "speed_limit": "threshold",
+       "amenities": "and"
      }
    }
 

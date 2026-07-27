@@ -43,11 +43,12 @@ class TestMap:
 
     def test_displays_filter_list_with_four_categories(self, page: Page):
         """Verify filter list has correct number of checkboxes/radios and category groups"""
-        # accessible_by (3) + type_of_place (2) = 5 "or" checkboxes, plus
-        # is_free ("boolean") contributes 1 more checkbox (only its "true"
-        # option is rendered; "false" is hidden - see FiltersForm.jsx).
+        # accessible_by (3) + type_of_place (2) + amenities (3, "and" mode is
+        # still multi-select) = 8 "or"/"and" checkboxes, plus is_free
+        # ("boolean") contributes 1 more checkbox (only its "true" option is
+        # rendered; "false" is hidden - see FiltersForm.jsx).
         checkboxes = page.get_by_role("checkbox")
-        expect(checkboxes).to_have_count(6)
+        expect(checkboxes).to_have_count(9)
 
         # speed_limit ("threshold") is single-select, rendered as radios.
         radios = page.get_by_role("radio")
@@ -61,6 +62,21 @@ class TestMap:
         expect(page.get_by_text("speed limit")).to_be_visible()
         expect(page.get_by_text("Others")).to_be_visible()
         expect(page.get_by_text("Free only")).to_be_visible()
+
+        # Every category shows a small mode badge (a single character, with a
+        # tooltip on hover/focus explaining what it means) next to its title -
+        # or:+, and:&, threshold:≤, boolean:• - so "or" and "and" (both
+        # checkboxes, otherwise visually identical) are as distinguishable as
+        # exclusive/threshold already are via their radio shape.
+        expect(page.get_by_text("amenities")).to_be_visible()
+
+        def mode_badge(symbol):
+            return page.get_by_label("Help:", exact=False).filter(has_text=symbol)
+
+        expect(mode_badge("+")).to_have_count(2)  # accessible_by, type_of_place
+        expect(mode_badge("&")).to_have_count(1)  # amenities
+        expect(mode_badge("≤")).to_have_count(1)  # speed_limit
+        expect(mode_badge("•")).to_have_count(1)  # is_free
 
     def test_should_not_have_scrollbars(self, page: Page):
         """Verify the page has no horizontal or vertical scrollbars"""
@@ -177,3 +193,27 @@ class TestMap:
         # ones: 1 header + 6 data rows
         speed_30_radio.click()
         expect(rows).to_have_count(7)
+
+    def test_and_filter_within_category_narrows_results(self, page: Page):
+        """Selecting multiple checkboxes within an "and" category (amenities)
+        should narrow results to locations that have every selected value,
+        the opposite of the default "or" behavior."""
+        cars_checkbox = page.get_by_role("checkbox", name="cars", exact=False)
+        expect(cars_checkbox).to_be_checked()
+        cars_checkbox.click()
+
+        lighting_checkbox = page.get_by_role("checkbox", name="lighting", exact=False)
+        benches_checkbox = page.get_by_role("checkbox", name="benches", exact=False)
+
+        table = self._open_list_view(page)
+        rows = table.locator("tr")
+        expect(rows).to_have_count(11)
+
+        # lighting alone -> 8 bridges (1 header + 8 data rows)
+        lighting_checkbox.click()
+        expect(rows).to_have_count(9)
+
+        # lighting AND benches -> only bridges with both (4), fewer than
+        # either alone (8 and 5) - the opposite of OR's broadening.
+        benches_checkbox.click()
+        expect(rows).to_have_count(5)

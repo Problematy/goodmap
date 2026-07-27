@@ -39,5 +39,14 @@
     "clearFilters": "Очистити фільтри",
     "clearAllFiltersAriaLabel": "Очистити всі фільтри",
     "otherFilters": "Інше",
-    "filterModeAndHint": "(усі одразу)"
+    "filterModeOrBadge": "+",
+    "filterModeOrTooltip": "Вибір кількох варіантів тут показує результати, що відповідають будь-якому з них",
+    "filterModeAndBadge": "&",
+    "filterModeAndTooltip": "Вибір кількох варіантів тут показує лише результати, що мають їх усі, а не будь-який",
+    "filterModeExclusiveBadge": "1",
+    "filterModeExclusiveTooltip": "Можна вибрати лише один варіант одночасно",
+    "filterModeBooleanBadge": "•",
+    "filterModeBooleanTooltip": "Не позначено - показує все; позначення звужує результати лише до цього",
+    "filterModeThresholdBadge": "≤",
+    "filterModeThresholdTooltip": "Вибір значення також включає кожне нижче значення"
 }

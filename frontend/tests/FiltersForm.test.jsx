@@ -221,7 +221,7 @@ describe('Groups boolean categories into a shared "Others" section', () => {
         expect(freeCheckbox.value).toBe('true');
 
         const label = document.querySelector('label[for="is_free"]');
-        expect(label.textContent.trim()).toBe('Free only');
+        expect(label.textContent).toContain('Free only');
 
         // "false" is never rendered - unchecked already means "show everything".
         expect(document.querySelector('#false')).toBeNull();
@@ -325,8 +325,11 @@ describe('Distinguishes "and" categories with a visible hint, but keeps checkbox
         expect(benches.checked).toBe(true);
     });
 
-    it('shows a "match all" hint next to the category title', () => {
+    it('shows an "&" badge with an explanatory tooltip next to the category title', () => {
         const header = document.querySelector('#filter-label-amenities-amenities').parentElement;
-        expect(header.textContent).toContain('(match all)');
+        expect(header.textContent).toContain('&');
+
+        const badge = within(header).getByLabelText(/Help:/i);
+        expect(badge).toBeInTheDocument();
     });
 });

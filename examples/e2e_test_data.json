@@ -149,7 +149,6 @@
       "url": "https://fonts.googleapis.com/css2?family=Poppins"
     },
     "primary_color": "#FFFFFF",
-    "secondary_color": "#245466",
-    "left_bar_width": "300px"
+    "secondary_color": "#245466"
   }
 }
