@@ -2,6 +2,13 @@
 
 <!-- version list -->
 
+## [2.0.0-alpha.4](https://github.com/Problematy/goodmap/compare/2.0.0-alpha.3...2.0.0-alpha.4) (2026-07-27)
+
+
+### Bug Fixes
+
+* added missing translations ([#386](https://github.com/Problematy/goodmap/issues/386)) ([cafbd62](https://github.com/Problematy/goodmap/commit/cafbd62ad1cdda80f54a63706ec7d33eea5b2f72))
+
 ## [2.0.0-alpha.3](https://github.com/Problematy/goodmap/compare/2.0.0-alpha.2...2.0.0-alpha.3) (2026-07-24)
 
 
