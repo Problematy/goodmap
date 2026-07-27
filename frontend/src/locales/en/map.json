@@ -34,5 +34,9 @@
     "locationBannerDismiss": "Dismiss",
     "shareLocation": "share",
     "linkCopied": "Link copied to clipboard",
-    "linkCopyFailed": "Failed to copy link"
+    "linkCopyFailed": "Failed to copy link",
+    "loadFiltersError": "Failed to load filters.",
+    "retry": "Retry",
+    "clearFilters": "Clear filters",
+    "clearAllFiltersAriaLabel": "Clear all filters"
 }
