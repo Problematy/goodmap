@@ -315,6 +315,7 @@ export const FiltersForm = () => {
         <form>
             {sections}
             <ClearFiltersButton
+                id="clear-filters-button"
                 type="button"
                 aria-label={t('clearAllFiltersAriaLabel')}
                 onClick={handleClearFilters}
