@@ -7,7 +7,7 @@ Tests basic map functionality including filter list and layout.
 import pytest
 from playwright.sync_api import Page, expect
 
-from tests.conftest import BASE_URL, TABLE_LOAD_TIMEOUT, TEST_LOCATIONS
+from tests.conftest import BASE_URL, SEEDED_LOCATION_COUNT, TABLE_LOAD_TIMEOUT, TEST_LOCATIONS
 
 
 class TestMap:
@@ -115,8 +115,8 @@ class TestMap:
 
         table = self._open_list_view(page)
         rows = table.locator("tr")
-        # 1 header + 10 data rows
-        expect(rows).to_have_count(11)
+        # 1 header + all seeded locations
+        expect(rows).to_have_count(SEEDED_LOCATION_COUNT + 1)
 
         # Re-check the "cars" filter checkbox - this should filter to only show
         # the 6 bridges accessible by cars (1 header + 6 data rows)
@@ -125,7 +125,7 @@ class TestMap:
 
         # Uncheck to restore all results
         cars_checkbox.click()
-        expect(rows).to_have_count(11)
+        expect(rows).to_have_count(SEEDED_LOCATION_COUNT + 1)
 
     def test_or_filter_within_category_broadens_results(self, page: Page):
         """Selecting multiple checkboxes within one category (accessible_by) should
@@ -140,7 +140,7 @@ class TestMap:
 
         table = self._open_list_view(page)
         rows = table.locator("tr")
-        expect(rows).to_have_count(11)
+        expect(rows).to_have_count(SEEDED_LOCATION_COUNT + 1)
 
         # bikes alone -> only Zwierzyniecka (1 header + 1 data row)
         bikes_checkbox.click()
@@ -164,7 +164,7 @@ class TestMap:
 
         table = self._open_list_view(page)
         rows = table.locator("tr")
-        expect(rows).to_have_count(11)
+        expect(rows).to_have_count(SEEDED_LOCATION_COUNT + 1)
 
         free_checkbox.click()
         expect(free_checkbox).to_be_checked()
@@ -174,7 +174,7 @@ class TestMap:
         # Unchecking goes back to showing both free and paid bridges.
         free_checkbox.click()
         expect(free_checkbox).not_to_be_checked()
-        expect(rows).to_have_count(11)
+        expect(rows).to_have_count(SEEDED_LOCATION_COUNT + 1)
 
     def test_speed_limit_threshold_filter_includes_lower_values(self, page: Page):
         """Selecting a speed limit should also match bridges with a lower limit
@@ -187,7 +187,7 @@ class TestMap:
 
         table = self._open_list_view(page)
         rows = table.locator("tr")
-        expect(rows).to_have_count(11)
+        expect(rows).to_have_count(SEEDED_LOCATION_COUNT + 1)
 
         # 30 km/h also matches the three 10 km/h bridges, but not the 50 km/h
         # ones: 1 header + 6 data rows
@@ -207,7 +207,7 @@ class TestMap:
 
         table = self._open_list_view(page)
         rows = table.locator("tr")
-        expect(rows).to_have_count(11)
+        expect(rows).to_have_count(SEEDED_LOCATION_COUNT + 1)
 
         # lighting alone -> 8 bridges (1 header + 8 data rows)
         lighting_checkbox.click()

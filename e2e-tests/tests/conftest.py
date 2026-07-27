@@ -21,6 +21,11 @@ MARKER_LOAD_TIMEOUT = 5000
 TABLE_LOAD_TIMEOUT = 5000
 FLY_TO_TIMEOUT = 20000
 
+# Number of bridges in e2e_test_data_initial.json's "data" array. Kept as a
+# single constant so tests don't hardcode this count (and its +1-for-header
+# variant) in multiple places.
+SEEDED_LOCATION_COUNT = 10
+
 MOBILE_DEVICES = {
     "iphone-x": {
         "viewport": {"width": 375, "height": 812},
@@ -102,10 +107,10 @@ def clear_all_checkboxes(page: Page) -> None:
         page.locator('button[aria-label="Close left panel"]').evaluate("el => el.click()")
 
 
-def open_zwierzyniecka_popup(page: Page) -> None:
+def open_test_popup(page: Page) -> None:
     """
-    Filter down to exactly the Zwierzyniecka bridge and click its marker to
-    open its popup.
+    Filter down to exactly one known seeded location (Zwierzyniecka) and
+    click its marker to open its popup.
 
     Clicking into a multi-marker cluster spiderfies it into a layout whose
     on-screen ordering isn't guaranteed to match geographic position

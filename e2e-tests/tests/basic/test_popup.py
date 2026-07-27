@@ -6,7 +6,7 @@ Tests popup functionality including content display, CTA buttons, and problem fo
 
 from playwright.sync_api import Page, expect
 
-from tests.conftest import BASE_URL, open_zwierzyniecka_popup
+from tests.conftest import BASE_URL, open_test_popup
 from tests.helpers import EXPECTED_PLACE_ZWIERZYNIECKA, verify_popup_content, verify_problem_form
 
 
@@ -24,7 +24,7 @@ class TestPopupOnDesktop:
 
         # Isolate Zwierzyniecka's marker and click it directly, rather than
         # expanding a multi-marker cluster and guessing at its layout.
-        open_zwierzyniecka_popup(page)
+        open_test_popup(page)
 
         # Verify popup content
         popup = page.locator(".leaflet-popup-content")
@@ -52,7 +52,7 @@ class TestPopupOnDesktop:
         """
         page.goto(BASE_URL, wait_until="domcontentloaded")
 
-        open_zwierzyniecka_popup(page)
+        open_test_popup(page)
 
         # Verify popup is visible
         popup = page.locator(".leaflet-popup-content")

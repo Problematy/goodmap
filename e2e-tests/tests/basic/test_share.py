@@ -15,7 +15,7 @@ from tests.conftest import (
     BASE_URL,
     MARKER_LOAD_TIMEOUT,
     clear_all_checkboxes,
-    open_zwierzyniecka_popup,
+    open_test_popup,
 )
 
 
@@ -32,7 +32,7 @@ class TestShareOnDesktop:
         # Grant clipboard permissions
         page.context.grant_permissions(["clipboard-read", "clipboard-write"])
 
-        open_zwierzyniecka_popup(page)
+        open_test_popup(page)
 
         # Verify popup is visible
         popup = page.locator(".leaflet-popup-content")
@@ -103,7 +103,7 @@ class TestShareOnMobile:
 
         mobile_page.goto(BASE_URL, wait_until="domcontentloaded")
 
-        open_zwierzyniecka_popup(mobile_page)
+        open_test_popup(mobile_page)
 
         # On mobile, popup appears as Material-UI Dialog
         dialog_content = mobile_page.locator(".MuiDialogContent-root")

@@ -10,7 +10,7 @@ Tests that changing the language:
 import pytest
 from playwright.sync_api import Page, expect
 
-from tests.conftest import BASE_URL, open_zwierzyniecka_popup
+from tests.conftest import BASE_URL, open_test_popup
 
 
 def get_language_button(page: Page):
@@ -71,7 +71,7 @@ class TestLanguageSwitching:
         page.get_by_role("link", name="polski").click()
         page.wait_for_load_state("domcontentloaded")
 
-        open_zwierzyniecka_popup(page)
+        open_test_popup(page)
 
         # Verify popup is visible
         popup = page.locator(".leaflet-popup-content")

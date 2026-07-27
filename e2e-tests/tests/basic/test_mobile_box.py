@@ -9,7 +9,7 @@ information as a bottom sheet that slides up from the bottom.
 import pytest
 from playwright.sync_api import Page, expect
 
-from tests.conftest import ALL_MOBILE_DEVICES, BASE_URL, open_zwierzyniecka_popup
+from tests.conftest import ALL_MOBILE_DEVICES, BASE_URL, open_test_popup
 from tests.helpers import EXPECTED_PLACE_ZWIERZYNIECKA, verify_popup_content, verify_problem_form
 
 
@@ -34,7 +34,7 @@ class TestPopupOnMobile:
 
         # Isolate Zwierzyniecka's marker and click it directly, rather than
         # expanding a multi-marker cluster and guessing at its layout.
-        open_zwierzyniecka_popup(mobile_page)
+        open_test_popup(mobile_page)
 
         # On mobile, popup appears as Material-UI Dialog (bottom sheet)
         dialog_content = mobile_page.locator(".MuiDialogContent-root")
