@@ -62,17 +62,12 @@ class TestMap:
         expect(page.get_by_text("speed limit")).to_be_visible()
         expect(page.get_by_text("Others")).to_be_visible()
         expect(page.get_by_text("Free only")).to_be_visible()
-
-        # Every category shows a small mode badge (a single character, with a
-        # tooltip on hover/focus explaining what it means) next to its title -
-        # or:+, and:&, threshold:≤, boolean:• - so "or" and "and" (both
-        # checkboxes, otherwise visually identical) are as distinguishable as
-        # exclusive/threshold already are via their radio shape.
         expect(page.get_by_text("amenities")).to_be_visible()
 
         def mode_badge(symbol):
             return page.get_by_label("Help:", exact=False).filter(has_text=symbol)
 
+        # check whether badges are there
         expect(mode_badge("+")).to_have_count(2)  # accessible_by, type_of_place
         expect(mode_badge("&")).to_have_count(1)  # amenities
         expect(mode_badge("≤")).to_have_count(1)  # speed_limit
