@@ -2,6 +2,13 @@
 
 <!-- version list -->
 
+## [2.0.0-alpha.5](https://github.com/Problematy/goodmap/compare/2.0.0-alpha.4...2.0.0-alpha.5) (2026-07-28)
+
+
+### Features
+
+* added filter types ([#388](https://github.com/Problematy/goodmap/issues/388)) ([0d80fc2](https://github.com/Problematy/goodmap/commit/0d80fc29c6c111653a7391ad13c58a57e878f7d2))
+
 ## [2.0.0-alpha.4](https://github.com/Problematy/goodmap/compare/2.0.0-alpha.3...2.0.0-alpha.4) (2026-07-27)
 
 
