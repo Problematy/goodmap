@@ -37,7 +37,7 @@ describe('Creates good filter_form box', () => {
             </CategoriesProvider>,
         );
         await waitFor(() =>
-            expect(document.querySelector('#filter-label-types-typy')).not.toBeNull(),
+            expect(document.querySelector('#filter-label-types')).not.toBeNull(),
         );
     });
 
@@ -49,7 +49,7 @@ describe('Creates good filter_form box', () => {
         const form = document.querySelector('form');
         expect(form).not.toBeNull();
 
-        const filterLabel = form.querySelector('#filter-label-types-typy');
+        const filterLabel = form.querySelector('#filter-label-types');
         expect(filterLabel).not.toBeNull();
         expect(filterLabel.textContent).toBe('typy');
 
@@ -88,7 +88,7 @@ describe('Creates good filter_form box', () => {
 
         // Category help tooltip is now in FilterHeader, not FilterTitle
         // Look for it in the parent FilterHeader element
-        const filterHeader = form.querySelector('#filter-label-types-typy').parentElement;
+        const filterHeader = form.querySelector('#filter-label-types').parentElement;
         const { queryByLabelText } = within(filterHeader);
         expect(queryByLabelText(/Help: Inaczej rodzaje/i)).toBeInTheDocument();
     });
@@ -214,7 +214,7 @@ describe('Groups boolean categories into a shared "Others" section', () => {
     });
 
     it('keeps non-boolean categories in their own titled section', () => {
-        expect(document.querySelector('#filter-label-types-typy')).not.toBeNull();
+        expect(document.querySelector('#filter-label-types')).not.toBeNull();
         expect(document.querySelector('#clothes')).not.toBeNull();
     });
 
@@ -332,11 +332,12 @@ describe('Distinguishes "and" categories with a visible hint, but keeps checkbox
         expect(benches.checked).toBe(true);
     });
 
-    it('shows an "&" badge with an explanatory tooltip next to the category title', () => {
-        const header = document.querySelector('#filter-label-amenities-amenities').parentElement;
+    it('shows an "&" badge with a keyboard-focusable, localized tooltip', () => {
+        const header = document.querySelector('#filter-label-amenities').parentElement;
         expect(header.textContent).toContain('&');
 
-        const badge = within(header).getByLabelText(/Help:/i);
+        const badge = within(header).getByLabelText(/Filter mode:/i);
         expect(badge).toBeInTheDocument();
+        expect(badge).toHaveAttribute('tabIndex', '0');
     });
 });

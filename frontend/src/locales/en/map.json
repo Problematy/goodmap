@@ -49,5 +49,6 @@
     "filterModeBooleanBadge": "•",
     "filterModeBooleanTooltip": "Unchecked shows everything; checking it narrows the results to just this",
     "filterModeThresholdBadge": "≤",
-    "filterModeThresholdTooltip": "Selecting a value also includes every lower value"
+    "filterModeThresholdTooltip": "Selecting a value also includes every lower value",
+    "filterModeHelpAriaLabel": "Filter mode: {{description}}"
 }

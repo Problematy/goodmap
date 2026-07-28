@@ -48,5 +48,6 @@
     "filterModeBooleanBadge": "•",
     "filterModeBooleanTooltip": "Не позначено - показує все; позначення звужує результати лише до цього",
     "filterModeThresholdBadge": "≤",
-    "filterModeThresholdTooltip": "Вибір значення також включає кожне нижче значення"
+    "filterModeThresholdTooltip": "Вибір значення також включає кожне нижче значення",
+    "filterModeHelpAriaLabel": "Режим фільтра: {{description}}"
 }

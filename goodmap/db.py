@@ -822,16 +822,23 @@ def mongodb_db_get_locations(self, query, location_model):
     for key, values in query.items():
         if not values:
             continue
-        if filter_modes.get(key) == "threshold":
+        mode = filter_modes.get(key, "or")
+        if mode == "threshold":
             # Threshold categories (e.g. speed limits) are numeric and ordered:
             # selecting a value also matches any stored value at or below it.
             # Assumes the field is stored numerically in MongoDB.
             try:
                 mongo_query[key] = {"$lte": max(float(value) for value in values)}
             except (TypeError, ValueError):
-                continue
+                # Match nothing for this category, same as goodmap.filtering's
+                # _matches_threshold (which returns False on the same error),
+                # rather than silently dropping the filter and matching everything.
+                mongo_query[key] = {"$in": []}
+        elif mode == "and":
+            # Entry must have every selected value, not just any of them.
+            mongo_query[key] = {"$all": values}
         else:
-            # "or" and "exclusive" both match any of the selected values.
+            # "or", "exclusive", and "boolean" all match any of the selected values.
             mongo_query[key] = {"$in": values}
 
     projection = {"_id": 0, "uuid": 1, "position": 1, "remark": 1}

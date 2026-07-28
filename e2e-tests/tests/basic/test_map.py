@@ -65,13 +65,17 @@ class TestMap:
         expect(page.get_by_text("amenities")).to_be_visible()
 
         def mode_badge(symbol):
-            return page.get_by_label("Help:", exact=False).filter(has_text=symbol)
+            return page.get_by_label("Filter mode:", exact=False).filter(has_text=symbol)
 
         # check whether badges are there
         expect(mode_badge("+")).to_have_count(2)  # accessible_by, type_of_place
         expect(mode_badge("&")).to_have_count(1)  # amenities
         expect(mode_badge("≤")).to_have_count(1)  # speed_limit
         expect(mode_badge("•")).to_have_count(1)  # is_free
+
+        # Badges are keyboard-focusable (not just hoverable), so their
+        # tooltip is reachable without a mouse.
+        expect(mode_badge("&")).to_have_attribute("tabindex", "0")
 
     def test_should_not_have_scrollbars(self, page: Page):
         """Verify the page has no horizontal or vertical scrollbars"""

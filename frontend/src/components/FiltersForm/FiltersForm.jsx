@@ -318,7 +318,12 @@ export const FiltersForm = () => {
                 enterTouchDelay={0}
                 leaveTouchDelay={3000}
             >
-                <ModeBadge aria-label={`Help: ${tooltipText}`}>{t(keys.badge)}</ModeBadge>
+                <ModeBadge
+                    tabIndex={0}
+                    aria-label={t('filterModeHelpAriaLabel', { description: tooltipText })}
+                >
+                    {t(keys.badge)}
+                </ModeBadge>
             </Tooltip>
         );
     };
@@ -408,15 +413,19 @@ export const FiltersForm = () => {
 
     const sections = otherCategories.map(category => {
         const { categoryKey, categoryName, categoriesHelp, filterMode } = category;
-        const sectionKey = `${categoryKey}-${categoryName}`;
+        // Built from categoryKey alone (not categoryName): aria-labelledby
+        // values are parsed as space-separated ID references, so an id built
+        // from a category's translated name (e.g. "accessible by") would
+        // silently break the association for any name containing whitespace.
+        const sectionId = `filter-label-${categoryKey}`;
         const categoryTooltip = globalThis.FEATURE_FLAGS?.CATEGORIES_HELP
             ? categoriesHelp.find(it => it[categoryKey])
             : null;
 
         return (
-            <FilterSection key={sectionKey} aria-labelledby={`filter-label-${sectionKey}`}>
+            <FilterSection key={categoryKey} aria-labelledby={sectionId}>
                 <FilterHeader>
-                    <FilterTitle id={`filter-label-${sectionKey}`}>{categoryName}</FilterTitle>
+                    <FilterTitle id={sectionId}>{categoryName}</FilterTitle>
                     {renderModeBadge(filterMode)}
                     {categoryTooltip && <FiltersTooltip text={categoryTooltip[categoryKey]} />}
                 </FilterHeader>
