@@ -1,8 +1,15 @@
 """Core data filtering and sorting utilities for location queries."""
 
-from typing import Any, Dict, List
+from types import MappingProxyType
+from typing import Any, Dict, List, Mapping
 
 # TODO move filtering to db site
+
+# Python has no builtin "frozendict" (the way frozenset mirrors set);
+# MappingProxyType is the standard-library equivalent - a read-only view that
+# raises TypeError on mutation. Used as the filter_modes default below instead
+# of a plain {} so a single shared instance is safe to reuse across calls.
+_NO_FILTER_MODES: Mapping[str, str] = MappingProxyType({})
 
 
 def _as_list(value: Any) -> list:
@@ -56,21 +63,20 @@ _FILTER_MATCHERS = {
 }
 
 
-def does_fulfill_requirement(entry, requirements, filter_modes=None):
+def does_fulfill_requirement(entry, requirements, filter_modes=_NO_FILTER_MODES):
     """Check if an entry fulfills all category requirements.
 
     Args:
         entry: Location data entry to check
         requirements: List of (category, values) tuples to match
-        filter_modes: Optional dict mapping category name to combination mode
-            ("or", "and", "exclusive", "boolean", or "threshold"). Categories not
+        filter_modes: Dict mapping category name to combination mode ("or",
+            "and", "exclusive", "boolean", or "threshold"). Categories not
             present default to "or" (entry matches if it has any of the
             selected values).
 
     Returns:
         bool: True if entry matches all non-empty requirements
     """
-    filter_modes = filter_modes or {}
     matches = []
     for category, values in requirements:
         if not values:
@@ -122,15 +128,15 @@ def limit(data, query_params):
         return data
 
 
-def get_queried_data(all_data, categories, query_params, filter_modes=None):
+def get_queried_data(all_data, categories, query_params, filter_modes=_NO_FILTER_MODES):
     """Filter, sort, and limit location data based on query parameters.
 
     Args:
         all_data: Complete list of location data
         categories: Available categories for filtering
         query_params: Query parameters for filtering, sorting, and limiting
-        filter_modes: Optional dict mapping category name to combination mode
-            ("or", "and", "exclusive", "boolean", or "threshold"), see
+        filter_modes: Dict mapping category name to combination mode ("or",
+            "and", "exclusive", "boolean", or "threshold"), see
             does_fulfill_requirement.
 
     Returns:
