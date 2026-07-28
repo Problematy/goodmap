@@ -614,9 +614,7 @@ def json_db_get_category_data(self, category_type=None):
                 )
             },
             "categories_filter_mode": {
-                category_type: self.data.get("categories_filter_mode", {}).get(
-                    category_type, "or"
-                )
+                category_type: self.data.get("categories_filter_mode", {}).get(category_type, "or")
             },
         }
     return {

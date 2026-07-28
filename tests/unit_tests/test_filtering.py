@@ -68,7 +68,7 @@ def test_or_mode_is_explicit_default():
 
 
 def test_and_mode_requires_every_selected_value():
-    """"and" narrows results: an entry must have ALL selected values, useful
+    """ "and" narrows results: an entry must have ALL selected values, useful
     for list-valued categories like amenities ("lighting" AND "benches")."""
     requirements = [("gender", ["male", "female"])]
     filter_modes = {"gender": "and"}

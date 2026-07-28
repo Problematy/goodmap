@@ -66,9 +66,7 @@ def get_queried_data(all_data, categories, query_params, filter_modes=NO_FILTER_
     for key in categories.keys():
         requirements.append((key, query_params.get(key)))
 
-    filtered_data = [
-        x for x in all_data if does_fulfill_requirement(x, requirements, filter_modes)
-    ]
+    filtered_data = [x for x in all_data if does_fulfill_requirement(x, requirements, filter_modes)]
     final_data = sort_by_distance(filtered_data, query_params)
     final_data = limit(final_data, query_params)
     return final_data
