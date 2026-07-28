@@ -187,6 +187,7 @@ def test_categories_full_endpoint_reports_configured_filter_mode():
     )
     response = test_app.get("/api/categories-full")
     assert response.status_code == 200
+    assert response.json is not None
     category = response.json["categories"][0]
     assert category["filter_mode"] == "exclusive"
 
@@ -355,6 +356,7 @@ def test_get_locations_multi_value_same_category_uses_or_semantics():
     response = client.get("/api/locations?tags=red&tags=blue")
 
     assert response.status_code == 200
+    assert response.json is not None
     uuids = {loc["uuid"] for loc in response.json}
     assert uuids == {
         "11111111-1111-1111-1111-111111111111",
@@ -397,6 +399,7 @@ def test_get_locations_and_filter_mode_requires_every_selected_value():
     response = client.get("/api/locations?amenities=lighting&amenities=benches")
 
     assert response.status_code == 200
+    assert response.json is not None
     uuids = {loc["uuid"] for loc in response.json}
     assert uuids == {"11111111-1111-1111-1111-111111111111"}
 
@@ -436,6 +439,7 @@ def test_get_locations_threshold_filter_mode():
     response = client.get("/api/locations?speed_limit=30")
 
     assert response.status_code == 200
+    assert response.json is not None
     uuids = {loc["uuid"] for loc in response.json}
     assert uuids == {
         "11111111-1111-1111-1111-111111111111",

@@ -1,6 +1,6 @@
 """Core data sorting, limiting, and query orchestration for location queries."""
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Mapping
 
 from goodmap.filtering import NO_FILTER_MODES, does_fulfill_requirement
 
@@ -48,7 +48,9 @@ def limit(data, query_params):
         return data
 
 
-def get_queried_data(all_data, categories, query_params, filter_modes=NO_FILTER_MODES):
+def get_queried_data(
+    all_data, categories, query_params, filter_modes: Mapping[str, str] = NO_FILTER_MODES
+):
     """Filter, sort, and limit location data based on query parameters.
 
     Args:

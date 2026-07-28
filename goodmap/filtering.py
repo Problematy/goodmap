@@ -6,7 +6,7 @@ for the config-level guide to the modes handled here: "or", "and", "exclusive",
 """
 
 from types import MappingProxyType
-from typing import Mapping
+from typing import Any, Mapping
 
 # Python has no builtin "frozendict" (the way frozenset mirrors set);
 # MappingProxyType is the standard-library equivalent - a read-only view that
@@ -16,7 +16,7 @@ from typing import Mapping
 NO_FILTER_MODES: Mapping[str, str] = MappingProxyType({})
 
 
-def _as_list(value) -> list:
+def _as_list(value: Any) -> list[str]:
     """Wrap a scalar field value in a list, leaving list values untouched."""
     if value is None:
         return []
@@ -25,12 +25,12 @@ def _as_list(value) -> list:
     return [value]
 
 
-def _matches_or(entry_values: list, selected_values: list) -> bool:
+def _matches_or(entry_values: list[str], selected_values: list[str]) -> bool:
     """Match if the entry has at least one of the selected values (any-of)."""
     return any(value in entry_values for value in selected_values)
 
 
-def _matches_and(entry_values: list, selected_values: list) -> bool:
+def _matches_and(entry_values: list[str], selected_values: list[str]) -> bool:
     """Match only if the entry has every selected value (all-of).
 
     Only meaningful for list-valued categories (an entry can have multiple
@@ -41,7 +41,7 @@ def _matches_and(entry_values: list, selected_values: list) -> bool:
     return all(value in entry_values for value in selected_values)
 
 
-def _matches_threshold(entry_values: list, selected_values: list) -> bool:
+def _matches_threshold(entry_values: list[str], selected_values: list[str]) -> bool:
     """Match if any entry value is numerically <= the highest selected value.
 
     Used for ordered numeric categories (e.g. speed limits) where selecting a
@@ -67,7 +67,9 @@ _FILTER_MATCHERS = {
 }
 
 
-def does_fulfill_requirement(entry, requirements, filter_modes=NO_FILTER_MODES):
+def does_fulfill_requirement(
+    entry, requirements, filter_modes: Mapping[str, str] = NO_FILTER_MODES
+):
     """Check if an entry fulfills all category requirements.
 
     Args:
