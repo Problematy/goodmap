@@ -222,7 +222,7 @@ const ClearFiltersButton = styled.button`
  * Fetches category data from the API and renders checkboxes for each filter option.
  * Manages filter state through the Categories context.
  *
- * @returns {React.ReactElement} Form element containing categorized filter checkboxes with optional tooltips
+ * @return {React.ReactElement} Form element containing categorized filter checkboxes with optional tooltips
  */
 const LoadingSkeleton = () => (
     <>
@@ -249,7 +249,7 @@ export const FiltersForm = () => {
 
     const handleCheckboxChange = event => {
         const { value, checked } = event.target;
-        const category = event.target.dataset.category;
+        const { category } = event.target.dataset;
 
         setCategories(prevSelectedFilters => {
             const newSelectedFilters = { ...prevSelectedFilters };
@@ -270,7 +270,7 @@ export const FiltersForm = () => {
     // option replaces any previous selection instead of toggling it.
     const handleRadioChange = event => {
         const { value } = event.target;
-        const category = event.target.dataset.category;
+        const { category } = event.target.dataset;
 
         setCategories(prevSelectedFilters => ({
             ...prevSelectedFilters,
@@ -382,7 +382,7 @@ export const FiltersForm = () => {
 
     const renderBooleanFilterOption = category => {
         const { categoryKey, categoryName, options, optionsHelp } = category;
-        const trueOption = options.find(([name]) => name === 'true');
+        const trueOption = options.find(([optionValue]) => optionValue === 'true');
         if (!trueOption) {
             return null;
         }

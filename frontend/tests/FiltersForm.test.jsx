@@ -36,9 +36,7 @@ describe('Creates good filter_form box', () => {
                 <FiltersForm />
             </CategoriesProvider>,
         );
-        await waitFor(() =>
-            expect(document.querySelector('#filter-label-types')).not.toBeNull(),
-        );
+        await waitFor(() => expect(document.querySelector('#filter-label-types')).not.toBeNull());
     });
 
     afterEach(() => {
