@@ -6,7 +6,7 @@ Tests popup functionality including content display, CTA buttons, and problem fo
 
 from playwright.sync_api import Page, expect
 
-from tests.conftest import BASE_URL, MARKER_LOAD_TIMEOUT, clear_all_checkboxes
+from tests.conftest import BASE_URL, open_test_popup
 from tests.helpers import EXPECTED_PLACE_ZWIERZYNIECKA, verify_popup_content, verify_problem_form
 
 
@@ -22,37 +22,9 @@ class TestPopupOnDesktop:
         """
         page.goto(BASE_URL, wait_until="domcontentloaded")
 
-        clear_all_checkboxes(page)
-
-        # Click first marker to trigger cluster expansion
-        first_marker = page.locator(".leaflet-marker-icon").first
-        first_marker.click()
-
-        # Wait for markers to appear (should be 2 after cluster expansion)
-        markers = page.locator(".leaflet-marker-icon")
-        expect(markers).to_have_count(2, timeout=MARKER_LOAD_TIMEOUT)
-
-        # Click the rightmost marker
-        # Note: Using evaluate to find rightmost marker since we don't have data-testid
-        page.evaluate("""
-            () => {
-                const markers = document.querySelectorAll('.leaflet-marker-icon');
-                let rightmostMarker = null;
-                let maxX = -Infinity;
-
-                markers.forEach(marker => {
-                    const rect = marker.getBoundingClientRect();
-                    if (rect.x > maxX) {
-                        maxX = rect.x;
-                        rightmostMarker = marker;
-                    }
-                });
-
-                if (rightmostMarker) {
-                    rightmostMarker.click();
-                }
-            }
-        """)
+        # Isolate Zwierzyniecka's marker and click it directly, rather than
+        # expanding a multi-marker cluster and guessing at its layout.
+        open_test_popup(page)
 
         # Verify popup content
         popup = page.locator(".leaflet-popup-content")
@@ -80,36 +52,7 @@ class TestPopupOnDesktop:
         """
         page.goto(BASE_URL, wait_until="domcontentloaded")
 
-        clear_all_checkboxes(page)
-
-        # Click first marker to trigger cluster expansion
-        first_marker = page.locator(".leaflet-marker-icon").first
-        first_marker.click()
-
-        # Wait for markers to appear (should be 2 after cluster expansion)
-        markers = page.locator(".leaflet-marker-icon")
-        expect(markers).to_have_count(2, timeout=MARKER_LOAD_TIMEOUT)
-
-        # Click the rightmost marker
-        page.evaluate("""
-            () => {
-                const markers = document.querySelectorAll('.leaflet-marker-icon');
-                let rightmostMarker = null;
-                let maxX = -Infinity;
-
-                markers.forEach(marker => {
-                    const rect = marker.getBoundingClientRect();
-                    if (rect.x > maxX) {
-                        maxX = rect.x;
-                        rightmostMarker = marker;
-                    }
-                });
-
-                if (rightmostMarker) {
-                    rightmostMarker.click();
-                }
-            }
-        """)
+        open_test_popup(page)
 
         # Verify popup is visible
         popup = page.locator(".leaflet-popup-content")

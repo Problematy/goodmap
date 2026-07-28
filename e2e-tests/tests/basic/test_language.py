@@ -10,7 +10,7 @@ Tests that changing the language:
 import pytest
 from playwright.sync_api import Page, expect
 
-from tests.conftest import BASE_URL, MARKER_LOAD_TIMEOUT, clear_all_checkboxes
+from tests.conftest import BASE_URL, open_test_popup
 
 
 def get_language_button(page: Page):
@@ -71,35 +71,7 @@ class TestLanguageSwitching:
         page.get_by_role("link", name="polski").click()
         page.wait_for_load_state("domcontentloaded")
 
-        clear_all_checkboxes(page)
-
-        # Click marker cluster to expand
-        page.locator(".leaflet-marker-icon").first.click()
-
-        # Wait for markers to appear
-        markers = page.locator(".leaflet-marker-icon")
-        expect(markers).to_have_count(2, timeout=MARKER_LOAD_TIMEOUT)
-
-        # Click rightmost marker to open popup
-        page.evaluate("""
-            () => {
-                const markers = document.querySelectorAll('.leaflet-marker-icon');
-                let rightmostMarker = null;
-                let maxX = -Infinity;
-
-                markers.forEach(marker => {
-                    const rect = marker.getBoundingClientRect();
-                    if (rect.x > maxX) {
-                        maxX = rect.x;
-                        rightmostMarker = marker;
-                    }
-                });
-
-                if (rightmostMarker) {
-                    rightmostMarker.click();
-                }
-            }
-        """)
+        open_test_popup(page)
 
         # Verify popup is visible
         popup = page.locator(".leaflet-popup-content")

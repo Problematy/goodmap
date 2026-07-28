@@ -122,13 +122,15 @@ def initialize_and_assert_db(db, data):
     location_model = create_location_model(location_obligatory_fields, {})
     extend_db_with_goodmap_queries(db, location_model)
 
-    query = {"test-category": "searchable"}
+    # Query values arrive as lists in production (request.args.to_dict(flat=False));
+    # a single selected value exactly matches one entry's scalar category field.
+    query = {"test-category": ["searchable"]}
 
     location = db.get_location("1")
     assert location.position == (50, 50)
     assert location.uuid == "1"
 
-    assert len(db.get_locations(query)) == 2
+    assert len(db.get_locations(query)) == 1
     assert db.get_data() == data
 
 
@@ -1424,6 +1426,7 @@ def test_json_db_get_category_data():
         "categories_help": ["Help text for categories"],
         "categories_options_help": {"test-category": ["Help for test category"]},
         "categories_default_checked": {"test-category": ["searchable"]},
+        "categories_filter_mode": {},
     }
     assert category_data == expected
 
@@ -1437,6 +1440,7 @@ def test_json_db_get_category_data_specific_category():
         "categories_help": ["Help text for categories"],
         "categories_options_help": {"test-category": ["Help for test category"]},
         "categories_default_checked": {"test-category": ["searchable"]},
+        "categories_filter_mode": {"test-category": "or"},
     }
     assert category_data == expected
 
@@ -1453,6 +1457,7 @@ def test_json_file_db_get_category_data(tmp_path):
         "categories_help": ["Help text for categories"],
         "categories_options_help": {"test-category": ["Help for test category"]},
         "categories_default_checked": {"test-category": ["searchable"]},
+        "categories_filter_mode": {},
     }
     assert category_data == expected
 
@@ -1469,6 +1474,7 @@ def test_json_file_db_get_category_data_specific_category(tmp_path):
         "categories_help": ["Help text for categories"],
         "categories_options_help": {"test-category": ["Help for test category"]},
         "categories_default_checked": {"test-category": ["searchable"]},
+        "categories_filter_mode": {"test-category": "or"},
     }
     assert category_data == expected
 
@@ -1486,6 +1492,7 @@ def test_google_json_db_get_category_data(mock_cli):
         "categories_help": ["Help text for categories"],
         "categories_options_help": {"test-category": ["Help for test category"]},
         "categories_default_checked": {"test-category": ["searchable"]},
+        "categories_filter_mode": {},
     }
     assert category_data == expected
 
@@ -1503,6 +1510,7 @@ def test_google_json_db_get_category_data_specific_category(mock_cli):
         "categories_help": ["Help text for categories"],
         "categories_options_help": {"test-category": ["Help for test category"]},
         "categories_default_checked": {"test-category": ["searchable"]},
+        "categories_filter_mode": {"test-category": "or"},
     }
     assert category_data == expected
 
@@ -1527,6 +1535,7 @@ def test_mongodb_db_get_category_data(mock_client):
         "categories_help": ["Help text for categories"],
         "categories_options_help": {"test-category": ["Help for test category"]},
         "categories_default_checked": {"test-category": ["searchable"]},
+        "categories_filter_mode": {},
     }
     assert category_data == expected
 
@@ -1551,6 +1560,7 @@ def test_mongodb_db_get_category_data_specific_category(mock_client):
         "categories_help": ["Help text for categories"],
         "categories_options_help": {"test-category": ["Help for test category"]},
         "categories_default_checked": {"test-category": ["searchable"]},
+        "categories_filter_mode": {"test-category": "or"},
     }
     assert category_data == expected
 
@@ -1569,6 +1579,7 @@ def test_mongodb_db_get_category_data_no_config(mock_client):
         "categories_help": [],
         "categories_options_help": {},
         "categories_default_checked": {},
+        "categories_filter_mode": {},
     }
     assert category_data == expected
 
@@ -1582,6 +1593,7 @@ def test_get_category_data():
         "categories_help": ["Help text for categories"],
         "categories_options_help": {"test-category": ["Help for test category"]},
         "categories_default_checked": {"test-category": ["searchable"]},
+        "categories_filter_mode": {},
     }
     assert category_data == expected
 
@@ -1609,6 +1621,56 @@ def test_mongodb_db_get_locations(mock_client):
 
     mock_db.locations.find.assert_called_once_with(
         {"test-category": {"$in": ["searchable"]}},
+        {"_id": 0, "uuid": 1, "position": 1, "remark": 1},
+    )
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_locations_and_filter_mode(mock_client):
+    """An "and" category must use $all (every selected value), not $in (any)."""
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.config.find_one.return_value = {
+        "_id": "map_config",
+        "categories_filter_mode": {"amenities": "and"},
+    }
+    mock_db.locations.find.return_value = [{"uuid": "1", "position": [50, 50]}]
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    extend_db_with_goodmap_queries(db, LocationBase)
+
+    query = {"amenities": ["lighting", "benches"]}
+    locations = list(mongodb_db_get_locations(db, query, LocationBase))
+
+    assert len(locations) == 1
+    mock_db.locations.find.assert_called_once_with(
+        {"amenities": {"$all": ["lighting", "benches"]}},
+        {"_id": 0, "uuid": 1, "position": 1, "remark": 1},
+    )
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_locations_threshold_parse_failure_matches_nothing(mock_client):
+    """A non-numeric threshold value should match nothing for that category,
+    the same as goodmap.filtering's _matches_threshold, rather than silently
+    dropping the filter (which would match everything)."""
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.config.find_one.return_value = {
+        "_id": "map_config",
+        "categories_filter_mode": {"speed_limit": "threshold"},
+    }
+    mock_db.locations.find.return_value = []
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    extend_db_with_goodmap_queries(db, LocationBase)
+
+    query = {"speed_limit": ["not-a-number"]}
+    locations = list(mongodb_db_get_locations(db, query, LocationBase))
+
+    assert locations == []
+    mock_db.locations.find.assert_called_once_with(
+        {"speed_limit": {"$in": []}},
         {"_id": 0, "uuid": 1, "position": 1, "remark": 1},
     )
 

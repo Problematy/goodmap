@@ -1,26 +1,10 @@
-"""Core data filtering and sorting utilities for location queries."""
+"""Core data sorting, limiting, and query orchestration for location queries."""
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Mapping
+
+from goodmap.filtering import NO_FILTER_MODES, does_fulfill_requirement
 
 # TODO move filtering to db site
-
-
-def does_fulfill_requirement(entry, requirements):
-    """Check if an entry fulfills all category requirements.
-
-    Args:
-        entry: Location data entry to check
-        requirements: List of (category, values) tuples to match
-
-    Returns:
-        bool: True if entry matches all non-empty requirements
-    """
-    matches = []
-    for category, values in requirements:
-        if not values:
-            continue
-        matches.append(all(entry_value in entry[category] for entry_value in values))
-    return all(matches)
 
 
 def sort_by_distance(data: List[Dict[str, Any]], query_params: Dict[str, List[str]]):
@@ -64,13 +48,18 @@ def limit(data, query_params):
         return data
 
 
-def get_queried_data(all_data, categories, query_params):
+def get_queried_data(
+    all_data, categories, query_params, filter_modes: Mapping[str, str] = NO_FILTER_MODES
+):
     """Filter, sort, and limit location data based on query parameters.
 
     Args:
         all_data: Complete list of location data
         categories: Available categories for filtering
         query_params: Query parameters for filtering, sorting, and limiting
+        filter_modes: Dict mapping category name to combination mode ("or",
+            "and", "exclusive", "boolean", or "threshold"), see
+            goodmap.filtering.does_fulfill_requirement.
 
     Returns:
         Filtered, sorted, and limited location data
@@ -79,7 +68,7 @@ def get_queried_data(all_data, categories, query_params):
     for key in categories.keys():
         requirements.append((key, query_params.get(key)))
 
-    filtered_data = [x for x in all_data if does_fulfill_requirement(x, requirements)]
+    filtered_data = [x for x in all_data if does_fulfill_requirement(x, requirements, filter_modes)]
     final_data = sort_by_distance(filtered_data, query_params)
     final_data = limit(final_data, query_params)
     return final_data

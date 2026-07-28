@@ -21,6 +21,15 @@ msgstr "accessible by"
 msgid "type_of_place"
 msgstr "type of place"
 
+msgid "is_free"
+msgstr "Free only"
+
+msgid "speed_limit"
+msgstr "speed limit"
+
+msgid "amenities"
+msgstr "amenities"
+
 msgid "remark"
 msgstr "remark"
 
@@ -41,6 +50,33 @@ msgstr "big bridge"
 msgid "small bridge"
 msgstr "small bridge"
 
+# Category values - is_free
+msgid "true"
+msgstr "yes"
+
+msgid "false"
+msgstr "no"
+
+# Category values - speed_limit (km/h, left untranslated on purpose)
+msgid "10"
+msgstr "10 km/h"
+
+msgid "30"
+msgstr "30 km/h"
+
+msgid "50"
+msgstr "50 km/h"
+
+# Category values - amenities
+msgid "lighting"
+msgstr "lighting"
+
+msgid "benches"
+msgstr "benches"
+
+msgid "toilets"
+msgstr "toilets"
+
 # Reported issue types
 msgid "under construction"
 msgstr "under construction"
@@ -51,6 +87,12 @@ msgstr "has a hole"
 # Help texts - category headers
 msgid "categories_help_accessible_by"
 msgstr "Who can use this bridge"
+
+msgid "categories_help_speed_limit"
+msgstr "Selecting a speed limit also shows bridges with a lower limit"
+
+msgid "categories_help_amenities"
+msgstr "Selecting several shows only bridges that have all of them"
 
 # Help texts - category options
 msgid "categories_options_help_small bridge"

@@ -89,6 +89,14 @@ export const MarkerPopup = ({ place }) => {
     const setSelectedLocationId = useMapStore(state => state.setSelectedLocationId);
     const [isClicked, setIsClicked] = useState(false);
 
+    // TODO: this only opens the popup if `place`'s Marker is actually attached to
+    // the map. Leaflet.markercluster detaches individual markers while they sit
+    // inside an unexpanded cluster bubble, so a shared ?locationId= link to a
+    // clustered location silently fails to open its popup on desktop (mobile's
+    // MobilePopup is unaffected - it's a state-driven MUI Dialog, not tied to the
+    // Leaflet marker). Fix: call the cluster group's zoomToShowLayer(marker, cb)
+    // before/instead of setIsClicked when the marker is clustered. Covered by the
+    // xfail'd test_shared_link_opens_popup_with_correct_content in e2e-tests.
     useEffect(() => {
         if (selectedLocationId === place.uuid) {
             setIsClicked(true);

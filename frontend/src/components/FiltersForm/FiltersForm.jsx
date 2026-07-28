@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled, { keyframes } from 'styled-components';
 import { useTranslation } from 'react-i18next';
+import { Tooltip } from '@mui/material';
 import { useCategories } from '../Categories/CategoriesContext';
 import { httpService } from '../../services/http/httpService';
 import FiltersTooltip from './FiltersTooltip';
@@ -68,10 +69,41 @@ const FilterHeader = styled.div`
 `;
 
 const FilterTitle = styled.span`
+    flex: 1;
     font-size: 13px;
     font-weight: 600;
     letter-spacing: 0.3px;
     line-height: 16px;
+`;
+
+// Every filter mode gets a small badge next to its category title, so "or"
+// and "and" (both checkboxes, otherwise visually identical at rest) are as
+// distinguishable as "exclusive"/"threshold" already are via their radio
+// shape. Kept to a single subtle character rather than a word, with the
+// full explanation one hover/focus away in the tooltip.
+const MODE_BADGES = {
+    or: { badge: 'filterModeOrBadge', tooltip: 'filterModeOrTooltip' },
+    and: { badge: 'filterModeAndBadge', tooltip: 'filterModeAndTooltip' },
+    exclusive: { badge: 'filterModeExclusiveBadge', tooltip: 'filterModeExclusiveTooltip' },
+    boolean: { badge: 'filterModeBooleanBadge', tooltip: 'filterModeBooleanTooltip' },
+    threshold: { badge: 'filterModeThresholdBadge', tooltip: 'filterModeThresholdTooltip' },
+};
+
+const ModeBadge = styled.span`
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 15px;
+    height: 15px;
+    padding: 0 3px;
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    background-color: rgba(79, 195, 247, 0.18);
+    color: #4fc3f7;
+    border: 1px solid rgba(79, 195, 247, 0.45);
+    cursor: help;
 `;
 
 const FilterOption = styled.label`
@@ -122,6 +154,21 @@ const StyledCheckbox = styled.input`
     &:focus {
         outline: none;
         box-shadow: 0 0 0 2px rgba(79, 195, 247, 0.4);
+    }
+
+    &[type='radio'] {
+        border-radius: 50%;
+    }
+
+    &[type='radio']:checked::after {
+        left: 4px;
+        top: 4px;
+        width: 6px;
+        height: 6px;
+        border: none;
+        border-radius: 50%;
+        background-color: white;
+        transform: none;
     }
 `;
 
@@ -175,7 +222,7 @@ const ClearFiltersButton = styled.button`
  * Fetches category data from the API and renders checkboxes for each filter option.
  * Manages filter state through the Categories context.
  *
- * @returns {React.ReactElement} Form element containing categorized filter checkboxes with optional tooltips
+ * @return {React.ReactElement} Form element containing categorized filter checkboxes with optional tooltips
  */
 const LoadingSkeleton = () => (
     <>
@@ -202,7 +249,7 @@ export const FiltersForm = () => {
 
     const handleCheckboxChange = event => {
         const { value, checked } = event.target;
-        const category = event.target.dataset.category;
+        const { category } = event.target.dataset;
 
         setCategories(prevSelectedFilters => {
             const newSelectedFilters = { ...prevSelectedFilters };
@@ -217,6 +264,18 @@ export const FiltersForm = () => {
 
             return newSelectedFilters;
         });
+    };
+
+    // "exclusive" categories are single-select (radio buttons): picking one
+    // option replaces any previous selection instead of toggling it.
+    const handleRadioChange = event => {
+        const { value } = event.target;
+        const { category } = event.target.dataset;
+
+        setCategories(prevSelectedFilters => ({
+            ...prevSelectedFilters,
+            [category]: [value],
+        }));
     };
 
     const handleClearFilters = () => {
@@ -248,20 +307,58 @@ export const FiltersForm = () => {
         fetchCategories();
     }, []);
 
-    const renderFilterOptions = (filters, category) => {
-        return filters[1].map(([name, translation]) => {
+    const renderModeBadge = mode => {
+        const keys = MODE_BADGES[mode] ?? MODE_BADGES.or;
+        const tooltipText = t(keys.tooltip);
+        return (
+            <Tooltip
+                title={tooltipText}
+                placement="top"
+                arrow
+                enterTouchDelay={0}
+                leaveTouchDelay={3000}
+            >
+                <ModeBadge
+                    tabIndex={0}
+                    aria-label={t('filterModeHelpAriaLabel', { description: tooltipText })}
+                >
+                    {t(keys.badge)}
+                </ModeBadge>
+            </Tooltip>
+        );
+    };
+
+    const renderFilterOptions = category => {
+        // "exclusive" (pick one) and "threshold" (pick a cumulative upper bound,
+        // e.g. speed limit) are both single-select: rendered as radio buttons so
+        // only one option can be active at a time.
+        //
+        // TODO: "threshold" categories would read more naturally as an MUI
+        // <Slider> with discrete `marks` at each option value - the filled
+        // track from min to the thumb is a direct visual match for "everything
+        // up to here is included," better than a radio group. Needs a design
+        // decision first: sliders have no natural "nothing selected" state (the
+        // thumb always sits somewhere), but "no filter" must stay distinct from
+        // "lowest value selected" - e.g. an explicit "Any" mark left of the
+        // lowest real value, or relying on the existing "Clear filters" button
+        // as the only way back to unset. Also needs keyboard/screen-reader
+        // slider accessibility and updated frontend/e2e tests.
+        const { categoryKey, options, optionsHelp, filterMode } = category;
+        const isSingleSelect = filterMode === 'exclusive' || filterMode === 'threshold';
+        return options.map(([name, translation]) => {
             const tooltipData = globalThis.FEATURE_FLAGS?.CATEGORIES_HELP
-                ? filters[3].find(it => it[name])
+                ? optionsHelp.find(it => it[name])
                 : '';
             return (
-                <FilterOption key={`${category}-${name}`} htmlFor={name}>
+                <FilterOption key={`${categoryKey}-${name}`} htmlFor={name}>
                     <StyledCheckbox
-                        onChange={handleCheckboxChange}
-                        data-category={category}
-                        type="checkbox"
+                        onChange={isSingleSelect ? handleRadioChange : handleCheckboxChange}
+                        data-category={categoryKey}
+                        type={isSingleSelect ? 'radio' : 'checkbox'}
+                        name={isSingleSelect ? categoryKey : undefined}
                         id={name}
                         value={name}
-                        checked={Boolean(selectedFilters[category]?.includes(name))}
+                        checked={Boolean(selectedFilters[categoryKey]?.includes(name))}
                     />
                     <OptionText>{translation}</OptionText>
                     {tooltipData && (
@@ -274,23 +371,79 @@ export const FiltersForm = () => {
         });
     };
 
-    const sections = categoriesData.map(filtersData => {
-        const [categoryKey, categoryName] = filtersData[0];
-        const sectionKey = `${categoryKey}-${categoryName}`;
+    // "boolean" categories (e.g. "free only") have exactly one meaningful filter
+    // state - leaving them unchecked already means "show everything" - so rather
+    // than giving each its own titled section, they're grouped into one shared
+    // "Others" section as plain checkboxes labeled with the category's own name.
+    // This keeps the panel compact as more true/false-style filters are added.
+    const isBooleanCategory = category => category.filterMode === 'boolean';
+    const booleanCategories = categoriesData.filter(isBooleanCategory);
+    const otherCategories = categoriesData.filter(f => !isBooleanCategory(f));
+
+    const renderBooleanFilterOption = category => {
+        const { categoryKey, categoryName, options, optionsHelp } = category;
+        const trueOption = options.find(([optionValue]) => optionValue === 'true');
+        if (!trueOption) {
+            return null;
+        }
+        const [name] = trueOption;
+        const tooltipData = globalThis.FEATURE_FLAGS?.CATEGORIES_HELP
+            ? optionsHelp.find(it => it[name])
+            : '';
+        return (
+            <FilterOption key={categoryKey} htmlFor={categoryKey}>
+                <StyledCheckbox
+                    onChange={handleCheckboxChange}
+                    data-category={categoryKey}
+                    type="checkbox"
+                    id={categoryKey}
+                    value={name}
+                    checked={Boolean(selectedFilters[categoryKey]?.includes(name))}
+                />
+                <OptionText>{categoryName}</OptionText>
+                {renderModeBadge('boolean')}
+                {tooltipData && (
+                    <TooltipWrapper>
+                        <FiltersTooltip text={tooltipData[name]} />
+                    </TooltipWrapper>
+                )}
+            </FilterOption>
+        );
+    };
+
+    const sections = otherCategories.map(category => {
+        const { categoryKey, categoryName, categoriesHelp, filterMode } = category;
+        // Built from categoryKey alone (not categoryName): aria-labelledby
+        // values are parsed as space-separated ID references, so an id built
+        // from a category's translated name (e.g. "accessible by") would
+        // silently break the association for any name containing whitespace.
+        const sectionId = `filter-label-${categoryKey}`;
         const categoryTooltip = globalThis.FEATURE_FLAGS?.CATEGORIES_HELP
-            ? filtersData[2].find(it => it[categoryKey])
+            ? categoriesHelp.find(it => it[categoryKey])
             : null;
 
         return (
-            <FilterSection key={sectionKey} aria-labelledby={`filter-label-${sectionKey}`}>
+            <FilterSection key={categoryKey} aria-labelledby={sectionId}>
                 <FilterHeader>
-                    <FilterTitle id={`filter-label-${sectionKey}`}>{categoryName}</FilterTitle>
+                    <FilterTitle id={sectionId}>{categoryName}</FilterTitle>
+                    {renderModeBadge(filterMode)}
                     {categoryTooltip && <FiltersTooltip text={categoryTooltip[categoryKey]} />}
                 </FilterHeader>
-                {renderFilterOptions(filtersData, categoryKey)}
+                {renderFilterOptions(category)}
             </FilterSection>
         );
     });
+
+    if (booleanCategories.length > 0) {
+        sections.push(
+            <FilterSection key="others-section" aria-labelledby="filter-label-others">
+                <FilterHeader>
+                    <FilterTitle id="filter-label-others">{t('otherFilters')}</FilterTitle>
+                </FilterHeader>
+                {booleanCategories.map(renderBooleanFilterOption)}
+            </FilterSection>,
+        );
+    }
 
     if (isLoading) {
         return (

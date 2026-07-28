@@ -1,4 +1,4 @@
-from goodmap.core import does_fulfill_requirement, get_queried_data, limit, sort_by_distance
+from goodmap.core import get_queried_data, limit, sort_by_distance
 
 test_data = [
     {
@@ -31,38 +31,14 @@ def test_query():
     assert get_queried_data(test_data, categories, query) == expected_data
 
 
-def test_filtering():
-    requirements = [("types", ["clothes"]), ("gender", ["male"])]
-    expected_data = [
-        {
-            "name": "PCK",
-            "position": [51.1, 17.05],
-            "types": ["clothes"],
-            "gender": ["male"],
-        }
-    ]
-    filtered_data = list(filter(lambda x: does_fulfill_requirement(x, requirements), test_data))
-    assert filtered_data == expected_data
+def test_get_queried_data_applies_filter_modes():
+    categories = {"gender": ["male", "female"]}
+    query = {"gender": ["female"]}
+    filter_modes = {"gender": "exclusive"}
 
+    result = get_queried_data(test_data, categories, query, filter_modes)
 
-def test_category_match_if_not_specified():
-    requirements = [("types", []), ("gender", ["male"])]
-    expected_data = [
-        {
-            "name": "LASSO",
-            "position": [51.113, 17.06],
-            "types": ["shoes"],
-            "gender": ["male", "female"],
-        },
-        {
-            "name": "PCK",
-            "position": [51.1, 17.05],
-            "types": ["clothes"],
-            "gender": ["male"],
-        },
-    ]
-    filtered_data = list(filter(lambda x: does_fulfill_requirement(x, requirements), test_data))
-    assert filtered_data == expected_data
+    assert result == [test_data[0]]
 
 
 def test_that_limit_works_properly():

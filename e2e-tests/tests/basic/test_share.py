@@ -15,6 +15,7 @@ from tests.conftest import (
     BASE_URL,
     MARKER_LOAD_TIMEOUT,
     clear_all_checkboxes,
+    open_test_popup,
 )
 
 
@@ -31,36 +32,7 @@ class TestShareOnDesktop:
         # Grant clipboard permissions
         page.context.grant_permissions(["clipboard-read", "clipboard-write"])
 
-        clear_all_checkboxes(page)
-
-        # Click first marker to trigger cluster expansion
-        first_marker = page.locator(".leaflet-marker-icon").first
-        first_marker.click()
-
-        # Wait for markers to appear (should be 2 after cluster expansion)
-        markers = page.locator(".leaflet-marker-icon")
-        expect(markers).to_have_count(2, timeout=MARKER_LOAD_TIMEOUT)
-
-        # Click the rightmost marker
-        page.evaluate("""
-            () => {
-                const markers = document.querySelectorAll('.leaflet-marker-icon');
-                let rightmostMarker = null;
-                let maxX = -Infinity;
-
-                markers.forEach(marker => {
-                    const rect = marker.getBoundingClientRect();
-                    if (rect.x > maxX) {
-                        maxX = rect.x;
-                        rightmostMarker = marker;
-                    }
-                });
-
-                if (rightmostMarker) {
-                    rightmostMarker.click();
-                }
-            }
-        """)
+        open_test_popup(page)
 
         # Verify popup is visible
         popup = page.locator(".leaflet-popup-content")
@@ -83,6 +55,13 @@ class TestShareOnDesktop:
         """
         Verify navigating to a URL with ?locationId= auto-opens the popup
         with the correct location content.
+
+        Note: this passes because Zwierzyniecka's seeded coordinates keep it
+        far enough from its nearest neighbor to render as a standalone marker
+        at the zoom level GoToLocation.jsx navigates to. There is a known,
+        separate app bug (see TODO in MarkerPopup.jsx) where this same flow
+        silently fails to open the popup if the target happens to be clustered
+        under the viewer's current filters/zoom - not exercised by this test.
         """
         page.goto(
             f"{BASE_URL}/?locationId=c8ecf476-5968-40da-ba5c-e810ad9ff203",
@@ -124,36 +103,7 @@ class TestShareOnMobile:
 
         mobile_page.goto(BASE_URL, wait_until="domcontentloaded")
 
-        clear_all_checkboxes(mobile_page)
-
-        # Click first marker to expand cluster
-        first_marker = mobile_page.locator(".leaflet-marker-icon").first
-        first_marker.evaluate("el => el.click()")
-
-        # Wait for markers to appear (should be 2 after expansion)
-        markers = mobile_page.locator(".leaflet-marker-icon")
-        expect(markers).to_have_count(2, timeout=MARKER_LOAD_TIMEOUT)
-
-        # Click the rightmost marker
-        mobile_page.evaluate("""
-            () => {
-                const markers = document.querySelectorAll('.leaflet-marker-icon');
-                let rightmostMarker = null;
-                let maxX = -Infinity;
-
-                markers.forEach(marker => {
-                    const rect = marker.getBoundingClientRect();
-                    if (rect.x > maxX) {
-                        maxX = rect.x;
-                        rightmostMarker = marker;
-                    }
-                });
-
-                if (rightmostMarker) {
-                    rightmostMarker.click();
-                }
-            }
-        """)
+        open_test_popup(mobile_page)
 
         # On mobile, popup appears as Material-UI Dialog
         dialog_content = mobile_page.locator(".MuiDialogContent-root")

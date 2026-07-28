@@ -83,7 +83,6 @@ def main():
             },
             "primary_color": "#FFFFFF",
             "secondary_color": "#245466",
-            "left_bar_width": "300px",
         },
     }
 

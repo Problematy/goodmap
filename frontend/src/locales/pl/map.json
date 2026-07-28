@@ -38,5 +38,17 @@
     "loadFiltersError": "Nie udało się załadować filtrów.",
     "retry": "Spróbuj ponownie",
     "clearFilters": "Wyczyść filtry",
-    "clearAllFiltersAriaLabel": "Wyczyść wszystkie filtry"
+    "clearAllFiltersAriaLabel": "Wyczyść wszystkie filtry",
+    "otherFilters": "Inne",
+    "filterModeOrBadge": "+",
+    "filterModeOrTooltip": "Wybranie kilku opcji tutaj pokazuje wyniki pasujące do dowolnej z nich",
+    "filterModeAndBadge": "&",
+    "filterModeAndTooltip": "Wybranie kilku opcji tutaj pokazuje tylko wyniki, które mają je wszystkie, a nie dowolne",
+    "filterModeExclusiveBadge": "1",
+    "filterModeExclusiveTooltip": "Można wybrać tylko jedną opcję naraz",
+    "filterModeBooleanBadge": "•",
+    "filterModeBooleanTooltip": "Odznaczone pokazuje wszystko; zaznaczenie zawęża wyniki tylko do tego",
+    "filterModeThresholdBadge": "≤",
+    "filterModeThresholdTooltip": "Wybranie wartości obejmuje też każdą niższą wartość",
+    "filterModeHelpAriaLabel": "Tryb filtra: {{description}}"
 }
