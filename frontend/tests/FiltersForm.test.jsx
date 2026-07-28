@@ -8,15 +8,17 @@ import { httpService } from '../src/services/http/httpService';
 jest.mock('../src/services/http/httpService');
 
 const categories = [
-    [
-        ['types', 'typy'],
-        [
+    {
+        categoryKey: 'types',
+        categoryName: 'typy',
+        options: [
             ['clothes', 'ciuchy'],
             ['shoes', 'buty'],
         ],
-        [{ types: 'Inaczej rodzaje' }],
-        [{ shoes: 'Kozaki też' }],
-    ],
+        categoriesHelp: [{ types: 'Inaczej rodzaje' }],
+        optionsHelp: [{ shoes: 'Kozaki też' }],
+        filterMode: 'or',
+    },
 ];
 
 httpService.getCategoriesData.mockResolvedValue({ categories, defaultChecked: {} });
@@ -123,17 +125,18 @@ describe('Renders exclusive (single-select) categories as radio buttons', () => 
     // instead (see below), which offers a single checkbox and no separate
     // radio-deselection problem.
     const exclusiveCategories = [
-        [
-            ['payment_status', 'payment status'],
-            [
+        {
+            categoryKey: 'payment_status',
+            categoryName: 'payment status',
+            options: [
                 ['free', 'free'],
                 ['discounted', 'discounted'],
                 ['full_price', 'full price'],
             ],
-            [],
-            [],
-            'exclusive',
-        ],
+            categoriesHelp: [],
+            optionsHelp: [],
+            filterMode: 'exclusive',
+        },
     ];
 
     beforeEach(async () => {
@@ -173,26 +176,28 @@ describe('Renders exclusive (single-select) categories as radio buttons', () => 
 
 describe('Groups boolean categories into a shared "Others" section', () => {
     const mixedCategories = [
-        [
-            ['types', 'typy'],
-            [
+        {
+            categoryKey: 'types',
+            categoryName: 'typy',
+            options: [
                 ['clothes', 'ciuchy'],
                 ['shoes', 'buty'],
             ],
-            [],
-            [],
-            'or',
-        ],
-        [
-            ['is_free', 'Free only'],
-            [
+            categoriesHelp: [],
+            optionsHelp: [],
+            filterMode: 'or',
+        },
+        {
+            categoryKey: 'is_free',
+            categoryName: 'Free only',
+            options: [
                 ['true', 'yes'],
                 ['false', 'no'],
             ],
-            [],
-            [],
-            'boolean',
-        ],
+            categoriesHelp: [],
+            optionsHelp: [],
+            filterMode: 'boolean',
+        },
     ];
 
     beforeEach(async () => {
@@ -242,17 +247,18 @@ describe('Groups boolean categories into a shared "Others" section', () => {
 
 describe('Renders threshold categories as radio buttons too', () => {
     const thresholdCategories = [
-        [
-            ['speed_limit', 'speed limit'],
-            [
+        {
+            categoryKey: 'speed_limit',
+            categoryName: 'speed limit',
+            options: [
                 ['10', '10 km/h'],
                 ['30', '30 km/h'],
                 ['50', '50 km/h'],
             ],
-            [],
-            [],
-            'threshold',
-        ],
+            categoriesHelp: [],
+            optionsHelp: [],
+            filterMode: 'threshold',
+        },
     ];
 
     beforeEach(async () => {
@@ -288,16 +294,17 @@ describe('Renders threshold categories as radio buttons too', () => {
 
 describe('Distinguishes "and" categories with a visible hint, but keeps checkboxes', () => {
     const andCategories = [
-        [
-            ['amenities', 'amenities'],
-            [
+        {
+            categoryKey: 'amenities',
+            categoryName: 'amenities',
+            options: [
                 ['lighting', 'lighting'],
                 ['benches', 'benches'],
             ],
-            [],
-            [],
-            'and',
-        ],
+            categoriesHelp: [],
+            optionsHelp: [],
+            filterMode: 'and',
+        },
     ];
 
     beforeEach(async () => {

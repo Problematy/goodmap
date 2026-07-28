@@ -9,13 +9,17 @@ import { httpService } from '../../src/services/http/httpService';
 jest.mock('../../src/services/http/httpService');
 
 const categories = [
-    [
-        ['types', 'typy'],
-        [
+    {
+        categoryKey: 'types',
+        categoryName: 'typy',
+        options: [
             ['clothes', 'ciuchy'],
             ['shoes', 'buty'],
         ],
-    ],
+        categoriesHelp: [],
+        optionsHelp: [],
+        filterMode: 'or',
+    },
 ];
 
 const locations = [
@@ -27,7 +31,7 @@ const locations = [
 ];
 
 httpService.getLocations.mockResolvedValue(locations);
-httpService.getCategoriesData.mockResolvedValue(categories);
+httpService.getCategoriesData.mockResolvedValue({ categories, defaultChecked: {} });
 
 describe('MapComponent', () => {
     beforeAll(() => {

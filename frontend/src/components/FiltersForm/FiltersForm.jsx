@@ -323,7 +323,7 @@ export const FiltersForm = () => {
         );
     };
 
-    const renderFilterOptions = (filters, category) => {
+    const renderFilterOptions = category => {
         // "exclusive" (pick one) and "threshold" (pick a cumulative upper bound,
         // e.g. speed limit) are both single-select: rendered as radio buttons so
         // only one option can be active at a time.
@@ -338,21 +338,22 @@ export const FiltersForm = () => {
         // lowest real value, or relying on the existing "Clear filters" button
         // as the only way back to unset. Also needs keyboard/screen-reader
         // slider accessibility and updated frontend/e2e tests.
-        const isSingleSelect = filters[4] === 'exclusive' || filters[4] === 'threshold';
-        return filters[1].map(([name, translation]) => {
+        const { categoryKey, options, optionsHelp, filterMode } = category;
+        const isSingleSelect = filterMode === 'exclusive' || filterMode === 'threshold';
+        return options.map(([name, translation]) => {
             const tooltipData = globalThis.FEATURE_FLAGS?.CATEGORIES_HELP
-                ? filters[3].find(it => it[name])
+                ? optionsHelp.find(it => it[name])
                 : '';
             return (
-                <FilterOption key={`${category}-${name}`} htmlFor={name}>
+                <FilterOption key={`${categoryKey}-${name}`} htmlFor={name}>
                     <StyledCheckbox
                         onChange={isSingleSelect ? handleRadioChange : handleCheckboxChange}
-                        data-category={category}
+                        data-category={categoryKey}
                         type={isSingleSelect ? 'radio' : 'checkbox'}
-                        name={isSingleSelect ? category : undefined}
+                        name={isSingleSelect ? categoryKey : undefined}
                         id={name}
                         value={name}
-                        checked={Boolean(selectedFilters[category]?.includes(name))}
+                        checked={Boolean(selectedFilters[categoryKey]?.includes(name))}
                     />
                     <OptionText>{translation}</OptionText>
                     {tooltipData && (
@@ -370,19 +371,19 @@ export const FiltersForm = () => {
     // than giving each its own titled section, they're grouped into one shared
     // "Others" section as plain checkboxes labeled with the category's own name.
     // This keeps the panel compact as more true/false-style filters are added.
-    const isBooleanCategory = filtersData => filtersData[4] === 'boolean';
+    const isBooleanCategory = category => category.filterMode === 'boolean';
     const booleanCategories = categoriesData.filter(isBooleanCategory);
     const otherCategories = categoriesData.filter(f => !isBooleanCategory(f));
 
-    const renderBooleanFilterOption = filtersData => {
-        const [categoryKey, categoryName] = filtersData[0];
-        const trueOption = filtersData[1].find(([name]) => name === 'true');
+    const renderBooleanFilterOption = category => {
+        const { categoryKey, categoryName, options, optionsHelp } = category;
+        const trueOption = options.find(([name]) => name === 'true');
         if (!trueOption) {
             return null;
         }
         const [name] = trueOption;
         const tooltipData = globalThis.FEATURE_FLAGS?.CATEGORIES_HELP
-            ? filtersData[3].find(it => it[name])
+            ? optionsHelp.find(it => it[name])
             : '';
         return (
             <FilterOption key={categoryKey} htmlFor={categoryKey}>
@@ -405,21 +406,21 @@ export const FiltersForm = () => {
         );
     };
 
-    const sections = otherCategories.map(filtersData => {
-        const [categoryKey, categoryName] = filtersData[0];
+    const sections = otherCategories.map(category => {
+        const { categoryKey, categoryName, categoriesHelp, filterMode } = category;
         const sectionKey = `${categoryKey}-${categoryName}`;
         const categoryTooltip = globalThis.FEATURE_FLAGS?.CATEGORIES_HELP
-            ? filtersData[2].find(it => it[categoryKey])
+            ? categoriesHelp.find(it => it[categoryKey])
             : null;
 
         return (
             <FilterSection key={sectionKey} aria-labelledby={`filter-label-${sectionKey}`}>
                 <FilterHeader>
                     <FilterTitle id={`filter-label-${sectionKey}`}>{categoryName}</FilterTitle>
-                    {renderModeBadge(filtersData[4] ?? 'or')}
+                    {renderModeBadge(filterMode)}
                     {categoryTooltip && <FiltersTooltip text={categoryTooltip[categoryKey]} />}
                 </FilterHeader>
-                {renderFilterOptions(filtersData, categoryKey)}
+                {renderFilterOptions(category)}
             </FilterSection>
         );
     });

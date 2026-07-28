@@ -47,30 +47,24 @@ export const httpService = {
      * Fetches complete categories data including subcategories in a single request.
      * Uses the /api/categories-full endpoint to avoid waterfall requests.
      *
-     * @returns {Promise<{categories: Array, defaultChecked: Object}>} Promise resolving to
-     *   the array of category data tuples plus a map of category key to the option values
-     *   that should be pre-checked by default.
+     * @returns {Promise<{categories: Array<{categoryKey: string, categoryName: string,
+     *   options: Array<[string, string]>, categoriesHelp: Array, optionsHelp: Array,
+     *   filterMode: string}>, defaultChecked: Object}>} Promise resolving to the array of
+     *   category data plus a map of category key to the option values that should be
+     *   pre-checked by default.
      */
     getCategoriesData: async () => {
         const response = await fetch(CATEGORIES_FULL).then(res => res.json());
+        const useCategoriesHelp = Boolean(globalThis.FEATURE_FLAGS?.CATEGORIES_HELP);
 
-        // Transform to expected format: [[key, name], options, help?, optionsHelp?, filterMode]
-        const categories = response.categories.map(category => {
-            const categoryTuple = [category.key, category.name];
-            const options = category.options;
-            const filterMode = category.filter_mode ?? 'or';
-
-            if (globalThis.FEATURE_FLAGS?.CATEGORIES_HELP) {
-                return [
-                    categoryTuple,
-                    category.options_with_help ?? options,
-                    response.categories_help ?? [],
-                    category.options_help ?? [],
-                    filterMode,
-                ];
-            }
-            return [categoryTuple, options, undefined, undefined, filterMode];
-        });
+        const categories = response.categories.map(category => ({
+            categoryKey: category.key,
+            categoryName: category.name,
+            options: (useCategoriesHelp ? category.options_with_help : null) ?? category.options,
+            categoriesHelp: useCategoriesHelp ? response.categories_help ?? [] : [],
+            optionsHelp: useCategoriesHelp ? category.options_help ?? [] : [],
+            filterMode: category.filter_mode ?? 'or',
+        }));
 
         const defaultChecked = Object.fromEntries(
             response.categories
