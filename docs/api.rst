@@ -19,13 +19,23 @@ Database Module
    :undoc-members:
    :show-inheritance:
 
+Query Module
+------------
+
+Sorting, limiting, and query orchestration for location data.
+
+.. automodule:: goodmap.core
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Filtering Module
 ----------------
 
 Category filter combination logic (see :ref:`categories-filter-mode` in
 :doc:`quickstart` for the config-level guide).
 
-.. automodule:: goodmap.core
+.. automodule:: goodmap.filtering
    :members:
    :undoc-members:
    :show-inheritance:
