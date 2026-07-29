@@ -229,7 +229,7 @@ def core_pages(
             database.add_suggestion(location.model_dump())
             message = gettext("A new location has been suggested with details")
             notifier_message = f"{message}: {json_lib.dumps(suggested_location, indent=2)}"
-            attachments = [photo_attachment] if photo_attachment else None
+            attachments = frozenset({photo_attachment}) if photo_attachment else frozenset()
             notifier_function(notifier_message, attachments=attachments)
         except LocationValidationError as e:
             # NOTE: validation_errors includes input values from the location model fields:

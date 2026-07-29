@@ -18,6 +18,8 @@ import {
 } from '../../utils/dialogHelpers';
 import { ERROR_MESSAGES, FILE_SIZES, SIMPLE_SCHEMA, FULL_SCHEMA } from '../../utils/testConstants';
 import { httpService } from '../../../src/services/http/httpService';
+import { toast } from '../../../src/utils/toast';
+import { compressImageToJpeg } from '../../../src/utils/imageCompression';
 
 const renderWithProvider = component => {
     return render(<LocationProvider>{component}</LocationProvider>);
@@ -28,6 +30,12 @@ jest.mock('../../../src/services/http/httpService', () => ({
     httpService: {
         getCategoriesData: jest.fn(),
     },
+}));
+jest.mock('../../../src/utils/toast', () => ({
+    toast: { success: jest.fn(), error: jest.fn() },
+}));
+jest.mock('../../../src/utils/imageCompression', () => ({
+    compressImageToJpeg: jest.fn(),
 }));
 
 // Mock CSRF token meta tag and location schema
@@ -156,8 +164,10 @@ describe('SuggestNewPointButton', () => {
         });
     });
 
-    it('displays error message when selected file is too large', async () => {
+    it('displays error message when an oversized file cannot be compressed', async () => {
+        const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
         mockGeolocationSuccess();
+        compressImageToJpeg.mockRejectedValue(new Error('Failed to load image for compression'));
 
         renderWithProvider(<SuggestNewPointButton />);
         URL.createObjectURL = jest.fn(() => 'blob:http://test-url/');
@@ -170,7 +180,33 @@ describe('SuggestNewPointButton', () => {
         mockUploadingFileWithSizeInMB(FILE_SIZES.OVER_LIMIT_MB);
 
         await waitFor(() => {
-            expect(screen.getByText(ERROR_MESSAGES.FILE_TOO_LARGE)).toBeInTheDocument();
+            expect(toast.error).toHaveBeenCalledWith(ERROR_MESSAGES.FILE_TOO_LARGE);
+        });
+
+        consoleErrorSpy.mockRestore();
+    });
+
+    it('compresses an oversized photo and accepts it when it fits under the limit', async () => {
+        mockGeolocationSuccess();
+        const compressedFile = new File(['compressed'], 'large-file.jpg', {
+            type: 'image/jpeg',
+        });
+        Object.defineProperty(compressedFile, 'size', { value: 1024 * 1024 });
+        compressImageToJpeg.mockResolvedValue(compressedFile);
+
+        renderWithProvider(<SuggestNewPointButton />);
+        URL.createObjectURL = jest.fn(() => 'blob:http://test-url/');
+        clickSuggestButton();
+
+        await waitFor(() => {
+            expect(screen.getByRole('dialog')).toBeInTheDocument();
+        });
+
+        mockUploadingFileWithSizeInMB(FILE_SIZES.OVER_LIMIT_MB);
+
+        await waitFor(() => {
+            expect(compressImageToJpeg).toHaveBeenCalled();
+            expect(toast.error).not.toHaveBeenCalled();
         });
     });
 
@@ -185,8 +221,7 @@ describe('SuggestNewPointButton', () => {
             target: { files: [] },
         });
 
-        expect(screen.queryByText(/too large/i)).not.toBeInTheDocument();
-        expect(screen.queryByText(/error/i)).not.toBeInTheDocument();
+        expect(toast.error).not.toHaveBeenCalled();
     });
 
     it('displays validation error when user position is not available', async () => {
@@ -199,7 +234,9 @@ describe('SuggestNewPointButton', () => {
         submitForm();
 
         await waitFor(() => {
-            expect(screen.getByText(ERROR_MESSAGES.LOCATION_NOT_AVAILABLE)).toBeInTheDocument();
+            expect(toast.error).toHaveBeenCalledWith(
+                expect.stringMatching(ERROR_MESSAGES.LOCATION_NOT_AVAILABLE),
+            );
             expect(screen.getByRole('dialog')).toBeInTheDocument();
             expect(axios.post).not.toHaveBeenCalled();
         });
@@ -215,7 +252,9 @@ describe('SuggestNewPointButton', () => {
         submitForm();
 
         await waitFor(() => {
-            expect(screen.getByText(ERROR_MESSAGES.REQUIRED_FIELDS)).toBeInTheDocument();
+            expect(toast.error).toHaveBeenCalledWith(
+                expect.stringMatching(ERROR_MESSAGES.REQUIRED_FIELDS),
+            );
             expect(screen.getByRole('dialog')).toBeInTheDocument();
             expect(axios.post).not.toHaveBeenCalled();
         });
@@ -235,13 +274,37 @@ describe('SuggestNewPointButton', () => {
         submitForm();
 
         await waitFor(() => {
-            expect(screen.getByText(ERROR_MESSAGES.SUBMISSION_ERROR)).toBeInTheDocument();
+            expect(toast.error).toHaveBeenCalledWith(
+                expect.stringMatching(ERROR_MESSAGES.SUBMISSION_ERROR),
+            );
             expect(screen.getByRole('dialog')).toBeInTheDocument();
             expect(axios.post).toHaveBeenCalledTimes(1);
             expect(consoleErrorSpy).toHaveBeenCalledWith(
                 'Error suggesting new point:',
                 expect.any(Error),
             );
+        });
+
+        consoleErrorSpy.mockRestore();
+    });
+
+    it('surfaces the backend-provided error message on submission failure', async () => {
+        const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+        const backendMessage = 'Invalid photo. Allowed formats: jpeg, jpg. Max size: 5MB.';
+
+        axios.post.mockRejectedValue({ response: { data: { message: backendMessage } } });
+        mockGeolocationSuccess();
+        globalThis.LOCATION_SCHEMA = SIMPLE_SCHEMA;
+
+        renderWithProvider(<SuggestNewPointButton />);
+        await openDialog();
+
+        fillTextField(/name/i, 'Test Location');
+        submitForm();
+
+        await waitFor(() => {
+            expect(toast.error).toHaveBeenCalledWith(backendMessage);
+            expect(screen.getByRole('dialog')).toBeInTheDocument();
         });
 
         consoleErrorSpy.mockRestore();
@@ -259,7 +322,9 @@ describe('SuggestNewPointButton', () => {
         submitForm();
 
         await waitFor(() => {
-            expect(screen.getByText(ERROR_MESSAGES.SUBMISSION_SUCCESS)).toBeInTheDocument();
+            expect(toast.success).toHaveBeenCalledWith(
+                expect.stringMatching(ERROR_MESSAGES.SUBMISSION_SUCCESS),
+            );
             expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
             expect(axios.post).toHaveBeenCalledTimes(1);
         });

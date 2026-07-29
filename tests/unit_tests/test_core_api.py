@@ -748,6 +748,33 @@ def test_suggest_location_with_photo_stores_suggestion(test_app):
     assert suggestions[-1]["name"] == "Test Location With Photo"
 
 
+def test_suggest_location_without_photo_notifies_with_empty_frozenset():
+    """Regression test for a production crash: notifier plugins (e.g. platzky_sendmail)
+    call list(notification.attachments) unconditionally, so attachments must always be
+    an iterable frozenset, never None, when no photo is attached.
+
+    Engine.notify must be patched before the app is created, since notifier_function
+    captures the bound method at app-factory time.
+    """
+    with mock.patch("platzky.engine.Engine.notify") as mock_notify:
+        app = create_test_app()
+        response = api_post(
+            app,
+            "/api/suggest-new-point",
+            {
+                "uuid": "one",
+                "name": "Test Organization",
+                "type_of_place": "type",
+                "test_category": ["test"],
+                "position": [50, 50],
+            },
+        )
+
+    assert response.status_code == 200
+    _, kwargs = mock_notify.call_args
+    assert kwargs["attachments"] == frozenset()
+
+
 @pytest.mark.parametrize(
     "data,expected_status",
     [

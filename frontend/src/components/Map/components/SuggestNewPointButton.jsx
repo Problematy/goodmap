@@ -11,7 +11,6 @@ import {
     MenuItem,
     InputLabel,
     FormControl,
-    Snackbar,
     IconButton,
     Checkbox,
     ListItemText,
@@ -29,6 +28,10 @@ import { buttonStyle, getLocationAwareStyles } from '../../../styles/buttonStyle
 import { getCsrfToken } from '../../../utils/csrf';
 import { useLocation } from '../context/LocationContext';
 import { httpService } from '../../../services/http/httpService';
+import { toast } from '../../../utils/toast';
+import { compressImageToJpeg } from '../../../utils/imageCompression';
+
+const MAX_PHOTO_SIZE_BYTES = 5 * 1024 * 1024;
 
 // Map a category's options to a { key: translation } object.
 // Options come as [[key, translation], ...] or [key, ...].
@@ -75,8 +78,6 @@ export const SuggestNewPointButton = () => {
     const { t } = useTranslation();
     const { locationGranted, userPosition, requestLocationWithFeedback } = useLocation();
     const [showNewPointBox, setShowNewPointSuggestionBox] = useState(false);
-    const [snackbarOpen, setSnackbarOpen] = useState(false);
-    const [snackbarMessage, setSnackbarMessage] = useState('');
     const [photo, setPhoto] = useState(null);
     const [photoURL, setPhotoURL] = useState(null);
     const [categoryTranslations, setCategoryTranslations] = useState({
@@ -100,6 +101,9 @@ export const SuggestNewPointButton = () => {
 
     // Read location schema from global object
     const locationSchema = globalThis.LOCATION_SCHEMA || { obligatory_fields: [], categories: {} };
+    // Photo constraints come from the backend's AttachmentConfig (see goodmap.py) so the
+    // frontend never has to guess/duplicate the limit it actually enforces.
+    const maxPhotoSizeBytes = locationSchema.photo?.max_size_bytes ?? MAX_PHOTO_SIZE_BYTES;
 
     // Initialize dynamic form fields based on schema
     const initializeFormFields = () => {
@@ -132,27 +136,32 @@ export const SuggestNewPointButton = () => {
         setShowNewPointSuggestionBox(false);
     };
 
-    const handleSnackbarClose = (event, reason) => {
-        if (reason === 'clickaway') {
-            return;
-        }
-
-        setSnackbarOpen(false);
-    };
-
-    const handlePhotoUpload = event => {
+    const handlePhotoUpload = async event => {
         const file = event.target.files[0];
         if (!file) {
             return;
         }
-        const fileSizeMB = file.size / 1024 / 1024;
-        if (fileSizeMB > 5) {
-            setSnackbarMessage(t('fileTooLarge'));
-            setSnackbarOpen(true);
+
+        if (file.size <= maxPhotoSizeBytes) {
+            setPhoto(file);
+            setPhotoURL(URL.createObjectURL(file));
             return;
         }
-        setPhoto(file);
-        setPhotoURL(URL.createObjectURL(file));
+
+        // Oversized photos are usually just high-resolution camera shots, not
+        // genuinely undersizable, so try recompressing before rejecting outright.
+        try {
+            const compressed = await compressImageToJpeg(file, { maxSizeBytes: maxPhotoSizeBytes });
+            if (compressed.size > maxPhotoSizeBytes) {
+                toast.error(t('fileTooLarge'));
+                return;
+            }
+            setPhoto(compressed);
+            setPhotoURL(URL.createObjectURL(compressed));
+        } catch (error) {
+            console.error('Photo compression failed:', error);
+            toast.error(t('fileTooLarge'));
+        }
     };
 
     const handleFieldChange = fieldName => event => {
@@ -164,8 +173,7 @@ export const SuggestNewPointButton = () => {
 
         // Validate user position is available
         if (!userPosition || userPosition.lat === null || userPosition.lng === null) {
-            setSnackbarMessage(t('locationNotAvailable'));
-            setSnackbarOpen(true);
+            toast.error(t('locationNotAvailable'));
             return;
         }
 
@@ -184,8 +192,7 @@ export const SuggestNewPointButton = () => {
         });
 
         if (emptyFields.length > 0) {
-            setSnackbarMessage(t('fillRequiredFields', { fields: emptyFields.join(', ') }));
-            setSnackbarOpen(true);
+            toast.error(t('fillRequiredFields', { fields: emptyFields.join(', ') }));
             return;
         }
 
@@ -213,8 +220,7 @@ export const SuggestNewPointButton = () => {
                     'X-CSRFToken': csrfToken,
                 },
             });
-            setSnackbarMessage(t('locationSuggestedSuccess'));
-            setSnackbarOpen(true);
+            toast.success(t('locationSuggestedSuccess'));
 
             // Reset form after successful submission
             setFormFields(initializeFormFields());
@@ -225,8 +231,9 @@ export const SuggestNewPointButton = () => {
             setShowNewPointSuggestionBox(false);
         } catch (error) {
             console.error('Error suggesting new point:', error);
-            setSnackbarMessage(t('locationSuggestedError'));
-            setSnackbarOpen(true);
+            // Surface the backend's specific reason (e.g. photo format/size) when available,
+            // instead of a generic message that hides why the submission was rejected.
+            toast.error(error.response?.data?.message || t('locationSuggestedError'));
             // Dialog stays open on error so user can retry
         }
     };
@@ -396,12 +403,6 @@ export const SuggestNewPointButton = () => {
                     </DialogActions>
                 </form>
             </Dialog>
-            <Snackbar
-                open={snackbarOpen}
-                autoHideDuration={6000}
-                onClose={handleSnackbarClose}
-                message={snackbarMessage}
-            />
         </>
     );
 };
