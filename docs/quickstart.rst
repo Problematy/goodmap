@@ -178,14 +178,11 @@ right control (checkbox vs. radio) without hardcoding category names.
 Photo Uploads
 ~~~~~~~~~~~~~
 
-Suggesting a new location (``POST /api/suggest-new-point``) accepts an
-optional ``photo`` file alongside the location fields. The allowed formats
-and maximum size come from platzky's own ``ATTACHMENT:`` config key (see
+Users can attach a photo when suggesting a new location. By default, Goodmap
+accepts JPEG photos up to 5 MiB. To allow other formats or change the size
+limit, set the ``ATTACHMENT:`` key in your configuration file (see
 `platzky's AttachmentConfig
-<https://platzky.readthedocs.io/en/latest/api.html#platzky.config.AttachmentConfig>`_),
-which Goodmap defaults to JPEG-only, 5 MiB - a safe default for a field the
-frontend always previews as an image and auto-compresses to JPEG when
-oversized:
+<https://platzky.readthedocs.io/en/latest/api.html#platzky.config.AttachmentConfig>`_):
 
 .. code-block:: yaml
 
@@ -194,48 +191,14 @@ oversized:
      allowed_extensions: ["jpg", "jpeg", "png"]
      max_size: 8388608  # 8 MiB
 
-Omit ``ATTACHMENT:`` entirely to keep the JPEG-only 5 MiB default.
+Omit ``ATTACHMENT:`` to keep the default (JPEG only, 5 MiB).
 
-These constraints are exposed to the frontend as ``photo`` in the
-``LOCATION_SCHEMA`` object rendered on the ``/map`` page
-(``allowed_extensions``, ``allowed_mime_types``, ``max_size_bytes``), so a
-custom frontend can read the live limits instead of hardcoding its own copy.
-
-Client-side behavior
-^^^^^^^^^^^^^^^^^^^^^
-
-The bundled frontend checks format and size separately, and never changes a
-photo without telling the user:
-
-1. A photo that already matches the allowed mime type and size is used as-is,
-   silently.
-2. A photo with an unsupported mime type (e.g. PNG when only JPEG is allowed)
-   is rejected outright, with an inline error naming the allowed formats.
-   It is **not** auto-converted - silently swapping a user's PNG for a
-   re-encoded JPEG behind their back would be surprising, so they have to
-   explicitly pick a different file.
-3. A photo with an allowed mime type that's simply too large is re-encoded as
-   JPEG client-side: scaled down to fit 1920px on its longest side, then
-   re-compressed at progressively lower quality (from 0.9 down to 0.4) until
-   it fits under the size limit. This is announced up front, before
-   compression starts (a large source photo can take a visible moment to
-   decode and re-encode) - the upload button shows a spinner and is disabled
-   while it runs, and the inline warning is updated once it finishes to
-   confirm the photo was compressed and may have lost some quality.
-4. If the recompressed photo is *still* too large, or the file can't be
-   decoded as an image at all, the user sees a rejection instead.
-
-Server-side validation
-^^^^^^^^^^^^^^^^^^^^^^^
-
-The backend independently validates the uploaded photo against the same
-``photo_attachment_config`` regardless of what the client already checked -
-a request with a disallowed mime type or a file over the size limit is
-rejected with a 400 response, e.g.:
-
-.. code-block:: json
-
-   {"message": "Invalid photo. Allowed formats: jpeg, jpg. Max size: 5MiB."}
+A photo in an unsupported format is rejected with an error message asking the
+user to pick a different file. A photo in an allowed format that exceeds the
+size limit is automatically compressed in the browser before upload; the user
+is warned that this may reduce image quality. If the photo still exceeds the
+limit after compression, it is rejected. The server enforces the same limits
+on upload, independently of the browser-side checks.
 
 .. _data-model-visible_data:
 
