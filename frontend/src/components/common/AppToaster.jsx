@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import toast, { ToastBar, Toaster } from 'react-hot-toast';
 import { IconButton } from '@mui/material';
 import Close from '@mui/icons-material/Close';
@@ -14,12 +15,21 @@ import { useMaxToasts } from '../../utils/hooks/useMaxToasts';
 export const AppToaster = () => {
     useMaxToasts();
 
-    return (
+    // Portalled to document.body (like MUI's Dialog) rather than rendered in place:
+    // this component lives deep inside the map's component tree, where an ancestor
+    // (e.g. a Leaflet pane) can establish its own stacking context and trap the
+    // toast's z-index there, so it loses to the Dialog's portal-level stacking no
+    // matter how high the z-index is set.
+    return createPortal(
         <Toaster
             position="top-center"
             reverseOrder={false}
             gutter={8}
-            containerStyle={{ zIndex: 99999999, top: 120 }}
+            // Centered on the viewport rather than anchored to a fixed pixel offset from
+            // the top: goodmap is embedded in third-party sites with varying header
+            // heights, so an assumed offset (e.g. "top: 120") can land the toast behind
+            // the host page's own header instead of over the dialog it relates to.
+            containerStyle={{ zIndex: 99999999, top: '50%', transform: 'translateY(-50%)' }}
             toastOptions={{
                 duration: 8000,
                 style: {
@@ -43,6 +53,7 @@ export const AppToaster = () => {
                     )}
                 </ToastBar>
             )}
-        </Toaster>
+        </Toaster>,
+        document.body,
     );
 };

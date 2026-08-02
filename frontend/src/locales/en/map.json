@@ -7,6 +7,7 @@
     "suggestNewPointDialogTitle": "Suggest a New Point",
     "yourPosition": "Your Position",
     "fileTooLarge": "The selected file is too large. Please select a file smaller than 5MB.",
+    "photoProcessingFailed": "Couldn't process this photo. Please try a different file.",
     "locationNotAvailable": "Location not available. Please enable location services and try again.",
     "fillRequiredFields": "Please fill in required fields: {{fields}}",
     "locationSuggestedSuccess": "Location suggested successfully!",

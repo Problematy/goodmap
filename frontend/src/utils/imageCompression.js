@@ -46,7 +46,12 @@ export const compressImageToJpeg = async (file, { maxSizeBytes, maxDimension = 1
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
-    canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+    const context = canvas.getContext('2d');
+    // JPEG has no alpha channel; without this, transparent PNG areas default to
+    // black (canvas pixels start as rgba(0,0,0,0), and the alpha just gets dropped).
+    context.fillStyle = '#fff';
+    context.fillRect(0, 0, width, height);
+    context.drawImage(img, 0, 0, width, height);
 
     let quality = 0.9;
     let blob = await canvasToBlob(canvas, quality);

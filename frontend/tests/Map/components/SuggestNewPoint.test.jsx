@@ -47,24 +47,30 @@ beforeEach(() => {
 
     globalThis.LOCATION_SCHEMA = FULL_SCHEMA;
 
-    // Mock categories data with translations matching FULL_SCHEMA structure
-    httpService.getCategoriesData.mockResolvedValue([
-        [
-            ['accessible_by', 'Accessible by'],
-            [
-                ['bikes', 'Bikes'],
-                ['cars', 'Cars'],
-                ['pedestrians', 'Pedestrians'],
-            ],
+    // Mock categories data matching httpService.getCategoriesData()'s real
+    // { categories: [{ categoryKey, categoryName, options }] } shape.
+    httpService.getCategoriesData.mockResolvedValue({
+        categories: [
+            {
+                categoryKey: 'accessible_by',
+                categoryName: 'Accessible by',
+                options: [
+                    ['bikes', 'Bikes'],
+                    ['cars', 'Cars'],
+                    ['pedestrians', 'Pedestrians'],
+                ],
+            },
+            {
+                categoryKey: 'type_of_place',
+                categoryName: 'Type of place',
+                options: [
+                    ['big bridge', 'Big bridge'],
+                    ['small bridge', 'Small bridge'],
+                ],
+            },
         ],
-        [
-            ['type_of_place', 'Type of place'],
-            [
-                ['big bridge', 'Big bridge'],
-                ['small bridge', 'Small bridge'],
-            ],
-        ],
-    ]);
+        defaultChecked: {},
+    });
 });
 
 afterEach(() => {
@@ -164,7 +170,7 @@ describe('SuggestNewPointButton', () => {
         });
     });
 
-    it('displays error message when an oversized file cannot be compressed', async () => {
+    it('displays error message when a file cannot be processed as a photo', async () => {
         const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
         mockGeolocationSuccess();
         compressImageToJpeg.mockRejectedValue(new Error('Failed to load image for compression'));
@@ -180,10 +186,35 @@ describe('SuggestNewPointButton', () => {
         mockUploadingFileWithSizeInMB(FILE_SIZES.OVER_LIMIT_MB);
 
         await waitFor(() => {
-            expect(toast.error).toHaveBeenCalledWith(ERROR_MESSAGES.FILE_TOO_LARGE);
+            expect(screen.getByRole('alert')).toHaveTextContent(
+                ERROR_MESSAGES.PHOTO_PROCESSING_FAILED,
+            );
         });
 
         consoleErrorSpy.mockRestore();
+    });
+
+    it('rejects a compressed photo that still exceeds the size limit', async () => {
+        mockGeolocationSuccess();
+        const stillTooLarge = new File(['x'], 'large-file.jpg', { type: 'image/jpeg' });
+        Object.defineProperty(stillTooLarge, 'size', {
+            value: FILE_SIZES.OVER_LIMIT_MB * 1024 * 1024,
+        });
+        compressImageToJpeg.mockResolvedValue(stillTooLarge);
+
+        renderWithProvider(<SuggestNewPointButton />);
+        URL.createObjectURL = jest.fn(() => 'blob:http://test-url/');
+        clickSuggestButton();
+
+        await waitFor(() => {
+            expect(screen.getByRole('dialog')).toBeInTheDocument();
+        });
+
+        mockUploadingFileWithSizeInMB(FILE_SIZES.OVER_LIMIT_MB);
+
+        await waitFor(() => {
+            expect(screen.getByRole('alert')).toHaveTextContent(ERROR_MESSAGES.FILE_TOO_LARGE);
+        });
     });
 
     it('compresses an oversized photo and accepts it when it fits under the limit', async () => {
@@ -206,7 +237,7 @@ describe('SuggestNewPointButton', () => {
 
         await waitFor(() => {
             expect(compressImageToJpeg).toHaveBeenCalled();
-            expect(toast.error).not.toHaveBeenCalled();
+            expect(screen.queryByRole('alert')).not.toBeInTheDocument();
         });
     });
 
@@ -221,7 +252,7 @@ describe('SuggestNewPointButton', () => {
             target: { files: [] },
         });
 
-        expect(toast.error).not.toHaveBeenCalled();
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     });
 
     it('displays validation error when user position is not available', async () => {
@@ -234,8 +265,8 @@ describe('SuggestNewPointButton', () => {
         submitForm();
 
         await waitFor(() => {
-            expect(toast.error).toHaveBeenCalledWith(
-                expect.stringMatching(ERROR_MESSAGES.LOCATION_NOT_AVAILABLE),
+            expect(screen.getByRole('alert')).toHaveTextContent(
+                ERROR_MESSAGES.LOCATION_NOT_AVAILABLE,
             );
             expect(screen.getByRole('dialog')).toBeInTheDocument();
             expect(axios.post).not.toHaveBeenCalled();
@@ -252,9 +283,7 @@ describe('SuggestNewPointButton', () => {
         submitForm();
 
         await waitFor(() => {
-            expect(toast.error).toHaveBeenCalledWith(
-                expect.stringMatching(ERROR_MESSAGES.REQUIRED_FIELDS),
-            );
+            expect(screen.getByRole('alert')).toHaveTextContent(ERROR_MESSAGES.REQUIRED_FIELDS);
             expect(screen.getByRole('dialog')).toBeInTheDocument();
             expect(axios.post).not.toHaveBeenCalled();
         });
@@ -274,9 +303,7 @@ describe('SuggestNewPointButton', () => {
         submitForm();
 
         await waitFor(() => {
-            expect(toast.error).toHaveBeenCalledWith(
-                expect.stringMatching(ERROR_MESSAGES.SUBMISSION_ERROR),
-            );
+            expect(screen.getByRole('alert')).toHaveTextContent(ERROR_MESSAGES.SUBMISSION_ERROR);
             expect(screen.getByRole('dialog')).toBeInTheDocument();
             expect(axios.post).toHaveBeenCalledTimes(1);
             expect(consoleErrorSpy).toHaveBeenCalledWith(
@@ -303,7 +330,7 @@ describe('SuggestNewPointButton', () => {
         submitForm();
 
         await waitFor(() => {
-            expect(toast.error).toHaveBeenCalledWith(backendMessage);
+            expect(screen.getByRole('alert')).toHaveTextContent(backendMessage);
             expect(screen.getByRole('dialog')).toBeInTheDocument();
         });
 

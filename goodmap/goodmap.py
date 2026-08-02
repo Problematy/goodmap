@@ -305,6 +305,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
             "reported_issue_types": reported_issue_types,
             "photo": {
                 "allowed_extensions": sorted(photo_attachment_config.allowed_extensions or []),
+                "allowed_mime_types": sorted(photo_attachment_config.allowed_mime_types or []),
                 "max_size_bytes": photo_attachment_config.max_size,
             },
         }

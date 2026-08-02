@@ -7,8 +7,8 @@
  */
 export const ERROR_MESSAGES = {
     LOCATION_SERVICES: 'Please enable location services to suggest a new point.',
-    FILE_TOO_LARGE:
-        'The selected file is too large. Please select a file smaller than 5MB.',
+    FILE_TOO_LARGE: 'The selected file is too large. Please select a file smaller than 5MB.',
+    PHOTO_PROCESSING_FAILED: "Couldn't process this photo. Please try a different file.",
     LOCATION_NOT_AVAILABLE: /Location not available.*enable location services/i,
     REQUIRED_FIELDS: /Please fill in required fields/i,
     SUBMISSION_ERROR: /Error suggesting location/i,
@@ -33,11 +33,21 @@ export const FILE_SIZES = {
 };
 
 /**
+ * Photo constraints mirroring the backend's AttachmentConfig default (see goodmap.py)
+ */
+export const PHOTO_SCHEMA = {
+    allowed_extensions: ['jpeg', 'jpg'],
+    allowed_mime_types: ['image/jpeg'],
+    max_size_bytes: FILE_SIZES.MAX_MB * 1024 * 1024,
+};
+
+/**
  * Simple location schema with minimal fields for testing
  */
 export const SIMPLE_SCHEMA = {
     obligatory_fields: [['name', 'str']],
     categories: {},
+    photo: PHOTO_SCHEMA,
 };
 
 /**
@@ -53,4 +63,5 @@ export const FULL_SCHEMA = {
         accessible_by: ['bikes', 'cars', 'pedestrians'],
         type_of_place: ['big bridge', 'small bridge'],
     },
+    photo: PHOTO_SCHEMA,
 };

@@ -16,6 +16,7 @@ import {
     ListItemText,
     OutlinedInput,
     Tooltip,
+    Alert,
 } from '@mui/material';
 
 import AddAPhotoIcon from '@mui/icons-material/AddAPhoto';
@@ -31,8 +32,6 @@ import { httpService } from '../../../services/http/httpService';
 import { toast } from '../../../utils/toast';
 import { compressImageToJpeg } from '../../../utils/imageCompression';
 
-const MAX_PHOTO_SIZE_BYTES = 5 * 1024 * 1024;
-
 // Map a category's options to a { key: translation } object.
 // Options come as [[key, translation], ...] or [key, ...].
 const mapCategoryOptions = categoryOptions => {
@@ -47,20 +46,21 @@ const mapCategoryOptions = categoryOptions => {
     return optionMap;
 };
 
-// Build { fieldNames, options } translation maps from the categories API shape.
+// Build { fieldNames, options } translation maps from httpService.getCategoriesData()'s
+// { categories: [{ categoryKey, categoryName, options }, ...] } shape.
 const buildCategoryTranslations = categoriesData => {
     const fieldNames = {};
     const options = {};
 
-    categoriesData.forEach(categoryData => {
-        const [categoryKey, categoryName] = categoryData[0];
-        fieldNames[categoryKey] = categoryName;
+    (categoriesData.categories || []).forEach(
+        ({ categoryKey, categoryName, options: categoryOptions }) => {
+            fieldNames[categoryKey] = categoryName;
 
-        const categoryOptions = categoryData[1];
-        if (categoryOptions && categoryOptions.length > 0) {
-            options[categoryKey] = mapCategoryOptions(categoryOptions);
-        }
-    });
+            if (categoryOptions && categoryOptions.length > 0) {
+                options[categoryKey] = mapCategoryOptions(categoryOptions);
+            }
+        },
+    );
 
     return { fieldNames, options };
 };
@@ -80,6 +80,10 @@ export const SuggestNewPointButton = () => {
     const [showNewPointBox, setShowNewPointSuggestionBox] = useState(false);
     const [photo, setPhoto] = useState(null);
     const [photoURL, setPhotoURL] = useState(null);
+    // Rendered inline in the dialog rather than as a toast: this dialog sits inside the
+    // map's component tree, where an ancestor (e.g. a Leaflet pane) can trap a toast's
+    // z-index in its own stacking context, leaving it hidden behind the dialog itself.
+    const [formError, setFormError] = useState(null);
     const [categoryTranslations, setCategoryTranslations] = useState({
         fieldNames: {},
         options: {},
@@ -99,11 +103,15 @@ export const SuggestNewPointButton = () => {
         fetchCategories();
     }, []);
 
-    // Read location schema from global object
-    const locationSchema = globalThis.LOCATION_SCHEMA || { obligatory_fields: [], categories: {} };
-    // Photo constraints come from the backend's AttachmentConfig (see goodmap.py) so the
-    // frontend never has to guess/duplicate the limit it actually enforces.
-    const maxPhotoSizeBytes = locationSchema.photo?.max_size_bytes ?? MAX_PHOTO_SIZE_BYTES;
+    // Read location schema from global object. `photo` mirrors the backend's AttachmentConfig
+    // (see goodmap.py) so the frontend never has to guess/duplicate the limits it enforces.
+    const locationSchema = globalThis.LOCATION_SCHEMA || {
+        obligatory_fields: [],
+        categories: {},
+        photo: { allowed_mime_types: [], max_size_bytes: 0 },
+    };
+    const { allowed_mime_types: allowedPhotoMimeTypes, max_size_bytes: maxPhotoSizeBytes } =
+        locationSchema.photo;
 
     // Initialize dynamic form fields based on schema
     const initializeFormFields = () => {
@@ -125,7 +133,10 @@ export const SuggestNewPointButton = () => {
     const [formFields, setFormFields] = useState(initializeFormFields);
 
     const handleNewPointButton = () => {
-        requestLocationWithFeedback(() => setShowNewPointSuggestionBox(true));
+        requestLocationWithFeedback(() => {
+            setFormError(null);
+            setShowNewPointSuggestionBox(true);
+        });
     };
 
     const handleLocateMe = () => {
@@ -134,6 +145,7 @@ export const SuggestNewPointButton = () => {
 
     const handleCloseNewPointBox = () => {
         setShowNewPointSuggestionBox(false);
+        setFormError(null);
     };
 
     const handlePhotoUpload = async event => {
@@ -142,25 +154,28 @@ export const SuggestNewPointButton = () => {
             return;
         }
 
-        if (file.size <= maxPhotoSizeBytes) {
+        if (allowedPhotoMimeTypes.includes(file.type) && file.size <= maxPhotoSizeBytes) {
+            setFormError(null);
             setPhoto(file);
             setPhotoURL(URL.createObjectURL(file));
             return;
         }
 
-        // Oversized photos are usually just high-resolution camera shots, not
-        // genuinely undersizable, so try recompressing before rejecting outright.
+        // Anything else (wrong format, oversized, or both) gets normalized to what the
+        // backend accepts: oversized photos are usually just high-resolution camera shots
+        // rather than genuinely undersizable, and re-encoding also fixes the format.
         try {
             const compressed = await compressImageToJpeg(file, { maxSizeBytes: maxPhotoSizeBytes });
             if (compressed.size > maxPhotoSizeBytes) {
-                toast.error(t('fileTooLarge'));
+                setFormError(t('fileTooLarge'));
                 return;
             }
+            setFormError(null);
             setPhoto(compressed);
             setPhotoURL(URL.createObjectURL(compressed));
         } catch (error) {
-            console.error('Photo compression failed:', error);
-            toast.error(t('fileTooLarge'));
+            console.error('Photo processing failed:', error);
+            setFormError(t('photoProcessingFailed'));
         }
     };
 
@@ -170,10 +185,11 @@ export const SuggestNewPointButton = () => {
 
     const handleConfirmNewPoint = async event => {
         event.preventDefault();
+        setFormError(null);
 
         // Validate user position is available
         if (!userPosition || userPosition.lat === null || userPosition.lng === null) {
-            toast.error(t('locationNotAvailable'));
+            setFormError(t('locationNotAvailable'));
             return;
         }
 
@@ -192,7 +208,7 @@ export const SuggestNewPointButton = () => {
         });
 
         if (emptyFields.length > 0) {
-            toast.error(t('fillRequiredFields', { fields: emptyFields.join(', ') }));
+            setFormError(t('fillRequiredFields', { fields: emptyFields.join(', ') }));
             return;
         }
 
@@ -233,7 +249,7 @@ export const SuggestNewPointButton = () => {
             console.error('Error suggesting new point:', error);
             // Surface the backend's specific reason (e.g. photo format/size) when available,
             // instead of a generic message that hides why the submission was rejected.
-            toast.error(error.response?.data?.message || t('locationSuggestedError'));
+            setFormError(error.response?.data?.message || t('locationSuggestedError'));
             // Dialog stays open on error so user can retry
         }
     };
@@ -353,6 +369,11 @@ export const SuggestNewPointButton = () => {
                 <DialogTitle>{t('suggestNewPointDialogTitle')}</DialogTitle>
                 <form onSubmit={handleConfirmNewPoint}>
                     <DialogContent>
+                        {formError && (
+                            <Alert severity="error" sx={{ mb: 2 }}>
+                                {formError}
+                            </Alert>
+                        )}
                         <Box display="flex" alignItems="center" gap={2}>
                             <TextField
                                 label={t('yourPosition')}
