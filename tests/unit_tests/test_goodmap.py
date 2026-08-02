@@ -169,6 +169,39 @@ def test_index_route_location_schema_includes_photo_constraints():
     assert '"allowed_extensions":["jpeg","jpg"]' in response_text
 
 
+def test_index_route_location_schema_respects_attachment_config_override():
+    """A deployment can override the default JPEG-only 5MiB photo constraints via
+    ATTACHMENT: in its YAML config - goodmap must read config.attachment (platzky's
+    own config field) rather than hardcoding its own AttachmentConfig.
+    """
+    config = GoodmapConfig(
+        APP_NAME="test_app",
+        SECRET_KEY="test_secret",
+        USE_WWW=False,
+        BLOG_PREFIX="/blog",
+        DB=JsonDbConfig(
+            DATA={"site_content": {"pages": []}, "categories": {}},
+            TYPE="json",
+        ),
+        ATTACHMENT={
+            "allowed_mime_types": ["image/jpeg", "image/png"],
+            "allowed_extensions": ["jpg", "jpeg", "png"],
+            "max_size": 8 * 1024 * 1024,
+        },
+    )
+    app = goodmap.create_app_from_config(config)
+    app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
+    client = app.test_client()
+
+    response = client.get("/map")
+    assert response.status_code == 200
+
+    response_text = response.data.decode("utf-8")
+    assert '"max_size_bytes":8388608' in response_text
+    assert '"allowed_mime_types":["image/jpeg","image/png"]' in response_text
+    assert '"allowed_extensions":["jpeg","jpg","png"]' in response_text
+
+
 def test_index_route_location_schema_with_lazy_loading():
     """Test that location_schema includes obligatory_fields when USE_LAZY_LOADING is enabled"""
     config = GoodmapConfig(

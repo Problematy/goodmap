@@ -180,21 +180,21 @@ Photo Uploads
 
 Suggesting a new location (``POST /api/suggest-new-point``) accepts an
 optional ``photo`` file alongside the location fields. The allowed formats
-and maximum size are defined once, in code, and shared with the frontend so
-the two can never drift apart:
+and maximum size come from platzky's own ``ATTACHMENT:`` config key (see
+`platzky's AttachmentConfig
+<https://platzky.readthedocs.io/en/latest/api.html#platzky.config.AttachmentConfig>`_),
+which Goodmap defaults to JPEG-only, 5 MiB - a safe default for a field the
+frontend always previews as an image and auto-compresses to JPEG when
+oversized:
 
-.. code-block:: python
+.. code-block:: yaml
 
-   # goodmap/goodmap.py
-   photo_attachment_config = AttachmentConfig(
-       allowed_mime_types=frozenset({"image/jpeg"}),
-       allowed_extensions=frozenset({"jpg", "jpeg"}),
-       max_size=5 * 1024 * 1024,  # 5 MiB
-   )
+   ATTACHMENT:
+     allowed_mime_types: ["image/jpeg", "image/png"]
+     allowed_extensions: ["jpg", "jpeg", "png"]
+     max_size: 8388608  # 8 MiB
 
-This is not currently exposed as a YAML config option - to change the
-allowed formats or size limit, edit ``photo_attachment_config`` directly in
-``goodmap.py``.
+Omit ``ATTACHMENT:`` entirely to keep the JPEG-only 5 MiB default.
 
 These constraints are exposed to the frontend as ``photo`` in the
 ``LOCATION_SCHEMA`` object rendered on the ``/map`` page

@@ -10,7 +10,7 @@ from flask import Blueprint, redirect, render_template, session
 from flask_babel import gettext
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from platzky import platzky
-from platzky.config import AttachmentConfig, languages_dict
+from platzky.config import languages_dict
 from platzky.models import CmsModule
 from platzky.plugin.content_transformer import ContentTransformerPluginBase
 from platzky.shortcodes import Shortcode
@@ -228,13 +228,10 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
 
     CSRFProtect(app)
 
-    # JPEG-only: universal browser/device support, good compression for location photos,
-    # no transparency needed. PNG/WebP can be added if user demand warrants it.
-    photo_attachment_config = AttachmentConfig(
-        allowed_mime_types=frozenset({"image/jpeg"}),
-        allowed_extensions=frozenset({"jpg", "jpeg"}),
-        max_size=5 * 1024 * 1024,  # 5 MiB - reasonable for location photos
-    )
+    # Sourced from config.attachment (YAML: ATTACHMENT:) rather than hardcoded here, so
+    # deployments can override allowed formats/size - see GoodmapConfig.attachment for
+    # the JPEG-only default this falls back to when unset.
+    photo_attachment_config = config.attachment
 
     shortcodes: dict[str, Shortcode] = {}
     for plugin in app.loaded_plugins:
