@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     Button,
     Box,
@@ -17,6 +17,7 @@ import {
     OutlinedInput,
     Tooltip,
     Alert,
+    CircularProgress,
 } from '@mui/material';
 
 import AddAPhotoIcon from '@mui/icons-material/AddAPhoto';
@@ -89,6 +90,24 @@ export const SuggestNewPointButton = () => {
     const [formNotice, setFormNotice] = useState(null);
     const showError = message => setFormNotice({ severity: 'error', message });
     const showWarning = message => setFormNotice({ severity: 'warning', message });
+    // The Dialog's Paper (not DialogContent) is what actually scrolls once a photo
+    // preview + all the dynamic fields push content past viewport height: DialogContent
+    // has flex:1 1 auto but, being height:auto itself with no definite cross-size to
+    // shrink against, it just grows to its full content height instead of clipping -
+    // Paper is the ancestor with the real maxHeight + overflow-y:auto constraint, so
+    // it's Paper's scrollTop that ends up non-zero. The alert renders at the top of that
+    // scroll area, so without this it can appear entirely off-screen above whatever the
+    // user had scrolled to - looking exactly like the original "submit does nothing" bug,
+    // just caused by scroll position this time.
+    const dialogPaperRef = useRef(null);
+    useEffect(() => {
+        if (formNotice) {
+            dialogPaperRef.current?.scrollTo?.({ top: 0, behavior: 'smooth' });
+        }
+    }, [formNotice]);
+    // True while an oversized photo is being recompressed - shown as a spinner on the
+    // upload button, since decoding a very large source image can take a visible moment.
+    const [isCompressingPhoto, setIsCompressingPhoto] = useState(false);
     const [categoryTranslations, setCategoryTranslations] = useState({
         fieldNames: {},
         options: {},
@@ -188,11 +207,15 @@ export const SuggestNewPointButton = () => {
         }
 
         // Right format, just oversized: compress automatically (most "oversized" photos
-        // are just high-resolution camera shots), but always tell the user it happened -
-        // a silently-shrunk photo could otherwise be confusing if the quality looks off.
+        // are just high-resolution camera shots). The warning is shown *before* compressing
+        // starts, not after - the user should see this is happening, not learn about it
+        // retroactively once it's already done (compressing a large source photo can take
+        // a visible moment, during which the button shows a spinner).
+        const maxSizeMiB = Math.floor(maxPhotoSizeBytes / 1024 / 1024);
+        showWarning(t('photoWillBeCompressed', { maxSizeMiB }));
+        setIsCompressingPhoto(true);
         try {
             const compressed = await compressImageToJpeg(file, { maxSizeBytes: maxPhotoSizeBytes });
-            const maxSizeMiB = Math.floor(maxPhotoSizeBytes / 1024 / 1024);
             if (compressed.size > maxPhotoSizeBytes) {
                 showError(t('fileTooLarge', { maxSizeMiB }));
                 return;
@@ -202,6 +225,8 @@ export const SuggestNewPointButton = () => {
         } catch (error) {
             console.error('Photo processing failed:', error);
             showError(t('photoProcessingFailed'));
+        } finally {
+            setIsCompressingPhoto(false);
         }
     };
 
@@ -391,7 +416,11 @@ export const SuggestNewPointButton = () => {
                 </Button>
             </Tooltip>
 
-            <Dialog open={showNewPointBox} onClose={handleCloseNewPointBox}>
+            <Dialog
+                open={showNewPointBox}
+                onClose={handleCloseNewPointBox}
+                PaperProps={{ ref: dialogPaperRef }}
+            >
                 <DialogTitle>{t('suggestNewPointDialogTitle')}</DialogTitle>
                 <form onSubmit={handleConfirmNewPoint}>
                     <DialogContent>
@@ -414,13 +443,18 @@ export const SuggestNewPointButton = () => {
                                 <RefreshIcon />
                             </IconButton>
                         </Box>
-                        <Button variant="contained" component="label">
-                            <AddAPhotoIcon />
+                        <Button variant="contained" component="label" disabled={isCompressingPhoto}>
+                            {isCompressingPhoto ? (
+                                <CircularProgress size={24} color="inherit" />
+                            ) : (
+                                <AddAPhotoIcon />
+                            )}
                             <input
                                 type="file"
                                 hidden
                                 accept={photoInputAccept}
                                 onChange={handlePhotoUpload}
+                                disabled={isCompressingPhoto}
                                 data-testid="photo-of-point"
                             />
                         </Button>

@@ -264,6 +264,47 @@ describe('SuggestNewPointButton', () => {
         });
     });
 
+    it('shows a heads-up and disables the upload button while compression is in flight', async () => {
+        mockGeolocationSuccess();
+        let resolveCompression;
+        compressImageToJpeg.mockImplementation(
+            () =>
+                new Promise(resolve => {
+                    resolveCompression = resolve;
+                }),
+        );
+
+        renderWithProvider(<SuggestNewPointButton />);
+        URL.createObjectURL = jest.fn(() => 'blob:http://test-url/');
+        clickSuggestButton();
+
+        await waitFor(() => {
+            expect(screen.getByRole('dialog')).toBeInTheDocument();
+        });
+
+        mockUploadingFileWithSizeInMB(FILE_SIZES.OVER_LIMIT_MB);
+
+        // Compression hasn't resolved yet - the user should already see the heads-up
+        // and a disabled/spinning upload button, not silence.
+        await waitFor(() => {
+            expect(screen.getByRole('alert')).toHaveTextContent(
+                ERROR_MESSAGES.PHOTO_WILL_BE_COMPRESSED,
+            );
+            expect(screen.getByRole('progressbar')).toBeInTheDocument();
+            expect(screen.getByTestId('photo-of-point')).toBeDisabled();
+        });
+
+        const compressedFile = new File(['compressed'], 'large-file.jpg', { type: 'image/jpeg' });
+        Object.defineProperty(compressedFile, 'size', { value: 1024 * 1024 });
+        resolveCompression(compressedFile);
+
+        await waitFor(() => {
+            expect(screen.getByRole('alert')).toHaveTextContent(ERROR_MESSAGES.PHOTO_COMPRESSED);
+            expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+            expect(screen.getByTestId('photo-of-point')).not.toBeDisabled();
+        });
+    });
+
     it('clears the error banner when a valid photo replaces a rejected one', async () => {
         mockGeolocationSuccess();
 
@@ -345,6 +386,32 @@ describe('SuggestNewPointButton', () => {
             expect(screen.getByRole('dialog')).toBeInTheDocument();
             expect(axios.post).not.toHaveBeenCalled();
         });
+    });
+
+    it('scrolls the dialog content back to top when a notice appears', async () => {
+        // jsdom doesn't implement Element.scrollTo, so it must be mocked to observe the call.
+        const scrollTo = jest.fn();
+        HTMLElement.prototype.scrollTo = scrollTo;
+
+        axios.post.mockResolvedValue({});
+        mockGeolocationSuccess();
+
+        renderWithProvider(<SuggestNewPointButton />);
+        await openDialog();
+
+        // Regression: the dialog's Paper (not DialogContent) is what actually scrolls
+        // once a photo preview and all the dynamic fields push content past viewport
+        // height. Without an explicit scroll, an alert appearing at the top can render
+        // entirely off-screen above wherever the user was already scrolled to -
+        // indistinguishable from "submit does nothing".
+        submitForm();
+
+        await waitFor(() => {
+            expect(screen.getByRole('alert')).toHaveTextContent(ERROR_MESSAGES.REQUIRED_FIELDS);
+            expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' });
+        });
+
+        delete HTMLElement.prototype.scrollTo;
     });
 
     it('clears the error banner when the dialog is reopened after a validation failure', async () => {

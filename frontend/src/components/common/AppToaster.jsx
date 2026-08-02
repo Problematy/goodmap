@@ -28,7 +28,19 @@ export const AppToaster = () => {
             // Centered on the viewport rather than pinned to the top: the success
             // message fires right as the dialog closes, and a small top-corner toast
             // is easy to miss against a full-screen map background.
-            containerStyle={{ zIndex: 99999999, top: '50%', transform: 'translateY(-50%)' }}
+            //
+            // `bottom` must be overridden to 'auto' too: react-hot-toast's container
+            // defaults to `{ top: 16, bottom: 16, ... }`, and with both `top` and
+            // `bottom` active the browser sizes the container's height by spanning
+            // between them (leaving it anchored to the lower half of the viewport)
+            // rather than shrinking it to the toast's actual content height - which
+            // throws off translateY(-50%)'s centering math.
+            containerStyle={{
+                zIndex: 99999999,
+                top: '50%',
+                bottom: 'auto',
+                transform: 'translateY(-50%)',
+            }}
             toastOptions={{
                 duration: 8000,
                 style: {

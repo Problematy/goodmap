@@ -217,9 +217,11 @@ photo without telling the user:
 3. A photo with an allowed mime type that's simply too large is re-encoded as
    JPEG client-side: scaled down to fit 1920px on its longest side, then
    re-compressed at progressively lower quality (from 0.9 down to 0.4) until
-   it fits under the size limit. If this succeeds, the user still sees an
-   inline warning that their photo was compressed and may have lost some
-   quality - compression happens automatically, but never silently.
+   it fits under the size limit. This is announced up front, before
+   compression starts (a large source photo can take a visible moment to
+   decode and re-encode) - the upload button shows a spinner and is disabled
+   while it runs, and the inline warning is updated once it finishes to
+   confirm the photo was compressed and may have lost some quality.
 4. If the recompressed photo is *still* too large, or the file can't be
    decoded as an image at all, the user sees a rejection instead.
 
