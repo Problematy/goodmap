@@ -25,10 +25,9 @@ export const AppToaster = () => {
             position="top-center"
             reverseOrder={false}
             gutter={8}
-            // Centered on the viewport rather than anchored to a fixed pixel offset from
-            // the top: goodmap is embedded in third-party sites with varying header
-            // heights, so an assumed offset (e.g. "top: 120") can land the toast behind
-            // the host page's own header instead of over the dialog it relates to.
+            // Centered on the viewport rather than pinned to the top: the success
+            // message fires right as the dialog closes, and a small top-corner toast
+            // is easy to miss against a full-screen map background.
             containerStyle={{ zIndex: 99999999, top: '50%', transform: 'translateY(-50%)' }}
             toastOptions={{
                 duration: 8000,

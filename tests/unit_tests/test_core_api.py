@@ -620,6 +620,36 @@ def test_suggest_new_location_with_multipart_form_data(test_app):
     assert response.status_code == 200
 
 
+@pytest.mark.parametrize("scalar_looking_value", ["true", "false", "10", "null"])
+def test_suggest_new_location_keeps_json_scalar_looking_field_as_string(
+    test_app, scalar_looking_value
+):
+    """Regression test: a str-typed field whose value happens to look like a JSON
+    scalar (e.g. a category literally named "true" or "10") must not be silently
+    coerced into a bool/int/None by the multipart form parser - the frontend only
+    ever JSON.stringify()s arrays/objects, so scalar form values are always meant
+    to be taken as plain strings.
+    """
+    db = test_app.application.db
+    initial_count = len(db.get_suggestions({}))
+
+    response = test_app.post(
+        "/api/suggest-new-point",
+        data={
+            "position": json.dumps([50, 50]),
+            "name": "Test Organization",
+            "type_of_place": scalar_looking_value,
+            "test_category": json.dumps(["test"]),
+        },
+        content_type="multipart/form-data",
+    )
+    assert response.status_code == 200
+
+    suggestions = db.get_suggestions({})
+    assert len(suggestions) == initial_count + 1
+    assert suggestions[-1]["type_of_place"] == scalar_looking_value
+
+
 # --- Photo upload tests ---
 
 # JPEG magic bytes header (enough for content-type detection)

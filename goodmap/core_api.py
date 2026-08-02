@@ -146,7 +146,17 @@ def core_pages(
 
                 for key in request.form:
                     value = request.form[key]
-                    # Try to parse as JSON for complex types (arrays, objects, position)
+                    # The frontend only ever JSON.stringify()s arrays/objects (list-type
+                    # category fields, and position) - plain text/category fields are sent
+                    # as raw, unescaped strings. Only attempt JSON parsing when the value
+                    # actually looks like one of those, so a scalar string that happens to
+                    # also be valid JSON (e.g. a category option literally named "true" or
+                    # "10") isn't silently coerced into a bool/int and fed to a field that
+                    # expects a plain string.
+                    if value.strip()[:1] not in ("[", "{"):
+                        suggested_location[key] = value
+                        continue
+
                     try:
                         # SECURITY: Use safe_json_loads with strict depth limit
                         # MAX_JSON_DEPTH_LOCATION=1: arrays/objects of primitives only

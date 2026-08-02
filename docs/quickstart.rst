@@ -175,6 +175,61 @@ The active mode for each category is also exposed as ``filter_mode`` in the
 ``/api/categories-full`` response, so a custom frontend can render the
 right control (checkbox vs. radio) without hardcoding category names.
 
+Photo Uploads
+~~~~~~~~~~~~~
+
+Suggesting a new location (``POST /api/suggest-new-point``) accepts an
+optional ``photo`` file alongside the location fields. The allowed formats
+and maximum size are defined once, in code, and shared with the frontend so
+the two can never drift apart:
+
+.. code-block:: python
+
+   # goodmap/goodmap.py
+   photo_attachment_config = AttachmentConfig(
+       allowed_mime_types=frozenset({"image/jpeg"}),
+       allowed_extensions=frozenset({"jpg", "jpeg"}),
+       max_size=5 * 1024 * 1024,  # 5MB
+   )
+
+This is not currently exposed as a YAML config option - to change the
+allowed formats or size limit, edit ``photo_attachment_config`` directly in
+``goodmap.py``.
+
+These constraints are exposed to the frontend as ``photo`` in the
+``LOCATION_SCHEMA`` object rendered on the ``/map`` page
+(``allowed_extensions``, ``allowed_mime_types``, ``max_size_bytes``), so a
+custom frontend can read the live limits instead of hardcoding its own copy.
+
+Client-side behavior
+^^^^^^^^^^^^^^^^^^^^^
+
+The bundled frontend does not simply reject an oversized or wrong-format
+photo - it tries to fix it first:
+
+1. A photo that already matches the allowed mime type and size is used as-is.
+2. Anything else is re-encoded as JPEG client-side: scaled down to fit 1920px
+   on its longest side, then re-compressed at progressively lower quality
+   (from 0.9 down to 0.4) until it fits under the size limit.
+3. Only if the recompressed photo is *still* too large, or the file can't be
+   decoded as an image at all, does the user see a rejection.
+
+This means most "oversized" photos (e.g. an unedited phone camera shot) are
+silently compressed and accepted rather than bouncing the user back to their
+photo library.
+
+Server-side validation
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The backend independently validates the uploaded photo against the same
+``photo_attachment_config`` regardless of what the client already checked -
+a request with a disallowed mime type or a file over the size limit is
+rejected with a 400 response, e.g.:
+
+.. code-block:: json
+
+   {"message": "Invalid photo. Allowed formats: jpeg, jpg. Max size: 5MB."}
+
 .. _data-model-visible_data:
 
 Database Types

@@ -7,6 +7,7 @@
  */
 export const ERROR_MESSAGES = {
     LOCATION_SERVICES: 'Please enable location services to suggest a new point.',
+    // Matches FILE_SIZES.MAX_MB via PHOTO_SCHEMA below (Math.floor(max_size_bytes / 1024 / 1024)).
     FILE_TOO_LARGE: 'The selected file is too large. Please select a file smaller than 5MB.',
     PHOTO_PROCESSING_FAILED: "Couldn't process this photo. Please try a different file.",
     LOCATION_NOT_AVAILABLE: /Location not available.*enable location services/i,

@@ -108,10 +108,16 @@ export const SuggestNewPointButton = () => {
     const locationSchema = globalThis.LOCATION_SCHEMA || {
         obligatory_fields: [],
         categories: {},
-        photo: { allowed_mime_types: [], max_size_bytes: 0 },
     };
-    const { allowed_mime_types: allowedPhotoMimeTypes, max_size_bytes: maxPhotoSizeBytes } =
-        locationSchema.photo;
+    const {
+        allowed_extensions: allowedPhotoExtensions = [],
+        allowed_mime_types: allowedPhotoMimeTypes = [],
+        max_size_bytes: maxPhotoSizeBytes = 0,
+    } = locationSchema.photo || {};
+    const photoInputAccept = [
+        ...allowedPhotoMimeTypes,
+        ...allowedPhotoExtensions.map(ext => `.${ext}`),
+    ].join(',');
 
     // Initialize dynamic form fields based on schema
     const initializeFormFields = () => {
@@ -145,7 +151,12 @@ export const SuggestNewPointButton = () => {
 
     const handleCloseNewPointBox = () => {
         setShowNewPointSuggestionBox(false);
+    };
+
+    const acceptPhoto = file => {
         setFormError(null);
+        setPhoto(file);
+        setPhotoURL(URL.createObjectURL(file));
     };
 
     const handlePhotoUpload = async event => {
@@ -155,9 +166,7 @@ export const SuggestNewPointButton = () => {
         }
 
         if (allowedPhotoMimeTypes.includes(file.type) && file.size <= maxPhotoSizeBytes) {
-            setFormError(null);
-            setPhoto(file);
-            setPhotoURL(URL.createObjectURL(file));
+            acceptPhoto(file);
             return;
         }
 
@@ -167,12 +176,10 @@ export const SuggestNewPointButton = () => {
         try {
             const compressed = await compressImageToJpeg(file, { maxSizeBytes: maxPhotoSizeBytes });
             if (compressed.size > maxPhotoSizeBytes) {
-                setFormError(t('fileTooLarge'));
+                setFormError(t('fileTooLarge', { maxSizeMB: Math.floor(maxPhotoSizeBytes / 1024 / 1024) }));
                 return;
             }
-            setFormError(null);
-            setPhoto(compressed);
-            setPhotoURL(URL.createObjectURL(compressed));
+            acceptPhoto(compressed);
         } catch (error) {
             console.error('Photo processing failed:', error);
             setFormError(t('photoProcessingFailed'));
@@ -393,6 +400,7 @@ export const SuggestNewPointButton = () => {
                             <input
                                 type="file"
                                 hidden
+                                accept={photoInputAccept}
                                 onChange={handlePhotoUpload}
                                 data-testid="photo-of-point"
                             />

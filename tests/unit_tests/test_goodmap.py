@@ -141,6 +141,34 @@ def test_index_route_returns_location_schema():
     assert "amenities" in response_text
 
 
+def test_index_route_location_schema_includes_photo_constraints():
+    """The frontend sources photo upload limits (max size, allowed types) live from
+    the backend's AttachmentConfig rather than hardcoding its own copy - this test
+    guards the `photo` key in location_schema that makes that possible.
+    """
+    config = GoodmapConfig(
+        APP_NAME="test_app",
+        SECRET_KEY="test_secret",
+        USE_WWW=False,
+        BLOG_PREFIX="/blog",
+        DB=JsonDbConfig(
+            DATA={"site_content": {"pages": []}, "categories": {}},
+            TYPE="json",
+        ),
+    )
+    app = goodmap.create_app_from_config(config)
+    app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
+    client = app.test_client()
+
+    response = client.get("/map")
+    assert response.status_code == 200
+
+    response_text = response.data.decode("utf-8")
+    assert '"max_size_bytes":5242880' in response_text
+    assert '"allowed_mime_types":["image/jpeg"]' in response_text
+    assert '"allowed_extensions":["jpeg","jpg"]' in response_text
+
+
 def test_index_route_location_schema_with_lazy_loading():
     """Test that location_schema includes obligatory_fields when USE_LAZY_LOADING is enabled"""
     config = GoodmapConfig(

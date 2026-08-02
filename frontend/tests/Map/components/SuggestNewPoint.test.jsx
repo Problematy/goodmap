@@ -241,6 +241,42 @@ describe('SuggestNewPointButton', () => {
         });
     });
 
+    it('clears the error banner when a valid photo replaces a rejected one', async () => {
+        mockGeolocationSuccess();
+
+        renderWithProvider(<SuggestNewPointButton />);
+        URL.createObjectURL = jest.fn(() => 'blob:http://test-url/');
+        clickSuggestButton();
+
+        await waitFor(() => {
+            expect(screen.getByRole('dialog')).toBeInTheDocument();
+        });
+
+        // Wrong mime type with no compression mocked resolves to a still-oversized
+        // File (compressImageToJpeg is unmocked -> unconfigured jest.fn() returns
+        // undefined, so we mock it explicitly to still exceed the limit here).
+        const stillTooLarge = new File(['x'], 'large-file.jpg', { type: 'image/jpeg' });
+        Object.defineProperty(stillTooLarge, 'size', {
+            value: FILE_SIZES.OVER_LIMIT_MB * 1024 * 1024,
+        });
+        compressImageToJpeg.mockResolvedValue(stillTooLarge);
+        mockUploadingFileWithSizeInMB(FILE_SIZES.OVER_LIMIT_MB);
+
+        await waitFor(() => {
+            expect(screen.getByRole('alert')).toHaveTextContent(ERROR_MESSAGES.FILE_TOO_LARGE);
+        });
+
+        const validFile = new File(['ok'], 'valid.jpg', { type: 'image/jpeg' });
+        Object.defineProperty(validFile, 'size', { value: FILE_SIZES.VALID_TEST_MB * 1024 * 1024 });
+        fireEvent.change(screen.getByTestId('photo-of-point'), {
+            target: { files: [validFile] },
+        });
+
+        await waitFor(() => {
+            expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+        });
+    });
+
     it('handles file dialog cancellation without crashing', async () => {
         mockGeolocationSuccess();
 
@@ -287,6 +323,30 @@ describe('SuggestNewPointButton', () => {
             expect(screen.getByRole('dialog')).toBeInTheDocument();
             expect(axios.post).not.toHaveBeenCalled();
         });
+    });
+
+    it('clears the error banner when the dialog is reopened after a validation failure', async () => {
+        axios.post.mockResolvedValue({});
+        mockGeolocationSuccess();
+
+        renderWithProvider(<SuggestNewPointButton />);
+        await openDialog();
+
+        submitForm();
+
+        await waitFor(() => {
+            expect(screen.getByRole('alert')).toHaveTextContent(ERROR_MESSAGES.REQUIRED_FIELDS);
+        });
+
+        fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
+
+        await waitFor(() => {
+            expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        });
+
+        await openDialog();
+
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     });
 
     it('keeps dialog open on submission error', async () => {
