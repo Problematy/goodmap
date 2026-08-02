@@ -486,6 +486,39 @@ describe('SuggestNewPointButton', () => {
         consoleErrorSpy.mockRestore();
     });
 
+    it('shows a spinner and disables both buttons while submitting', async () => {
+        let resolvePost;
+        axios.post.mockImplementation(
+            () =>
+                new Promise(resolve => {
+                    resolvePost = resolve;
+                }),
+        );
+        mockGeolocationSuccess();
+        globalThis.LOCATION_SCHEMA = SIMPLE_SCHEMA;
+
+        renderWithProvider(<SuggestNewPointButton />);
+        await openDialog();
+
+        fillTextField(/name/i, 'Test Location');
+        submitForm();
+
+        // The backend can be slow (e.g. a notifier plugin sending an email runs
+        // synchronously before responding) - the button must show it's working,
+        // not just sit there looking unresponsive.
+        await waitFor(() => {
+            expect(screen.getByRole('progressbar')).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /submit/i })).toBeDisabled();
+            expect(screen.getByRole('button', { name: /cancel/i })).toBeDisabled();
+        });
+
+        resolvePost({ data: { message: 'Success' } });
+
+        await waitFor(() => {
+            expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        });
+    });
+
     it('closes dialog and resets form on successful submission', async () => {
         axios.post.mockResolvedValue({ data: { message: 'Success' } });
         mockGeolocationSuccess();

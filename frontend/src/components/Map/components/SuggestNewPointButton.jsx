@@ -108,6 +108,11 @@ export const SuggestNewPointButton = () => {
     // True while an oversized photo is being recompressed - shown as a spinner on the
     // upload button, since decoding a very large source image can take a visible moment.
     const [isCompressingPhoto, setIsCompressingPhoto] = useState(false);
+    // True while the suggestion is being submitted - shown as a spinner on the Submit
+    // button. The backend can take a noticeable moment here (e.g. a slow notifier
+    // plugin, such as sending an email, runs synchronously before it responds), so
+    // without this the button just looks unresponsive for however long that takes.
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [categoryTranslations, setCategoryTranslations] = useState({
         fieldNames: {},
         options: {},
@@ -279,6 +284,7 @@ export const SuggestNewPointButton = () => {
             }
         });
 
+        setIsSubmitting(true);
         try {
             const csrfToken = await getCsrfToken();
             await axios.post('/api/suggest-new-point', formData, {
@@ -302,6 +308,8 @@ export const SuggestNewPointButton = () => {
             // instead of a generic message that hides why the submission was rejected.
             showError(error.response?.data?.message || t('locationSuggestedError'));
             // Dialog stays open on error so user can retry
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -472,13 +480,24 @@ export const SuggestNewPointButton = () => {
                             .map(([fieldName, fieldType]) => renderFormField(fieldName, fieldType))}
                     </DialogContent>
                     <DialogActions>
-                        <Button type="submit" variant="contained" color="primary">
-                            {t('submit')}
+                        <Button
+                            type="submit"
+                            variant="contained"
+                            color="primary"
+                            disabled={isSubmitting}
+                            aria-label={t('submit')}
+                        >
+                            {isSubmitting ? (
+                                <CircularProgress size={20} color="inherit" />
+                            ) : (
+                                t('submit')
+                            )}
                         </Button>
                         <Button
                             onClick={handleCloseNewPointBox}
                             variant="outlined"
                             color="secondary"
+                            disabled={isSubmitting}
                         >
                             {t('cancel')}
                         </Button>
