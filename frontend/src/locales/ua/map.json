@@ -6,7 +6,7 @@
     "suggestNewPoint": "Додати нову точку",
     "suggestNewPointDialogTitle": "Запропонувати нову точку",
     "yourPosition": "Ваша позиція",
-    "fileTooLarge": "Вибраний файл завеликий. Виберіть файл розміром менше {{maxSizeMB}}МБ.",
+    "fileTooLarge": "Вибраний файл завеликий. Виберіть файл розміром менше {{maxSizeMiB}}МіБ.",
     "photoProcessingFailed": "Не вдалося обробити це фото. Спробуйте вибрати інший файл.",
     "locationNotAvailable": "Місцезнаходження недоступне. Увімкніть служби геолокації та спробуйте знову.",
     "fillRequiredFields": "Заповніть обов'язкові поля: {{fields}}",

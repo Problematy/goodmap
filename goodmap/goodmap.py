@@ -233,7 +233,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
     photo_attachment_config = AttachmentConfig(
         allowed_mime_types=frozenset({"image/jpeg"}),
         allowed_extensions=frozenset({"jpg", "jpeg"}),
-        max_size=5 * 1024 * 1024,  # 5MB - reasonable for location photos
+        max_size=5 * 1024 * 1024,  # 5 MiB - reasonable for location photos
     )
 
     shortcodes: dict[str, Shortcode] = {}

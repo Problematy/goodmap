@@ -6,7 +6,7 @@
     "suggestNewPoint": "Dodaj nowy punkt",
     "suggestNewPointDialogTitle": "Zaproponuj nowy punkt",
     "yourPosition": "Twoja pozycja",
-    "fileTooLarge": "Wybrany plik jest za duży. Wybierz plik mniejszy niż {{maxSizeMB}}MB.",
+    "fileTooLarge": "Wybrany plik jest za duży. Wybierz plik mniejszy niż {{maxSizeMiB}}MiB.",
     "photoProcessingFailed": "Nie udało się przetworzyć tego zdjęcia. Spróbuj wybrać inny plik.",
     "locationNotAvailable": "Lokalizacja niedostępna. Włącz usługi lokalizacji i spróbuj ponownie.",
     "fillRequiredFields": "Wypełnij wymagane pola: {{fields}}",

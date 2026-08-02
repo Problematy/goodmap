@@ -713,7 +713,7 @@ def test_suggest_location_rejects_wrong_extension(test_app):
 
 
 def test_suggest_location_rejects_oversized_photo(test_app):
-    """Photos over 5MB should be rejected."""
+    """Photos over 5 MiB should be rejected."""
     oversized_content = JPEG_HEADER + (b"\x00" * (5 * 1024 * 1024 + 1))
 
     response = test_app.post(
@@ -729,7 +729,7 @@ def test_suggest_location_rejects_oversized_photo(test_app):
     )
     assert response.status_code == 400
     assert "Invalid photo" in response.json["message"]
-    assert "5MB" in response.json["message"]
+    assert "5MiB" in response.json["message"]
 
 
 def test_suggest_location_rejects_fake_jpeg(test_app):

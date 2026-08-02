@@ -189,7 +189,7 @@ the two can never drift apart:
    photo_attachment_config = AttachmentConfig(
        allowed_mime_types=frozenset({"image/jpeg"}),
        allowed_extensions=frozenset({"jpg", "jpeg"}),
-       max_size=5 * 1024 * 1024,  # 5MB
+       max_size=5 * 1024 * 1024,  # 5 MiB
    )
 
 This is not currently exposed as a YAML config option - to change the
@@ -228,7 +228,7 @@ rejected with a 400 response, e.g.:
 
 .. code-block:: json
 
-   {"message": "Invalid photo. Allowed formats: jpeg, jpg. Max size: 5MB."}
+   {"message": "Invalid photo. Allowed formats: jpeg, jpg. Max size: 5MiB."}
 
 .. _data-model-visible_data:
 

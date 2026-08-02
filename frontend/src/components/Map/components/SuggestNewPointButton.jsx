@@ -177,7 +177,9 @@ export const SuggestNewPointButton = () => {
             const compressed = await compressImageToJpeg(file, { maxSizeBytes: maxPhotoSizeBytes });
             if (compressed.size > maxPhotoSizeBytes) {
                 setFormError(
-                    t('fileTooLarge', { maxSizeMB: Math.floor(maxPhotoSizeBytes / 1024 / 1024) }),
+                    t('fileTooLarge', {
+                        maxSizeMiB: Math.floor(maxPhotoSizeBytes / 1024 / 1024),
+                    }),
                 );
                 return;
             }

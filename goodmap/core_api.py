@@ -109,7 +109,7 @@ def core_pages(
     allowed_ext = ", ".join(sorted(photo_attachment_config.allowed_extensions or []))
     max_size_mb = photo_attachment_config.max_size / (1024 * 1024)
     error_invalid_photo = (
-        f"Invalid photo. Allowed formats: {allowed_ext}. Max size: {max_size_mb:.0f}MB."
+        f"Invalid photo. Allowed formats: {allowed_ext}. Max size: {max_size_mb:.0f}MiB."
     )
 
     # Initialize Spectree for API documentation and validation

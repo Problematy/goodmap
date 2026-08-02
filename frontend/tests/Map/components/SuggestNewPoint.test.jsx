@@ -377,7 +377,7 @@ describe('SuggestNewPointButton', () => {
 
     it('surfaces the backend-provided error message on submission failure', async () => {
         const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
-        const backendMessage = 'Invalid photo. Allowed formats: jpeg, jpg. Max size: 5MB.';
+        const backendMessage = 'Invalid photo. Allowed formats: jpeg, jpg. Max size: 5MiB.';
 
         axios.post.mockRejectedValue({ response: { data: { message: backendMessage } } });
         mockGeolocationSuccess();
