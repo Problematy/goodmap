@@ -204,19 +204,24 @@ custom frontend can read the live limits instead of hardcoding its own copy.
 Client-side behavior
 ^^^^^^^^^^^^^^^^^^^^^
 
-The bundled frontend does not simply reject an oversized or wrong-format
-photo - it tries to fix it first:
+The bundled frontend checks format and size separately, and never changes a
+photo without telling the user:
 
-1. A photo that already matches the allowed mime type and size is used as-is.
-2. Anything else is re-encoded as JPEG client-side: scaled down to fit 1920px
-   on its longest side, then re-compressed at progressively lower quality
-   (from 0.9 down to 0.4) until it fits under the size limit.
-3. Only if the recompressed photo is *still* too large, or the file can't be
-   decoded as an image at all, does the user see a rejection.
-
-This means most "oversized" photos (e.g. an unedited phone camera shot) are
-silently compressed and accepted rather than bouncing the user back to their
-photo library.
+1. A photo that already matches the allowed mime type and size is used as-is,
+   silently.
+2. A photo with an unsupported mime type (e.g. PNG when only JPEG is allowed)
+   is rejected outright, with an inline error naming the allowed formats.
+   It is **not** auto-converted - silently swapping a user's PNG for a
+   re-encoded JPEG behind their back would be surprising, so they have to
+   explicitly pick a different file.
+3. A photo with an allowed mime type that's simply too large is re-encoded as
+   JPEG client-side: scaled down to fit 1920px on its longest side, then
+   re-compressed at progressively lower quality (from 0.9 down to 0.4) until
+   it fits under the size limit. If this succeeds, the user still sees an
+   inline warning that their photo was compressed and may have lost some
+   quality - compression happens automatically, but never silently.
+4. If the recompressed photo is *still* too large, or the file can't be
+   decoded as an image at all, the user sees a rejection instead.
 
 Server-side validation
 ^^^^^^^^^^^^^^^^^^^^^^^

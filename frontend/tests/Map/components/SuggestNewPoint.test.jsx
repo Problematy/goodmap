@@ -82,11 +82,11 @@ afterEach(() => {
     jest.clearAllMocks();
 });
 
-const mockUploadingFileWithSizeInMB = sizeInMB => {
+const mockUploadingFileWithSizeInMB = (sizeInMB, mimeType = 'image/jpeg') => {
     const file = {
-        name: 'large-file.txt',
+        name: 'large-file.jpg',
         size: sizeInMB * 1024 * 1024,
-        type: 'text/plain',
+        type: mimeType,
     };
 
     fireEvent.change(screen.getByTestId('photo-of-point'), {
@@ -170,6 +170,27 @@ describe('SuggestNewPointButton', () => {
         });
     });
 
+    it('rejects a photo with an unsupported format without attempting compression', async () => {
+        mockGeolocationSuccess();
+
+        renderWithProvider(<SuggestNewPointButton />);
+        clickSuggestButton();
+
+        await waitFor(() => {
+            expect(screen.getByRole('dialog')).toBeInTheDocument();
+        });
+
+        // Small enough to fit under the size limit - format alone must trigger rejection.
+        mockUploadingFileWithSizeInMB(FILE_SIZES.VALID_TEST_MB, 'image/png');
+
+        await waitFor(() => {
+            expect(screen.getByRole('alert')).toHaveTextContent(
+                ERROR_MESSAGES.UNSUPPORTED_PHOTO_FORMAT,
+            );
+        });
+        expect(compressImageToJpeg).not.toHaveBeenCalled();
+    });
+
     it('displays error message when a file cannot be processed as a photo', async () => {
         const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
         mockGeolocationSuccess();
@@ -237,7 +258,9 @@ describe('SuggestNewPointButton', () => {
 
         await waitFor(() => {
             expect(compressImageToJpeg).toHaveBeenCalled();
-            expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+            // Compression succeeding is not silent - the user must be told their photo
+            // was altered, even though the dialog isn't blocked from proceeding.
+            expect(screen.getByRole('alert')).toHaveTextContent(ERROR_MESSAGES.PHOTO_COMPRESSED);
         });
     });
 
@@ -252,9 +275,8 @@ describe('SuggestNewPointButton', () => {
             expect(screen.getByRole('dialog')).toBeInTheDocument();
         });
 
-        // Wrong mime type with no compression mocked resolves to a still-oversized
-        // File (compressImageToJpeg is unmocked -> unconfigured jest.fn() returns
-        // undefined, so we mock it explicitly to still exceed the limit here).
+        // Right format but oversized, and compression (mocked below) still can't get
+        // it under the limit.
         const stillTooLarge = new File(['x'], 'large-file.jpg', { type: 'image/jpeg' });
         Object.defineProperty(stillTooLarge, 'size', {
             value: FILE_SIZES.OVER_LIMIT_MB * 1024 * 1024,

@@ -83,7 +83,12 @@ export const SuggestNewPointButton = () => {
     // Rendered inline in the dialog rather than as a toast: this dialog sits inside the
     // map's component tree, where an ancestor (e.g. a Leaflet pane) can trap a toast's
     // z-index in its own stacking context, leaving it hidden behind the dialog itself.
-    const [formError, setFormError] = useState(null);
+    // { severity: 'error' | 'warning', message: string } | null - 'warning' is used for
+    // non-blocking heads-ups (e.g. "your photo was compressed") where the form still
+    // proceeds, unlike 'error' which stops the user from submitting.
+    const [formNotice, setFormNotice] = useState(null);
+    const showError = message => setFormNotice({ severity: 'error', message });
+    const showWarning = message => setFormNotice({ severity: 'warning', message });
     const [categoryTranslations, setCategoryTranslations] = useState({
         fieldNames: {},
         options: {},
@@ -140,7 +145,7 @@ export const SuggestNewPointButton = () => {
 
     const handleNewPointButton = () => {
         requestLocationWithFeedback(() => {
-            setFormError(null);
+            setFormNotice(null);
             setShowNewPointSuggestionBox(true);
         });
     };
@@ -154,7 +159,6 @@ export const SuggestNewPointButton = () => {
     };
 
     const acceptPhoto = file => {
-        setFormError(null);
         setPhoto(file);
         setPhotoURL(URL.createObjectURL(file));
     };
@@ -164,29 +168,40 @@ export const SuggestNewPointButton = () => {
         if (!file) {
             return;
         }
+        setFormNotice(null);
 
-        if (allowedPhotoMimeTypes.includes(file.type) && file.size <= maxPhotoSizeBytes) {
+        // Wrong format is rejected outright rather than silently converted: swapping a
+        // user's PNG for a re-encoded JPEG behind their back is surprising, so they need
+        // to explicitly pick a different file instead.
+        if (!allowedPhotoMimeTypes.includes(file.type)) {
+            showError(
+                t('unsupportedPhotoFormat', {
+                    allowedFormats: allowedPhotoExtensions.map(ext => ext.toUpperCase()).join('/'),
+                }),
+            );
+            return;
+        }
+
+        if (file.size <= maxPhotoSizeBytes) {
             acceptPhoto(file);
             return;
         }
 
-        // Anything else (wrong format, oversized, or both) gets normalized to what the
-        // backend accepts: oversized photos are usually just high-resolution camera shots
-        // rather than genuinely undersizable, and re-encoding also fixes the format.
+        // Right format, just oversized: compress automatically (most "oversized" photos
+        // are just high-resolution camera shots), but always tell the user it happened -
+        // a silently-shrunk photo could otherwise be confusing if the quality looks off.
         try {
             const compressed = await compressImageToJpeg(file, { maxSizeBytes: maxPhotoSizeBytes });
+            const maxSizeMiB = Math.floor(maxPhotoSizeBytes / 1024 / 1024);
             if (compressed.size > maxPhotoSizeBytes) {
-                setFormError(
-                    t('fileTooLarge', {
-                        maxSizeMiB: Math.floor(maxPhotoSizeBytes / 1024 / 1024),
-                    }),
-                );
+                showError(t('fileTooLarge', { maxSizeMiB }));
                 return;
             }
             acceptPhoto(compressed);
+            showWarning(t('photoCompressed', { maxSizeMiB }));
         } catch (error) {
             console.error('Photo processing failed:', error);
-            setFormError(t('photoProcessingFailed'));
+            showError(t('photoProcessingFailed'));
         }
     };
 
@@ -196,11 +211,11 @@ export const SuggestNewPointButton = () => {
 
     const handleConfirmNewPoint = async event => {
         event.preventDefault();
-        setFormError(null);
+        setFormNotice(null);
 
         // Validate user position is available
         if (!userPosition || userPosition.lat === null || userPosition.lng === null) {
-            setFormError(t('locationNotAvailable'));
+            showError(t('locationNotAvailable'));
             return;
         }
 
@@ -219,7 +234,7 @@ export const SuggestNewPointButton = () => {
         });
 
         if (emptyFields.length > 0) {
-            setFormError(t('fillRequiredFields', { fields: emptyFields.join(', ') }));
+            showError(t('fillRequiredFields', { fields: emptyFields.join(', ') }));
             return;
         }
 
@@ -260,7 +275,7 @@ export const SuggestNewPointButton = () => {
             console.error('Error suggesting new point:', error);
             // Surface the backend's specific reason (e.g. photo format/size) when available,
             // instead of a generic message that hides why the submission was rejected.
-            setFormError(error.response?.data?.message || t('locationSuggestedError'));
+            showError(error.response?.data?.message || t('locationSuggestedError'));
             // Dialog stays open on error so user can retry
         }
     };
@@ -380,9 +395,9 @@ export const SuggestNewPointButton = () => {
                 <DialogTitle>{t('suggestNewPointDialogTitle')}</DialogTitle>
                 <form onSubmit={handleConfirmNewPoint}>
                     <DialogContent>
-                        {formError && (
-                            <Alert severity="error" sx={{ mb: 2 }}>
-                                {formError}
+                        {formNotice && (
+                            <Alert severity={formNotice.severity} sx={{ mb: 2 }}>
+                                {formNotice.message}
                             </Alert>
                         )}
                         <Box display="flex" alignItems="center" gap={2}>

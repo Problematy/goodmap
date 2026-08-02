@@ -8,6 +8,8 @@
     "yourPosition": "Twoja pozycja",
     "fileTooLarge": "Wybrany plik jest za duży. Wybierz plik mniejszy niż {{maxSizeMiB}}MiB.",
     "photoProcessingFailed": "Nie udało się przetworzyć tego zdjęcia. Spróbuj wybrać inny plik.",
+    "unsupportedPhotoFormat": "Ten format zdjęcia nie jest obsługiwany. Prześlij zdjęcie w formacie {{allowedFormats}}.",
+    "photoCompressed": "Twoje zdjęcie było większe niż {{maxSizeMiB}}MiB, więc zostało skompresowane, aby zmieścić się w limicie. Może to nieznacznie obniżyć jakość obrazu.",
     "locationNotAvailable": "Lokalizacja niedostępna. Włącz usługi lokalizacji i spróbuj ponownie.",
     "fillRequiredFields": "Wypełnij wymagane pola: {{fields}}",
     "locationSuggestedSuccess": "Lokalizacja została zaproponowana pomyślnie!",
