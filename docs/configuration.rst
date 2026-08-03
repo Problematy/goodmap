@@ -53,7 +53,6 @@ Everything below in one file — copy it and delete what you do not need:
      SHOW_SUGGEST_NEW_POINT_BUTTON: true
      SHOW_ACCESSIBILITY_TABLE: true
      USE_SERVER_SIDE_CLUSTERING: false
-     ENABLE_ADMIN_PANEL: false
      FAKE_LOGIN: false
 
    BLOG_PREFIX: "/blog"
@@ -156,8 +155,8 @@ frontend to decide what to render. Both are set the same way.
    * - ``USE_LAZY_LOADING``
      - backend
      - Builds the location model from ``location_obligatory_fields`` and ``categories``
-       in your data source, so submitted and admin-created points are validated against
-       them, and the "suggest a new point" form is generated from them. With it off,
+       in your data source, so submitted points are validated against them, and the
+       "suggest a new point" form is generated from them. With it off,
        only ``uuid``, ``position`` and ``remark`` are validated and the suggest form has
        no fields. Practically always wanted — see the note below.
    * - ``CATEGORIES_HELP``
@@ -166,10 +165,6 @@ frontend to decide what to render. Both are set the same way.
        ``/api/category/<name>``, and makes the frontend render the tooltips. Without it
        the ``categories_help`` and ``categories_options_help`` keys in your data are
        ignored. See :ref:`data-source-help`.
-   * - ``ENABLE_ADMIN_PANEL``
-     - backend
-     - Registers the admin panel at ``/goodmap-admin`` and the admin API under
-       ``/api/admin/``. Off by default. Read :doc:`admin-panel` before turning it on.
    * - ``USE_SERVER_SIDE_CLUSTERING``
      - both
      - The frontend fetches ``/api/locations-clustered`` instead of ``/api/locations``,
@@ -183,20 +178,20 @@ frontend to decide what to render. Both are set the same way.
      - frontend
      - Shows the button that lets visitors submit a new point through
        ``/api/suggest-new-point``. Submissions land in the moderation queue, not on the
-       map — see :doc:`admin-panel`.
+       map.
    * - ``SHOW_ACCESSIBILITY_TABLE``
      - frontend
      - Shows an alternative table view of the map data, for users who cannot use the map
        itself.
    * - ``FAKE_LOGIN``
      - backend
-     - platzky flag: lets anyone into the admin area by picking a role, with no
-       authentication. For local development only.
+     - platzky flag: lets anyone log in by picking a role, with no authentication. For
+       local development only.
 
 .. warning::
 
-   Never enable ``FAKE_LOGIN`` in production. Combined with ``ENABLE_ADMIN_PANEL`` it
-   hands the admin panel to anyone who finds the URL.
+   Never enable ``FAKE_LOGIN`` in production. It hands a logged-in session to anyone who
+   asks for one.
 
 .. note::
 

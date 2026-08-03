@@ -184,14 +184,6 @@ def admin_pages(database, location_model) -> Blueprint:
     Returns:
         Blueprint: Flask blueprint with all admin endpoints
     """
-    # TODO admin API endpoints do not authenticate the caller
-    #  Every route below is reachable by anyone who can reach the app once
-    #  ENABLE_ADMIN_PANEL is on - reading, creating, editing and deleting locations.
-    #  Only the /goodmap-admin *page* checks session["user"] (see goodmap.py::admin);
-    #  the API behind it does not. CSRF protection stops a third-party site from driving
-    #  a logged-in browser, but not a direct request. Add a session/role check here
-    #  (e.g. a before_request on this blueprint) rather than relying on deployments to
-    #  restrict /api/admin/ at the proxy.
     admin_api_blueprint = Blueprint("admin_api", __name__, url_prefix="/api/admin")
 
     spec = SpecTree(

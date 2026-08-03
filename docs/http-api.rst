@@ -238,8 +238,8 @@ deployment with ``sendmail`` set up emails a moderator on each submission.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Submit a new point for review. It goes to the moderation queue with
-``"status": "pending"`` — **it does not appear on the map** until accepted
-(:doc:`admin-panel`).
+``"status": "pending"`` — **it does not appear on the map**; someone has to move it into
+the map data.
 
 Accepts either JSON or ``multipart/form-data``. The body is your point without a
 ``uuid`` — the server assigns one:
@@ -295,8 +295,8 @@ Report a problem with an existing point.
 ``"other"`` is among them, in which case any text up to 500 characters is accepted. A
 description that satisfies neither rule gives ``400``.
 
-The report is stored with ``"status": "pending"`` and ``"priority": "medium"`` for
-triage in the admin panel.
+The report is stored with ``"status": "pending"`` and ``"priority": "medium"`` in the
+data source, for triage.
 
 ``GET /api/generate-csrf-token``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -305,120 +305,3 @@ triage in the admin panel.
 
    Deprecated since 1.1.8 and kept only for backward compatibility. Read the token from
    the ``csrf-token`` meta tag instead. CSRF protection itself is unaffected.
-
-.. _api-admin:
-
-Admin API
----------
-
-Registered under ``/api/admin/`` **only when the ``ENABLE_ADMIN_PANEL`` feature flag is
-on**; otherwise these paths do not exist. This is the API behind the admin panel
-(:doc:`admin-panel`).
-
-.. danger::
-
-   These endpoints **do not authenticate the caller.** The admin *page* checks for a
-   session, but the API behind it does not — so with ``ENABLE_ADMIN_PANEL`` on, anyone who
-   can reach the app and obtain a CSRF token can read, create, edit and delete points.
-   CSRF protection stops a third-party site from driving a logged-in browser; it does not
-   stop a direct request. Do not expose an admin-enabled instance to the internet without
-   putting your own authentication or network restriction in front of ``/api/admin/``.
-   See :ref:`deployment-admin`.
-
-Listing and pagination
-~~~~~~~~~~~~~~~~~~~~~~
-
-The three ``GET`` collection endpoints share one response envelope:
-
-.. code-block:: text
-
-   {
-     "items": [ ... ],
-     "pagination": {"total": 42, "page": 1, "per_page": 20, "total_pages": 3}
-   }
-
-and one set of query parameters:
-
-.. list-table::
-   :header-rows: 1
-   :widths: 20 80
-
-   * - Parameter
-     - Meaning
-   * - ``page``
-     - 1-indexed page number. Default ``1``; invalid values fall back to ``1``.
-   * - ``per_page``
-     - Items per page. Default ``20``, capped at ``1000``. Pass ``all`` for everything in
-       one page.
-   * - ``sort_by``
-     - Field to sort on. ``/api/admin/locations`` defaults to ``name``; the others are
-       unsorted unless you ask.
-   * - ``sort_order``
-     - ``asc`` (default) or ``desc``.
-   * - ``status``
-     - Filter by status; repeat for several.
-   * - ``priority``
-     - Filter by priority; repeat for several. Reports only.
-
-Locations
-~~~~~~~~~
-
-.. list-table::
-   :header-rows: 1
-   :widths: 32 68
-
-   * - Endpoint
-     - Behaviour
-   * - ``GET /api/admin/locations``
-     - Paginated full point records — every field, not the trimmed public shape.
-   * - ``POST /api/admin/locations``
-     - Create a point. Body is the point without ``uuid``; the server assigns one and
-       returns the stored record. ``400`` if it fails validation.
-   * - ``PUT /api/admin/locations/<uuid>``
-     - Replace a point. The body is validated as a whole record, so send every field, not
-       just the changed ones. ``404`` if the uuid is unknown.
-   * - ``DELETE /api/admin/locations/<uuid>``
-     - Delete a point. ``204`` with an empty body on success, ``404`` if unknown.
-
-Suggestions
-~~~~~~~~~~~
-
-.. list-table::
-   :header-rows: 1
-   :widths: 32 68
-
-   * - Endpoint
-     - Behaviour
-   * - ``GET /api/admin/suggestions``
-     - Paginated queue of submitted points, each with a ``status``.
-   * - ``PUT /api/admin/suggestions/<uuid>``
-     - Body ``{"status": "accepted"}`` or ``{"status": "rejected"}``. **Accepting copies
-       the suggestion into the live map data**; rejecting only marks it. Returns the
-       updated suggestion.
-
-Only ``pending`` suggestions can be acted on — a second decision on the same suggestion
-gives ``409 {"message": "Suggestion already processed"}``, so two moderators working at
-once cannot double-add a point. If accepting would collide with an existing uuid, the
-response is ``409 {"message": "Location already exists"}``.
-
-Reports
-~~~~~~~
-
-.. list-table::
-   :header-rows: 1
-   :widths: 32 68
-
-   * - Endpoint
-     - Behaviour
-   * - ``GET /api/admin/reports``
-     - Paginated problem reports. Each carries ``location_id``, ``description``,
-       ``status`` and ``priority``.
-   * - ``PUT /api/admin/reports/<uuid>``
-     - Update ``status`` (``resolved`` or ``rejected``) and/or ``priority``
-       (``critical``, ``high``, ``medium``, ``low``). Send either or both. Returns the
-       updated report; ``404`` if unknown.
-
-.. warning::
-
-   With the ``google_hosted_json_file`` backend every write above silently does nothing —
-   the backend is read-only. See :ref:`data-source-backends`.

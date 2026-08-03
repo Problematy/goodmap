@@ -4,8 +4,7 @@ Goodmap Documentation
 Goodmap is a map engine: you give it a **data source** (a JSON file, a JSON blob in
 Google Cloud Storage, or MongoDB) describing points on a map, plus a **YAML config
 file**, and you get a running web application with a filterable map, marker popups,
-a "suggest a new point" flow, an issue-reporting flow, an admin panel, and a JSON
-HTTP API.
+a "suggest a new point" flow, an issue-reporting flow, and a JSON HTTP API.
 
 Goodmap is built on `platzky <https://platzky.readthedocs.io/>`_, so a Goodmap
 deployment is also a platzky site (pages, menus, translations, plugins) with the map
@@ -33,7 +32,6 @@ These docs are task-oriented and split three ways:
    quickstart
    configuration
    data-source
-   admin-panel
    deployment
 
 .. toctree::
@@ -62,7 +60,7 @@ the data source
    What is on the map: the points themselves, which fields are shown, which fields are
    filterable, which plugins are active. See :doc:`data-source`.
 
-Everything else — the map UI, the HTTP API, the admin panel — comes from the package.
+Everything else — the map UI, the HTTP API — comes from the package.
 
 Indices and tables
 ==================

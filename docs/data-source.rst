@@ -46,7 +46,7 @@ cares about:
    }
 
 ``uuid`` (required)
-   The point's identity, used in ``/api/location/<uuid>`` and by the admin API. **It must
+   The point's identity, used in ``/api/location/<uuid>``. **It must
    be a real UUID** — Goodmap 2.0 dropped support for arbitrary string ids, and a non-UUID
    id gives a 404 at routing.
 
@@ -97,9 +97,8 @@ Supported types: ``str``, ``list``, ``int``, ``float``, ``bool``, ``dict``.
 
 This drives three things at once:
 
-- **Validation.** Points submitted through ``/api/suggest-new-point`` or created through
-  the admin API are rejected with ``400`` if a field is missing or has a value outside its
-  category's allowed list.
+- **Validation.** Points submitted through ``/api/suggest-new-point`` are rejected with
+  ``400`` if a field is missing or has a value outside its category's allowed list.
 - **The suggest-a-point form.** The frontend generates its fields from this schema.
 - **Length limits.** String fields are capped at 200 characters, lists at 20 items of at
   most 100 characters each.
@@ -278,8 +277,9 @@ anticipate; leave it out to keep reports strictly categorised.
 Written by the app, not by you. A point submitted through ``/api/suggest-new-point``
 lands in ``suggestions`` with ``"status": "pending"``; a problem reported through
 ``/api/report-location`` lands in ``reports`` with ``"status": "pending"`` and
-``"priority": "medium"``. Neither affects the live map until moderated — see
-:doc:`admin-panel`.
+``"priority": "medium"``. Neither affects the live map: nothing in ``suggestions`` or
+``reports`` is served to visitors, and a suggested point only appears on the map once you
+move it into ``data`` yourself.
 
 ``plugins``
 ~~~~~~~~~~~
@@ -344,9 +344,8 @@ JSON file
 The whole structure above in one file on disk. Read per request, so edits to ``data``
 show up on the next refresh — though the schema keys (``categories``,
 ``location_obligatory_fields``, ``visible_data``) are read once at startup and need a
-restart. Writes — accepted suggestions, new reports, admin edits — are written back
-atomically via a temporary file and a rename, so a crash mid-write cannot truncate your
-data.
+restart. Writes — new suggestions and reports — are written back atomically via a
+temporary file and a rename, so a crash mid-write cannot truncate your data.
 
 Best for: development, and small-to-medium read-mostly maps served by a single process.
 Not suitable for multiple worker processes writing concurrently — see
@@ -370,7 +369,7 @@ application default credentials.
    **This backend is read-only.** Adding a location, updating a report, deleting a
    suggestion — all silently do nothing. Suggestions submitted by visitors are accepted by
    the API but never persisted. Use it for maps whose data is published from elsewhere,
-   not for maps that accept user submissions or admin edits.
+   not for maps that accept user submissions.
 
 MongoDB
 ~~~~~~~

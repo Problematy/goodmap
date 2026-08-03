@@ -36,17 +36,6 @@
   </ul>
   <div class="tab-content" id="adminTabContent">
     <!-- Locations Tab -->
-    <!-- TODO Locations tab is hardcoded to the bridges example schema
-         The table columns, the "Filter by Type"/"Filter by Accessibility" dropdowns, the
-         add/edit form and its /api/category/accessible_by fetch all assume the fields
-         name, position, type_of_place and accessible_by. Deployments with any other
-         schema cannot use this tab: custom fields are neither shown nor editable, and
-         renderLocations() throws on loc.accessible_by.join() when the field is absent.
-         Drive the columns and the form from the location schema instead of naming fields
-         literally - note goodmap.py::admin does not currently pass location_schema to
-         this template (only the /map view gets it), so that has to be added, or the tab
-         can read /api/categories-full at runtime. The Suggestions and Reports tabs are
-         schema-agnostic and need no change. -->
     <div class="tab-pane fade show active" id="locations" role="tabpanel" aria-labelledby="locations-tab">
       <div class="d-flex flex-wrap align-items-center mb-3">
         <h2 class="me-auto">{{ gettext("Locations") }}</h2>

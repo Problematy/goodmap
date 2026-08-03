@@ -1,3 +1,4 @@
+
 """Sphinx configuration for Goodmap documentation.
 
 These docs are task-oriented prose: how to run, configure and extend Goodmap. They

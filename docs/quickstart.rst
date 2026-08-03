@@ -213,6 +213,4 @@ Where to go next
 - :doc:`configuration` — every ``config.yml`` key and feature flag.
 - :doc:`data-source` — the full data format, all five filter modes, and the Google Cloud
   Storage and MongoDB backends.
-- :doc:`admin-panel` — moderating the points, suggestions, and problem reports your users
-  submit.
 - :doc:`deployment` — running it for real.
