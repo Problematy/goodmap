@@ -26,22 +26,14 @@ export const AppToaster = () => {
             // closes, and a small top-corner toast is easy to miss against a
             // full-screen map background.
             //
-            // `position` must be 'absolute' so the offsets resolve against the
-            // overlay layer - the library's default is 'fixed', which stays
-            // viewport-relative regardless of the portal target and would center
-            // the toast over the sidebar too.
-            //
             // `bottom` must be overridden to 'auto': the library defaults to
             // `{ top: 16, bottom: 16, ... }`, and with both active the browser sizes
             // the container's height by spanning between them rather than shrinking
             // it to the toast's content height - which throws off translateY(-50%)'s
             // centering math.
             containerStyle={{
-                position: 'absolute',
                 top: '50%',
                 bottom: 'auto',
-                left: 0,
-                right: 0,
                 transform: 'translateY(-50%)',
             }}
             toastOptions={{
