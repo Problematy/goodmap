@@ -1,262 +1,218 @@
 Quickstart
 ==========
 
-Configuration
--------------
+Build a working map from an empty directory. You will write two files — a data source
+and a config — and run one command.
 
-Goodmap uses YAML configuration files. Create a configuration file (e.g., ``config.yml``):
+The example is a map of climbing crags, filterable by rock type and by whether the
+approach is wheelchair-accessible.
+
+Before you start, install Goodmap (:doc:`installation`):
+
+.. code-block:: bash
+
+   pip install --pre goodmap
+
+.. _quickstart-data:
+
+1. Write the data source
+------------------------
+
+Create ``data.json``. This one file holds both the points and the map's schema:
+
+.. code-block:: json
+
+   {
+     "map": {
+       "data": [
+         {
+           "uuid": "5f9e1a3c-2b4d-4e6f-8a91-0c2d4e6f8a91",
+           "name": "Kobylany",
+           "position": [50.1655, 19.7420],
+           "type_of_place": "limestone crag",
+           "rock": "limestone",
+           "wheelchair_approach": "false"
+         },
+         {
+           "uuid": "7c3d5e7f-9a1b-4c3d-8e5f-7a9b1c3d5e7f",
+           "name": "Zakrzówek",
+           "position": [50.0397, 19.9060],
+           "type_of_place": "limestone crag",
+           "rock": "limestone",
+           "wheelchair_approach": "true"
+         },
+         {
+           "uuid": "9b1c3d5e-7f9a-4b1c-8d5e-9f1a3b5c7d9e",
+           "name": "Rudawy Janowickie",
+           "position": [50.8330, 15.9170],
+           "type_of_place": "granite crag",
+           "rock": "granite",
+           "wheelchair_approach": "false"
+         }
+       ],
+       "location_obligatory_fields": [
+         ["name", "str"],
+         ["type_of_place", "str"],
+         ["rock", "str"]
+       ],
+       "categories": {
+         "rock": ["limestone", "granite", "sandstone"],
+         "wheelchair_approach": ["true", "false"]
+       },
+       "categories_filter_mode": {
+         "wheelchair_approach": "boolean"
+       },
+       "visible_data": ["rock", "wheelchair_approach"],
+       "meta_data": ["uuid"],
+       "reported_issue_types": ["overgrown", "access banned", "other"]
+     },
+     "site_content": {
+       "home_page_path": "/map",
+       "pages": [],
+       "menu_items": {},
+       "logo_url": "",
+       "primary_color": "#FFFFFF",
+       "secondary_color": "#245466"
+     }
+   }
+
+What each part does:
+
+``data``
+   The points. Every point needs a ``uuid``, a ``position`` as
+   ``[latitude, longitude]``, a ``name`` (the popup title), and a ``type_of_place``
+   (the popup subtitle). Anything else is yours to invent.
+
+``location_obligatory_fields``
+   The fields beyond ``uuid`` and ``position`` that every point must have. Goodmap
+   validates against this and builds the "suggest a new point" form from it.
+
+``categories``
+   The filterable fields, each with its list of allowed values. These become the filter
+   checkboxes in the left panel.
+
+``categories_filter_mode``
+   How multiple checked values in one category combine. ``boolean`` renders
+   ``wheelchair_approach`` as a single "accessible only" checkbox instead of a
+   true/false pair. Five modes are available — see :ref:`categories-filter-mode`.
+
+``visible_data``
+   Which fields show inside the marker popup. Fields not listed here are never sent to
+   the frontend.
+
+``site_content``
+   platzky's section — pages, menus, colours. ``home_page_path: "/map"`` is what makes
+   ``/`` serve the map; without it, ``/`` is platzky's own homepage and the map lives at
+   ``/map`` only.
+
+The full reference for this file is :doc:`data-source`.
+
+2. Write the config
+-------------------
+
+Create ``config.yml`` next to it:
 
 .. code-block:: yaml
 
-   APP_NAME: My awesome goodmap application
-   SECRET_KEY: secret
+   APP_NAME: Crags
+   SECRET_KEY: change-me-before-production
+   USE_WWW: False
 
    LANGUAGES:
      en:
        name: English
-       flag: uk
+       flag: gb
        country: GB
-     pl:
-       name: polski
-       flag: pl
-       country: PL
 
    DB:
      TYPE: json_file
      PATH: data.json
-
-   PLUGINS:
-     sendmail:
-       PORT: 465
-       SERVER: "smtp.example.com"
-       RECEIVER: "receiver@example.com"
-       USER: "sender@example.pl"
-       PASSWORD: "PA$$WORD"
-       SUBJECT: "My awesome goodmap application"
-
-Data Model
-~~~~~~~~~~
-
-Each location in the database has a set of fields (``name``, ``position``,
-``type_of_place``, plus any custom fields defined by the application). Three
-configuration keys control how these fields appear on the map:
-
-``visible_data``
-   List of field names to display **inline** in location markers (the popup
-   that appears when a pin is clicked). Only fields listed here appear in the
-   marker's data section; any other location fields are hidden from the
-   frontend.
-
-``meta_data``
-   List of field names to display in the location detail panel (sidebar or
-   modal), separate from the inline marker fields.
-
-``location_obligatory_fields``
-   List of ``(field_name, field_type)`` tuples that define **extra** fields
-   (beyond the built-in ``name`` and ``position``) which are required when
-   creating or editing a location. The frontend uses this to generate dynamic
-   forms. Supported types: ``str``, ``list``, ``int``, ``float``, ``bool``,
-   ``dict``.
-
-Example configuration in your data source:
-
-.. code-block:: json
-
-   {
-     "visible_data": ["test_category", "type_of_place"],
-     "meta_data": ["uuid"],
-     "location_obligatory_fields": [
-       ["test_category", "list[str]"]
-     ]
-   }
-
-.. _categories-filter-mode:
-
-Categories and Filtering
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-``categories`` is a dict of field name to the list of allowed values for that
-field. Each category is rendered in the frontend as a group of filter
-checkboxes, one per allowed value.
-
-``categories_help``
-   List of category keys that should show a help tooltip next to the
-   category's title. The tooltip text is looked up via the translation key
-   ``categories_help_<category_key>``.
-
-``categories_options_help``
-   Dict of category key to the list of option values within that category
-   that should show a help tooltip. The tooltip text is looked up via the
-   translation key ``categories_options_help_<option_value>``.
-
-``categories_default_checked``
-   Dict of category key to the list of option values that should be
-   pre-checked in the filter panel when the app first loads, before the user
-   has made any selection.
-
-``categories_filter_mode``
-   Dict of category key to how *multiple selected values within that
-   category* are combined when filtering locations. Categories not listed
-   here default to ``"or"``. This only affects combination **within** one
-   category - across different categories, selections are always combined
-   with AND (a location must match every category that has an active
-   selection).
-
-   ``"or"`` (default)
-      A location matches if it has **any** of the selected values. This is
-      the usual "check more boxes to broaden results" behavior - e.g.
-      checking both ``bikes`` and ``cars`` on ``accessible_by`` shows
-      locations that allow bikes *or* cars, not only locations that allow
-      both (which would often be zero results).
-
-   ``"and"``
-      A location matches only if it has **every** one of the selected
-      values - narrowing rather than broadening. Only meaningful for
-      list-valued categories (a location can have several simultaneous
-      values); for a single-valued category it behaves like ``"or"``
-      restricted to one selection at a time. Still rendered as checkboxes
-      (it's still multi-select), but with a "(match all)" hint next to the
-      category title so it reads differently from the default "or"
-      behavior - e.g. an ``amenities`` field where checking ``lighting``
-      and ``benches`` should show only bridges that have both, not either.
-
-   ``"exclusive"``
-      Single-select: the frontend renders the options as radio buttons
-      instead of checkboxes, so only one value can be active at a time. Use
-      this for categories with three or more mutually-exclusive states,
-      e.g. a toll tier: ``free`` / ``discounted`` / ``full_price``.
-
-   ``"boolean"``
-      For a field with exactly the two values ``"true"`` and ``"false"``.
-      Only the ``"true"`` option is rendered, as a single checkbox; leaving
-      it unchecked already means "show everything" (both true and false
-      locations), so there's no separate control for isolating ``"false"``
-      alone. Use this when nobody would deliberately filter for the
-      negative case - e.g. a "free only" checkbox for an ``is_free`` field,
-      since drivers care about "free" or "all", not "paid only".
-
-   ``"threshold"``
-      For an ordered, numeric-valued category, e.g. a speed limit in km/h.
-      Selecting a value matches any location whose value is **at or below**
-      the highest selected value - e.g. selecting ``30`` also matches
-      locations with ``10`` or ``30``, but not ``50``. The frontend renders
-      this as radio buttons too, since selecting more than one option would
-      be redundant: the highest selection alone determines the cutoff.
-
-Example configuration combining all five modes:
-
-.. code-block:: json
-
-   {
-     "categories": {
-       "accessible_by": ["bikes", "cars", "pedestrians"],
-       "type_of_place": ["big bridge", "small bridge"],
-       "is_free": ["true", "false"],
-       "speed_limit": ["10", "30", "50"],
-       "amenities": ["lighting", "benches", "toilets"]
-     },
-     "categories_help": ["accessible_by"],
-     "categories_options_help": {
-       "accessible_by": ["cars", "pedestrians"]
-     },
-     "categories_default_checked": {
-       "accessible_by": ["cars"]
-     },
-     "categories_filter_mode": {
-       "accessible_by": "or",
-       "type_of_place": "or",
-       "is_free": "boolean",
-       "speed_limit": "threshold",
-       "amenities": "and"
-     }
-   }
-
-The active mode for each category is also exposed as ``filter_mode`` in the
-``/api/categories-full`` response, so a custom frontend can render the
-right control (checkbox vs. radio) without hardcoding category names.
-
-Feature Flags
-~~~~~~~~~~~~~
-
-Optional behavior can be toggled via a ``FEATURE_FLAGS:`` block in your
-configuration file:
-
-.. code-block:: yaml
 
    FEATURE_FLAGS:
      USE_LAZY_LOADING: true
+     SHOW_SEARCH_BAR: true
+     SHOW_SUGGEST_NEW_POINT_BUTTON: true
 
-``USE_LAZY_LOADING`` (default: ``true``)
-   Loads a location's full data only after the user clicks its point on the
-   map, rather than upfront together with the initial map load. Set to
-   ``false`` to load all point data together with the map instead.
+``DB`` points at the data source you just wrote. ``FEATURE_FLAGS`` switch optional
+behaviour on and off — every flag is listed in :ref:`config-feature-flags`.
 
-Photo Uploads
-~~~~~~~~~~~~~
+.. important::
 
-Users can attach a photo when suggesting a new location. By default, Goodmap
-accepts JPEG photos up to 5 MiB. To allow other formats or change the size
-limit, set the ``ATTACHMENT:`` key in your configuration file (see
-`platzky's AttachmentConfig
-<https://platzky.readthedocs.io/en/latest/api.html#platzky.config.AttachmentConfig>`_):
+   ``USE_WWW: False`` matters locally. It defaults to true, which redirects every request
+   to the ``www.`` hostname — so on ``localhost`` you get a ``301`` to
+   ``http://www.localhost/`` and nothing loads. Turn it back on in production if you serve
+   from a ``www.`` domain.
 
-.. code-block:: yaml
+.. warning::
 
-   ATTACHMENT:
-     allowed_mime_types: ["image/jpeg", "image/png"]
-     allowed_extensions: ["jpg", "jpeg", "png"]
-     max_size: 8388608  # 8 MiB
+   ``SECRET_KEY`` signs session cookies and CSRF tokens. Use a real random value in
+   production and keep it out of version control — see :ref:`deployment-secrets`.
 
-Omit ``ATTACHMENT:`` to keep the default (JPEG only, 5 MiB).
-
-A photo in an unsupported format is rejected with an error message asking the
-user to pick a different file. A photo in an allowed format that exceeds the
-size limit is automatically compressed in the browser before upload; the user
-is warned that this may reduce image quality. If the photo still exceeds the
-limit after compression, it is rejected. The server enforces the same limits
-on upload, independently of the browser-side checks.
-
-.. _data-model-visible_data:
-
-Database Types
-~~~~~~~~~~~~~~
-
-JSON File:
-
-.. code-block:: yaml
-
-   DB:
-     TYPE: json_file
-     PATH: data.json
-
-Google Cloud Storage:
-
-.. code-block:: yaml
-
-   DB:
-     TYPE: google_hosted_json_file
-     BUCKET_NAME: good-map
-     SOURCE_BLOB_NAME: data.json
-
-Running the Application
------------------------
-
-Development Server
-~~~~~~~~~~~~~~~~~~
+3. Run it
+---------
 
 .. code-block:: bash
 
-   poetry run flask --app "goodmap.goodmap:create_app(config_path='config.yml')" --debug run
+   flask --app "goodmap.goodmap:create_app(config_path='config.yml')" --debug run
 
-The application will be available at http://localhost:5000
+Open http://localhost:5000/ — three crags on a map, a rock-type filter, and an
+"accessible only" checkbox in the left panel. Clicking a marker shows its rock type and
+approach.
 
-Building the Application
-------------------------
+.. note::
 
-To build translations and create a distribution:
+   ``--debug`` reloads on change and shows tracebacks. Drop it outside development, and
+   see :doc:`deployment` for how to serve this properly.
+
+4. Talk to the API
+------------------
+
+The same data is available as JSON. Filters are query parameters — repeat a parameter to
+check several boxes:
 
 .. code-block:: bash
 
-   make build
+   curl 'http://localhost:5000/api/locations'
+   curl 'http://localhost:5000/api/locations?rock=granite'
+   curl 'http://localhost:5000/api/locations?rock=granite&rock=limestone'
 
-This will compile translations and build the package.
+``/api/locations`` returns only identity and position — the popup contents are a second
+call, so a map with thousands of points stays cheap:
+
+.. code-block:: bash
+
+   curl 'http://localhost:5000/api/location/7c3d5e7f-9a1b-4c3d-8e5f-7a9b1c3d5e7f'
+
+Sorting by distance and capping the result set, for a "near me" view:
+
+.. code-block:: bash
+
+   curl 'http://localhost:5000/api/locations?lat=50.06&lon=19.94&limit=5'
+
+Every endpoint is documented in :doc:`http-api`, and the running app serves its own
+OpenAPI schema at http://localhost:5000/api/doc.
+
+5. Change something
+-------------------
+
+Add ``sandstone`` crags, or add a new filterable field:
+
+1. Add the field to a point in ``data.json``.
+2. Add it to ``categories`` with its allowed values, so it becomes filterable.
+3. Add it to ``visible_data``, so it shows in the popup.
+4. Add it to ``location_obligatory_fields`` if every point must have it.
+5. Restart the server.
+
+With ``TYPE: json_file`` the file is re-read per request, so data edits show up on
+refresh — but the schema keys above are read once at startup, so changing them needs a
+restart.
+
+Where to go next
+----------------
+
+- :doc:`configuration` — every ``config.yml`` key and feature flag.
+- :doc:`data-source` — the full data format, all five filter modes, and the Google Cloud
+  Storage and MongoDB backends.
+- :doc:`admin-panel` — moderating the points, suggestions, and problem reports your users
+  submit.
+- :doc:`deployment` — running it for real.

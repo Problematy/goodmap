@@ -1,12 +1,11 @@
-"""Sphinx configuration for Goodmap documentation."""
+"""Sphinx configuration for Goodmap documentation.
+
+These docs are task-oriented prose: how to run, configure and extend Goodmap. They
+deliberately carry no autodoc API dump, so no extension here imports the package —
+only its version is read, for the |version| substitution.
+"""
 
 import importlib.metadata
-import sys
-from pathlib import Path
-
-# Add project to path
-project_root = Path(__file__).parent.parent
-sys.path.insert(0, str(project_root))
 
 # Read version from installed package metadata
 try:
@@ -22,10 +21,7 @@ author = "Goodmap Contributors"
 
 # General configuration
 extensions = [
-    "sphinx.ext.autodoc",
     "sphinx.ext.intersphinx",
-    "sphinx.ext.viewcode",
-    "sphinx.ext.napoleon",
     "myst_parser",
 ]
 
@@ -53,22 +49,13 @@ html_sidebars = {
     ]
 }
 
-# Autodoc settings
-autodoc_member_order = "bysource"
-autodoc_typehints = "description"
-
-# Intersphinx mapping
+# Intersphinx mapping. platzky is linked from the config and plugin pages, since a
+# Goodmap deployment is a platzky site and inherits its configuration.
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
     "flask": ("https://flask.palletsprojects.com/en/stable/", None),
-    "pydantic": ("https://docs.pydantic.dev/latest/", None),
     "platzky": ("https://platzky.readthedocs.io/en/latest/", None),
 }
-
-# Napoleon settings for Google/NumPy style docstrings
-napoleon_google_docstring = True
-napoleon_numpy_docstring = False
-napoleon_include_init_with_doc = True
 
 # Make version available as substitution in RST files
 rst_epilog = f"""

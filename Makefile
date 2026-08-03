@@ -37,6 +37,13 @@ dependency-check:
 run-example-env:
 	$(PYTHON) flask --app "goodmap.goodmap:create_app(config_path='$(CONFIG_PATH)')" --debug run
 
+# TODO verify-json-data is broken: goodmap.data_validator does not exist
+#  The target always fails with "No module named goodmap.data_validator". Either restore
+#  the module or reimplement it: build a model with
+#  data_models.location.create_location_model(location_obligatory_fields, categories)
+#  from the file's own "map" section and model_validate() every point, exiting non-zero
+#  on the first failure. Docs (docs/data-source.rst) currently ship a standalone script
+#  as a workaround - fold it back in here once this works.
 verify-json-data:
 ifndef JSON_DATA_FILE
 	$(error "Missing required argument JSON_DATA_FILE: make verify-json-data JSON_DATA_FILE=path/to/json")
