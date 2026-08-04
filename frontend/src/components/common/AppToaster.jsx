@@ -22,19 +22,12 @@ export const AppToaster = () => {
             position="top-center"
             reverseOrder={false}
             gutter={8}
-            // Vertically centered: the success message fires right as the dialog
-            // closes, and a small top-corner toast is easy to miss against a
-            // full-screen map background.
-            //
-            // `bottom` must be overridden to 'auto': the library defaults to
-            // `{ top: 16, bottom: 16, ... }`, and with both active the browser sizes
-            // the container's height by spanning between them rather than shrinking
-            // it to the toast's content height - which throws off translateY(-50%)'s
-            // centering math.
+            // Placed mid-map: a toast in the top corner is easy to miss against a
+            // full-screen map. `bottom` must be 'auto' - the library defaults it to
+            // 16, which stretches the container and drops the toast far below here.
             containerStyle={{
                 top: '50%',
                 bottom: 'auto',
-                transform: 'translateY(-50%)',
             }}
             toastOptions={{
                 duration: 8000,
