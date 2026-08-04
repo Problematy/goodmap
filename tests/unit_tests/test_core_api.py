@@ -650,6 +650,33 @@ def test_suggest_new_location_keeps_json_scalar_looking_field_as_string(
     assert suggestions[-1]["type_of_place"] == scalar_looking_value
 
 
+def test_suggest_new_location_keeps_json_array_looking_string_as_string(test_app):
+    """A str-typed field whose value happens to be valid JSON must stay a string.
+
+    Which fields arrive JSON-encoded is decided by the location model's declared
+    types, so a plain text field is never parsed no matter what it contains.
+    """
+    db = test_app.application.db
+    initial_count = len(db.get_suggestions({}))
+
+    response = test_app.post(
+        "/api/suggest-new-point",
+        data={
+            "position": json.dumps([50, 50]),
+            "name": '["not", "a", "list"]',
+            "type_of_place": "shop",
+            "test_category": json.dumps(["test"]),
+        },
+        content_type="multipart/form-data",
+    )
+    assert response.status_code == 200
+
+    suggestions = db.get_suggestions({})
+    assert len(suggestions) == initial_count + 1
+    assert suggestions[-1]["name"] == '["not", "a", "list"]'
+    assert suggestions[-1]["test_category"] == ["test"]
+
+
 # --- Photo upload tests ---
 
 # JPEG magic bytes header (enough for content-type detection)

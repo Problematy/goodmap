@@ -1,6 +1,8 @@
 import importlib.metadata
 import logging
+import types
 import uuid
+from typing import Any, Union, get_args, get_origin
 
 import deprecation
 import numpy
@@ -93,6 +95,14 @@ def get_locations_from_request(database, request_args):
     return [x.basic_info() for x in all_locations]
 
 
+def _holds_container(annotation: Any) -> bool:
+    """True when a field holds a list/tuple/set/dict rather than a scalar."""
+    origin = get_origin(annotation)
+    if origin in (Union, types.UnionType):
+        return any(_holds_container(arg) for arg in get_args(annotation))
+    return (origin or annotation) in (list, tuple, set, dict)
+
+
 def core_pages(
     database,
     languages: LanguagesMapping,
@@ -104,6 +114,14 @@ def core_pages(
     shortcodes: dict[str, Shortcode],
 ) -> Blueprint:
     core_api_blueprint = Blueprint("api", __name__, url_prefix="/api")
+
+    # Multipart form values are always strings; the frontend JSON-encodes the ones
+    # whose field holds a container.
+    json_encoded_fields = {
+        name
+        for name, field in location_model.model_fields.items()
+        if _holds_container(field.annotation)
+    }
 
     # Build photo error message from config
     allowed_ext = ", ".join(sorted(photo_attachment_config.allowed_extensions or []))
@@ -146,14 +164,7 @@ def core_pages(
 
                 for key in request.form:
                     value = request.form[key]
-                    # The frontend only ever JSON.stringify()s arrays/objects (list-type
-                    # category fields, and position) - plain text/category fields are sent
-                    # as raw, unescaped strings. Only attempt JSON parsing when the value
-                    # actually looks like one of those, so a scalar string that happens to
-                    # also be valid JSON (e.g. a category option literally named "true" or
-                    # "10") isn't silently coerced into a bool/int and fed to a field that
-                    # expects a plain string.
-                    if value.strip()[:1] not in ("[", "{"):
+                    if key not in json_encoded_fields:
                         suggested_location[key] = value
                         continue
 
