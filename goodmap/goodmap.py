@@ -228,9 +228,6 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
 
     CSRFProtect(app)
 
-    # Sourced from config.attachment (YAML: ATTACHMENT:) rather than hardcoded here, so
-    # deployments can override allowed formats/size - see GoodmapConfig.attachment for
-    # the JPEG-only default this falls back to when unset.
     photo_attachment_config = config.attachment
 
     shortcodes: dict[str, Shortcode] = {}

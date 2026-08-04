@@ -9,13 +9,10 @@ from pydantic import Field
 
 
 def _default_photo_attachment_config() -> AttachmentConfig:
-    """JPEG-only, 5 MiB: goodmap's only current use of attachments is location
-    suggestion photos, which the frontend always previews as an <img> and
-    auto-compresses to JPEG when oversized - platzky's own AttachmentConfig default
-    (PDFs, archives, audio/video, up to 10MB) isn't a safe default for that. Kept as
-    goodmap's own default for the inherited `attachment` field below, rather than
-    platzky's, so deployments that don't set ATTACHMENT: keep this behavior; those
-    that do set it get exactly what they configured.
+    """Attachment limits for location suggestion photos: JPEG only, up to 5 MiB.
+
+    The frontend previews the attachment as an <img> and compresses oversized
+    ones to JPEG, so the format set is deliberately narrower than platzky's.
     """
     return AttachmentConfig(
         allowed_mime_types=frozenset({"image/jpeg"}),
@@ -35,9 +32,7 @@ class GoodmapConfig(PlatzkyConfig):
         alias="GOODMAP_FRONTEND_LIB_URL",
     )
 
-    # Overrides platzky's own AttachmentConfig default - see
-    # _default_photo_attachment_config for why. Deployments can still set their own
-    # allowed formats/size via ATTACHMENT: in YAML, same as any platzky app.
+    # Set via ATTACHMENT: in YAML; unset deployments get the photo defaults above.
     attachment: AttachmentConfig = Field(
         default_factory=_default_photo_attachment_config,
         alias="ATTACHMENT",
