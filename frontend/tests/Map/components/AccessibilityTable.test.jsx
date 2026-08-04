@@ -36,6 +36,7 @@ const examplePlaces = [
 ];
 
 httpService.getLocationsData.mockResolvedValue(examplePlaces);
+httpService.getCategoriesData.mockResolvedValue({ categories: [], defaultChecked: {} });
 
 describe('Accessibility Table', () => {
     beforeEach(() => {

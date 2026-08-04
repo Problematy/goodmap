@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
     Button,
     Box,
@@ -26,7 +26,7 @@ import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import { getCsrfToken } from '../../../utils/csrf';
 import { useLocation } from '../context/LocationContext';
-import { httpService } from '../../../services/http/httpService';
+import { useCategories } from '../../Categories/CategoriesContext';
 import { toast } from '../../../utils/toast';
 import imageCompression from 'browser-image-compression';
 
@@ -44,12 +44,12 @@ const mapCategoryOptions = categoryOptions => {
     return optionMap;
 };
 
-// Build { fieldNames, options } translation maps from httpService.getCategoriesData().
+// Build { fieldNames, options } translation maps from the fetched category definitions.
 const buildCategoryTranslations = categoriesData => {
     const fieldNames = {};
     const options = {};
 
-    categoriesData.categories.forEach(({ categoryKey, categoryName, options: categoryOptions }) => {
+    categoriesData.forEach(({ categoryKey, categoryName, options: categoryOptions }) => {
         fieldNames[categoryKey] = categoryName;
 
         if (categoryOptions?.length) {
@@ -113,6 +113,7 @@ const useScrollToTop = trigger => {
 export const SuggestNewPointDialog = ({ open, onClose }) => {
     const { t } = useTranslation();
     const { userPosition, requestLocationWithFeedback } = useLocation();
+    const { categoriesData } = useCategories();
     const [photo, setPhoto] = useState(null);
     const [photoURL, setPhotoURL] = useState(null);
     // Shown inline in the dialog: a toast here can end up behind it.
@@ -123,10 +124,10 @@ export const SuggestNewPointDialog = ({ open, onClose }) => {
     const dialogPaperRef = useScrollToTop(formNotice);
     const [isCompressingPhoto, setIsCompressingPhoto] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [categoryTranslations, setCategoryTranslations] = useState({
-        fieldNames: {},
-        options: {},
-    });
+    const categoryTranslations = useMemo(
+        () => buildCategoryTranslations(categoriesData),
+        [categoriesData],
+    );
 
     // A notice from a previous attempt must not greet the user on reopen.
     useEffect(() => {
@@ -134,20 +135,6 @@ export const SuggestNewPointDialog = ({ open, onClose }) => {
             setFormNotice(null);
         }
     }, [open]);
-
-    // Fetch translated category data
-    useEffect(() => {
-        const fetchCategories = async () => {
-            try {
-                const categoriesData = await httpService.getCategoriesData();
-                setCategoryTranslations(buildCategoryTranslations(categoriesData));
-            } catch (error) {
-                console.error('Failed to fetch category translations:', error);
-            }
-        };
-
-        fetchCategories();
-    }, []);
 
     const locationSchema = globalThis.LOCATION_SCHEMA || {
         obligatory_fields: [],

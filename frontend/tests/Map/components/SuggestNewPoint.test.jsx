@@ -4,6 +4,7 @@ import React from 'react';
 import axios from 'axios';
 import { SuggestNewPointButton } from '../../../src/components/Map/components/SuggestNewPointButton';
 import { LocationProvider } from '../../../src/components/Map/context/LocationContext';
+import { CategoriesProvider } from '../../../src/components/Categories/CategoriesContext';
 import {
     mockGeolocationSuccess,
     mockGeolocationError,
@@ -22,7 +23,11 @@ import { toast } from '../../../src/utils/toast';
 import imageCompression from 'browser-image-compression';
 
 const renderWithProvider = component => {
-    return render(<LocationProvider>{component}</LocationProvider>);
+    return render(
+        <CategoriesProvider>
+            <LocationProvider>{component}</LocationProvider>
+        </CategoriesProvider>,
+    );
 };
 
 jest.mock('axios');
