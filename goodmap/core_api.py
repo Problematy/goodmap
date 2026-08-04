@@ -14,6 +14,7 @@ from platzky.attachment import create_attachment
 from platzky.config import AttachmentConfig, LanguagesMapping
 from platzky.shortcodes import Shortcode
 from spectree import Response, SpecTree
+from werkzeug.exceptions import HTTPException
 
 from goodmap.api_models import (
     CSRFTokenResponse,
@@ -265,6 +266,10 @@ def core_pages(
                 extra={"errors": e.validation_errors},
             )
             return make_response(jsonify({"message": ERROR_INVALID_LOCATION_DATA}), 400)
+        except HTTPException:
+            # Carries its own status (e.g. 413 for a body past MAX_CONTENT_LENGTH);
+            # reporting it as a 500 would misattribute a client error to the server.
+            raise
         except Exception:
             logger.exception("Error in suggest location endpoint")
             return make_response(

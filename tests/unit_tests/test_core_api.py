@@ -677,6 +677,31 @@ def test_suggest_new_location_keeps_json_array_looking_string_as_string(test_app
     assert suggestions[-1]["test_category"] == ["test"]
 
 
+def test_suggest_location_accepts_photo_far_larger_than_the_form_fields(test_app):
+    """A realistic photo is orders of magnitude bigger than the text fields around it.
+
+    The request size cap has to be derived from attachment.max_size, not from the
+    size of a suggestion's other fields, or every real photo would 413.
+    """
+    photo = JPEG_HEADER + b"\x00" * (500 * 1024)
+    with mock.patch(
+        "platzky.attachment.mime_validation.validate_content_mime_type", return_value=None
+    ):
+        response = test_app.post(
+            "/api/suggest-new-point",
+            data={
+                "position": json.dumps([50, 50]),
+                "name": "Test Location",
+                "type_of_place": "shop",
+                "test_category": json.dumps(["test"]),
+                "photo": (BytesIO(photo), "photo.jpg", "image/jpeg"),
+            },
+            content_type="multipart/form-data",
+        )
+
+    assert response.status_code == 200
+
+
 # --- Photo upload tests ---
 
 # JPEG magic bytes header (enough for content-type detection)
