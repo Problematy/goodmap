@@ -8,6 +8,7 @@ from unittest import mock
 from unittest.mock import MagicMock, patch
 
 import pytest
+from platzky.config import AttachmentConfig
 from platzky.db.json_db import JsonDbConfig
 
 from goodmap import goodmap
@@ -183,11 +184,11 @@ def test_index_route_location_schema_respects_attachment_config_override():
             DATA={"site_content": {"pages": []}, "categories": {}},
             TYPE="json",
         ),
-        ATTACHMENT={
-            "allowed_mime_types": ["image/jpeg", "image/png"],
-            "allowed_extensions": ["jpg", "jpeg", "png"],
-            "max_size": 8 * 1024 * 1024,
-        },
+        ATTACHMENT=AttachmentConfig(
+            allowed_mime_types=frozenset({"image/jpeg", "image/png"}),
+            allowed_extensions=frozenset({"jpg", "jpeg", "png"}),
+            max_size=8 * 1024 * 1024,
+        ),
     )
     app = goodmap.create_app_from_config(config)
     app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
