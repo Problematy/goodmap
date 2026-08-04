@@ -4,14 +4,12 @@ Suggest New Point Tests
 Tests the "suggest a new point" dialog's validation and error feedback.
 """
 
+import io
+
+from PIL import Image
 from playwright.sync_api import Page, expect
 
 from tests.conftest import BASE_URL
-
-
-def _suggest_new_point_dialog(page: Page):
-    # Matched by name: #left-panel also has role="dialog".
-    return page.get_by_role("dialog", name="Suggest a New Point")
 
 
 def _open_suggest_new_point_dialog(page: Page):
@@ -19,36 +17,22 @@ def _open_suggest_new_point_dialog(page: Page):
     expect(suggest_button).to_have_css("opacity", "1", timeout=5000)
     suggest_button.click()
 
-    dialog = _suggest_new_point_dialog(page)
+    # Matched by name: #left-panel also has role="dialog".
+    dialog = page.get_by_role("dialog", name="Suggest a New Point")
     expect(dialog).to_be_visible()
     return dialog
 
 
 def _upload_tall_photo(page: Page) -> None:
     """
-    Attaches a synthetic 200x3000px JPEG, generated in-browser so no fixture file is
-    needed on disk. Tall enough that the dialog is guaranteed to overflow and scroll.
+    Attaches a 200x3000px JPEG, tall enough that the dialog overflows and scrolls.
     """
-    page.evaluate("""
-        async () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = 200;
-            canvas.height = 3000;
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#3366ff';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+    buffer = io.BytesIO()
+    Image.new("RGB", (200, 3000), "#3366ff").save(buffer, format="JPEG")
 
-            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.8));
-            const file = new File([blob], 'tall-photo.jpg', { type: 'image/jpeg' });
-
-            const dataTransfer = new DataTransfer();
-            dataTransfer.items.add(file);
-
-            const input = document.querySelector('[data-testid="photo-of-point"]');
-            input.files = dataTransfer.files;
-            input.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-    """)
+    page.locator('[data-testid="photo-of-point"]').set_input_files(
+        files=[{"name": "tall-photo.jpg", "mimeType": "image/jpeg", "buffer": buffer.getvalue()}]
+    )
 
 
 class TestSuggestNewPointValidation:
