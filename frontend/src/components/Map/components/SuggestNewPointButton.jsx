@@ -47,21 +47,18 @@ const mapCategoryOptions = categoryOptions => {
     return optionMap;
 };
 
-// Build { fieldNames, options } translation maps from httpService.getCategoriesData()'s
-// { categories: [{ categoryKey, categoryName, options }, ...] } shape.
+// Build { fieldNames, options } translation maps from httpService.getCategoriesData().
 const buildCategoryTranslations = categoriesData => {
     const fieldNames = {};
     const options = {};
 
-    (categoriesData.categories || []).forEach(
-        ({ categoryKey, categoryName, options: categoryOptions }) => {
-            fieldNames[categoryKey] = categoryName;
+    categoriesData.categories.forEach(({ categoryKey, categoryName, options: categoryOptions }) => {
+        fieldNames[categoryKey] = categoryName;
 
-            if (categoryOptions && categoryOptions.length > 0) {
-                options[categoryKey] = mapCategoryOptions(categoryOptions);
-            }
-        },
-    );
+        if (categoryOptions?.length) {
+            options[categoryKey] = mapCategoryOptions(categoryOptions);
+        }
+    });
 
     return { fieldNames, options };
 };
