@@ -31,7 +31,7 @@ import { getCsrfToken } from '../../../utils/csrf';
 import { useLocation } from '../context/LocationContext';
 import { httpService } from '../../../services/http/httpService';
 import { toast } from '../../../utils/toast';
-import { compressImageToJpeg } from '../../../utils/imageCompression';
+import imageCompression from 'browser-image-compression';
 
 // Map a category's options to a { key: translation } object.
 // Options come as [[key, translation], ...] or [key, ...].
@@ -66,6 +66,48 @@ const buildCategoryTranslations = categoriesData => {
     return { fieldNames, options };
 };
 
+const isFieldEmpty = (value, fieldType) =>
+    fieldType === 'list' ? !value || value.length === 0 : !value || value.trim() === '';
+
+const findEmptyRequiredFields = (obligatoryFields, formFields) =>
+    obligatoryFields
+        .filter(([fieldName]) => fieldName !== 'uuid')
+        .filter(([fieldName, fieldType]) => isFieldEmpty(formFields[fieldName], fieldType))
+        .map(([fieldName]) => fieldName);
+
+const buildSuggestionFormData = ({ userPosition, photo, formFields }) => {
+    const formData = new FormData();
+    formData.append('position', JSON.stringify([userPosition.lat, userPosition.lng]));
+    if (photo) {
+        formData.append('photo', photo);
+    }
+    Object.entries(formFields).forEach(([fieldName, fieldValue]) => {
+        formData.append(
+            fieldName,
+            Array.isArray(fieldValue) ? JSON.stringify(fieldValue) : fieldValue,
+        );
+    });
+    return formData;
+};
+
+// For display only - the byte count stays authoritative for size checks.
+const toMiB = bytes => Number((bytes / 1024 / 1024).toFixed(1));
+
+const isPositionAvailable = position =>
+    Boolean(position) && position.lat !== null && position.lng !== null;
+
+// Scrolls the returned element back to the top whenever `trigger` becomes truthy.
+// Attach to the Dialog's Paper - it's the scroll container, not DialogContent.
+const useScrollToTop = trigger => {
+    const ref = useRef(null);
+    useEffect(() => {
+        if (trigger) {
+            ref.current?.scrollTo?.({ top: 0, behavior: 'smooth' });
+        }
+    }, [trigger]);
+    return ref;
+};
+
 /**
  * Button component that allows users to suggest new map points/locations.
  * Opens a dialog form with dynamically generated fields based on window.LOCATION_SCHEMA.
@@ -81,37 +123,13 @@ export const SuggestNewPointButton = () => {
     const [showNewPointBox, setShowNewPointSuggestionBox] = useState(false);
     const [photo, setPhoto] = useState(null);
     const [photoURL, setPhotoURL] = useState(null);
-    // Rendered inline in the dialog rather than as a toast: this dialog sits inside the
-    // map's component tree, where an ancestor (e.g. a Leaflet pane) can trap a toast's
-    // z-index in its own stacking context, leaving it hidden behind the dialog itself.
-    // { severity: 'error' | 'warning', message: string } | null - 'warning' is used for
-    // non-blocking heads-ups (e.g. "your photo was compressed") where the form still
-    // proceeds, unlike 'error' which stops the user from submitting.
+    // Shown inline in the dialog: a toast here can end up behind it.
+    // 'warning' notices are non-blocking, 'error' ones stop submission.
     const [formNotice, setFormNotice] = useState(null);
     const showError = message => setFormNotice({ severity: 'error', message });
     const showWarning = message => setFormNotice({ severity: 'warning', message });
-    // The Dialog's Paper (not DialogContent) is what actually scrolls once a photo
-    // preview + all the dynamic fields push content past viewport height: DialogContent
-    // has flex:1 1 auto but, being height:auto itself with no definite cross-size to
-    // shrink against, it just grows to its full content height instead of clipping -
-    // Paper is the ancestor with the real maxHeight + overflow-y:auto constraint, so
-    // it's Paper's scrollTop that ends up non-zero. The alert renders at the top of that
-    // scroll area, so without this it can appear entirely off-screen above whatever the
-    // user had scrolled to - looking exactly like the original "submit does nothing" bug,
-    // just caused by scroll position this time.
-    const dialogPaperRef = useRef(null);
-    useEffect(() => {
-        if (formNotice) {
-            dialogPaperRef.current?.scrollTo?.({ top: 0, behavior: 'smooth' });
-        }
-    }, [formNotice]);
-    // True while an oversized photo is being recompressed - shown as a spinner on the
-    // upload button, since decoding a very large source image can take a visible moment.
+    const dialogPaperRef = useScrollToTop(formNotice);
     const [isCompressingPhoto, setIsCompressingPhoto] = useState(false);
-    // True while the suggestion is being submitted - shown as a spinner on the Submit
-    // button. The backend can take a noticeable moment here (e.g. a slow notifier
-    // plugin, such as sending an email, runs synchronously before it responds), so
-    // without this the button just looks unresponsive for however long that takes.
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [categoryTranslations, setCategoryTranslations] = useState({
         fieldNames: {},
@@ -132,8 +150,6 @@ export const SuggestNewPointButton = () => {
         fetchCategories();
     }, []);
 
-    // Read location schema from global object. `photo` mirrors the backend's AttachmentConfig
-    // (see goodmap.py) so the frontend never has to guess/duplicate the limits it enforces.
     const locationSchema = globalThis.LOCATION_SCHEMA || {
         obligatory_fields: [],
         categories: {},
@@ -187,40 +203,17 @@ export const SuggestNewPointButton = () => {
         setPhotoURL(URL.createObjectURL(file));
     };
 
-    const handlePhotoUpload = async event => {
-        const file = event.target.files[0];
-        if (!file) {
-            return;
-        }
-        setFormNotice(null);
-
-        // Wrong format is rejected outright rather than silently converted: swapping a
-        // user's PNG for a re-encoded JPEG behind their back is surprising, so they need
-        // to explicitly pick a different file instead.
-        if (!allowedPhotoMimeTypes.includes(file.type)) {
-            showError(
-                t('unsupportedPhotoFormat', {
-                    allowedFormats: allowedPhotoExtensions.map(ext => ext.toUpperCase()).join('/'),
-                }),
-            );
-            return;
-        }
-
-        if (file.size <= maxPhotoSizeBytes) {
-            acceptPhoto(file);
-            return;
-        }
-
-        // Right format, just oversized: compress automatically (most "oversized" photos
-        // are just high-resolution camera shots). The warning is shown *before* compressing
-        // starts, not after - the user should see this is happening, not learn about it
-        // retroactively once it's already done (compressing a large source photo can take
-        // a visible moment, during which the button shows a spinner).
-        const maxSizeMiB = Math.floor(maxPhotoSizeBytes / 1024 / 1024);
+    const compressAndAcceptPhoto = async file => {
+        const maxSizeMiB = toMiB(maxPhotoSizeBytes);
         showWarning(t('photoWillBeCompressed', { maxSizeMiB }));
         setIsCompressingPhoto(true);
         try {
-            const compressed = await compressImageToJpeg(file, { maxSizeBytes: maxPhotoSizeBytes });
+            const compressed = await imageCompression(file, {
+                maxSizeMB: maxPhotoSizeBytes / 1024 / 1024,
+                maxWidthOrHeight: 1920,
+                fileType: 'image/jpeg',
+                useWebWorker: true,
+            });
             if (compressed.size > maxPhotoSizeBytes) {
                 showError(t('fileTooLarge', { maxSizeMiB }));
                 return;
@@ -235,6 +228,30 @@ export const SuggestNewPointButton = () => {
         }
     };
 
+    const handlePhotoUpload = async event => {
+        const file = event.target.files[0];
+        if (!file) {
+            return;
+        }
+        setFormNotice(null);
+
+        if (!allowedPhotoMimeTypes.includes(file.type)) {
+            showError(
+                t('unsupportedPhotoFormat', {
+                    allowedFormats: allowedPhotoExtensions.map(ext => ext.toUpperCase()).join('/'),
+                }),
+            );
+            return;
+        }
+
+        if (file.size <= maxPhotoSizeBytes) {
+            acceptPhoto(file);
+            return;
+        }
+
+        await compressAndAcceptPhoto(file);
+    };
+
     const handleFieldChange = fieldName => event => {
         setFormFields({ ...formFields, [fieldName]: event.target.value });
     };
@@ -243,46 +260,18 @@ export const SuggestNewPointButton = () => {
         event.preventDefault();
         setFormNotice(null);
 
-        // Validate user position is available
-        if (!userPosition || userPosition.lat === null || userPosition.lng === null) {
+        if (!isPositionAvailable(userPosition)) {
             showError(t('locationNotAvailable'));
             return;
         }
 
-        // Validate required fields are filled
-        const emptyFields = [];
-        locationSchema.obligatory_fields.forEach(([fieldName, fieldType]) => {
-            if (fieldName === 'uuid') return; // Skip uuid - generated on backend
-
-            const value = formFields[fieldName];
-            const isEmpty =
-                fieldType === 'list' ? !value || value.length === 0 : !value || value.trim() === '';
-
-            if (isEmpty) {
-                emptyFields.push(fieldName);
-            }
-        });
-
+        const emptyFields = findEmptyRequiredFields(locationSchema.obligatory_fields, formFields);
         if (emptyFields.length > 0) {
             showError(t('fillRequiredFields', { fields: emptyFields.join(', ') }));
             return;
         }
 
-        const formData = new FormData();
-        // Convert position from {lat, lng} to [lat, lng] array format
-        formData.append('position', JSON.stringify([userPosition.lat, userPosition.lng]));
-        if (photo) {
-            formData.append('photo', photo);
-        }
-
-        // Add all dynamic form fields
-        Object.entries(formFields).forEach(([fieldName, fieldValue]) => {
-            if (Array.isArray(fieldValue)) {
-                formData.append(fieldName, JSON.stringify(fieldValue));
-            } else {
-                formData.append(fieldName, fieldValue);
-            }
-        });
+        const formData = buildSuggestionFormData({ userPosition, photo, formFields });
 
         setIsSubmitting(true);
         try {
@@ -295,19 +284,13 @@ export const SuggestNewPointButton = () => {
             });
             toast.success(t('locationSuggestedSuccess'));
 
-            // Reset form after successful submission
             setFormFields(initializeFormFields());
             setPhoto(null);
             setPhotoURL(null);
-
-            // Close dialog only after successful submission
             setShowNewPointSuggestionBox(false);
         } catch (error) {
             console.error('Error suggesting new point:', error);
-            // Surface the backend's specific reason (e.g. photo format/size) when available,
-            // instead of a generic message that hides why the submission was rejected.
             showError(error.response?.data?.message || t('locationSuggestedError'));
-            // Dialog stays open on error so user can retry
         } finally {
             setIsSubmitting(false);
         }

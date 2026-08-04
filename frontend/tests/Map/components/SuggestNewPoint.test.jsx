@@ -19,7 +19,7 @@ import {
 import { ERROR_MESSAGES, FILE_SIZES, SIMPLE_SCHEMA, FULL_SCHEMA } from '../../utils/testConstants';
 import { httpService } from '../../../src/services/http/httpService';
 import { toast } from '../../../src/utils/toast';
-import { compressImageToJpeg } from '../../../src/utils/imageCompression';
+import imageCompression from 'browser-image-compression';
 
 const renderWithProvider = component => {
     return render(<LocationProvider>{component}</LocationProvider>);
@@ -34,9 +34,7 @@ jest.mock('../../../src/services/http/httpService', () => ({
 jest.mock('../../../src/utils/toast', () => ({
     toast: { success: jest.fn(), error: jest.fn() },
 }));
-jest.mock('../../../src/utils/imageCompression', () => ({
-    compressImageToJpeg: jest.fn(),
-}));
+jest.mock('browser-image-compression');
 
 // Mock CSRF token meta tag and location schema
 beforeEach(() => {
@@ -188,13 +186,13 @@ describe('SuggestNewPointButton', () => {
                 ERROR_MESSAGES.UNSUPPORTED_PHOTO_FORMAT,
             );
         });
-        expect(compressImageToJpeg).not.toHaveBeenCalled();
+        expect(imageCompression).not.toHaveBeenCalled();
     });
 
     it('displays error message when a file cannot be processed as a photo', async () => {
         const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
         mockGeolocationSuccess();
-        compressImageToJpeg.mockRejectedValue(new Error('Failed to load image for compression'));
+        imageCompression.mockRejectedValue(new Error('Failed to load image for compression'));
 
         renderWithProvider(<SuggestNewPointButton />);
         URL.createObjectURL = jest.fn(() => 'blob:http://test-url/');
@@ -221,7 +219,7 @@ describe('SuggestNewPointButton', () => {
         Object.defineProperty(stillTooLarge, 'size', {
             value: FILE_SIZES.OVER_LIMIT_MB * 1024 * 1024,
         });
-        compressImageToJpeg.mockResolvedValue(stillTooLarge);
+        imageCompression.mockResolvedValue(stillTooLarge);
 
         renderWithProvider(<SuggestNewPointButton />);
         URL.createObjectURL = jest.fn(() => 'blob:http://test-url/');
@@ -244,7 +242,7 @@ describe('SuggestNewPointButton', () => {
             type: 'image/jpeg',
         });
         Object.defineProperty(compressedFile, 'size', { value: 1024 * 1024 });
-        compressImageToJpeg.mockResolvedValue(compressedFile);
+        imageCompression.mockResolvedValue(compressedFile);
 
         renderWithProvider(<SuggestNewPointButton />);
         URL.createObjectURL = jest.fn(() => 'blob:http://test-url/');
@@ -257,7 +255,7 @@ describe('SuggestNewPointButton', () => {
         mockUploadingFileWithSizeInMB(FILE_SIZES.OVER_LIMIT_MB);
 
         await waitFor(() => {
-            expect(compressImageToJpeg).toHaveBeenCalled();
+            expect(imageCompression).toHaveBeenCalled();
             // Compression succeeding is not silent - the user must be told their photo
             // was altered, even though the dialog isn't blocked from proceeding.
             expect(screen.getByRole('alert')).toHaveTextContent(ERROR_MESSAGES.PHOTO_COMPRESSED);
@@ -267,7 +265,7 @@ describe('SuggestNewPointButton', () => {
     it('shows a heads-up and disables the upload button while compression is in flight', async () => {
         mockGeolocationSuccess();
         let resolveCompression;
-        compressImageToJpeg.mockImplementation(
+        imageCompression.mockImplementation(
             () =>
                 new Promise(resolve => {
                     resolveCompression = resolve;
@@ -322,7 +320,7 @@ describe('SuggestNewPointButton', () => {
         Object.defineProperty(stillTooLarge, 'size', {
             value: FILE_SIZES.OVER_LIMIT_MB * 1024 * 1024,
         });
-        compressImageToJpeg.mockResolvedValue(stillTooLarge);
+        imageCompression.mockResolvedValue(stillTooLarge);
         mockUploadingFileWithSizeInMB(FILE_SIZES.OVER_LIMIT_MB);
 
         await waitFor(() => {
