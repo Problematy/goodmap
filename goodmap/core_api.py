@@ -1,8 +1,8 @@
 import importlib.metadata
+import json as json_lib
 import logging
-import types
 import uuid
-from typing import Any, Union, get_args, get_origin
+from typing import Any
 
 import deprecation
 import numpy
@@ -96,12 +96,42 @@ def get_locations_from_request(database, request_args):
     return [x.basic_info() for x in all_locations]
 
 
-def _holds_container(annotation: Any) -> bool:
-    """True when a field holds a list/tuple/set/dict rather than a scalar."""
-    origin = get_origin(annotation)
-    if origin in (Union, types.UnionType):
-        return any(_holds_container(arg) for arg in get_args(annotation))
-    return (origin or annotation) in (list, tuple, set, dict)
+def _parse_location_payload(raw_data: str) -> tuple[dict | None, Any]:
+    """Safely parse a JSON-encoded location payload.
+
+    Shared by the JSON body and the multipart 'location' field: both carry the same
+    JSON-object-of-fields shape, only the transport differs.
+
+    Returns:
+        (data, None) on success, or (None, error_response) on failure.
+    """
+    if not raw_data:
+        logger.warning("Empty location payload in suggest endpoint")
+        return None, make_response(jsonify({"message": ERROR_INVALID_REQUEST_DATA}), 400)
+    try:
+        # SECURITY: Use safe_json_loads with strict depth limit
+        data = safe_json_loads(raw_data, max_depth=MAX_JSON_DEPTH_LOCATION)
+    except (JSONDepthError, JSONSizeError) as e:
+        # Log security event and return 400
+        logger.warning(
+            f"JSON parsing blocked for security: {e}", extra={"value_size": len(raw_data)}
+        )
+        return None, make_response(
+            jsonify(
+                {
+                    "message": "Invalid request: JSON payload too complex or too large",
+                    "error": str(e),
+                }
+            ),
+            400,
+        )
+    except ValueError:  # JSONDecodeError inherits from ValueError
+        logger.warning("Invalid JSON in suggest endpoint")
+        return None, make_response(jsonify({"message": ERROR_INVALID_REQUEST_DATA}), 400)
+    if not isinstance(data, dict):
+        logger.warning("Non-object JSON value in suggest endpoint")
+        return None, make_response(jsonify({"message": ERROR_INVALID_REQUEST_DATA}), 400)
+    return data, None
 
 
 def core_pages(
@@ -115,14 +145,6 @@ def core_pages(
     shortcodes: dict[str, Shortcode],
 ) -> Blueprint:
     core_api_blueprint = Blueprint("api", __name__, url_prefix="/api")
-
-    # Multipart form values are always strings; the frontend JSON-encodes the ones
-    # whose field holds a container.
-    json_encoded_fields = {
-        name
-        for name, field in location_model.model_fields.items()
-        if _holds_container(field.annotation)
-    }
 
     # Build photo error message from config
     allowed_ext = ", ".join(sorted(photo_attachment_config.allowed_extensions or []))
@@ -149,53 +171,26 @@ def core_pages(
     def suggest_new_point():
         """Suggest new location for review.
 
-        Accepts location data either as JSON or multipart/form-data.
-        All fields are validated using Pydantic location model.
+        Accepts location data either as a plain JSON body, or - when a photo is
+        attached - as multipart/form-data with the same JSON object in a 'location'
+        field alongside the binary 'photo' file. All fields are validated using the
+        Pydantic location model.
         """
-        import json as json_lib
-
         try:
             # Initialize photo attachment (only populated for multipart/form-data)
             photo_attachment = None
 
-            # Handle both multipart/form-data (with file uploads) and JSON
-            if request.content_type and request.content_type.startswith("multipart/form-data"):
-                # Parse form data dynamically
-                suggested_location = {}
+            is_multipart = bool(
+                request.content_type and request.content_type.startswith("multipart/form-data")
+            )
+            raw_location = (
+                request.form.get("location", "") if is_multipart else request.get_data(as_text=True)
+            )
+            suggested_location, error_response = _parse_location_payload(raw_location)
+            if error_response is not None:
+                return error_response
 
-                for key in request.form:
-                    value = request.form[key]
-                    if key not in json_encoded_fields:
-                        suggested_location[key] = value
-                        continue
-
-                    try:
-                        # SECURITY: Use safe_json_loads with strict depth limit
-                        # MAX_JSON_DEPTH_LOCATION=1: arrays/objects of primitives only
-                        suggested_location[key] = safe_json_loads(
-                            value, max_depth=MAX_JSON_DEPTH_LOCATION
-                        )
-                    except (JSONDepthError, JSONSizeError) as e:
-                        # Log security event and return 400
-                        logger.warning(
-                            f"JSON parsing blocked for security: {e}",
-                            extra={"field": key, "value_size": len(value)},
-                        )
-                        return make_response(
-                            jsonify(
-                                {
-                                    "message": (
-                                        "Invalid request: JSON payload too complex or too large"
-                                    ),
-                                    "error": str(e),
-                                }
-                            ),
-                            400,
-                        )
-                    except ValueError:  # JSONDecodeError inherits from ValueError
-                        # If not JSON, use as-is (simple string values)
-                        suggested_location[key] = value
-
+            if is_multipart:
                 # Extract and validate photo attachment if present
                 photo_file = request.files.get("photo")
                 if photo_file and photo_file.filename:
@@ -213,38 +208,6 @@ def core_pages(
                             extra={"photo_filename": photo_file.filename},
                         )
                         return make_response(jsonify({"message": error_invalid_photo}), 400)
-            else:
-                # Parse JSON data with security checks (depth/size protection)
-                raw_data = request.get_data(as_text=True)
-                if not raw_data:
-                    logger.warning("Empty JSON body in suggest endpoint")
-                    return make_response(jsonify({"message": ERROR_INVALID_REQUEST_DATA}), 400)
-                try:
-                    suggested_location = safe_json_loads(
-                        raw_data, max_depth=MAX_JSON_DEPTH_LOCATION
-                    )
-                except (JSONDepthError, JSONSizeError) as e:
-                    logger.warning(
-                        f"JSON parsing blocked for security: {e}",
-                        extra={"value_size": len(raw_data)},
-                    )
-                    return make_response(
-                        jsonify(
-                            {
-                                "message": (
-                                    "Invalid request: JSON payload too complex or too large"
-                                ),
-                                "error": str(e),
-                            }
-                        ),
-                        400,
-                    )
-                except ValueError:
-                    logger.warning("Invalid JSON in suggest endpoint")
-                    return make_response(jsonify({"message": ERROR_INVALID_REQUEST_DATA}), 400)
-                if suggested_location is None:
-                    logger.warning("Null JSON value in suggest endpoint")
-                    return make_response(jsonify({"message": ERROR_INVALID_REQUEST_DATA}), 400)
 
             suggested_location.update({"uuid": str(uuid.uuid4())})
             location = location_model.model_validate(suggested_location)

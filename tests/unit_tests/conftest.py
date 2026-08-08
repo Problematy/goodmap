@@ -89,6 +89,18 @@ def api_delete(client, url):
     return client.delete(url)
 
 
+def multipart_suggest_post(client, location, photo=None):
+    """Helper for multipart/form-data POSTs to /api/suggest-new-point.
+
+    Mirrors what the frontend sends: the non-photo fields as one JSON-encoded
+    'location' field, plus an optional binary 'photo' file.
+    """
+    data = {"location": json.dumps(location)}
+    if photo is not None:
+        data["photo"] = photo
+    return client.post("/api/suggest-new-point", data=data, content_type="multipart/form-data")
+
+
 def create_test_app(
     feature_flags=make_flag_set(CategoriesHelp, UseLazyLoading, EnableAdminPanel),
     db_overrides=None,
