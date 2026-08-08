@@ -96,42 +96,25 @@ def get_locations_from_request(database, request_args):
     return [x.basic_info() for x in all_locations]
 
 
-def _parse_location_payload(raw_data: str) -> tuple[dict | None, Any]:
-    """Safely parse a JSON-encoded location payload.
+def _parse_location_payload(raw_data: str) -> dict[str, Any]:
+    """Parse a JSON-encoded location payload into a dict of fields.
 
     Shared by the JSON body and the multipart 'location' field: both carry the same
     JSON-object-of-fields shape, only the transport differs.
 
-    Returns:
-        (data, None) on success, or (None, error_response) on failure.
+    Raises:
+        ValueError: raw_data is empty, not valid JSON, or not a JSON object.
+        JSONDepthError, JSONSizeError: the payload trips the security limits
+            (both are also ValueError subclasses; callers that want to tell "too
+            complex/large" apart from "just malformed" must catch them first).
     """
     if not raw_data:
-        logger.warning("Empty location payload in suggest endpoint")
-        return None, make_response(jsonify({"message": ERROR_INVALID_REQUEST_DATA}), 400)
-    try:
-        # SECURITY: Use safe_json_loads with strict depth limit
-        data = safe_json_loads(raw_data, max_depth=MAX_JSON_DEPTH_LOCATION)
-    except (JSONDepthError, JSONSizeError) as e:
-        # Log security event and return 400
-        logger.warning(
-            f"JSON parsing blocked for security: {e}", extra={"value_size": len(raw_data)}
-        )
-        return None, make_response(
-            jsonify(
-                {
-                    "message": "Invalid request: JSON payload too complex or too large",
-                    "error": str(e),
-                }
-            ),
-            400,
-        )
-    except ValueError:  # JSONDecodeError inherits from ValueError
-        logger.warning("Invalid JSON in suggest endpoint")
-        return None, make_response(jsonify({"message": ERROR_INVALID_REQUEST_DATA}), 400)
+        raise ValueError("Empty location payload")
+    # SECURITY: Use safe_json_loads with strict depth limit
+    data = safe_json_loads(raw_data, max_depth=MAX_JSON_DEPTH_LOCATION)
     if not isinstance(data, dict):
-        logger.warning("Non-object JSON value in suggest endpoint")
-        return None, make_response(jsonify({"message": ERROR_INVALID_REQUEST_DATA}), 400)
-    return data, None
+        raise ValueError("Location payload is not a JSON object")
+    return data
 
 
 def core_pages(
@@ -186,9 +169,26 @@ def core_pages(
             raw_location = (
                 request.form.get("location", "") if is_multipart else request.get_data(as_text=True)
             )
-            suggested_location, error_response = _parse_location_payload(raw_location)
-            if error_response is not None:
-                return error_response
+            try:
+                suggested_location = _parse_location_payload(raw_location)
+            except (JSONDepthError, JSONSizeError) as e:
+                # Log security event and return 400
+                logger.warning(
+                    f"JSON parsing blocked for security: {e}",
+                    extra={"value_size": len(raw_location)},
+                )
+                return make_response(
+                    jsonify(
+                        {
+                            "message": "Invalid request: JSON payload too complex or too large",
+                            "error": str(e),
+                        }
+                    ),
+                    400,
+                )
+            except ValueError:
+                logger.warning("Invalid location payload in suggest endpoint")
+                return make_response(jsonify({"message": ERROR_INVALID_REQUEST_DATA}), 400)
 
             if is_multipart:
                 # Extract and validate photo attachment if present
