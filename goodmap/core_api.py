@@ -103,13 +103,13 @@ def _parse_location_payload(raw_data: str) -> dict[str, Any]:
     JSON-object-of-fields shape, only the transport differs.
 
     Raises:
-        ValueError: raw_data is empty, not valid JSON, or not a JSON object.
+        ValueError: raw_data is empty, not valid JSON, or not a JSON object
+            (empty/malformed input fails inside safe_json_loads itself: json.loads("")
+            raises JSONDecodeError, which safe_json_loads turns into ValueError).
         JSONDepthError, JSONSizeError: the payload trips the security limits
             (both are also ValueError subclasses; callers that want to tell "too
             complex/large" apart from "just malformed" must catch them first).
     """
-    if not raw_data:
-        raise ValueError("Empty location payload")
     # SECURITY: Use safe_json_loads with strict depth limit
     data = safe_json_loads(raw_data, max_depth=MAX_JSON_DEPTH_LOCATION)
     if not isinstance(data, dict):
