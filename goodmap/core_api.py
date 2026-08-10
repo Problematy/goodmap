@@ -2,7 +2,6 @@ import importlib.metadata
 import json as json_lib
 import logging
 import uuid
-from typing import Any
 
 import deprecation
 import numpy
@@ -96,27 +95,6 @@ def get_locations_from_request(database, request_args):
     return [x.basic_info() for x in all_locations]
 
 
-def _parse_location_payload(raw_data: str) -> dict[str, Any]:
-    """Parse a JSON-encoded location payload into a dict of fields.
-
-    Shared by the JSON body and the multipart 'location' field: both carry the same
-    JSON-object-of-fields shape, only the transport differs.
-
-    Raises:
-        ValueError: raw_data is empty, not valid JSON, or not a JSON object
-            (empty/malformed input fails inside safe_json_loads itself: json.loads("")
-            raises JSONDecodeError, which safe_json_loads turns into ValueError).
-        JSONDepthError, JSONSizeError: the payload trips the security limits
-            (both are also ValueError subclasses; callers that want to tell "too
-            complex/large" apart from "just malformed" must catch them first).
-    """
-    # SECURITY: Use safe_json_loads with strict depth limit
-    data = safe_json_loads(raw_data, max_depth=MAX_JSON_DEPTH_LOCATION)
-    if not isinstance(data, dict):
-        raise ValueError("Location payload is not a JSON object")
-    return data
-
-
 def core_pages(
     database,
     languages: LanguagesMapping,
@@ -170,7 +148,14 @@ def core_pages(
                 request.form.get("location", "") if is_multipart else request.get_data(as_text=True)
             )
             try:
-                suggested_location = _parse_location_payload(raw_location)
+                # SECURITY: Use safe_json_loads with strict depth limit. Empty/malformed
+                # input fails inside safe_json_loads itself: json.loads("") raises
+                # JSONDecodeError, which safe_json_loads turns into ValueError.
+                suggested_location = safe_json_loads(
+                    raw_location, max_depth=MAX_JSON_DEPTH_LOCATION
+                )
+                if not isinstance(suggested_location, dict):
+                    raise ValueError("Location payload is not a JSON object")
             except (JSONDepthError, JSONSizeError) as e:
                 # Log security event and return 400
                 logger.warning(
