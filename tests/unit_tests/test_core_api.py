@@ -927,10 +927,7 @@ def test_suggest_location_dos_protection(test_app, field_name, malicious_value, 
     )
     assert response.status_code == 400
     data = response.json
-    assert (
-        error_substring in data["message"].lower()
-        or error_substring in data.get("error", "").lower()
-    )
+    assert error_substring in data["message"].lower()
 
 
 def test_suggest_location_dos_protection_json_body_deeply_nested(test_app):
@@ -941,9 +938,7 @@ def test_suggest_location_dos_protection_json_body_deeply_nested(test_app):
     )
     assert response.status_code == 400
     data = response.json
-    assert (
-        "too complex" in data["message"].lower() or "nesting depth" in data.get("error", "").lower()
-    )
+    assert "too complex" in data["message"].lower()
 
 
 # --- Location clustering tests ---

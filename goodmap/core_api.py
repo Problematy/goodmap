@@ -166,7 +166,6 @@ def core_pages(
                     jsonify(
                         {
                             "message": "Invalid request: JSON payload too complex or too large",
-                            "error": str(e),
                         }
                     ),
                     400,
