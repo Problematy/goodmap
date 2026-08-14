@@ -178,7 +178,7 @@ def core_pages(
                     logger.warning(
                         "Rejected photo: %s",
                         e,
-                        extra={"photo_filename": photo_file.filename},
+                        extra={"photo_filename": repr(photo_file.filename)},
                     )
                     return make_response(jsonify({"message": error_invalid_photo}), 400)
 
