@@ -591,9 +591,8 @@ def test_report_description_empty_options_allows_free_text():
 
 
 def test_suggest_new_location_with_valid_data(test_app):
-    response = api_post(
+    response = multipart_suggest_post(
         test_app,
-        "/api/suggest-new-point",
         {
             "uuid": "one",
             "name": "Test Organization",
@@ -604,19 +603,6 @@ def test_suggest_new_location_with_valid_data(test_app):
     )
     assert response.status_code == 200
     assert response.json == {"message": "Location suggested"}
-
-
-def test_suggest_new_location_with_multipart_form_data(test_app):
-    response = multipart_suggest_post(
-        test_app,
-        {
-            "position": [50, 50],
-            "name": "Test Organization",
-            "type_of_place": "type",
-            "test_category": ["test"],
-        },
-    )
-    assert response.status_code == 200
 
 
 @pytest.mark.parametrize("scalar_looking_value", ["true", "false", "10", "null"])
@@ -826,9 +812,8 @@ def test_suggest_location_without_photo_notifies_with_empty_frozenset():
     """
     with mock.patch("platzky.engine.Engine.notify") as mock_notify:
         app = create_test_app()
-        response = api_post(
+        response = multipart_suggest_post(
             app,
-            "/api/suggest-new-point",
             {
                 "uuid": "one",
                 "name": "Test Organization",
@@ -853,7 +838,7 @@ def test_suggest_location_without_photo_notifies_with_empty_frozenset():
     ],
 )
 def test_suggest_new_location_invalid_data(test_app, data, expected_status):
-    response = api_post(test_app, "/api/suggest-new-point", data)
+    response = multipart_suggest_post(test_app, data)
     assert response.status_code == expected_status
 
 
@@ -866,16 +851,19 @@ def test_suggest_new_location_invalid_data(test_app, data, expected_status):
     ],
 )
 def test_suggest_new_location_malformed_body(test_app, body, expected_message):
-    response = test_app.post("/api/suggest-new-point", data=body, content_type="application/json")
+    response = test_app.post(
+        "/api/suggest-new-point",
+        data={"location": body},
+        content_type="multipart/form-data",
+    )
     assert response.status_code == 400
     assert response.json["message"] == expected_message
 
 
 def test_suggest_new_location_with_list_item_too_long(test_app):
     long_item = "x" * 101
-    response = api_post(
+    response = multipart_suggest_post(
         test_app,
-        "/api/suggest-new-point",
         {
             "name": "Test Location",
             "position": [50.5, 19.5],
@@ -890,9 +878,8 @@ def test_suggest_new_location_with_list_item_too_long(test_app):
 def test_suggest_location_unexpected_error(test_app):
     db = test_app.application.db
     with mock.patch.object(db, "add_suggestion", side_effect=Exception("Database failure")):
-        response = api_post(
+        response = multipart_suggest_post(
             test_app,
-            "/api/suggest-new-point",
             {
                 "name": "Test",
                 "position": [50, 50],
@@ -930,11 +917,11 @@ def test_suggest_location_dos_protection(test_app, field_name, malicious_value, 
     assert error_substring in data["message"].lower()
 
 
-def test_suggest_location_dos_protection_json_body_deeply_nested(test_app):
+def test_suggest_location_dos_protection_deeply_nested_location_field(test_app):
     response = test_app.post(
         "/api/suggest-new-point",
-        data='{"a":{"b":{"c":"d"}}}',
-        content_type="application/json",
+        data={"location": '{"a":{"b":{"c":"d"}}}'},
+        content_type="multipart/form-data",
     )
     assert response.status_code == 400
     data = response.json

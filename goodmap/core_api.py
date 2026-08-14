@@ -132,25 +132,15 @@ def core_pages(
     def suggest_new_point():
         """Suggest new location for review.
 
-        Accepts location data either as a plain JSON body, or - when a photo is
-        attached - as multipart/form-data with the same JSON object in a 'location'
-        field alongside the binary 'photo' file. All fields are validated using the
-        Pydantic location model.
+        Accepts multipart/form-data with the location data as a JSON object in the
+        'location' field, plus an optional binary 'photo' file. All fields are
+        validated using the Pydantic location model.
         """
         try:
-            # Initialize photo attachment (only populated for multipart/form-data)
             photo_attachment = None
-
-            is_multipart = bool(
-                request.content_type and request.content_type.startswith("multipart/form-data")
-            )
-            raw_location = (
-                request.form.get("location", "") if is_multipart else request.get_data(as_text=True)
-            )
+            raw_location = request.form.get("location", "")
             try:
-                # SECURITY: Use safe_json_loads with strict depth limit. Empty/malformed
-                # input fails inside safe_json_loads itself: json.loads("") raises
-                # JSONDecodeError, which safe_json_loads turns into ValueError.
+                # Distinguish DoS-shaped payloads (depth/size) from ordinary malformed JSON.
                 suggested_location = safe_json_loads(
                     raw_location, max_depth=MAX_JSON_DEPTH_LOCATION
                 )
@@ -174,24 +164,23 @@ def core_pages(
                 logger.warning("Invalid location payload in suggest endpoint")
                 return make_response(jsonify({"message": ERROR_INVALID_REQUEST_DATA}), 400)
 
-            if is_multipart:
-                # Extract and validate photo attachment if present
-                photo_file = request.files.get("photo")
-                if photo_file and photo_file.filename:
-                    photo_content = photo_file.read()
-                    photo_mime = photo_file.content_type or "application/octet-stream"
+            # Extract and validate photo attachment if present
+            photo_file = request.files.get("photo")
+            if photo_file and photo_file.filename:
+                photo_content = photo_file.read()
+                photo_mime = photo_file.content_type or "application/octet-stream"
 
-                    try:
-                        photo_attachment = create_attachment(
-                            photo_file.filename, photo_content, photo_mime, photo_attachment_config
-                        )
-                    except ValueError as e:
-                        logger.warning(
-                            "Rejected photo: %s",
-                            e,
-                            extra={"photo_filename": photo_file.filename},
-                        )
-                        return make_response(jsonify({"message": error_invalid_photo}), 400)
+                try:
+                    photo_attachment = create_attachment(
+                        photo_file.filename, photo_content, photo_mime, photo_attachment_config
+                    )
+                except ValueError as e:
+                    logger.warning(
+                        "Rejected photo: %s",
+                        e,
+                        extra={"photo_filename": photo_file.filename},
+                    )
+                    return make_response(jsonify({"message": error_invalid_photo}), 400)
 
             suggested_location.update({"uuid": str(uuid.uuid4())})
             location = location_model.model_validate(suggested_location)
