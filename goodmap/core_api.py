@@ -95,6 +95,19 @@ def get_locations_from_request(database, request_args):
     return [x.basic_info() for x in all_locations]
 
 
+def safe_location_loads(raw_location: str) -> dict:
+    """Parse a suggested-location payload, requiring it to be a JSON object.
+
+    Raises JSONDepthError/JSONSizeError for DoS-shaped payloads, or ValueError
+    for ordinary malformed JSON or a non-object payload - same as safe_json_loads,
+    plus the object-shape requirement.
+    """
+    parsed = safe_json_loads(raw_location, max_depth=MAX_JSON_DEPTH_LOCATION)
+    if not isinstance(parsed, dict):
+        raise ValueError("Location payload is not a JSON object")
+    return parsed
+
+
 def core_pages(
     database,
     languages: LanguagesMapping,
@@ -140,12 +153,7 @@ def core_pages(
             photo_attachment = None
             raw_location = request.form.get("location", "")
             try:
-                # Distinguish DoS-shaped payloads (depth/size) from ordinary malformed JSON.
-                suggested_location = safe_json_loads(
-                    raw_location, max_depth=MAX_JSON_DEPTH_LOCATION
-                )
-                if not isinstance(suggested_location, dict):
-                    raise ValueError("Location payload is not a JSON object")
+                suggested_location = safe_location_loads(raw_location)
             except (JSONDepthError, JSONSizeError) as e:
                 # Log security event and return 400
                 logger.warning(
