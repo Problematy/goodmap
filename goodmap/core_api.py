@@ -2,6 +2,7 @@ import importlib.metadata
 import json as json_lib
 import logging
 import uuid
+from typing import Any
 
 import deprecation
 import numpy
@@ -95,7 +96,7 @@ def get_locations_from_request(database, request_args):
     return [x.basic_info() for x in all_locations]
 
 
-def safe_location_loads(raw_location: str) -> dict:
+def safe_location_loads(raw_location: str) -> dict[str, Any]:
     """Parse a suggested-location payload, requiring it to be a JSON object.
 
     Raises JSONDepthError/JSONSizeError for DoS-shaped payloads, or ValueError
