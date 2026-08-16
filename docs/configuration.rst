@@ -46,6 +46,11 @@ Everything below in one file — copy it and delete what you do not need:
      TYPE: json_file
      PATH: data.json
 
+   ATTACHMENT:
+     allowed_mime_types: ["image/jpeg"]
+     allowed_extensions: ["jpg", "jpeg"]
+     max_size: 5242880  # 5 MiB
+
    FEATURE_FLAGS:
      USE_LAZY_LOADING: true
      CATEGORIES_HELP: true
@@ -135,12 +140,34 @@ Basic keys
    The backends, their trade-offs, and the MongoDB layout are covered in
    :ref:`data-source-backends`.
 
+.. _config-attachment:
+
+``ATTACHMENT``
+   What a visitor may attach as a photo when suggesting a new point. Omit it and you get
+   **JPEG only, up to 5 MiB** — deliberately narrower than platzky's default, because the
+   frontend previews the attachment as an ``<img>`` and compresses oversized ones to JPEG.
+
+   .. code-block:: yaml
+
+      ATTACHMENT:
+        allowed_mime_types: ["image/jpeg", "image/png"]
+        allowed_extensions: ["jpg", "jpeg", "png"]
+        max_size: 8388608  # 8 MiB
+
+   ``max_size`` is in bytes. Both the browser and the server enforce these limits, and the
+   app's overall request-body cap is derived from ``max_size``
+   (:ref:`the request size cap <api-request-size>`), so raising the limit here is the only
+   change needed. A photo in an allowed format that is over the limit is compressed in the
+   browser first, with a warning that quality may drop; if it is still too large it is
+   rejected. An unsupported format is rejected outright.
+
 .. _config-feature-flags:
 
 Feature flags
 -------------
 
-``FEATURE_FLAGS`` is a flat mapping of flag name to boolean. Unset flags are off.
+``FEATURE_FLAGS`` is a flat mapping of flag name to boolean. Unset flags are off, with one
+exception: ``USE_LAZY_LOADING`` defaults to on.
 
 Flags fall into two groups: some change what the backend does, others are handed to the
 frontend to decide what to render. Both are set the same way.
@@ -154,11 +181,11 @@ frontend to decide what to render. Both are set the same way.
      - Effect
    * - ``USE_LAZY_LOADING``
      - backend
-     - Builds the location model from ``location_obligatory_fields`` and ``categories``
-       in your data source, so submitted points are validated against them, and the
-       "suggest a new point" form is generated from them. With it off,
-       only ``uuid``, ``position`` and ``remark`` are validated and the suggest form has
-       no fields. Practically always wanted — see the note below.
+     - **On by default.** Builds the location model from ``location_obligatory_fields``
+       and ``categories`` in your data source, so submitted points are validated against
+       them, and the "suggest a new point" form is generated from them. Set it to
+       ``false`` and only ``uuid``, ``position`` and ``remark`` are validated, and the
+       suggest form has no fields — see the note below.
    * - ``CATEGORIES_HELP``
      - both
      - Enables the help-tooltip data in ``/api/categories``, ``/api/categories-full`` and

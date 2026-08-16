@@ -241,15 +241,24 @@ Submit a new point for review. It goes to the moderation queue with
 ``"status": "pending"`` — **it does not appear on the map**; someone has to move it into
 the map data.
 
-Accepts either JSON or ``multipart/form-data``. The body is your point without a
-``uuid`` — the server assigns one:
+**The request must be ``multipart/form-data``.** The point goes in a single ``location``
+form field as a JSON object — not as one form field per property — and the optional photo
+goes in a ``photo`` file part. Send the point without a ``uuid``; the server assigns one:
 
 .. code-block:: bash
 
    curl -X POST http://localhost:5000/api/suggest-new-point \
-     -H 'Content-Type: application/json' \
      -H "X-CSRFToken: $TOKEN" \
-     -d '{"name": "Nowy", "position": [50.1, 19.9], "type_of_place": "granite crag", "rock": "granite"}'
+     -F 'location={"name": "Nowy", "position": [50.1, 19.9], "type_of_place": "granite crag", "rock": "granite"}' \
+     -F 'photo=@crag.jpg'
+
+.. note::
+
+   Sending the point as a JSON request body used to work and no longer does — a
+   ``Content-Type: application/json`` request has no ``location`` form field, so it is
+   rejected with ``400 {"message": "Invalid request data"}``. The same status comes back
+   if ``location`` is missing, is not valid JSON, or is a JSON value that is not an
+   object.
 
 The submission is validated against ``location_obligatory_fields`` and ``categories``
 (:doc:`data-source`). A missing obligatory field, or a value outside its category's
@@ -265,22 +274,35 @@ say which field was wrong — that detail is logged server-side.
    * - ``200``
      - ``{"message": "Location suggested"}``
    * - ``400``
-     - Invalid location data, malformed JSON, or a payload that is too large or too deeply
-       nested
+     - Invalid location data, a missing or malformed ``location`` field, a rejected photo,
+       or a payload that is too deeply nested
+   * - ``413``
+     - The whole request body exceeded
+       :ref:`the request size cap <api-request-size>`
    * - ``500``
      - Something failed while storing or notifying
 
-**Photo uploads.** Use ``multipart/form-data`` with a ``photo`` file part; other fields
-are sent as form fields, with lists and objects JSON-encoded per field. Photos must be
-**JPEG** and at most **5 MB**; anything else is rejected with ``400`` and a message naming
-the allowed formats. The photo is attached to the notification, not stored as map data.
+**Photo uploads.** The ``photo`` part is optional; a suggestion without one is accepted.
+The accepted formats and size limit come from the ``ATTACHMENT`` config key, which
+defaults to **JPEG only, up to 5 MiB** (:ref:`config-attachment`). A photo that fails
+either check is rejected with ``400`` and a message naming the allowed formats and limit,
+e.g. ``Invalid photo. Allowed formats: jpeg, jpg. Max size: 5MiB.`` The photo is attached
+to the notification, not stored as map data.
+
+.. _api-request-size:
+
+**Request size cap.** The app sets ``MAX_CONTENT_LENGTH`` to the configured attachment
+limit plus 100 KB of headroom for the form fields and multipart framing. A body over that
+is refused with ``413`` before it is read into memory. Raising ``ATTACHMENT.max_size``
+raises this cap with it, so the two cannot drift apart.
 
 .. note::
 
-   Payloads are parsed with hard limits to keep hostile input cheap to reject: at most
-   50 KB per JSON value, nesting no deeper than arrays/objects of primitives, 1000
-   characters per string, 100 array items, 50 object keys. Legitimate points are nowhere
-   near these.
+   The ``location`` field is parsed with hard limits to keep hostile input cheap to
+   reject: at most 50 KB of JSON, nesting no deeper than arrays/objects of primitives,
+   1000 characters per string, 100 array items, 50 object keys. Exceeding any of them
+   gives ``400 {"message": "Invalid request: JSON payload too complex or too large"}``.
+   Legitimate points are nowhere near these.
 
 ``POST /api/report-location``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

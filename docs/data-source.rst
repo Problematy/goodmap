@@ -95,6 +95,9 @@ A list of ``[field_name, field_type]`` pairs listing the fields — beyond the b
 
 Supported types: ``str``, ``list``, ``int``, ``float``, ``bool``, ``dict``.
 
+The key itself is optional — leave it out and it is treated as an empty list, so nothing
+beyond ``uuid`` and ``position`` is required and the suggest form has no fields.
+
 This drives three things at once:
 
 - **Validation.** Points submitted through ``/api/suggest-new-point`` are rejected with
