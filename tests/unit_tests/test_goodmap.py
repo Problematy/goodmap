@@ -107,8 +107,8 @@ def test_frontend_lib_url_uses_bundled_static_when_present():
     assert 'src="/static/frontend/index.min.js"' in response.data.decode("utf-8")
 
 
-def test_index_route_returns_location_schema():
-    """Test that the index route (/map) returns successfully with location_schema"""
+def test_map_route_returns_location_schema():
+    """Test that the /map route returns successfully with location_schema"""
     config = GoodmapConfig(
         APP_NAME="test_app",
         SECRET_KEY="test_secret",
@@ -143,7 +143,7 @@ def test_index_route_returns_location_schema():
     assert "amenities" in response_text
 
 
-def test_index_route_location_schema_includes_photo_constraints():
+def test_map_route_includes_photo_constraints():
     """The frontend sources photo upload limits (max size, allowed types) live from
     the backend's AttachmentConfig rather than hardcoding its own copy - this test
     guards the `photo` key in location_schema that makes that possible.
@@ -240,7 +240,7 @@ def test_max_content_length_rejects_bodies_past_the_cap():
     assert response.status_code == 413
 
 
-def test_index_route_location_schema_respects_attachment_config_override():
+def test_map_route_overrides_photo_constraints():
     """A deployment can override the default JPEG-only 5MiB photo constraints via
     ATTACHMENT: in its YAML config - goodmap must read config.attachment (platzky's
     own config field) rather than hardcoding its own AttachmentConfig.
@@ -273,7 +273,7 @@ def test_index_route_location_schema_respects_attachment_config_override():
     assert '"allowed_extensions":["jpeg","jpg","png"]' in response_text
 
 
-def test_index_route_location_schema_with_lazy_loading():
+def test_map_route_location_schema_with_lazy_loading():
     """Test that location_schema includes obligatory_fields when USE_LAZY_LOADING is enabled"""
     config = GoodmapConfig(
         APP_NAME="test_app",
