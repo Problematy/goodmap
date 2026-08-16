@@ -175,6 +175,22 @@ The active mode for each category is also exposed as ``filter_mode`` in the
 ``/api/categories-full`` response, so a custom frontend can render the
 right control (checkbox vs. radio) without hardcoding category names.
 
+Feature Flags
+~~~~~~~~~~~~~
+
+Optional behavior can be toggled via a ``FEATURE_FLAGS:`` block in your
+configuration file:
+
+.. code-block:: yaml
+
+   FEATURE_FLAGS:
+     USE_LAZY_LOADING: true
+
+``USE_LAZY_LOADING`` (default: ``true``)
+   Loads a location's full data only after the user clicks its point on the
+   map, rather than upfront together with the initial map load. Set to
+   ``false`` to load all point data together with the map instead.
+
 Photo Uploads
 ~~~~~~~~~~~~~
 
