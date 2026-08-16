@@ -171,27 +171,38 @@ def test_index_route_location_schema_includes_photo_constraints():
     assert '"allowed_extensions":["jpeg","jpg"]' in response_text
 
 
-def _config_with_attachment(attachment: AttachmentConfig | None = None) -> GoodmapConfig:
-    kwargs: dict[str, Any] = {
-        "APP_NAME": "test_app",
-        "SECRET_KEY": "test_secret",
-        "USE_WWW": False,
-        "BLOG_PREFIX": "/blog",
-        "DB": JsonDbConfig(
+def _minimal_config() -> GoodmapConfig:
+    return GoodmapConfig(
+        APP_NAME="test_app",
+        SECRET_KEY="test_secret",
+        USE_WWW=False,
+        BLOG_PREFIX="/blog",
+        DB=JsonDbConfig(
             DATA={"site_content": {"pages": []}, "categories": {}},
             TYPE="json",
         ),
-    }
-    if attachment is not None:
-        kwargs["ATTACHMENT"] = attachment
-    return GoodmapConfig(**kwargs)
+    )
+
+
+def _config_with_attachment(attachment: AttachmentConfig) -> GoodmapConfig:
+    return GoodmapConfig(
+        APP_NAME="test_app",
+        SECRET_KEY="test_secret",
+        USE_WWW=False,
+        BLOG_PREFIX="/blog",
+        DB=JsonDbConfig(
+            DATA={"site_content": {"pages": []}, "categories": {}},
+            TYPE="json",
+        ),
+        ATTACHMENT=attachment,
+    )
 
 
 def test_max_content_length_leaves_room_for_an_attachment_at_the_configured_limit():
     """The request size cap must exceed attachment.max_size, or Flask would reject an
     otherwise-valid photo with 413 before it ever reaches attachment validation.
     """
-    app = goodmap.create_app_from_config(_config_with_attachment())
+    app = goodmap.create_app_from_config(_minimal_config())
 
     max_content_length = app.config["MAX_CONTENT_LENGTH"]
     assert max_content_length is not None, "request size cap must actually be applied"
@@ -215,7 +226,7 @@ def test_max_content_length_tracks_a_raised_attachment_limit():
 
 def test_max_content_length_rejects_bodies_past_the_cap():
     """Oversized requests are still dropped rather than buffered into memory."""
-    app = goodmap.create_app_from_config(_config_with_attachment())
+    app = goodmap.create_app_from_config(_minimal_config())
     app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
     client = app.test_client()
 
