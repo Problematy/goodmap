@@ -69,9 +69,9 @@ const findEmptyRequiredFields = (obligatoryFields, formFields) =>
         .filter(([fieldName, fieldType]) => isFieldEmpty(formFields[fieldName], fieldType))
         .map(([fieldName]) => fieldName);
 
-// The backend expects the whole non-photo payload as one JSON object - matching
-// the pure-JSON request shape - so it doesn't need to know per-field which values
-// are JSON-encoded.
+// The backend expects the whole non-photo payload as one JSON object in the
+// 'location' field, so it doesn't need to know per-field which values are
+// JSON-encoded.
 const buildSuggestionFormData = ({ userPosition, photo, formFields }) => {
     const formData = new FormData();
     formData.append(
