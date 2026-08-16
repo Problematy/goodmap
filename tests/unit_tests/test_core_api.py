@@ -1,4 +1,3 @@
-import json
 from io import BytesIO
 from unittest import mock
 
@@ -14,6 +13,7 @@ from tests.unit_tests.conftest import (
     fake_translation,
     get_test_config_data,
     make_flag_set,
+    multipart_suggest_post,
 )
 
 # --- Basic endpoint tests ---
@@ -591,9 +591,8 @@ def test_report_description_empty_options_allows_free_text():
 
 
 def test_suggest_new_location_with_valid_data(test_app):
-    response = api_post(
+    response = multipart_suggest_post(
         test_app,
-        "/api/suggest-new-point",
         {
             "uuid": "one",
             "name": "Test Organization",
@@ -606,17 +605,78 @@ def test_suggest_new_location_with_valid_data(test_app):
     assert response.json == {"message": "Location suggested"}
 
 
-def test_suggest_new_location_with_multipart_form_data(test_app):
-    response = test_app.post(
-        "/api/suggest-new-point",
-        data={
-            "position": json.dumps([50, 50]),
+@pytest.mark.parametrize("scalar_looking_value", ["true", "false", "10", "null"])
+def test_suggest_new_location_keeps_json_scalar_looking_field_as_string(
+    test_app, scalar_looking_value
+):
+    """Regression test: a str-typed field whose value happens to look like a JSON
+    scalar (e.g. a category literally named "true" or "10") must not be silently
+    coerced into a bool/int/None. Since the whole suggestion travels as one JSON
+    object, this only stays true because it's sent as a proper JSON string value
+    (`json.dumps(value)`), not because of any per-field type sniffing.
+    """
+    db = test_app.application.db
+    initial_count = len(db.get_suggestions({}))
+
+    response = multipart_suggest_post(
+        test_app,
+        {
+            "position": [50, 50],
             "name": "Test Organization",
-            "type_of_place": "type",
-            "test_category": json.dumps(["test"]),
+            "type_of_place": scalar_looking_value,
+            "test_category": ["test"],
         },
-        content_type="multipart/form-data",
     )
+    assert response.status_code == 200
+
+    suggestions = db.get_suggestions({})
+    assert len(suggestions) == initial_count + 1
+    assert suggestions[-1]["type_of_place"] == scalar_looking_value
+
+
+def test_suggest_new_location_keeps_json_array_looking_string_as_string(test_app):
+    """A str-typed field whose value happens to look like valid JSON must stay a string."""
+    db = test_app.application.db
+    initial_count = len(db.get_suggestions({}))
+
+    response = multipart_suggest_post(
+        test_app,
+        {
+            "position": [50, 50],
+            "name": '["not", "a", "list"]',
+            "type_of_place": "shop",
+            "test_category": ["test"],
+        },
+    )
+    assert response.status_code == 200
+
+    suggestions = db.get_suggestions({})
+    assert len(suggestions) == initial_count + 1
+    assert suggestions[-1]["name"] == '["not", "a", "list"]'
+    assert suggestions[-1]["test_category"] == ["test"]
+
+
+def test_suggest_location_accepts_photo_far_larger_than_the_form_fields(test_app):
+    """A realistic photo is orders of magnitude bigger than the text fields around it.
+
+    The request size cap has to be derived from attachment.max_size, not from the
+    size of a suggestion's other fields, or every real photo would 413.
+    """
+    photo = JPEG_HEADER + b"\x00" * (500 * 1024)
+    with mock.patch(
+        "platzky.attachment.mime_validation.validate_content_mime_type", return_value=None
+    ):
+        response = multipart_suggest_post(
+            test_app,
+            {
+                "position": [50, 50],
+                "name": "Test Location",
+                "type_of_place": "shop",
+                "test_category": ["test"],
+            },
+            photo=(BytesIO(photo), "photo.jpg", "image/jpeg"),
+        )
+
     assert response.status_code == 200
 
 
@@ -632,16 +692,15 @@ def test_suggest_location_with_valid_jpeg_photo(test_app):
     with mock.patch(
         "platzky.attachment.mime_validation.validate_content_mime_type", return_value=None
     ):
-        response = test_app.post(
-            "/api/suggest-new-point",
-            data={
-                "position": json.dumps([50, 50]),
+        response = multipart_suggest_post(
+            test_app,
+            {
+                "position": [50, 50],
                 "name": "Test Location",
                 "type_of_place": "test-place",
-                "test_category": json.dumps(["test"]),
-                "photo": (BytesIO(FAKE_JPEG_CONTENT), "photo.jpg"),
+                "test_category": ["test"],
             },
-            content_type="multipart/form-data",
+            photo=(BytesIO(FAKE_JPEG_CONTENT), "photo.jpg"),
         )
     assert response.status_code == 200
     assert response.json == {"message": "Location suggested"}
@@ -649,16 +708,15 @@ def test_suggest_location_with_valid_jpeg_photo(test_app):
 
 def test_suggest_location_rejects_png_photo(test_app):
     """PNG photos should be rejected (only JPEG allowed)."""
-    response = test_app.post(
-        "/api/suggest-new-point",
-        data={
-            "position": json.dumps([50, 50]),
+    response = multipart_suggest_post(
+        test_app,
+        {
+            "position": [50, 50],
             "name": "Test Location",
             "type_of_place": "test-place",
-            "test_category": json.dumps(["test"]),
-            "photo": (BytesIO(b"fake png content"), "photo.png"),
+            "test_category": ["test"],
         },
-        content_type="multipart/form-data",
+        photo=(BytesIO(b"fake png content"), "photo.png"),
     )
     assert response.status_code == 400
     assert "Invalid photo" in response.json["message"]
@@ -667,55 +725,52 @@ def test_suggest_location_rejects_png_photo(test_app):
 
 def test_suggest_location_rejects_wrong_extension(test_app):
     """File with disallowed extension should be rejected."""
-    response = test_app.post(
-        "/api/suggest-new-point",
-        data={
-            "position": json.dumps([50, 50]),
+    response = multipart_suggest_post(
+        test_app,
+        {
+            "position": [50, 50],
             "name": "Test Location",
             "type_of_place": "test-place",
-            "test_category": json.dumps(["test"]),
-            "photo": (BytesIO(FAKE_JPEG_CONTENT), "photo.gif"),
+            "test_category": ["test"],
         },
-        content_type="multipart/form-data",
+        photo=(BytesIO(FAKE_JPEG_CONTENT), "photo.gif"),
     )
     assert response.status_code == 400
     assert "Invalid photo" in response.json["message"]
 
 
 def test_suggest_location_rejects_oversized_photo(test_app):
-    """Photos over 5MB should be rejected."""
+    """Photos over 5 MiB should be rejected."""
     oversized_content = JPEG_HEADER + (b"\x00" * (5 * 1024 * 1024 + 1))
 
-    response = test_app.post(
-        "/api/suggest-new-point",
-        data={
-            "position": json.dumps([50, 50]),
+    response = multipart_suggest_post(
+        test_app,
+        {
+            "position": [50, 50],
             "name": "Test Location",
             "type_of_place": "test-place",
-            "test_category": json.dumps(["test"]),
-            "photo": (BytesIO(oversized_content), "photo.jpg"),
+            "test_category": ["test"],
         },
-        content_type="multipart/form-data",
+        photo=(BytesIO(oversized_content), "photo.jpg"),
     )
     assert response.status_code == 400
     assert "Invalid photo" in response.json["message"]
-    assert "5MB" in response.json["message"]
+    assert "5MiB" in response.json["message"]
 
 
 def test_suggest_location_rejects_fake_jpeg(test_app):
     """Text file claiming to be JPEG should be rejected by content validation."""
     fake_jpeg = b"This is not a JPEG file, just plain text"
 
-    response = test_app.post(
-        "/api/suggest-new-point",
-        data={
-            "position": json.dumps([50, 50]),
+    response = multipart_suggest_post(
+        test_app,
+        {
+            "position": [50, 50],
             "name": "Test Location",
             "type_of_place": "test-place",
-            "test_category": json.dumps(["test"]),
-            "photo": (BytesIO(fake_jpeg), "photo.jpg"),
+            "test_category": ["test"],
         },
-        content_type="multipart/form-data",
+        photo=(BytesIO(fake_jpeg), "photo.jpg"),
     )
     assert response.status_code == 400
     assert "Invalid photo" in response.json["message"]
@@ -729,16 +784,15 @@ def test_suggest_location_with_photo_stores_suggestion(test_app):
     with mock.patch(
         "platzky.attachment.mime_validation.validate_content_mime_type", return_value=None
     ):
-        response = test_app.post(
-            "/api/suggest-new-point",
-            data={
-                "position": json.dumps([50, 50]),
+        response = multipart_suggest_post(
+            test_app,
+            {
+                "position": [50, 50],
                 "name": "Test Location With Photo",
                 "type_of_place": "test-place",
-                "test_category": json.dumps(["test"]),
-                "photo": (BytesIO(FAKE_JPEG_CONTENT), "photo.jpg"),
+                "test_category": ["test"],
             },
-            content_type="multipart/form-data",
+            photo=(BytesIO(FAKE_JPEG_CONTENT), "photo.jpg"),
         )
     assert response.status_code == 200
 
@@ -746,6 +800,32 @@ def test_suggest_location_with_photo_stores_suggestion(test_app):
     suggestions = db.get_suggestions({})
     assert len(suggestions) == initial_count + 1
     assert suggestions[-1]["name"] == "Test Location With Photo"
+
+
+def test_suggest_location_without_photo_notifies_with_empty_frozenset():
+    """Regression test for a production crash: notifier plugins (e.g. platzky_sendmail)
+    call list(notification.attachments) unconditionally, so attachments must always be
+    an iterable frozenset, never None, when no photo is attached.
+
+    Engine.notify must be patched before the app is created, since notifier_function
+    captures the bound method at app-factory time.
+    """
+    with mock.patch("platzky.engine.Engine.notify") as mock_notify:
+        app = create_test_app()
+        response = multipart_suggest_post(
+            app,
+            {
+                "uuid": "one",
+                "name": "Test Organization",
+                "type_of_place": "type",
+                "test_category": ["test"],
+                "position": [50, 50],
+            },
+        )
+
+    assert response.status_code == 200
+    _, kwargs = mock_notify.call_args
+    assert kwargs["attachments"] == frozenset()
 
 
 @pytest.mark.parametrize(
@@ -758,7 +838,7 @@ def test_suggest_location_with_photo_stores_suggestion(test_app):
     ],
 )
 def test_suggest_new_location_invalid_data(test_app, data, expected_status):
-    response = api_post(test_app, "/api/suggest-new-point", data)
+    response = multipart_suggest_post(test_app, data)
     assert response.status_code == expected_status
 
 
@@ -771,16 +851,19 @@ def test_suggest_new_location_invalid_data(test_app, data, expected_status):
     ],
 )
 def test_suggest_new_location_malformed_body(test_app, body, expected_message):
-    response = test_app.post("/api/suggest-new-point", data=body, content_type="application/json")
+    response = test_app.post(
+        "/api/suggest-new-point",
+        data={"location": body},
+        content_type="multipart/form-data",
+    )
     assert response.status_code == 400
     assert response.json["message"] == expected_message
 
 
 def test_suggest_new_location_with_list_item_too_long(test_app):
     long_item = "x" * 101
-    response = api_post(
+    response = multipart_suggest_post(
         test_app,
-        "/api/suggest-new-point",
         {
             "name": "Test Location",
             "position": [50.5, 19.5],
@@ -795,9 +878,8 @@ def test_suggest_new_location_with_list_item_too_long(test_app):
 def test_suggest_location_unexpected_error(test_app):
     db = test_app.application.db
     with mock.patch.object(db, "add_suggestion", side_effect=Exception("Database failure")):
-        response = api_post(
+        response = multipart_suggest_post(
             test_app,
-            "/api/suggest-new-point",
             {
                 "name": "Test",
                 "position": [50, 50],
@@ -815,41 +897,35 @@ def test_suggest_location_unexpected_error(test_app):
 @pytest.mark.parametrize(
     "field_name,malicious_value,error_substring",
     [
-        ("position", '{"a":{"b":{"c":"d"}}}', "too complex"),  # deeply nested object
-        ("position", '[[["deeply", "nested"]]]', "too complex"),  # deeply nested array
-        ("position", '["' + "x" * (55 * 1024) + '"]', "too large"),  # oversized payload
+        ("position", {"a": {"b": {"c": "d"}}}, "too complex"),  # deeply nested object
+        ("position", [[["deeply", "nested"]]], "too complex"),  # deeply nested array
+        ("position", ["x" * (55 * 1024)], "too large"),  # oversized payload
     ],
 )
 def test_suggest_location_dos_protection(test_app, field_name, malicious_value, error_substring):
-    response = test_app.post(
-        "/api/suggest-new-point",
-        data={
+    response = multipart_suggest_post(
+        test_app,
+        {
             "name": "Test",
             field_name: malicious_value,
-            "test_category": json.dumps(["test"]),
+            "test_category": ["test"],
             "type_of_place": "test-place",
         },
+    )
+    assert response.status_code == 400
+    data = response.json
+    assert error_substring in data["message"].lower()
+
+
+def test_suggest_location_dos_protection_deeply_nested_location_field(test_app):
+    response = test_app.post(
+        "/api/suggest-new-point",
+        data={"location": '{"a":{"b":{"c":"d"}}}'},
         content_type="multipart/form-data",
     )
     assert response.status_code == 400
     data = response.json
-    assert (
-        error_substring in data["message"].lower()
-        or error_substring in data.get("error", "").lower()
-    )
-
-
-def test_suggest_location_dos_protection_json_body_deeply_nested(test_app):
-    response = test_app.post(
-        "/api/suggest-new-point",
-        data='{"a":{"b":{"c":"d"}}}',
-        content_type="application/json",
-    )
-    assert response.status_code == 400
-    data = response.json
-    assert (
-        "too complex" in data["message"].lower() or "nesting depth" in data.get("error", "").lower()
-    )
+    assert "too complex" in data["message"].lower()
 
 
 # --- Location clustering tests ---

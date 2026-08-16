@@ -10,7 +10,7 @@ from flask import Blueprint, redirect, render_template, session
 from flask_babel import gettext
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from platzky import platzky
-from platzky.config import AttachmentConfig, languages_dict
+from platzky.config import languages_dict
 from platzky.models import CmsModule
 from platzky.plugin.content_transformer import ContentTransformerPluginBase
 from platzky.shortcodes import Shortcode
@@ -30,6 +30,9 @@ from goodmap.plugin import CAPABILITY_BASES, GoodmapPluginBase
 logger = logging.getLogger(__name__)
 
 _PLUGIN_ENTRY_POINT_GROUP = "goodmap.plugins"
+
+# Room above the attachment limit for a suggestion's text fields and multipart framing.
+MULTIPART_OVERHEAD_ALLOWANCE = 100 * 1024
 
 
 def _frontend_capability_bases(plugin_class: Any) -> list[type[GoodmapPluginBase]]:
@@ -185,11 +188,13 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         )
     )
 
-    # SECURITY: Set maximum request body size to 100KB (prevents memory exhaustion)
-    # This protects against large file uploads and JSON payloads
-    # Based on calculation: ~6.5KB max legitimate payload + multipart overhead
-    if "MAX_CONTENT_LENGTH" not in app.config:
-        app.config["MAX_CONTENT_LENGTH"] = 100 * 1024  # 100KB
+    # SECURITY: cap request bodies so oversized ones are dropped before being buffered
+    # into memory. Sized to the largest legitimate suggestion - an attachment at the
+    # configured limit, plus headroom for the form fields and multipart overhead -
+    # since anything above that could never pass validation anyway.
+    # Flask seeds MAX_CONTENT_LENGTH with None, so this checks the value, not the key.
+    if app.config.get("MAX_CONTENT_LENGTH") is None:
+        app.config["MAX_CONTENT_LENGTH"] = config.attachment.max_size + MULTIPART_OVERHEAD_ALLOWANCE
 
     if app.is_enabled(UseLazyLoading):
         location_obligatory_fields, _, location_model, app.db = _setup_location_model(app.db)
@@ -228,13 +233,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
 
     CSRFProtect(app)
 
-    # JPEG-only: universal browser/device support, good compression for location photos,
-    # no transparency needed. PNG/WebP can be added if user demand warrants it.
-    photo_attachment_config = AttachmentConfig(
-        allowed_mime_types=frozenset({"image/jpeg"}),
-        allowed_extensions=frozenset({"jpg", "jpeg"}),
-        max_size=5 * 1024 * 1024,  # 5MB - reasonable for location photos
-    )
+    photo_attachment_config = config.attachment
 
     shortcodes: dict[str, Shortcode] = {}
     for plugin in app.loaded_plugins:
@@ -303,6 +302,11 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
             "categories": categories,  # Backward compatibility
             "fields": form_fields,
             "reported_issue_types": reported_issue_types,
+            "photo": {
+                "allowed_extensions": sorted(photo_attachment_config.allowed_extensions or []),
+                "allowed_mime_types": sorted(photo_attachment_config.allowed_mime_types or []),
+                "max_size_bytes": photo_attachment_config.max_size,
+            },
         }
 
         return render_template(

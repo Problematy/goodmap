@@ -3,8 +3,22 @@ import typing as t
 from typing import Literal
 
 import yaml
+from platzky.config import AttachmentConfig
 from platzky.config import Config as PlatzkyConfig
 from pydantic import Field
+
+
+def _default_photo_attachment_config() -> AttachmentConfig:
+    """Attachment limits for location suggestion photos: JPEG only, up to 5 MiB.
+
+    The frontend previews the attachment as an <img> and compresses oversized
+    ones to JPEG, so the format set is deliberately narrower than platzky's.
+    """
+    return AttachmentConfig(
+        allowed_mime_types=frozenset({"image/jpeg"}),
+        allowed_extensions=frozenset({"jpg", "jpeg"}),
+        max_size=5 * 1024 * 1024,
+    )
 
 
 class GoodmapConfig(PlatzkyConfig):
@@ -16,6 +30,12 @@ class GoodmapConfig(PlatzkyConfig):
     goodmap_frontend_lib_url: str = Field(
         default="/static/frontend/index.min.js",
         alias="GOODMAP_FRONTEND_LIB_URL",
+    )
+
+    # Set via ATTACHMENT: in YAML; unset deployments get the photo defaults above.
+    attachment: AttachmentConfig = Field(
+        default_factory=_default_photo_attachment_config,
+        alias="ATTACHMENT",
     )
 
     @classmethod

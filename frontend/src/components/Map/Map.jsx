@@ -6,6 +6,7 @@ import { MapComponent } from './MapComponent';
 import { useMapStore } from './store/map.store';
 import { CategoriesProvider } from '../Categories/CategoriesContext';
 import { createPortal } from 'react-dom';
+import { AppToaster } from '../common/AppToaster';
 import useDebounce from '../../utils/hooks/useDebounce';
 
 /**
@@ -26,6 +27,7 @@ const MapWrap = () => {
 
     return (
         <CategoriesProvider>
+            <AppToaster />
             {createPortal(<FiltersForm />, filtersPlaceholder)}
             {createPortal(<MapComponent />, mapPlaceholder)}
         </CategoriesProvider>

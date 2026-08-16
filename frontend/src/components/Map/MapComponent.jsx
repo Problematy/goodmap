@@ -10,7 +10,6 @@ import MapAutocomplete from './components/MapAutocomplete';
 import ListViewButton from './components/ListView';
 import AccessibilityTable from './components/AccessibilityTable';
 import SaveMapConfiguration from './components/SaveMapConfiguration';
-import { AppToaster } from '../common/AppToaster';
 import { Markers } from './components/Markers';
 import { MapLoadingOverlay } from './components/MapLoadingOverlay';
 import { LocationProvider, useLocation } from './context/LocationContext';
@@ -44,7 +43,6 @@ const MapComponentInner = () => {
 
     return (
         <div style={{ height: '100%', position: 'relative' }}>
-            <AppToaster />
             <LocationPermissionBanner />
             <MapLoadingOverlay isLoading={isMapLoading} />
             <MapOverlays isMapLoading={isMapLoading} />

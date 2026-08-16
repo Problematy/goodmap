@@ -175,6 +175,47 @@ The active mode for each category is also exposed as ``filter_mode`` in the
 ``/api/categories-full`` response, so a custom frontend can render the
 right control (checkbox vs. radio) without hardcoding category names.
 
+Feature Flags
+~~~~~~~~~~~~~
+
+Optional behavior can be toggled via a ``FEATURE_FLAGS:`` block in your
+configuration file:
+
+.. code-block:: yaml
+
+   FEATURE_FLAGS:
+     USE_LAZY_LOADING: true
+
+``USE_LAZY_LOADING`` (default: ``true``)
+   Loads a location's full data only after the user clicks its point on the
+   map, rather than upfront together with the initial map load. Set to
+   ``false`` to load all point data together with the map instead.
+
+Photo Uploads
+~~~~~~~~~~~~~
+
+Users can attach a photo when suggesting a new location. By default, Goodmap
+accepts JPEG photos up to 5 MiB. To allow other formats or change the size
+limit, set the ``ATTACHMENT:`` key in your configuration file (see
+`platzky's AttachmentConfig
+<https://platzky.readthedocs.io/en/latest/api.html#platzky.config.AttachmentConfig>`_):
+
+.. code-block:: yaml
+
+   ATTACHMENT:
+     allowed_mime_types: ["image/jpeg", "image/png"]
+     allowed_extensions: ["jpg", "jpeg", "png"]
+     max_size: 8388608  # 8 MiB
+
+Omit ``ATTACHMENT:`` to keep the default (JPEG only, 5 MiB).
+
+A photo in an unsupported format is rejected with an error message asking the
+user to pick a different file. A photo in an allowed format that exceeds the
+size limit is automatically compressed in the browser before upload; the user
+is warned that this may reduce image quality. If the photo still exceeds the
+limit after compression, it is rejected. The server enforces the same limits
+on upload, independently of the browser-side checks.
+
 .. _data-model-visible_data:
 
 Database Types

@@ -5,7 +5,7 @@ from unittest import mock
 
 import pytest
 from platzky.db.google_json_db import GoogleJsonDb
-from platzky.db.json_db import Json
+from platzky.db.json_db import Json, MemoryStore
 from platzky.db.json_file_db import JsonFile
 from platzky.db.mongodb_db import MongoDB
 
@@ -103,6 +103,17 @@ from goodmap.exceptions import (
     ReportNotFoundError,
 )
 
+
+def in_memory_json_db(data: dict[str, Any]) -> Json:
+    """Json db holding `data` in memory.
+
+    Json takes a JsonStore rather than a raw dict; MemoryStore keeps the passed
+    dict as the source of truth, so tests can still assert against `data` itself
+    after writes.
+    """
+    return Json(MemoryStore(data))
+
+
 data = {
     "data": [
         {"position": [50, 50], "uuid": "1", "name": "one", "test-category": "searchable"},
@@ -135,7 +146,7 @@ def initialize_and_assert_db(db, data):
 
 
 def test_goodmap_json_db_extended():
-    db = Json(data)
+    db = in_memory_json_db(data)
     initialize_and_assert_db(db, data)
 
 
@@ -170,7 +181,7 @@ def test_json_file_atomic_dump(mock_replace, mock_fsync, mock_tempfile, mock_jso
 
 
 def test_json_db_get_location_obligatory_fields():
-    db = Json(data={"location_obligatory_fields": ["field"]})
+    db = in_memory_json_db(data={"location_obligatory_fields": ["field"]})
     assert json_db_get_location_obligatory_fields(db) == ["field"]
 
 
@@ -193,7 +204,7 @@ def test_google_json_db_get_location_obligatory_fields(mock_cli):
 
 
 def test_get_data_dispatch_json_db():
-    db = Json({})
+    db = in_memory_json_db({})
     assert get_data(db) is json_db_get_data
 
 
@@ -213,7 +224,7 @@ def test_get_data_dispatch_google_json_db(mock_cli):
 
 
 def test_json_db_get_data_returns_data():
-    db = Json({"foo": "bar"})
+    db = in_memory_json_db({"foo": "bar"})
     assert json_db_get_data(db) == {"foo": "bar"}
 
 
@@ -343,7 +354,7 @@ def test_get_location_from_raw_data_not_found():
 
 def test_json_db_add_location():
     Location = create_location_model([], {})
-    db = Json({"data": []})
+    db = in_memory_json_db({"data": []})
     location = {"uuid": "1", "position": [1, 2]}
     json_db_add_location(db, location, Location)
     assert len(db.data["data"]) == 1
@@ -352,7 +363,7 @@ def test_json_db_add_location():
 
 def test_json_db_add_duplicate_location():
     Location = create_location_model([], {})
-    db = Json({"data": []})
+    db = in_memory_json_db({"data": []})
     location = {"uuid": "1", "position": [1, 2]}
     json_db_add_location(db, location, Location)
     with pytest.raises(LocationAlreadyExistsError):
@@ -361,7 +372,7 @@ def test_json_db_add_duplicate_location():
 
 def test_json_db_update_location():
     Location = create_location_model([], {})
-    db = Json({"data": [{"uuid": "1", "position": [1, 2]}]})
+    db = in_memory_json_db({"data": [{"uuid": "1", "position": [1, 2]}]})
     location_update = {"uuid": "1", "position": [3, 4]}
     json_db_update_location(db, "1", location_update, Location)
     assert tuple(db.data["data"][0]["position"]) == (3, 4)
@@ -369,20 +380,20 @@ def test_json_db_update_location():
 
 def test_json_db_update_location_not_found():
     Location = create_location_model([], {})
-    db = Json({"data": []})
+    db = in_memory_json_db({"data": []})
     location_update = {"uuid": "1", "position": [3, 4]}
     with pytest.raises(LocationNotFoundError):
         json_db_update_location(db, "1", location_update, Location)
 
 
 def test_json_db_delete_location():
-    db = Json({"data": [{"uuid": "1", "position": [1, 2]}]})
+    db = in_memory_json_db({"data": [{"uuid": "1", "position": [1, 2]}]})
     json_db_delete_location(db, "1")
     assert db.data["data"] == []
 
 
 def test_json_db_delete_location_not_found():
-    db = Json({"data": []})
+    db = in_memory_json_db({"data": []})
     with pytest.raises(LocationNotFoundError):
         json_db_delete_location(db, "1")
 
@@ -458,7 +469,7 @@ def test_json_file_db_delete_location_not_found():
 
 
 def test_json_db_add_suggestion():
-    db = Json({})
+    db = in_memory_json_db({})
     suggestion = {"uuid": "s1", "foo": "bar"}
     json_db_add_suggestion(db, suggestion)
     assert len(db.data["suggestions"]) == 1
@@ -466,7 +477,7 @@ def test_json_db_add_suggestion():
 
 
 def test_json_db_add_duplicate_suggestion():
-    db = Json({})
+    db = in_memory_json_db({})
     suggestion = {"uuid": "s1"}
     json_db_add_suggestion(db, suggestion)
     with pytest.raises(AlreadyExistsError):
@@ -478,7 +489,7 @@ def test_json_db_get_suggestions_filters():
         {"uuid": "s1", "status": "pending"},
         {"uuid": "s2", "status": "done"},
     ]
-    db = Json({"suggestions": suggestions})
+    db = in_memory_json_db({"suggestions": suggestions})
     all_suggestions = json_db_get_suggestions(db, {})
     assert len(all_suggestions) == 2
     pending = json_db_get_suggestions(db, {"status": ["pending"]})
@@ -486,20 +497,20 @@ def test_json_db_get_suggestions_filters():
 
 
 def test_json_db_get_suggestion_by_uuid():
-    db = Json({"suggestions": [{"uuid": "s1", "status": "pending"}]})
+    db = in_memory_json_db({"suggestions": [{"uuid": "s1", "status": "pending"}]})
     suggestion = json_db_get_suggestion(db, "s1")
     assert suggestion is not None and suggestion["uuid"] == "s1"
     assert json_db_get_suggestion(db, "x") is None
 
 
 def test_json_db_update_suggestion():
-    db = Json({"suggestions": [{"uuid": "s1", "status": "pending"}]})
+    db = in_memory_json_db({"suggestions": [{"uuid": "s1", "status": "pending"}]})
     json_db_update_suggestion(db, "s1", "done")
     assert db.data["suggestions"][0]["status"] == "done"
 
 
 def test_json_db_update_suggestion_not_found():
-    db = Json({"suggestions": []})
+    db = in_memory_json_db({"suggestions": []})
     with pytest.raises(ValueError):
         json_db_update_suggestion(db, "x", "new")
 
@@ -510,20 +521,20 @@ def test_json_db_update_suggestion_multiple():
         {"uuid": "a", "status": "pending"},
         {"uuid": "b", "status": "pending"},
     ]
-    db = Json({"suggestions": [s.copy() for s in suggestions]})
+    db = in_memory_json_db({"suggestions": [s.copy() for s in suggestions]})
     json_db_update_suggestion(db, "b", "done")
     assert db.data["suggestions"][0]["status"] == "pending"
     assert db.data["suggestions"][1]["status"] == "done"
 
 
 def test_json_db_delete_suggestion():
-    db = Json({"suggestions": [{"uuid": "s1"}]})
+    db = in_memory_json_db({"suggestions": [{"uuid": "s1"}]})
     json_db_delete_suggestion(db, "s1")
     assert db.data["suggestions"] == []
 
 
 def test_json_db_delete_suggestion_not_found():
-    db = Json({"suggestions": []})
+    db = in_memory_json_db({"suggestions": []})
     with pytest.raises(ValueError):
         json_db_delete_suggestion(db, "s1")
 
@@ -660,14 +671,14 @@ def test_json_file_db_delete_suggestion_not_found():
 
 
 def test_json_db_add_report():
-    db = Json({})
+    db = in_memory_json_db({})
     report = {"uuid": "r1", "status": "new", "priority": "high"}
     json_db_add_report(db, report)
     assert len(db.data["reports"]) == 1
 
 
 def test_json_db_add_duplicate_report():
-    db = Json({})
+    db = in_memory_json_db({})
     report = {"uuid": "r1"}
     json_db_add_report(db, report)
     with pytest.raises(ValueError):
@@ -675,7 +686,7 @@ def test_json_db_add_duplicate_report():
 
 
 def test_json_db_get_reports_filters():
-    db = Json(
+    db = in_memory_json_db(
         {
             "reports": [
                 {"uuid": "r1", "status": "new", "priority": "high"},
@@ -692,14 +703,14 @@ def test_json_db_get_reports_filters():
 
 
 def test_json_db_get_report_by_uuid():
-    db = Json({"reports": [{"uuid": "r1"}]})
+    db = in_memory_json_db({"reports": [{"uuid": "r1"}]})
     report = json_db_get_report(db, "r1")
     assert report is not None and report["uuid"] == "r1"
     assert json_db_get_report(db, "x") is None
 
 
 def test_json_db_update_report_fields():
-    db = Json({"reports": [{"uuid": "r1", "status": "new", "priority": "high"}]})
+    db = in_memory_json_db({"reports": [{"uuid": "r1", "status": "new", "priority": "high"}]})
     json_db_update_report(db, "r1", status="done")
     assert db.data["reports"][0]["status"] == "done"
     json_db_update_report(db, "r1", priority="low")
@@ -710,7 +721,7 @@ def test_json_db_update_report_fields():
 
 
 def test_json_db_update_report_not_found():
-    db = Json({"reports": []})
+    db = in_memory_json_db({"reports": []})
     report_uuid = "550e8400-e29b-41d4-a716-446655440000"
     with pytest.raises(ReportNotFoundError):
         json_db_update_report(db, report_uuid, status="a")
@@ -722,20 +733,20 @@ def test_json_db_update_report_multiple():
         {"uuid": "r1", "status": "pending", "priority": "low"},
         {"uuid": "r2", "status": "pending", "priority": "low"},
     ]
-    db = Json({"reports": [r.copy() for r in reports]})
+    db = in_memory_json_db({"reports": [r.copy() for r in reports]})
     json_db_update_report(db, "r2", status="resolved", priority=None)
     assert db.data["reports"][0]["status"] == "pending"
     assert db.data["reports"][1]["status"] == "resolved"
 
 
 def test_json_db_delete_report():
-    db = Json({"reports": [{"uuid": "r1"}]})
+    db = in_memory_json_db({"reports": [{"uuid": "r1"}]})
     json_db_delete_report(db, "r1")
     assert db.data["reports"] == []
 
 
 def test_json_db_delete_report_not_found():
-    db = Json({"reports": []})
+    db = in_memory_json_db({"reports": []})
     report_uuid = "550e8400-e29b-41d4-a716-446655440001"
     with pytest.raises(ReportNotFoundError):
         json_db_delete_report(db, report_uuid)
@@ -886,7 +897,7 @@ def test_json_file_db_delete_report_not_found():
 
 
 def test_dispatch_add_update_delete_location():
-    db = Json({"data": []})
+    db = in_memory_json_db({"data": []})
     Location = create_location_model([], {})
 
     loc = {"uuid": "u1", "position": [10, 20]}
@@ -902,7 +913,7 @@ def test_dispatch_add_update_delete_location():
 
 
 def test_dispatch_add_update_delete_suggestion():
-    db = Json({"suggestions": []})
+    db = in_memory_json_db({"suggestions": []})
 
     sugg = {"uuid": "s1", "foo": "bar"}
     add_suggestion(db, sugg)
@@ -916,7 +927,7 @@ def test_dispatch_add_update_delete_suggestion():
 
 
 def test_dispatch_add_update_delete_report():
-    db = Json({"reports": []})
+    db = in_memory_json_db({"reports": []})
 
     rep = {"uuid": "r1", "status": "new", "priority": "high"}
     add_report(db, rep)
@@ -1344,7 +1355,7 @@ def test_mongodb_db_delete_suggestion_not_found(mock_client):
 
 
 def test_json_db_get_categories():
-    db = Json(data)
+    db = in_memory_json_db(data)
     extend_db_with_goodmap_queries(db, LocationBase)
     categories = json_db_get_categories(db)
     assert list(categories) == ["test-category"]
@@ -1411,14 +1422,14 @@ def test_mongodb_db_get_categories_no_categories_field(mock_client):
 
 
 def test_get_categories():
-    db = Json(data)
+    db = in_memory_json_db(data)
     extend_db_with_goodmap_queries(db, LocationBase)
     categories = json_db_get_categories(db)
     assert list(categories) == ["test-category"]
 
 
 def test_json_db_get_category_data():
-    db = Json(data)
+    db = in_memory_json_db(data)
     extend_db_with_goodmap_queries(db, LocationBase)
     category_data = json_db_get_category_data(db)
     expected = {
@@ -1432,7 +1443,7 @@ def test_json_db_get_category_data():
 
 
 def test_json_db_get_category_data_specific_category():
-    db = Json(data)
+    db = in_memory_json_db(data)
     extend_db_with_goodmap_queries(db, LocationBase)
     category_data = json_db_get_category_data(db, "test-category")
     expected = {
@@ -1585,7 +1596,7 @@ def test_mongodb_db_get_category_data_no_config(mock_client):
 
 
 def test_get_category_data():
-    db = Json(data)
+    db = in_memory_json_db(data)
     extend_db_with_goodmap_queries(db, LocationBase)
     category_data = json_db_get_category_data(db)
     expected = {
@@ -2045,7 +2056,7 @@ def test_build_pagination_response_per_page_none():
 def test_json_db_get_locations_paginated():
     from goodmap.db import json_db_get_locations_paginated
 
-    db = Json(data)
+    db = in_memory_json_db(data)
     Location = create_location_model([], {})
 
     # Test with sorting by name
@@ -2075,7 +2086,7 @@ def test_json_db_get_suggestions_paginated():
             {"uuid": "s3", "status": "pending", "created_at": "2024-01-03"},
         ]
     }
-    db = Json(suggestions_data)
+    db = in_memory_json_db(suggestions_data)
 
     # Test with status filtering and sorting
     query = {
@@ -2108,7 +2119,7 @@ def test_json_db_get_reports_paginated():
             {"uuid": "r3", "status": "new", "priority": "critical", "created_at": "2024-01-03"},
         ]
     }
-    db = Json(reports_data)
+    db = in_memory_json_db(reports_data)
 
     # Test with status and priority filtering, sorting
     query = {
@@ -2228,7 +2239,7 @@ def test_google_json_db_pagination_no_per_page():
 def test_json_db_pagination_no_per_page():
     from goodmap.db import json_db_get_locations_paginated
 
-    db = Json(data)
+    db = in_memory_json_db(data)
     Location = create_location_model([], {})
 
     # Test lines 384, 390 - no per_page
@@ -2259,7 +2270,7 @@ def test_suggestions_pagination_no_per_page():
     from goodmap.db import json_db_get_suggestions_paginated
 
     suggestions_data = {"suggestions": [{"uuid": "s1", "status": "pending"}]}
-    db = Json(suggestions_data)
+    db = in_memory_json_db(suggestions_data)
 
     # Test line 700 - no per_page
     query = {"page": ["1"]}
@@ -2295,7 +2306,7 @@ def test_reports_pagination_no_per_page():
     from goodmap.db import json_db_get_reports_paginated
 
     reports_data = {"reports": [{"uuid": "r1", "status": "new"}]}
-    db = Json(reports_data)
+    db = in_memory_json_db(reports_data)
 
     # Test line 1000 - no per_page
     query = {"page": ["1"]}
@@ -2355,7 +2366,7 @@ def test_specific_missing_lines():
             assert len(result["items"]) == 1
 
     # Test line 384 - json_db when per_page is None
-    db = Json(data)
+    db = in_memory_json_db(data)
     Location = create_location_model([], {})
     query = {"per_page": ["all"], "page": ["1"]}
     result = json_db_get_locations_paginated(db, query, Location)
@@ -2388,7 +2399,7 @@ def test_specific_missing_lines():
 
     # Test line 700 - json_db_get_suggestions when per_page is None
     suggestions_data = {"suggestions": [{"uuid": "s1", "status": "pending"}]}
-    db = Json(suggestions_data)
+    db = in_memory_json_db(suggestions_data)
     query = {"per_page": ["all"], "page": ["1"]}
     result = json_db_get_suggestions_paginated(db, query)
     assert len(result["items"]) == 1
@@ -2405,7 +2416,7 @@ def test_specific_missing_lines():
 
     # Test line 1000 - json_db_get_reports when per_page is None
     reports_data = {"reports": [{"uuid": "r1", "status": "new"}]}
-    db = Json(reports_data)
+    db = in_memory_json_db(reports_data)
     query = {"per_page": ["all"], "page": ["1"]}
     result = json_db_get_reports_paginated(db, query)
     assert len(result["items"]) == 1

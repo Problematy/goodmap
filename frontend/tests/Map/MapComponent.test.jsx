@@ -44,18 +44,30 @@ describe('MapComponent', () => {
         jest.spyOn(globalThis, 'fetch').mockResolvedValue({
             json: jest.fn().mockResolvedValue(categories),
         });
+    });
+
+    // eslint-disable-next-line es-x/no-async-functions -- needed to await waitFor
+    it('renders without crashing', async () => {
         render(
             <CategoriesProvider>
                 <MapComponent />
             </CategoriesProvider>,
         );
-    });
 
-    it('renders without crashing', () => {
-        expect(screen.getAllByRole('presentation').length).toBeGreaterThan(0);
+        await waitFor(() => expect(screen.getAllByRole('presentation').length).toBeGreaterThan(0));
     });
 
     it('does not fetch locations before filter state is initialized', () => {
+        httpService.getLocations.mockClear();
+        // Never resolves, so the provider leaves the filter state uninitialized.
+        httpService.getCategoriesData.mockReturnValueOnce(new Promise(() => {}));
+
+        render(
+            <CategoriesProvider>
+                <MapComponent />
+            </CategoriesProvider>,
+        );
+
         expect(httpService.getLocations).not.toHaveBeenCalled();
     });
 });

@@ -320,13 +320,13 @@ class CRUDHelper:
 
 def json_db_get_location_obligatory_fields(db):
     """Return location obligatory fields from in-memory JSON database."""
-    return db.data["location_obligatory_fields"]
+    return db.data.get("location_obligatory_fields", [])
 
 
 def json_file_db_get_location_obligatory_fields(db):
     """Return location obligatory fields from JSON file database."""
     with open(db.data_file_path, "r") as file:
-        return json.load(file)["map"]["location_obligatory_fields"]
+        return json.load(file)["map"].get("location_obligatory_fields", [])
 
 
 def google_json_db_get_location_obligatory_fields(db):

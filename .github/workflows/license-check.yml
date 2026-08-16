@@ -36,7 +36,8 @@ jobs:
             Python-2.0,
             MPL-2.0,
             0BSD,
-            Artistic-1.0-Perl
+            Artistic-1.0-Perl,
+            MIT-CMU
           # TODO: migrate away from react-leaflet (Hippocratic-2.1) to vanilla Leaflet (BSD-2-Clause)
           # to make the frontend fully MIT-compatible. Tracked here until migration is done.
           allow-dependencies-licenses: >-

@@ -1,4 +1,5 @@
 import importlib.metadata
+import io
 import os
 import sys
 import tempfile
@@ -8,6 +9,7 @@ from unittest import mock
 from unittest.mock import MagicMock, patch
 
 import pytest
+from platzky.config import AttachmentConfig
 from platzky.db.json_db import JsonDbConfig
 
 from goodmap import goodmap
@@ -105,8 +107,8 @@ def test_frontend_lib_url_uses_bundled_static_when_present():
     assert 'src="/static/frontend/index.min.js"' in response.data.decode("utf-8")
 
 
-def test_index_route_returns_location_schema():
-    """Test that the index route (/map) returns successfully with location_schema"""
+def test_map_route_returns_location_schema():
+    """Test that the /map route returns successfully with location_schema"""
     config = GoodmapConfig(
         APP_NAME="test_app",
         SECRET_KEY="test_secret",
@@ -141,7 +143,137 @@ def test_index_route_returns_location_schema():
     assert "amenities" in response_text
 
 
-def test_index_route_location_schema_with_lazy_loading():
+def test_map_route_includes_photo_constraints():
+    """The frontend sources photo upload limits (max size, allowed types) live from
+    the backend's AttachmentConfig rather than hardcoding its own copy - this test
+    guards the `photo` key in location_schema that makes that possible.
+    """
+    config = GoodmapConfig(
+        APP_NAME="test_app",
+        SECRET_KEY="test_secret",
+        USE_WWW=False,
+        BLOG_PREFIX="/blog",
+        DB=JsonDbConfig(
+            DATA={"site_content": {"pages": []}, "categories": {}},
+            TYPE="json",
+        ),
+    )
+    app = goodmap.create_app_from_config(config)
+    app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
+    client = app.test_client()
+
+    response = client.get("/map")
+    assert response.status_code == 200
+
+    response_text = response.data.decode("utf-8")
+    assert '"max_size_bytes":5242880' in response_text
+    assert '"allowed_mime_types":["image/jpeg"]' in response_text
+    assert '"allowed_extensions":["jpeg","jpg"]' in response_text
+
+
+def _minimal_config() -> GoodmapConfig:
+    return GoodmapConfig(
+        APP_NAME="test_app",
+        SECRET_KEY="test_secret",
+        USE_WWW=False,
+        BLOG_PREFIX="/blog",
+        DB=JsonDbConfig(
+            DATA={"site_content": {"pages": []}, "categories": {}},
+            TYPE="json",
+        ),
+    )
+
+
+def _config_with_attachment(attachment: AttachmentConfig) -> GoodmapConfig:
+    return GoodmapConfig(
+        APP_NAME="test_app",
+        SECRET_KEY="test_secret",
+        USE_WWW=False,
+        BLOG_PREFIX="/blog",
+        DB=JsonDbConfig(
+            DATA={"site_content": {"pages": []}, "categories": {}},
+            TYPE="json",
+        ),
+        ATTACHMENT=attachment,
+    )
+
+
+def test_max_content_length_leaves_room_for_an_attachment_at_the_configured_limit():
+    """The request size cap must exceed attachment.max_size, or Flask would reject an
+    otherwise-valid photo with 413 before it ever reaches attachment validation.
+    """
+    app = goodmap.create_app_from_config(_minimal_config())
+
+    max_content_length = app.config["MAX_CONTENT_LENGTH"]
+    assert max_content_length is not None, "request size cap must actually be applied"
+    assert max_content_length > 5 * 1024 * 1024
+
+
+def test_max_content_length_tracks_a_raised_attachment_limit():
+    """Raising ATTACHMENT.max_size must raise the request cap with it."""
+    app = goodmap.create_app_from_config(
+        _config_with_attachment(
+            AttachmentConfig(
+                allowed_mime_types=frozenset({"image/jpeg"}),
+                allowed_extensions=frozenset({"jpg", "jpeg"}),
+                max_size=8 * 1024 * 1024,
+            )
+        )
+    )
+
+    assert app.config["MAX_CONTENT_LENGTH"] > 8 * 1024 * 1024
+
+
+def test_max_content_length_rejects_bodies_past_the_cap():
+    """Oversized requests are still dropped rather than buffered into memory."""
+    app = goodmap.create_app_from_config(_minimal_config())
+    app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
+    client = app.test_client()
+
+    oversized = b"x" * (app.config["MAX_CONTENT_LENGTH"] + 1)
+    response = client.post(
+        "/api/suggest-new-point",
+        data={"position": "[50, 50]", "photo": (io.BytesIO(oversized), "photo.jpg", "image/jpeg")},
+        content_type="multipart/form-data",
+    )
+
+    assert response.status_code == 413
+
+
+def test_map_route_overrides_photo_constraints():
+    """A deployment can override the default JPEG-only 5MiB photo constraints via
+    ATTACHMENT: in its YAML config - goodmap must read config.attachment (platzky's
+    own config field) rather than hardcoding its own AttachmentConfig.
+    """
+    config = GoodmapConfig(
+        APP_NAME="test_app",
+        SECRET_KEY="test_secret",
+        USE_WWW=False,
+        BLOG_PREFIX="/blog",
+        DB=JsonDbConfig(
+            DATA={"site_content": {"pages": []}, "categories": {}},
+            TYPE="json",
+        ),
+        ATTACHMENT=AttachmentConfig(
+            allowed_mime_types=frozenset({"image/jpeg", "image/png"}),
+            allowed_extensions=frozenset({"jpg", "jpeg", "png"}),
+            max_size=8 * 1024 * 1024,
+        ),
+    )
+    app = goodmap.create_app_from_config(config)
+    app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
+    client = app.test_client()
+
+    response = client.get("/map")
+    assert response.status_code == 200
+
+    response_text = response.data.decode("utf-8")
+    assert '"max_size_bytes":8388608' in response_text
+    assert '"allowed_mime_types":["image/jpeg","image/png"]' in response_text
+    assert '"allowed_extensions":["jpeg","jpg","png"]' in response_text
+
+
+def test_map_route_location_schema_with_lazy_loading():
     """Test that location_schema includes obligatory_fields when USE_LAZY_LOADING is enabled"""
     config = GoodmapConfig(
         APP_NAME="test_app",

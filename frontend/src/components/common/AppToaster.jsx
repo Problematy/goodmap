@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import toast, { ToastBar, Toaster } from 'react-hot-toast';
 import { IconButton } from '@mui/material';
 import Close from '@mui/icons-material/Close';
@@ -14,12 +15,20 @@ import { useMaxToasts } from '../../utils/hooks/useMaxToasts';
 export const AppToaster = () => {
     useMaxToasts();
 
-    return (
+    // #main-row's stacking context would trap the toast below the MUI Dialog.
+    // See the #overlay-root rule in platzky's styles.css.
+    return createPortal(
         <Toaster
             position="top-center"
             reverseOrder={false}
             gutter={8}
-            containerStyle={{ zIndex: 99999999, top: 120 }}
+            // Placed mid-map: a toast in the top corner is easy to miss against a
+            // full-screen map. `bottom` must be 'auto' - the library defaults it to
+            // 16, which stretches the container and drops the toast far below here.
+            containerStyle={{
+                top: '50%',
+                bottom: 'auto',
+            }}
             toastOptions={{
                 duration: 8000,
                 style: {
@@ -43,6 +52,7 @@ export const AppToaster = () => {
                     )}
                 </ToastBar>
             )}
-        </Toaster>
+        </Toaster>,
+        document.getElementById('overlay-root'),
     );
 };

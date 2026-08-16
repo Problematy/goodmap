@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import styled, { keyframes } from 'styled-components';
 import { useTranslation } from 'react-i18next';
 import { Tooltip } from '@mui/material';
 import { useCategories } from '../Categories/CategoriesContext';
-import { httpService } from '../../services/http/httpService';
 import FiltersTooltip from './FiltersTooltip';
 
 const shimmer = keyframes`
@@ -242,10 +241,14 @@ const LoadingSkeleton = () => (
 
 export const FiltersForm = () => {
     const { t } = useTranslation();
-    const { categories: selectedFilters, setCategories, setIsInitialized } = useCategories();
-    const [categoriesData, setCategoriesData] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [hasError, setHasError] = useState(false);
+    const {
+        categories: selectedFilters,
+        setCategories,
+        categoriesData,
+        isLoading,
+        hasError,
+        refetchCategories,
+    } = useCategories();
 
     const handleCheckboxChange = event => {
         const { value, checked } = event.target;
@@ -281,31 +284,6 @@ export const FiltersForm = () => {
     const handleClearFilters = () => {
         setCategories({});
     };
-
-    const fetchCategories = async () => {
-        setIsLoading(true);
-        setHasError(false);
-        try {
-            const { categories, defaultChecked } = await httpService.getCategoriesData();
-            setCategoriesData(categories);
-            if (Object.keys(defaultChecked).length > 0) {
-                setCategories(defaultChecked);
-            }
-            setIsInitialized(true);
-        } catch (error) {
-            console.error('Failed to load categories:', error);
-            // Establish an explicit fallback (no filters) instead of silently
-            // signaling initialization with unknown/missing category data.
-            setCategoriesData([]);
-            setHasError(true);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchCategories();
-    }, []);
 
     const renderModeBadge = mode => {
         const keys = MODE_BADGES[mode] ?? MODE_BADGES.or;
@@ -457,7 +435,7 @@ export const FiltersForm = () => {
         return (
             <form>
                 <ErrorMessage>{t('loadFiltersError')}</ErrorMessage>
-                <RetryButton type="button" onClick={fetchCategories}>
+                <RetryButton type="button" onClick={refetchCategories}>
                     {t('retry')}
                 </RetryButton>
             </form>

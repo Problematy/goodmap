@@ -65,6 +65,7 @@
         "@mui/icons-material": "^5.14.6",
         "@mui/material": "^5.14.6",
         "axios": "^1.7.6",
+        "browser-image-compression": "^2.0.2",
         "i18next": "^23.15.1",
         "leaflet": "^1.9.3",
         "prop-types": "^15.8.1",
