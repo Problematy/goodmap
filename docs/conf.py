@@ -71,14 +71,24 @@ napoleon_include_init_with_doc = True
 
 # The docs build with -n (nitpicky), so every unresolved cross-reference is a warning.
 # These come out of third-party annotations autodoc copies into the signatures and have
-# nothing to link to: pydantic and pymongo publish no intersphinx inventory, platzky's
-# does not cover its classes, and annotated_types constraints render as their repr
-# ("ge=-180"), which is not a target at all. Ignoring them keeps -n meaningful for the
-# references we actually control.
+# nothing to link to: pydantic and pymongo publish no intersphinx inventory, and
+# annotated_types constraints render as their repr ("ge=-180"), which is not a target at
+# all. Ignoring them keeps -n meaningful for the references we actually control.
+#
+# The platzky entries are named one by one on purpose. Its inventory does resolve most
+# classes (platzky.engine.Engine and platzky.config.Config both link), so a blanket
+# "platzky\..*" would hide genuinely broken references to it. Only these three are
+# missing: "platzky.Engine" is the package-level re-export rather than the canonical
+# path, and the other two are simply absent upstream.
+_ANY_PY_ROLE = "py:.*"
 nitpick_ignore_regex = [
-    ("py:.*", r"ConfigDict|callable"),
-    ("py:.*", r"(annotated_types|pymongo|platzky)\..*"),
-    ("py:.*", r"[gl]e=-?\d+"),
+    (_ANY_PY_ROLE, r"ConfigDict|callable"),
+    (_ANY_PY_ROLE, r"(annotated_types|pymongo)\..*"),
+    (_ANY_PY_ROLE, r"[gl]e=-?\d+"),
+    (
+        _ANY_PY_ROLE,
+        r"platzky\.(Engine|feature_flags_wrapper\.FeatureFlagSet|plugin\.plugin\.PluginBase)",
+    ),
 ]
 
 # Intersphinx mapping. platzky is linked from the config and plugin pages, since a

@@ -12,15 +12,23 @@ The config controls **how the app runs**. What is *on* the map — the points, t
 filterable fields, the popup contents — lives in the data source instead, documented in
 :doc:`data-source`.
 
-Because Goodmap is built on platzky, a Goodmap config *is* a platzky config plus one
-extra key (``GOODMAP_FRONTEND_LIB_URL``). Keys not listed here are passed through to
-platzky; see :doc:`platzky's configuration docs <platzky:index>` for the rest.
+Because Goodmap is built on platzky, a Goodmap config *is* a platzky config plus the keys
+Goodmap adds of its own — ``GOODMAP_FRONTEND_LIB_URL`` and ``ATTACHMENT``. Keys not listed
+here are passed through to platzky; see
+:doc:`platzky's configuration docs <platzky:index>` for the rest.
 
 .. note::
 
-   Config keys are uppercase. A missing config file exits with an error; an unreadable or
-   invalid one raises at startup, so problems surface immediately rather than on first
-   request.
+   **Top-level** config keys are uppercase; nested ones are not, so ``ATTACHMENT`` is
+   spelled in caps but its ``max_size`` is not. A missing config file exits with an error;
+   an unreadable or invalid one raises at startup, so problems surface immediately rather
+   than on first request.
+
+.. warning::
+
+   An unknown top-level key is **silently ignored**, not rejected — a typo in a key name
+   costs you the setting with nothing in the log to say so. Check spelling against this
+   page when a setting appears to have no effect.
 
 A complete config
 -----------------

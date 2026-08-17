@@ -33,8 +33,9 @@ Only ``data`` and ``categories`` are structurally required; ``suggestions`` and
 Points
 ------
 
-``data`` is the list of points. Each one is a free-form object with four fields Goodmap
-cares about:
+``data`` is the list of points. Each one is a free-form object with five fields Goodmap
+treats specially — everything else in the example below, such as ``accessible_by``, is an
+ordinary field of your own:
 
 .. code-block:: json
 
@@ -127,13 +128,17 @@ This drives three things at once:
    }
 
 ``visible_data``
-   Field names shown in the marker popup's body, in the order given. **This is also a
-   privacy boundary**: a field not listed here is never sent to the frontend by
-   ``/api/location/<uuid>``, so internal fields can live in the data safely.
+   Field names shown in the marker popup's body, in the order given.
 
 ``meta_data``
    Field names returned in the popup's separate ``metadata`` object, for data that is
    needed but not part of the visible body — typically ``uuid``.
+
+**Together the two lists are a privacy boundary**: ``/api/location/<uuid>`` returns a
+field only if it appears in one of them, so internal fields can live in the data without
+reaching the frontend. Note that it really is *either* list — a field in ``meta_data`` is
+returned even though it is not in ``visible_data``. Leaving a field out of
+``visible_data`` alone does not hide it.
 
 Both are translated through gettext before being returned (:ref:`config-translations`).
 

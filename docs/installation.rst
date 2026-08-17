@@ -30,11 +30,21 @@ Goodmap is published on PyPI as `goodmap <https://pypi.org/project/goodmap/>`_:
 
       pip install --pre goodmap
 
-With Poetry, in the project that will host your map:
+With Poetry, in the project that will host your map. The ``--allow-prereleases`` flag is
+required for the same reason ``pip`` needs ``--pre``: without it Poetry refuses every
+published 2.x and the install fails to resolve.
 
 .. code-block:: bash
 
-   poetry add goodmap
+   poetry add goodmap --allow-prereleases
+
+To keep that from being a flag you have to remember, declare it in ``pyproject.toml``
+instead:
+
+.. code-block:: toml
+
+   [tool.poetry.dependencies]
+   goodmap = { version = "^2.0.0", allow-prereleases = true }
 
 Checking it worked
 ------------------
@@ -51,7 +61,10 @@ Then ``curl http://localhost:5000/api/version`` should report the installed vers
 
 .. code-block:: json
 
-   {"backend": "2.0.0a5"}
+   {"backend": "<installed-version>"}
+
+The value is the package version normalised to PEP 440, so a release published as
+``2.0.0-alpha.5`` reports as ``2.0.0a5``.
 
 Installing from source
 ----------------------

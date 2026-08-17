@@ -45,8 +45,8 @@ Then, for whichever parts you are touching:
 
 .. code-block:: bash
 
-   make -C frontend install         # frontend work
-   cd e2e-tests && poetry install   # e2e work
+   make -C frontend install          # frontend work
+   (cd e2e-tests && poetry install)  # e2e work
 
 Python 3.10 is the supported floor. If your system Python differs, install 3.10 alongside
 with `pyenv <https://github.com/pyenv/pyenv>`_.

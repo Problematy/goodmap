@@ -223,10 +223,10 @@ The configured interface languages, exactly as given in ``LANGUAGES``:
 
 .. code-block:: json
 
-   {"backend": "2.0.0a5"}
+   {"backend": "<installed-version>"}
 
-The installed package version, normalised to PEP 440 — ``2.0.0-alpha.5`` reports as
-``2.0.0a5``. Useful as a health check.
+The installed package version, normalised to PEP 440 — a release published as
+``2.0.0-alpha.5`` reports as ``2.0.0a5``. Useful as a health check.
 
 Submissions
 -----------

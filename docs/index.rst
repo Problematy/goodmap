@@ -15,7 +15,8 @@ These docs are task-oriented and split three ways:
 
 **Running a Goodmap**
    You want an instance of your own. Install it, write ``config.yml``, author the data,
-   moderate what users submit, put it in production. No Python required.
+   moderate what users submit, put it in production. No Python programming required —
+   though you do need a Python 3.10+ runtime to install and run it (:doc:`installation`).
 
 **Extending Goodmap**
    You are building against an instance — calling the HTTP API from your own client, or

@@ -126,7 +126,7 @@ Health checks
 -------------
 
 ``GET /api/version`` is cheap and needs no data source, returning
-``{"backend": "2.0.0a5"}``. Point your load balancer at it.
+``{"backend": "<installed-version>"}``. Point your load balancer at it.
 
 For a check that also proves the data source is reachable, use ``GET /api/locations`` —
 it touches the backend, though on a large map it is not free.
