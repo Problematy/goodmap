@@ -30,7 +30,3 @@ DB:
 #   TYPE: google_hosted_json_file
 #   BUCKET_NAME: good-map
 #   SOURCE_BLOB_NAME: data.json
-
-
-# -- Plugins are NOT configured here. They are activated in the data source, under its
-# -- top-level "plugins" key, keyed by entry-point name. See docs/data-source.rst.

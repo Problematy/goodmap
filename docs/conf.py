@@ -1,10 +1,4 @@
-"""Sphinx configuration for Goodmap documentation.
-
-Most of these docs are task-oriented prose: how to run, configure and extend Goodmap.
-The API reference page is generated from docstrings instead, so autodoc imports the
-package - hence the sys.path entry below, which makes a source checkout importable
-without installing it.
-"""
+"""Sphinx configuration for Goodmap documentation."""
 
 import importlib.metadata
 import sys
