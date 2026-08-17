@@ -438,6 +438,7 @@ catch problems before deploying, validate the file against the schema it declare
    import sys
 
    from goodmap.data_models.location import create_location_model
+   from goodmap.exceptions import LocationValidationError
 
    raw = json.load(open(sys.argv[1]))["map"]
    model = create_location_model(
@@ -449,18 +450,25 @@ catch problems before deploying, validate the file against the schema it declare
    for point in raw["data"]:
        try:
            model.model_validate(point)
-       except Exception as error:
+       except LocationValidationError as error:
            failures += 1
-           print(f"{point.get('uuid', '<no uuid>')}: {error}")
+           uuid = point.get("uuid", "<no uuid>")
+           for detail in error.validation_errors:
+               field = ".".join(str(part) for part in detail["loc"]) or "<point>"
+               print(f"{uuid}: {field}: {detail['msg']}")
 
    print(f"{len(raw['data'])} points checked, {failures} invalid")
    sys.exit(1 if failures else 0)
 
 This catches missing obligatory fields, values outside a category's allowed list, and
-out-of-range coordinates.
+out-of-range coordinates, and reports the offending field for each one::
+
+   22222222-2222-2222-2222-222222222222: name: Field required
+   33333333-3333-3333-3333-333333333333: type_of_place: Value error, must be one of ...
 
 .. note::
 
-   The repository's ``make verify-json-data`` target invokes a
-   ``goodmap.data_validator`` module that does not currently exist, so it fails with
-   ``No module named goodmap.data_validator``. Use the script above until that is fixed.
+   Read the failures off ``error.validation_errors``, not off the exception itself.
+   ``LocationValidationError`` prints as a bare ``Validation failed for location
+   '<uuid>'`` — it withholds detail on purpose, so that API responses never leak the
+   shape of your data.
