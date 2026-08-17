@@ -11,7 +11,7 @@ Before you start, install Goodmap (:doc:`installation`):
 
 .. code-block:: bash
 
-   pip install --pre goodmap
+   pip install goodmap
 
 .. _quickstart-data:
 

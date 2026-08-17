@@ -134,12 +134,11 @@ it touches the backend, though on a large map it is not free.
 Upgrading
 ---------
 
-Goodmap 2.x is currently published as pre-releases, so pin an exact version and upgrade
-deliberately:
+Pin an exact version and upgrade deliberately:
 
 .. code-block:: text
 
-   goodmap==2.0.0a5
+   goodmap==2.0.0
 
 Before upgrading, read ``CHANGELOG.md`` in the repository. Note that 2.0 **requires every
 point's ``uuid`` to be a real UUID** — arbitrary string ids are no longer routable and
