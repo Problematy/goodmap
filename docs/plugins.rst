@@ -3,8 +3,8 @@ Plugins
 
 Plugins are how you add behaviour to the map without forking Goodmap: a banner over the
 map, a custom renderer for one of your fields. Installing one is ``pip install`` plus a
-few lines in your data source (:ref:`plugins-configuration`); writing one is the rest of
-this page.
+few lines in your data source — not in ``config.yml`` (:ref:`plugins-configuration`);
+writing one is the rest of this page.
 
 Goodmap builds on platzky's plugin system and adds its own plugin ecosystem for the
 map. A Goodmap plugin is an ordinary Python package that declares a ``goodmap.plugins``
@@ -157,12 +157,12 @@ A wrapper must have a renderer beneath it (a built-in, or one it depends on).
 Configuration
 -------------
 
-Activate a plugin by adding it to the ``plugins`` object in your **data source** — not in
-``config.yml``, which is where platzky's own plugins (notifiers and the like) are
-configured instead; see :ref:`config-plugins`. Entries are keyed by the entry-point name.
-The plugin loads only when ``is_active`` is ``true``; its ``config`` is passed to the
-plugin's ``__init__`` and (for frontend plugins) delivered to the React component as the
-``config`` prop:
+Activate a plugin by adding it to the top-level ``plugins`` object in your **data
+source** — never in ``config.yml``, which has no plugin section at all
+(:ref:`data-source-plugins`). platzky's own plugins go in the same place. Entries are
+keyed by the entry-point name. The plugin loads only when ``is_active`` is ``true``; its
+``config`` is passed to the plugin's ``__init__`` and (for frontend plugins) delivered to
+the React component as the ``config`` prop:
 
 .. code-block:: json
 

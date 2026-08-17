@@ -65,15 +65,6 @@ Everything below in one file — copy it and delete what you do not need:
 
    GOODMAP_FRONTEND_LIB_URL: "/static/frontend/index.min.js"
 
-   PLUGINS:
-     sendmail:
-       PORT: 465
-       SERVER: "smtp.example.com"
-       RECEIVER: "receiver@example.com"
-       USER: "sender@example.pl"
-       PASSWORD: "PA$$WORD"
-       SUBJECT: "My awesome goodmap application"
-
 The repository also ships ``config-template.yml`` as a starting point, and
 ``examples/e2e_test_config.yml`` as a config known to work with the bundled dataset.
 
@@ -235,28 +226,26 @@ can read flags Goodmap itself does not know about.
 Plugins
 -------
 
-There are two plugin systems, configured in two different places, and the distinction
-trips people up:
+**Plugins are not configured here.** Every plugin — Goodmap's map overlays and
+marker-field renderers, and platzky's notifiers alike — is activated in the **data
+source**, under its top-level ``plugins`` key:
 
-**platzky plugins** are configured in ``config.yml`` under ``PLUGINS``, keyed by plugin
-name, with that plugin's own settings nested underneath. Notifiers such as ``sendmail``
-belong here — that is what delivers a message when someone suggests a point or reports a
-problem:
+.. code-block:: json
 
-.. code-block:: yaml
+   {
+     "plugins": {
+       "some_plugin": { "is_active": true, "config": { } }
+     }
+   }
 
-   PLUGINS:
-     sendmail:
-       PORT: 465
-       SERVER: "smtp.example.com"
-       RECEIVER: "receiver@example.com"
-       USER: "sender@example.pl"
-       PASSWORD: "PA$$WORD"
-       SUBJECT: "My awesome goodmap application"
+See :ref:`data-source-plugins` for the shape and :doc:`plugins` for writing one.
 
-**Goodmap plugins** — map overlays and marker-field renderers — are activated in the
-**data source** instead, under its own ``plugins`` key, because their configuration is
-map content. See :doc:`plugins`.
+.. warning::
+
+   Older configs carry a ``PLUGINS:`` section in ``config.yml``, and it does nothing —
+   unknown config keys are ignored, so there is no error to tell you. If a notifier stopped
+   firing after an upgrade, this is why: move the plugin's settings into the data source.
+   ``config-template.yml`` in the repository shipped such a section for a long time.
 
 .. _config-translations:
 

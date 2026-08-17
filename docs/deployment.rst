@@ -58,11 +58,17 @@ sessions.
 - Keep it out of version control. Since the config is YAML with no interpolation, either
   render the config at deploy time from your secret store, or keep a config file outside
   the repository readable only by the service user.
-- The same applies to notifier credentials under ``PLUGINS`` — an SMTP password in a
-  committed ``config.yml`` is a leaked password.
 
 Rotating ``SECRET_KEY`` logs everyone out and invalidates outstanding CSRF tokens. That is
 usually fine; do it deliberately.
+
+Plugin credentials are the other half of this, and they are easy to miss: plugins are
+configured in the **data source**, not in ``config.yml``
+(:ref:`data-source-plugins`), so a mail notifier's SMTP password sits in the same
+``data.json`` you may be tempted to commit alongside your points. A ``json_file`` data
+source holding an active notifier is a secret-bearing file — keep it out of the repository
+and readable only by the service user, the same as the config. This is one more reason to
+prefer MongoDB or a bucket over a checked-in JSON file once a deployment is real.
 
 Pre-flight checklist
 --------------------

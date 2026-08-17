@@ -18,12 +18,14 @@ and their schema, alongside platzky's ``site_content`` section:
        "visible_data": [ ... ],
        "meta_data": [ ... ],
        "reported_issue_types": [ ... ],
-       "plugins": { ... },
        "suggestions": [ ... ],
        "reports": [ ... ]
      },
+     "plugins": { ... },
      "site_content": { ... }
    }
+
+Note that ``plugins`` is a **sibling** of ``map``, not a key inside it.
 
 Only ``data`` and ``categories`` are structurally required; ``suggestions`` and
 ``reports`` are created by the app as users submit things.
@@ -284,11 +286,18 @@ lands in ``suggestions`` with ``"status": "pending"``; a problem reported throug
 ``reports`` is served to visitors, and a suggested point only appears on the map once you
 move it into ``data`` yourself.
 
-``plugins``
-~~~~~~~~~~~
+.. _data-source-plugins:
 
-Goodmap plugins (map overlays and marker-field renderers) are activated here rather than
-in ``config.yml``, because which overlays a map shows is map content:
+``plugins``
+-----------
+
+**Every plugin is activated here, and only here** — Goodmap's own (map overlays and
+marker-field renderers) and platzky's (notifiers and the like) alike. ``config.yml`` has
+no say in it.
+
+This is a **top-level key**, alongside ``map`` and ``site_content`` — not inside ``map``.
+Put it in the wrong place and nothing complains: the app starts, the plugin is simply
+never loaded.
 
 .. code-block:: json
 
@@ -301,8 +310,16 @@ in ``config.yml``, because which overlays a map shows is map content:
      }
    }
 
-See :doc:`plugins`. Note that platzky plugins — notifiers and the like — are configured
-in ``config.yml`` instead (:ref:`config-plugins`).
+Entries are keyed by the plugin's **entry-point name**, which is the name its package
+registers under ``goodmap.plugins`` or ``platzky.plugins`` — not the distribution name you
+``pip install``. Each entry takes ``is_active`` (default ``false``) and ``config``, whose
+contents are the plugin's own business.
+
+A named plugin that is active but not installed is a **startup error**, not a warning, so
+a typo in the key stops the app rather than silently disabling a feature. An entry with
+``"is_active": false`` is skipped without being resolved.
+
+See :doc:`plugins` for writing one, and restart the app after changing this key.
 
 ``site_content``
 ----------------

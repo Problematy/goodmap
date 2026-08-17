@@ -32,11 +32,5 @@ DB:
 #   SOURCE_BLOB_NAME: data.json
 
 
-PLUGINS:
-  sendmail:
-    PORT: 465
-    SERVER: "smtp.example.com"
-    RECEIVER: "receiver@example.com"
-    USER: "sender@example.pl"
-    PASSWORD: "PA$$WORD"
-    SUBJECT: "My awesome goodmap application"
+# -- Plugins are NOT configured here. They are activated in the data source, under its
+# -- top-level "plugins" key, keyed by entry-point name. See docs/data-source.rst.

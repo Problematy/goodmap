@@ -231,8 +231,9 @@ The installed package version, normalised to PEP 440 — ``2.0.0-alpha.5`` repor
 Submissions
 -----------
 
-Both endpoints below trigger the configured notifier (:ref:`config-plugins`), so a
-deployment with ``sendmail`` set up emails a moderator on each submission.
+Both endpoints below trigger whatever notifier plugin is active
+(:ref:`data-source-plugins`), so a deployment with a mail notifier set up emails a
+moderator on each submission.
 
 ``POST /api/suggest-new-point``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
