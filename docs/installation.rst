@@ -61,15 +61,27 @@ change, or contribute (see :doc:`development`).
 
 .. important::
 
-   A source checkout has **no frontend bundle** — it is a build artifact and is
-   gitignored. Until you build it, the map page loads with no map. Either build it once:
+   **This applies to source checkouts only.** ``pip install goodmap`` gives you the
+   frontend already built — the wheel ships ``index.min.js`` — so an installed package
+   needs no build step. A clone does: ``goodmap/static/frontend/`` is compiled output,
+   gitignored and never committed, so a fresh checkout has nothing to serve.
+
+   Nothing announces the problem: ``map.html`` pulls the bundle in with a plain
+   ``<script src="/static/frontend/index.min.js">``, so the page still returns ``200``
+   and the server logs stay quiet. What you see is a page with a blank space where the
+   map belongs, and a ``404`` for ``index.min.js`` in the browser console.
+
+   Build it once — this needs Node.js and npm:
 
    .. code-block:: bash
 
-      make build-frontend      # requires Node.js/npm; writes goodmap/static/frontend/index.min.js
+      make build-frontend
 
-   or point the app at a hosted build instead, by setting ``GOODMAP_FRONTEND_LIB_URL`` in
-   your config (see :ref:`config-frontend-url`).
+   That writes ``goodmap/static/frontend/index.min.js``, which the app picks up with no
+   further configuration.
+
+   To skip the build entirely, point the app at a hosted bundle instead by setting
+   ``GOODMAP_FRONTEND_LIB_URL`` in your config (see :ref:`config-frontend-url`).
 
 The repository is a monorepo: the Python backend at the root, the React frontend in
 ``frontend/``, and Playwright end-to-end tests in ``e2e-tests/``. Each has its own
