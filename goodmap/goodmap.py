@@ -285,11 +285,17 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         Returns:
             Rendered map.html template with feature flags and the plugin manifest
         """
+        try:
+            marker_styles = app.db.get_marker_styles()  # type: ignore[attr-defined]
+        except (KeyError, AttributeError):
+            marker_styles = {}
+
         return render_template(
             "map.html",
             feature_flags=config.feature_flags,
             goodmap_frontend_lib_url=config.goodmap_frontend_lib_url,
             plugin_manifest=plugin_manifest,
+            marker_styles=marker_styles,
         )
 
     @goodmap.route("/goodmap-admin")

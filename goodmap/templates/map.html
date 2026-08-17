@@ -121,6 +121,8 @@ window.USE_SERVER_SIDE_CLUSTERING = {{ feature_flags.USE_SERVER_SIDE_CLUSTERING 
 window.SHOW_ACCESSIBILITY_TABLE = {{ feature_flags.SHOW_ACCESSIBILITY_TABLE | default(false) | tojson }};
 window.FEATURE_FLAGS = {{ feature_flags | tojson }};
 window.PLUGIN_MANIFEST = {{ plugin_manifest | tojson }};
+// Deployment-specific pin icon/color lookup table, see goodmap/db.py's get_marker_styles.
+window.MARKER_STYLES = {{ marker_styles | tojson }};
 </script>
 <script src="{{ goodmap_frontend_lib_url }}" crossorigin="anonymous"></script>
 {% endblock %}

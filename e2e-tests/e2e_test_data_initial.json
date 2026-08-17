@@ -272,6 +272,20 @@
         "cars"
       ]
     },
+    "marker_styles": {
+      "icon_field": "type_of_place",
+      "color_field": "speed_limit",
+      "icons": {
+        "big bridge": "M1 11h14v2H1zM2 7h1v4H2zM13 7h1v4h-1zM4 5h1v6H4zM11 5h1v6h-1zM7 4h2v7H7z",
+        "small bridge": "M2 9c2-3 10-3 12 0"
+      },
+      "colors": {
+        "10": "#2e7d32",
+        "30": "#ef6c00",
+        "50": "#c62828"
+      },
+      "default_color": "#2a81cb"
+    },
     "visible_data": [
       "remark",
       "accessible_by",

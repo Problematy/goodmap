@@ -6,7 +6,7 @@ for location-based applications with custom fields.
 """
 
 import warnings
-from typing import Annotated, Any, Type, cast
+from typing import Annotated, Any, ClassVar, Type, cast
 
 from annotated_types import Ge, Le
 from pydantic import (
@@ -36,6 +36,11 @@ class LocationBase(BaseModel, extra="allow"):
     position: tuple[Latitude, Longitude]
     uuid: str = Field(..., max_length=100)  # TODO make this UUID and deprecate string
     remark: str | None = None
+
+    # Names of category fields whose values should ride along on basic_info(),
+    # e.g. so the frontend can pick a pin icon/color without a full detail fetch.
+    # Populated by create_location_model(); empty for the base class.
+    pin_marker_fields: ClassVar[frozenset[str]] = frozenset()
 
     @model_validator(mode="before")
     @classmethod
@@ -85,9 +90,18 @@ class LocationBase(BaseModel, extra="allow"):
         return super().model_dump(**kwargs)
 
     def basic_info(self) -> dict[str, Any]:
-        """Get basic location information summary."""
+        """Get basic location information summary.
+
+        Includes the uuid/position/remark flag always shown on the map, plus the
+        value of any category field named in ``pin_marker_fields`` - enough for the
+        frontend to choose a pin icon/color without fetching full location detail.
+        """
         data = self.model_dump(include={"uuid", "position"})
         data["has_remark"] = bool(self.remark)
+        for field in sorted(self.pin_marker_fields):
+            value = getattr(self, field, None)
+            if value is not None:
+                data[field] = value
         return data
 
 
@@ -255,9 +269,11 @@ def create_location_model(
             allowed = frozenset()
         fields[field_name] = _build_field_definition(field_type_str, allowed)
 
-    return create_model(
+    location_model = create_model(
         "Location",
         __base__=LocationBase,
         __module__="goodmap.data_models.location",
         **fields,
     )
+    location_model.pin_marker_fields = frozenset(categories.keys()) & fields.keys()
+    return location_model

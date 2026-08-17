@@ -10,6 +10,7 @@ import useMapStore from '../Map/store/map.store';
 import LocationDetailsBox from './LocationDetails';
 import MobilePopup from './MobilePopup';
 import DesktopPopup from './DesktopPopup';
+import { getTypedMarkerIcon } from './getTypedMarkerIcon';
 import iconAsterisk from '../../res/img/marker-icon-asterisk.png';
 
 /**
@@ -122,9 +123,16 @@ const MarkerPopup = ({ place }) => {
         alt: place.has_remark ? 'Marker-Asterisk' : 'Marker',
     };
 
-    // Only add icon prop if we have a custom icon (for remarks)
-    // This prevents passing undefined which can cause issues with MarkerClusterGroup
-    if (place.has_remark) {
+    // Prefer a marker_styles match (getTypedMarkerIcon adds an asterisk badge to
+    // it when place.has_remark is set, so a remarked location keeps its type/color
+    // styling) and only fall back to the plain asterisk icon when there's no
+    // match to style - e.g. a legacy/unconfigured deployment. Only add an icon
+    // prop when we actually have a custom icon: passing icon={undefined} causes
+    // errors in MarkerClusterGroup during cluster zoom animations.
+    const typedIcon = getTypedMarkerIcon(place);
+    if (typedIcon) {
+        markerProps.icon = typedIcon;
+    } else if (place.has_remark) {
         markerProps.icon = asteriskIcon;
     }
 

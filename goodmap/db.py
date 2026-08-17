@@ -563,6 +563,70 @@ def get_meta_data(db):
 
 
 # ------------------------------------------------
+# get_marker_styles
+
+
+def google_json_db_get_marker_styles(self) -> dict[str, Any]:
+    """
+    Retrieve marker icon/color styling configuration from Google Cloud Storage JSON blob.
+
+    Returns:
+        dict: Pin styling lookup table (icon_field, color_field, icons, colors).
+              Returns empty dict if not found.
+    """
+    return self.data.get("map", {}).get("marker_styles", {})
+
+
+def json_file_db_get_marker_styles(self) -> dict[str, Any]:
+    """
+    Retrieve marker icon/color styling configuration from JSON file database.
+
+    Returns:
+        dict: Pin styling lookup table (icon_field, color_field, icons, colors).
+              Returns empty dict if not found.
+    """
+    return self.data.get("map", {}).get("marker_styles", {})
+
+
+def json_db_get_marker_styles(self) -> dict[str, Any]:
+    """
+    Retrieve marker icon/color styling configuration from in-memory JSON database.
+
+    Returns:
+        dict: Pin styling lookup table (icon_field, color_field, icons, colors).
+              Returns empty dict if not found.
+    """
+    return self.data.get("marker_styles", {})
+
+
+def mongodb_db_get_marker_styles(self) -> dict[str, Any]:
+    """
+    Retrieve marker icon/color styling configuration from MongoDB.
+
+    Returns:
+        dict: Pin styling lookup table (icon_field, color_field, icons, colors).
+              Returns empty dict if config document not found or field missing.
+    """
+    config_doc = self.db.config.find_one({"_id": "map_config"})
+    if config_doc:
+        return config_doc.get("marker_styles", {})
+    return {}
+
+
+def get_marker_styles(db):
+    """
+    Get the appropriate get_marker_styles function for the given database backend.
+
+    Args:
+        db: Database instance (must have module_name attribute).
+
+    Returns:
+        callable: Backend-specific get_marker_styles function.
+    """
+    return globals()[f"{db.module_name}_get_marker_styles"]
+
+
+# ------------------------------------------------
 # get_categories
 
 
@@ -1777,6 +1841,7 @@ def extend_db_with_goodmap_queries(db, location_model):
     db.extend("get_data", get_data(db))
     db.extend("get_visible_data", get_visible_data(db))
     db.extend("get_meta_data", get_meta_data(db))
+    db.extend("get_marker_styles", get_marker_styles(db))
     db.extend("get_locations", get_locations(db, location_model))
     db.extend("get_locations_paginated", get_locations_paginated(db, location_model))
     db.extend("get_location", get_location(db, location_model))

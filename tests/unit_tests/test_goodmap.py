@@ -107,6 +107,63 @@ def test_frontend_lib_url_uses_bundled_static_when_present():
     assert 'src="/static/frontend/index.min.js"' in response.data.decode("utf-8")
 
 
+def test_map_route_includes_marker_styles():
+    """The frontend picks pin icon/color per marker_styles.config's iconField/colorField
+    at runtime from window.MARKER_STYLES - a deployment-specific lookup table that lives
+    in the database (like categories/visible_data), not hardcoded in the frontend build."""
+    config = GoodmapConfig(
+        APP_NAME="test_app",
+        SECRET_KEY="test_secret",
+        USE_WWW=False,
+        BLOG_PREFIX="/blog",
+        DB=JsonDbConfig(
+            DATA={
+                "site_content": {"pages": []},
+                "categories": {"type_of_place": ["parcel_locker", "container"]},
+                "marker_styles": {
+                    "icon_field": "type_of_place",
+                    "icons": {"parcel_locker": "M0 0h16v16H0z"},
+                    "colors": {},
+                },
+            },
+            TYPE="json",
+        ),
+    )
+    app = goodmap.create_app_from_config(config)
+    app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
+    client = app.test_client()
+
+    response = client.get("/map")
+    assert response.status_code == 200
+
+    response_text = response.data.decode("utf-8")
+    assert "MARKER_STYLES" in response_text
+    assert "icon_field" in response_text
+    assert "parcel_locker" in response_text
+
+
+def test_map_route_marker_styles_defaults_to_empty():
+    """Deployments that don't configure marker_styles get an empty object, so the
+    frontend falls back to Leaflet's default marker - no behavior change."""
+    config = GoodmapConfig(
+        APP_NAME="test_app",
+        SECRET_KEY="test_secret",
+        USE_WWW=False,
+        BLOG_PREFIX="/blog",
+        DB=JsonDbConfig(
+            DATA={"site_content": {"pages": []}, "categories": {}},
+            TYPE="json",
+        ),
+    )
+    app = goodmap.create_app_from_config(config)
+    app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
+    client = app.test_client()
+
+    response = client.get("/map")
+    assert response.status_code == 200
+    assert "window.MARKER_STYLES={};" in response.data.decode("utf-8")
+
+
 def test_map_route_includes_photo_constraints():
     """The frontend sources photo upload limits (max size, allowed types) live from
     the backend's AttachmentConfig rather than hardcoding its own copy - this test

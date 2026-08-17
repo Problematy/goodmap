@@ -129,6 +129,32 @@ def test_category_validation_rejects_invalid_list_item():
         location_model(uuid="2", tags=["red", "yellow"], position=(50, 50))
 
 
+def test_basic_info_includes_category_field_values():
+    """basic_info() should surface category field values (for pin icon/color
+    selection) alongside the existing uuid/position/remark."""
+    location_model = create_location_model(
+        obligatory_fields=[("type_of_place", "str"), ("name", "str")],
+        categories={"type_of_place": ["parcel_locker", "container"]},
+    )
+    location = location_model(
+        uuid="1", name="test", type_of_place="parcel_locker", position=(50, 50)
+    )
+    assert location.basic_info() == {
+        "uuid": "1",
+        "position": (50, 50),
+        "remark": False,
+        "type_of_place": "parcel_locker",
+    }
+
+
+def test_basic_info_omits_category_fields_when_none_configured():
+    """Backward compatibility: deployments without categories get the original
+    uuid/position/remark shape, unchanged."""
+    location_model = create_location_model(obligatory_fields=[("name", "str")], categories={})
+    location = location_model(uuid="1", name="test", position=(50, 50))
+    assert location.basic_info() == {"uuid": "1", "position": (50, 50), "remark": False}
+
+
 def test_create_location_model_with_int_field():
     """Test that non-str simple fields (like int) are created without max_length."""
     location_model = create_location_model(obligatory_fields=[("capacity", "int")], categories={})

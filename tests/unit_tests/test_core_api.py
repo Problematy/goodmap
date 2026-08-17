@@ -315,6 +315,39 @@ def test_get_locations_accepts_valid_and_undeclared_parameters(test_app, query):
     assert response.status_code == 200
 
 
+def test_get_locations_includes_category_field_for_pin_styling():
+    """/api/locations should surface category field values (e.g. a point-type
+    category), so the frontend can pick a marker icon/color without a full
+    per-location detail fetch."""
+    client = create_test_app(
+        db_overrides={
+            "categories": {"point_type": ["parcel_locker", "container"]},
+            "location_obligatory_fields": [("point_type", "str"), ("name", "str")],
+            "data": [
+                {
+                    "name": "locker-1",
+                    "position": [50, 50],
+                    "point_type": "parcel_locker",
+                    "uuid": "11111111-1111-1111-1111-111111111111",
+                },
+            ],
+            "visible_data": ["name", "point_type"],
+        }
+    )
+
+    response = client.get("/api/locations")
+
+    assert response.status_code == 200
+    assert response.json == [
+        {
+            "uuid": "11111111-1111-1111-1111-111111111111",
+            "position": [50, 50],
+            "has_remark": False,
+            "point_type": "parcel_locker",
+        },
+    ]
+
+
 def test_get_locations_multi_value_same_category_uses_or_semantics():
     """Selecting several checkboxes within one category should return the union
     of matches, not only entries that have every selected value."""

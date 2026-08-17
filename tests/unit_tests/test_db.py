@@ -26,6 +26,7 @@ from goodmap.db import (
     google_json_db_get_data,
     google_json_db_get_location_obligatory_fields,
     google_json_db_get_locations_paginated,
+    google_json_db_get_marker_styles,
     google_json_db_get_meta_data,
     google_json_db_get_visible_data,
     json_db_add_location,
@@ -57,6 +58,7 @@ from goodmap.db import (
     json_file_db_get_data,
     json_file_db_get_location_obligatory_fields,
     json_file_db_get_locations_paginated,
+    json_file_db_get_marker_styles,
     json_file_db_get_meta_data,
     json_file_db_get_report,
     json_file_db_get_reports,
@@ -81,6 +83,7 @@ from goodmap.db import (
     mongodb_db_get_location_obligatory_fields,
     mongodb_db_get_locations,
     mongodb_db_get_locations_paginated,
+    mongodb_db_get_marker_styles,
     mongodb_db_get_meta_data,
     mongodb_db_get_report,
     mongodb_db_get_reports,
@@ -296,6 +299,41 @@ def test_json_file_db_get_meta_data_empty():
     assert result == {}
 
 
+@mock.patch(
+    "builtins.open",
+    mock.mock_open(
+        read_data=json.dumps(
+            {
+                "map": {
+                    "marker_styles": {
+                        "icon_field": "type_of_place",
+                        "color_field": "status",
+                        "icons": {"parcel_locker": "M0 0h16v16H0z"},
+                        "colors": {"open": "#2e7d32"},
+                    }
+                }
+            }
+        )
+    ),
+)
+def test_json_file_db_get_marker_styles():
+    db = JsonFile("/fake/path/data.json")
+    result = json_file_db_get_marker_styles(db)
+    assert result == {
+        "icon_field": "type_of_place",
+        "color_field": "status",
+        "icons": {"parcel_locker": "M0 0h16v16H0z"},
+        "colors": {"open": "#2e7d32"},
+    }
+
+
+@mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {}})))
+def test_json_file_db_get_marker_styles_empty():
+    db = JsonFile("/fake/path/data.json")
+    result = json_file_db_get_marker_styles(db)
+    assert result == {}
+
+
 # Test get_visible_data and get_meta_data for google_json_db
 @mock.patch("platzky.db.google_json_db.Client")
 def test_google_json_db_get_visible_data(mock_cli):
@@ -334,6 +372,38 @@ def test_google_json_db_get_meta_data_empty(mock_cli):
     )
     db = GoogleJsonDb("bucket", "blob")
     result = google_json_db_get_meta_data(db)
+    assert result == {}
+
+
+@mock.patch("platzky.db.google_json_db.Client")
+def test_google_json_db_get_marker_styles(mock_cli):
+    mock_cli.return_value.bucket.return_value.blob.return_value.download_as_text.return_value = (
+        json.dumps(
+            {
+                "map": {
+                    "marker_styles": {
+                        "icon_field": "type_of_place",
+                        "icons": {"parcel_locker": "M0 0h16v16H0z"},
+                    }
+                }
+            }
+        )
+    )
+    db = GoogleJsonDb("bucket", "blob")
+    result = google_json_db_get_marker_styles(db)
+    assert result == {
+        "icon_field": "type_of_place",
+        "icons": {"parcel_locker": "M0 0h16v16H0z"},
+    }
+
+
+@mock.patch("platzky.db.google_json_db.Client")
+def test_google_json_db_get_marker_styles_empty(mock_cli):
+    mock_cli.return_value.bucket.return_value.blob.return_value.download_as_text.return_value = (
+        json.dumps({"map": {}})
+    )
+    db = GoogleJsonDb("bucket", "blob")
+    result = google_json_db_get_marker_styles(db)
     assert result == {}
 
 
@@ -1089,6 +1159,50 @@ def test_mongodb_db_get_meta_data_no_config(mock_client):
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
     result = mongodb_db_get_meta_data(db)
+    assert result == {}
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_marker_styles(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.config.find_one.return_value = {
+        "_id": "map_config",
+        "marker_styles": {
+            "icon_field": "type_of_place",
+            "icons": {"parcel_locker": "M0 0h16v16H0z"},
+        },
+    }
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    result = mongodb_db_get_marker_styles(db)
+    assert result == {
+        "icon_field": "type_of_place",
+        "icons": {"parcel_locker": "M0 0h16v16H0z"},
+    }
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_marker_styles_empty(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.config.find_one.return_value = {
+        "_id": "map_config",
+    }
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    result = mongodb_db_get_marker_styles(db)
+    assert result == {}
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_marker_styles_no_config(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.config.find_one.return_value = None
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    result = mongodb_db_get_marker_styles(db)
     assert result == {}
 
 
