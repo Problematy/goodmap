@@ -19,7 +19,8 @@ These docs are task-oriented and split three ways:
 
 **Extending Goodmap**
    You are building against an instance — calling the HTTP API from your own client, or
-   writing a plugin that adds behaviour to the map.
+   writing a plugin that adds behaviour to the map. The generated
+   :doc:`Python API reference <api-reference>` backs this part up with exact signatures.
 
 **Contributing**
    You are working on the Goodmap repository itself.
@@ -40,6 +41,7 @@ These docs are task-oriented and split three ways:
 
    http-api
    plugins
+   api-reference
 
 .. toctree::
    :maxdepth: 2

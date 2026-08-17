@@ -1,12 +1,18 @@
-
 """Sphinx configuration for Goodmap documentation.
 
-These docs are task-oriented prose: how to run, configure and extend Goodmap. They
-deliberately carry no autodoc API dump, so no extension here imports the package —
-only its version is read, for the |version| substitution.
+Most of these docs are task-oriented prose: how to run, configure and extend Goodmap.
+The API reference page is generated from docstrings instead, so autodoc imports the
+package - hence the sys.path entry below, which makes a source checkout importable
+without installing it.
 """
 
 import importlib.metadata
+import sys
+from pathlib import Path
+
+# Autodoc imports goodmap, so a source checkout has to be on the path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
 
 # Read version from installed package metadata
 try:
@@ -22,7 +28,10 @@ author = "Goodmap Contributors"
 
 # General configuration
 extensions = [
+    "sphinx.ext.autodoc",
     "sphinx.ext.intersphinx",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.viewcode",
     "myst_parser",
 ]
 
@@ -50,11 +59,35 @@ html_sidebars = {
     ]
 }
 
+# Autodoc settings. Source order reads better than alphabetical for these modules, and
+# annotations go in the description so signatures stay readable.
+autodoc_member_order = "bysource"
+autodoc_typehints = "description"
+
+# Napoleon settings: docstrings in this project are Google style.
+napoleon_google_docstring = True
+napoleon_numpy_docstring = False
+napoleon_include_init_with_doc = True
+
+# The docs build with -n (nitpicky), so every unresolved cross-reference is a warning.
+# These come out of third-party annotations autodoc copies into the signatures and have
+# nothing to link to: pydantic and pymongo publish no intersphinx inventory, platzky's
+# does not cover its classes, and annotated_types constraints render as their repr
+# ("ge=-180"), which is not a target at all. Ignoring them keeps -n meaningful for the
+# references we actually control.
+nitpick_ignore_regex = [
+    ("py:.*", r"ConfigDict|callable"),
+    ("py:.*", r"(annotated_types|pymongo|platzky)\..*"),
+    ("py:.*", r"[gl]e=-?\d+"),
+]
+
 # Intersphinx mapping. platzky is linked from the config and plugin pages, since a
-# Goodmap deployment is a platzky site and inherits its configuration.
+# Goodmap deployment is a platzky site and inherits its configuration; python, flask and
+# pydantic resolve the types autodoc pulls out of the signatures.
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
     "flask": ("https://flask.palletsprojects.com/en/stable/", None),
+    "pydantic": ("https://docs.pydantic.dev/latest/", None),
     "platzky": ("https://platzky.readthedocs.io/en/latest/", None),
 }
 
