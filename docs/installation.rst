@@ -5,12 +5,17 @@ Requirements
 ------------
 
 - **Python 3.10 or newer.**
-- A data source: nothing (a local JSON file is fine), a Google Cloud Storage bucket, or
-  a MongoDB instance. See :doc:`data-source`.
+- A data source — a local JSON file, a Google Cloud Storage bucket, or a MongoDB
+  instance. A JSON file needs no external service, so you can start with nothing but a
+  file on disk. See :doc:`data-source`.
 
-Nothing else. The React frontend and the interface translations are compiled into the
-published package, so there is no separate Node.js build step and no separate frontend
-to host.
+Nothing else, if you install the published package: the React frontend and the compiled
+interface translations ship inside it, so there is no frontend to host separately and no
+Node.js involved.
+
+A source checkout is different. Both the frontend bundle and the translation catalogs are
+gitignored build output, so a clone additionally needs **Node.js and npm** to build them
+— see `Installing from source`_.
 
 Installing the package
 ----------------------
