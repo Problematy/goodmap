@@ -94,8 +94,8 @@ Goodmap serves the bundle at ``/plugins/<name>/static/remoteEntry.js`` and adds 
 entry ``{pluginName, url, module, capability, config}`` for each capability the plugin
 provides. The ``capability`` token and its ``module`` are derived from the capability base
 class name (``PluginBase`` stripped) —
-``MapOverlayPluginBase`` (``"MapOverlay"`` / ``./MapOverlay``) and
-``MarkerFieldPluginBase`` (``"MarkerField"`` / ``./MarkerField``) — and
+:class:`~goodmap.plugin.MapOverlayPluginBase` (``"MapOverlay"`` / ``./MapOverlay``) and
+:class:`~goodmap.plugin.MarkerFieldPluginBase` (``"MarkerField"`` / ``./MarkerField``) — and
 the frontend uses ``capability`` to mount the component at the right place (overlays over the
 map by ``MapOverlays``; field plugins in a marker by ``FieldRenderer``, which folds them by
 ``config.field`` and ``config.order``).
