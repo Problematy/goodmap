@@ -3,7 +3,7 @@ from unittest import mock
 
 import pytest
 
-from goodmap.api.core_api import get_default_issue_options, get_or_none, make_tuple_translation
+from goodmap.api.core_api import get_default_issue_options, make_tuple_translation
 from goodmap.config import GoodmapConfig
 from goodmap.feature_flags import CategoriesHelp
 from goodmap.goodmap import create_app_from_config
@@ -72,100 +72,6 @@ def test_api_doc_index(test_app):
     assert b"/api/doc/swagger/" in response.data
     assert b"/api/doc/redoc/" in response.data
     assert b"/api/doc/openapi.json" in response.data
-
-
-# --- Categories endpoint tests ---
-
-
-@mock.patch("goodmap.api.core_api.gettext", fake_translation)
-def test_categories_endpoints_return_expected_data(test_app):
-    # Test /api/categories endpoint
-    response = test_app.get("/api/categories")
-    assert response.status_code == 200
-    assert response.json == {
-        "categories": [["test-category", "test-category-translated"]],
-        "categories_help": [{"test-category": "categories_help_test-category-translated"}],
-    }
-
-    # Test /api/category/<category> endpoint
-    response = test_app.get("/api/category/test-category")
-    assert response.status_code == 200
-    assert response.json == {
-        "categories_options": [["test", "test-translated"], ["test2", "test2-translated"]],
-        "categories_options_help": [{"test": "categories_options_help_test-translated"}],
-    }
-
-
-@mock.patch("goodmap.api.core_api.gettext", fake_translation)
-def test_categories_endpoints_old_format(test_app_without_helpers):
-    # Test /api/categories endpoint (old format)
-    response = test_app_without_helpers.get("/api/categories")
-    assert response.status_code == 200
-    assert response.json == [["test-category", "test-category-translated"]]
-
-    # Test /api/category/<category> endpoint (old format)
-    response = test_app_without_helpers.get("/api/category/test-category")
-    assert response.status_code == 200
-    assert response.json == [["test", "test-translated"], ["test2", "test2-translated"]]
-
-
-@mock.patch("goodmap.api.core_api.gettext", fake_translation)
-@mock.patch("flask_babel.gettext", fake_translation)
-def test_categories_endpoint_with_categories_help():
-    test_app = create_test_app(
-        feature_flags=make_flag_set(CategoriesHelp),
-        db_overrides={"categories_help": ["option1", "option2"]},
-    )
-    response = test_app.get("/api/categories")
-    assert response.status_code == 200
-    data = response.json
-    assert data is not None
-    assert "categories_help" in data
-    assert len(data["categories_help"]) == 2
-    assert data["categories_help"][0] == {"option1": "categories_help_option1-translated"}
-
-
-@mock.patch("goodmap.api.core_api.gettext", fake_translation)
-@mock.patch("flask_babel.gettext", fake_translation)
-def test_category_data_endpoint_with_categories_options_help():
-    test_app = create_test_app(
-        feature_flags=make_flag_set(CategoriesHelp),
-        db_overrides={"categories_options_help": {"test-category": ["help1", "help2"]}},
-    )
-    response = test_app.get("/api/category/test-category")
-    assert response.status_code == 200
-    data = response.json
-    assert data is not None
-    assert "categories_options_help" in data
-    assert len(data["categories_options_help"]) == 2
-    assert data["categories_options_help"][0] == {
-        "help1": "categories_options_help_help1-translated"
-    }
-
-
-def test_categories_endpoint_with_none_categories_help():
-    test_app = create_test_app(
-        feature_flags=make_flag_set(CategoriesHelp), db_overrides={"categories_help": None}
-    )
-    response = test_app.get("/api/categories")
-    assert response.status_code == 200
-    data = response.json
-    assert data is not None
-    assert data["categories_help"] == []
-
-
-def test_category_data_endpoint_with_none_categories_options_help():
-    config_data = get_test_config_data()
-    config_data["FEATURE_FLAGS"] = make_flag_set(CategoriesHelp)
-    config_data["DB"]["DATA"].pop("categories_options_help", None)
-    config = GoodmapConfig.model_validate(config_data)
-    app = create_app_from_config(config)
-    test_client = app.test_client()
-    response = test_client.get("/api/category/test-category")
-    assert response.status_code == 200
-    data = response.json
-    assert data is not None
-    assert data["categories_options_help"] == []
 
 
 # --- Categories-full endpoint tests ---
@@ -1050,19 +956,6 @@ def test_make_tuple_translation():
         ("alpha", "alpha-translated"),
         ("beta", "beta-translated"),
     ]
-
-
-@pytest.mark.parametrize(
-    "data,keys,expected",
-    [
-        ({"a": {"b": {"c": "value"}}}, ("a", "b", "c"), "value"),
-        ({"a": "not_a_dict"}, ("a", "b"), None),
-        ({"a": {"b": "value"}}, ("a", "missing_key"), None),
-    ],
-)
-def test_get_or_none(data, keys, expected):
-    result = get_or_none(data, *keys)
-    assert result == expected
 
 
 def test_issue_options_from_db(test_app):

@@ -49,6 +49,22 @@ Server-rendered pages expose one in a meta tag:
        body: JSON.stringify({ id: locationUuid, description: 'has a hole' }),
    });
 
+A scripted client has no meta tag to read, so it needs both pieces the browser gets for
+free: the token, and the session cookie it is bound to. **A bare token is not enough** —
+without the matching cookie the request fails with a different error,
+``400 {"message": "The CSRF session token is missing."}``. Fetch a page first to get
+both, keeping cookies in a jar to reuse on the write:
+
+.. code-block:: bash
+
+   JAR=$(mktemp)
+   TOKEN=$(curl -s -c "$JAR" http://localhost:5000/ | grep -oP 'name="csrf-token" content="\K[^"]+')
+   curl -X POST http://localhost:5000/api/report-location \
+     -b "$JAR" \
+     -H "Content-Type: application/json" \
+     -H "X-CSRFToken: $TOKEN" \
+     -d '{"id": "9264286a-5d33-4e38-ab11-c8e179a7754a", "description": "has a hole"}'
+
 Over https, a matching ``Referer`` header is required too — same-origin defense in
 depth, on top of the token. Browsers send this automatically for a same-origin request,
 so it is invisible in normal use; a scripted client (``curl``, a backend job) must set it
@@ -160,12 +176,6 @@ buttons for ``exclusive``/``threshold``, a single checkbox for ``boolean``
 With ``CATEGORIES_HELP`` on, each category also carries ``options_help``, and the response
 gains a top-level ``categories_help`` — both lists of ``{option: help text}`` objects.
 
-Prefer this endpoint over ``GET /api/categories`` and ``GET /api/category/<name>``, which
-exist for older clients and cost one request per category. Both share one trap worth
-knowing: with ``CATEGORIES_HELP`` **off** they return a bare list of pairs, and with it
-**on** they return an object instead — the response *type* changes with the flag, not just
-its contents. The schema documents both shapes.
-
 .. _api-location-schema:
 
 ``GET /api/location-schema``
@@ -215,9 +225,12 @@ own:
 .. code-block:: bash
 
    curl -X POST http://localhost:5000/api/suggest-new-point \
+     -b "$JAR" \
      -H "X-CSRFToken: $TOKEN" \
      -F 'location={"name": "Nowy", "position": [51.11, 17.03], "type_of_place": "small bridge", "accessible_by": ["bikes"], "is_free": "true"}' \
      -F 'photo=@bridge.jpg'
+
+(``$JAR`` and ``$TOKEN`` as obtained above.)
 
 To find the fields a given instance wants, call :ref:`api-location-schema` — the same
 schema the built-in suggest form is generated from.

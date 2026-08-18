@@ -128,17 +128,6 @@ class LocationDetail(BaseModel):
     metadata: dict[str, Any] = Field(..., description="The meta_data fields")
 
 
-class CategoriesWithHelp(BaseModel):
-    """Category names plus help text, returned when CATEGORIES_HELP is on."""
-
-    categories: list[tuple[str, str]] = Field(..., description="[key, translated label] pairs")
-    categories_help: list[dict[str, str]] = Field(..., description="Help text per category")
-
-
-class CategoriesResponse(RootModel[CategoriesWithHelp | list[tuple[str, str]]]):
-    """Bare [key, label] pairs, or an object with help text when CATEGORIES_HELP is on."""
-
-
 class CategoryFull(BaseModel):
     """One category with everything needed to render its filter control."""
 
@@ -161,19 +150,6 @@ class CategoriesFullResponse(BaseModel):
     categories_help: list[dict[str, str]] | None = Field(
         None, description="Present only when the CATEGORIES_HELP feature flag is on"
     )
-
-
-class CategoryOptionsWithHelp(BaseModel):
-    """A category's options plus help text, returned when CATEGORIES_HELP is on."""
-
-    categories_options: list[tuple[str, str]] = Field(
-        ..., description="[value, translated label] pairs"
-    )
-    categories_options_help: list[dict[str, str]] = Field(..., description="Help text per option")
-
-
-class CategoryOptionsResponse(RootModel[CategoryOptionsWithHelp | list[tuple[str, str]]]):
-    """Bare [value, label] pairs, or an object with help text when CATEGORIES_HELP is on."""
 
 
 class LocationQueryParams(BaseModel):

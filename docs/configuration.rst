@@ -187,10 +187,10 @@ frontend to decide what to render. Both are set the same way.
        suggest form has no fields — see the note below.
    * - ``CATEGORIES_HELP``
      - both
-     - Enables the help-tooltip data in ``/api/categories``, ``/api/categories-full`` and
-       ``/api/category/<name>``, and makes the frontend render the tooltips. Without it
-       the ``categories_help`` and ``categories_options_help`` keys in your data are
-       ignored. See :ref:`data-source-help`.
+     - Enables the help-tooltip data in ``/api/categories-full``, and makes the frontend
+       render the tooltips. Without it the ``categories_help`` and
+       ``categories_options_help`` keys in your data are ignored. See
+       :ref:`data-source-help`.
    * - ``USE_SERVER_SIDE_CLUSTERING``
      - both
      - The frontend fetches ``/api/locations-clustered`` instead of ``/api/locations``,

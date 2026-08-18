@@ -18,8 +18,6 @@ from werkzeug.exceptions import HTTPException
 
 from goodmap.api.api_models import (
     CategoriesFullResponse,
-    CategoriesResponse,
-    CategoryOptionsResponse,
     ClusteringParams,
     ClusterList,
     ErrorResponse,
@@ -79,15 +77,6 @@ def get_default_issue_options():
 
 def make_tuple_translation(keys_to_translate):
     return [(x, gettext(x)) for x in keys_to_translate]
-
-
-def get_or_none(data, *keys):
-    for key in keys:
-        if isinstance(data, dict):
-            data = data.get(key)
-        else:
-            return None
-    return data
 
 
 def get_locations_from_request(database, request_args):
@@ -420,29 +409,6 @@ def core_pages(
             }
         )
 
-    @core_api_blueprint.route("/categories", methods=["GET"])
-    @spec.validate(resp=Response(HTTP_200=CategoriesResponse))
-    def get_categories():
-        """Get all available location categories.
-
-        Returns list of categories with optional help text
-        if CATEGORIES_HELP feature flag is enabled.
-        """
-        raw_categories = database.get_categories()
-        categories = make_tuple_translation(raw_categories)
-
-        if CategoriesHelp not in feature_flags:
-            return jsonify(categories)
-
-        category_data = database.get_category_data()
-        categories_help = category_data.get("categories_help")
-        proper_categories_help = []
-        if categories_help is not None:
-            for option in categories_help:
-                proper_categories_help.append({option: gettext(f"categories_help_{option}")})
-
-        return jsonify({"categories": categories, "categories_help": proper_categories_help})
-
     @core_api_blueprint.route("/categories-full", methods=["GET"])
     @spec.validate(resp=Response(HTTP_200=CategoriesFullResponse))
     def get_categories_full():
@@ -501,36 +467,6 @@ def core_pages(
         Returns list of supported languages for the application.
         """
         return jsonify(languages)
-
-    @core_api_blueprint.route("/category/<category_type>", methods=["GET"])
-    @spec.validate(resp=Response(HTTP_200=CategoryOptionsResponse))
-    def get_category_types(category_type):
-        """Get all available options for a specific category.
-
-        Returns list of category options with optional help text
-        if CATEGORIES_HELP feature flag is enabled.
-        """
-        category_data = database.get_category_data(category_type)
-        local_data = make_tuple_translation(category_data["categories"][category_type])
-
-        categories_options_help = get_or_none(
-            category_data, "categories_options_help", category_type
-        )
-        proper_categories_options_help = []
-        if categories_options_help is not None:
-            for option in categories_options_help:
-                proper_categories_options_help.append(
-                    {option: gettext(f"categories_options_help_{option}")}
-                )
-        if CategoriesHelp not in feature_flags:
-            return jsonify(local_data)
-
-        return jsonify(
-            {
-                "categories_options": local_data,
-                "categories_options_help": proper_categories_options_help,
-            }
-        )
 
     # Register Spectree with blueprint after all routes are defined
     spec.register(core_api_blueprint)
