@@ -248,13 +248,6 @@ source**, under its top-level ``plugins`` key:
 
 See :ref:`data-source-plugins` for the shape and :doc:`plugins` for writing one.
 
-.. warning::
-
-   Older configs carry a ``PLUGINS:`` section in ``config.yml``, and it does nothing —
-   unknown config keys are ignored, so there is no error to tell you. If a notifier stopped
-   firing after an upgrade, this is why: move the plugin's settings into the data source.
-   ``config-template.yml`` in the repository shipped such a section for a long time.
-
 .. _config-translations:
 
 Translating your own data
