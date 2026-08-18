@@ -235,10 +235,6 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
     # CSRFProtect on the engine); initializing it here again would register a second
     # before_request hook and break any future exempt() registered on one instance only.
     #
-    # The token is bound to the session, which is the actual protection. The extra
-    # referrer check flask-wtf adds on https would reject scripted API callers that
-    # send a valid token but no Referer header, so it is off.
-    app.config["WTF_CSRF_SSL_STRICT"] = False
     # The map page is typically left open well past the default 3600s, and the frontend
     # never refreshes the meta-tag token - so scope the token to the session instead of
     # rejecting submissions from any tab older than an hour.

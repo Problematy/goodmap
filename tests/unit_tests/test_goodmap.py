@@ -544,8 +544,12 @@ def test_csrf_failure_returns_json_error():
     assert response.json == {"message": "The CSRF token is missing."}
 
 
-def test_csrf_accepts_scripted_https_caller_without_referer():
-    """A valid token from the caller's own session works over https with no Referer."""
+def test_csrf_enforces_referer_on_https():
+    """WTF_CSRF_SSL_STRICT is left on: https requires a same-origin Referer, on top
+    of the token/session check, as defense-in-depth against a forged cross-origin
+    request. A real browser sends a matching Referer automatically for a same-origin
+    request, so this only rejects scripted callers that omit it or spoof it.
+    """
     import re
 
     config = _make_test_app_config(extra_data={"categories": {}, "data": []})
@@ -555,18 +559,39 @@ def test_csrf_accepts_scripted_https_caller_without_referer():
     page = client.get("/map", base_url="https://localhost")
     token_match = re.search(r'name="csrf-token" content="([^"]+)"', page.data.decode("utf-8"))
     assert token_match is not None
+    token = token_match.group(1)
+    payload = {"id": "x", "description": "y"}
 
+    # Same-origin Referer, as a real browser sends by default: past the CSRF layer.
+    # The handler may still reject the payload, but not with a CSRF message.
     response = client.post(
         "/api/report-location",
-        json={"id": "x", "description": "y"},
-        headers={"X-CSRFToken": token_match.group(1)},
+        json=payload,
+        headers={"X-CSRFToken": token, "Referer": "https://localhost/map"},
         base_url="https://localhost",
     )
-
-    # Past the CSRF layer: the handler itself may reject the payload, but not with
-    # a CSRF message and never as HTML.
-    assert response.content_type.startswith("application/json")
     assert "CSRF" not in response.get_data(as_text=True)
+
+    # No Referer at all: rejected.
+    response = client.post(
+        "/api/report-location",
+        json=payload,
+        headers={"X-CSRFToken": token},
+        base_url="https://localhost",
+    )
+    assert response.status_code == 400
+    assert response.json == {"message": "The referrer header is missing."}
+
+    # Cross-origin Referer: rejected. This is the actual attack the check defends
+    # against - a request that carries a valid token but did not originate here.
+    response = client.post(
+        "/api/report-location",
+        json=payload,
+        headers={"X-CSRFToken": token, "Referer": "https://evil.example/"},
+        base_url="https://localhost",
+    )
+    assert response.status_code == 400
+    assert response.json == {"message": "The referrer does not match the host."}
 
 
 def test_csrf_token_is_session_scoped():

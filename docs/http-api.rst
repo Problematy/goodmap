@@ -33,7 +33,8 @@ on the ``categories`` in your data source (:doc:`data-source`).
 **Writes need a CSRF token.** CSRF protection is on for the whole app, so ``POST``,
 ``PUT`` and ``DELETE`` without a token get ``400 {"message": "The CSRF token is
 missing."}``. Send it as an ``X-CSRFToken`` header, from the same session the token was
-minted in — the token is bound to the session cookie, so the pair travels together. Server-rendered pages expose one in a meta tag:
+minted in — the token is bound to the session cookie, so the pair travels together.
+Server-rendered pages expose one in a meta tag:
 
 .. code-block:: html
 
@@ -47,6 +48,12 @@ minted in — the token is bound to the session cookie, so the pair travels toge
        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': token },
        body: JSON.stringify({ id: locationUuid, description: 'has a hole' }),
    });
+
+Over https, a matching ``Referer`` header is required too — same-origin defense in
+depth, on top of the token. Browsers send this automatically for a same-origin request,
+so it is invisible in normal use; a scripted client (``curl``, a backend job) must set it
+explicitly, e.g. ``-H "Referer: https://your-host/"``, or the request gets
+``400 {"message": "The referrer header is missing."}``.
 
 **Errors are ``{"message": "..."}``**, occasionally with an extra ``error`` field.
 Messages are deliberately generic — the details go to the server log, not the response.
