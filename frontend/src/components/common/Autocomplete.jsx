@@ -147,7 +147,11 @@ const SuggestionItem = styled.li`
     transition: background-color 0.15s ease;
 
     &:hover {
-        background-color: color-mix(in srgb, ${props => props.$secondaryColor || 'black'} 10%, transparent);
+        background-color: color-mix(
+            in srgb,
+            ${props => props.$secondaryColor || 'black'} 10%,
+            transparent
+        );
     }
 `;
 
