@@ -66,11 +66,16 @@ const AutoComplete = ({ onClick }) => {
             </InputBox>
 
             {data.some(it => it.display_name !== searchTerm) && (
-                <SuggestionList>
+                <SuggestionList style={{ backgroundColor: primaryColor }}>
                     {data
                         .filter(it => it.display_name !== searchTerm)
                         .map(item => (
-                            <SuggestionItem key={item?.place_id} onClick={() => clickItem(item)}>
+                            <SuggestionItem
+                                key={item?.place_id}
+                                onClick={() => clickItem(item)}
+                                $secondaryColor={secondaryColor}
+                                style={{ color: secondaryColor }}
+                            >
                                 {item.display_name}
                             </SuggestionItem>
                         ))}
@@ -115,7 +120,8 @@ const StyledInput = styled.input`
     }
 
     &:focus {
-        box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.3);
+        box-shadow: 0 0 0 3px
+            color-mix(in srgb, ${props => props.$secondaryColor || 'black'} 30%, transparent);
     }
 `;
 
@@ -126,7 +132,6 @@ const SuggestionList = styled.ul`
     min-width: 100%;
     max-width: 100%;
     border-radius: 8px;
-    background-color: white;
     padding: 4px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     margin: 0;
@@ -142,7 +147,7 @@ const SuggestionItem = styled.li`
     transition: background-color 0.15s ease;
 
     &:hover {
-        background-color: rgba(0, 102, 204, 0.1);
+        background-color: color-mix(in srgb, ${props => props.$secondaryColor || 'black'} 10%, transparent);
     }
 `;
 
