@@ -37,7 +37,7 @@ Setting up
 
 .. code-block:: bash
 
-   git clone --recursive https://github.com/Problematy/goodmap.git
+   git clone https://github.com/Problematy/goodmap.git
    cd goodmap
    poetry install --with dev
 
