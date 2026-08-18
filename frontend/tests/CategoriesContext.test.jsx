@@ -1,8 +1,8 @@
 import React from 'react';
 import { render, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { FiltersForm } from '../src/components/FiltersForm/FiltersForm';
-import { SuggestNewPointButton } from '../src/components/Map/components/SuggestNewPointButton';
+import FiltersForm from '../src/components/FiltersForm/FiltersForm';
+import SuggestNewPointButton from '../src/components/Map/components/SuggestNewPointButton';
 import { CategoriesProvider } from '../src/components/Categories/CategoriesContext';
 import { LocationProvider } from '../src/components/Map/context/LocationContext';
 import { httpService } from '../src/services/http/httpService';

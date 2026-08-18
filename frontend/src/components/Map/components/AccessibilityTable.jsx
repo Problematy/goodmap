@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -44,61 +44,38 @@ const AccessibilityTable = ({ userPosition, setIsAccessibilityTableOpen }) => {
     }, [categories, userPosition]);
 
     useEffect(() => {
+        if (!data) {
+            return;
+        }
         try {
-            const uniqueHeadersSet = new Set();
-            if (!data) {
-                return;
-            }
-            uniqueHeadersSet.add(t('title'));
-            for (const place of data) {
-                for (const item of place.data) {
+            const uniqueHeadersSet = new Set([t('title')]);
+            data.forEach(place => {
+                place.data.forEach(item => {
                     uniqueHeadersSet.add(item[0]);
-                }
-            }
-            const uniqueNumberedKeys = {};
-            for (const [index, key] of Array.from(uniqueHeadersSet).entries()) {
-                uniqueNumberedKeys[key] = index;
-            }
-            const orderedKeysArray = Object.keys(uniqueNumberedKeys).sort(
-                (a, b) => uniqueNumberedKeys[a] - uniqueNumberedKeys[b],
-            );
+                });
+            });
+            const orderedKeysArray = Array.from(uniqueHeadersSet);
             setHeaders(orderedKeysArray);
-
-            const rowsLocal = [];
 
             const getArr = (placeItem, key) => {
                 const item = placeItem.find(it => it[0] === key);
-                if (!item) {
-                    return ['', '—'];
-                }
-                return item;
+                return item || ['', '—'];
             };
 
-            for (const it of data) {
-                const row = [];
-                const place = it.data;
-                row.push(it.title);
+            const rowsLocal = data.map(it => {
+                const row = [it.title];
                 // Skip first element (title) and iterate over remaining keys
-                for (const key of orderedKeysArray.slice(1)) {
-                    const values = getArr(place, key);
-                    if (values === undefined) {
-                        continue;
-                    }
-                    const value = values[1];
-                    if (Array.isArray(value)) {
-                        const str = value.join(', ');
-                        row.push(str);
-                        continue;
-                    }
-                    row.push(value);
-                }
-                rowsLocal.push(row);
-            }
+                orderedKeysArray.slice(1).forEach(key => {
+                    const [, value] = getArr(it.data, key);
+                    row.push(Array.isArray(value) ? value.join(', ') : value);
+                });
+                return row;
+            });
             setRows(rowsLocal);
         } catch (error) {
             console.log('AccessibilityTable: ', error);
         }
-    }, [data]);
+    }, [data, t]);
 
     return (
         <>
@@ -125,13 +102,13 @@ const AccessibilityTable = ({ userPosition, setIsAccessibilityTableOpen }) => {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {rows.map((row, index) => (
+                        {rows.map(row => (
                             <TableRow
                                 key={row.toString()}
                                 sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                             >
-                                {row.map((cell, index) => (
-                                    <TableCell key={`${cell.toString()}-${index}`} align="center">
+                                {row.map((cell, cellIndex) => (
+                                    <TableCell key={headers[cellIndex]} align="center">
                                         {cell.type ? <FieldRenderer value={cell} /> : cell}
                                     </TableCell>
                                 ))}

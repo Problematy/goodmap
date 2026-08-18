@@ -11,7 +11,7 @@ import { zoomInButtonStyle, zoomOutButtonStyle } from '../../../styles/buttonSty
  *
  * @returns {React.ReactElement} Control component with zoom in/out buttons
  */
-export const CustomZoomControl = () => {
+const CustomZoomControl = () => {
     const map = useMap();
 
     const handleZoomIn = () => {
@@ -45,3 +45,5 @@ export const CustomZoomControl = () => {
         </Control>
     );
 };
+
+export default CustomZoomControl;

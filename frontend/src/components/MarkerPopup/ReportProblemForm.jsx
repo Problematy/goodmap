@@ -145,7 +145,7 @@ const getIssueTypeOptions = t => {
     ];
 };
 
-export const ReportProblemForm = ({ placeId }) => {
+const ReportProblemForm = ({ placeId }) => {
     const { t } = useTranslation();
     const [problem, setProblem] = useState('');
     const [problemType, setProblemType] = useState('');
@@ -213,3 +213,5 @@ export const ReportProblemForm = ({ placeId }) => {
 ReportProblemForm.propTypes = {
     placeId: PropTypes.string.isRequired,
 };
+
+export default ReportProblemForm;

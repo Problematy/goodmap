@@ -5,7 +5,7 @@ import AddIcon from '@mui/icons-material/Add';
 import { useTranslation } from 'react-i18next';
 import { buttonStyle, getLocationAwareStyles } from '../../../styles/buttonStyle';
 import { useLocation } from '../context/LocationContext';
-import { SuggestNewPointDialog } from './SuggestNewPointDialog';
+import SuggestNewPointDialog from './SuggestNewPointDialog';
 
 /**
  * Button that opens the "suggest a new point" form. Opening requires the user's
@@ -14,7 +14,7 @@ import { SuggestNewPointDialog } from './SuggestNewPointDialog';
  *
  * @returns {React.ReactElement} Button and its suggestion dialog
  */
-export const SuggestNewPointButton = () => {
+const SuggestNewPointButton = () => {
     const { t } = useTranslation();
     const { locationGranted, requestLocationWithFeedback } = useLocation();
     const [showNewPointBox, setShowNewPointSuggestionBox] = useState(false);
@@ -53,3 +53,5 @@ export const SuggestNewPointButton = () => {
         </>
     );
 };
+
+export default SuggestNewPointButton;

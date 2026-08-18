@@ -1,13 +1,10 @@
 import ReactDOM from 'react-dom/client';
-import React, { useEffect } from 'react';
-import { httpService } from '../../services/http/httpService';
-import { FiltersForm } from '../FiltersForm/FiltersForm';
-import { MapComponent } from './MapComponent';
-import { useMapStore } from './store/map.store';
-import { CategoriesProvider } from '../Categories/CategoriesContext';
+import React from 'react';
 import { createPortal } from 'react-dom';
-import { AppToaster } from '../common/AppToaster';
-import useDebounce from '../../utils/hooks/useDebounce';
+import FiltersForm from '../FiltersForm/FiltersForm';
+import MapComponent from './MapComponent';
+import { CategoriesProvider } from '../Categories/CategoriesContext';
+import AppToaster from '../common/AppToaster';
 
 /**
  * Wrapper component that renders the map and filters form into their respective DOM placeholders.
@@ -41,10 +38,12 @@ const MapWrap = () => {
  *
  * @returns {void}
  */
-export const MapContainer = () => {
+const MapContainer = () => {
     const appContainer = document.createElement('div');
     document.body.appendChild(appContainer);
 
     const root = ReactDOM.createRoot(appContainer);
     root.render(<MapWrap />);
 };
+
+export default MapContainer;

@@ -12,7 +12,7 @@ import { useMaxToasts } from '../../utils/hooks/useMaxToasts';
  *
  * @returns {React.ReactElement} Toaster component configured for the application
  */
-export const AppToaster = () => {
+const AppToaster = () => {
     useMaxToasts();
 
     // #main-row's stacking context would trap the toast below the MUI Dialog.
@@ -56,3 +56,5 @@ export const AppToaster = () => {
         document.getElementById('overlay-root'),
     );
 };
+
+export default AppToaster;

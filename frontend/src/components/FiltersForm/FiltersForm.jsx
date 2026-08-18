@@ -239,7 +239,7 @@ const LoadingSkeleton = () => (
     </>
 );
 
-export const FiltersForm = () => {
+const FiltersForm = () => {
     const { t } = useTranslation();
     const {
         categories: selectedFilters,
@@ -456,3 +456,5 @@ export const FiltersForm = () => {
         </form>
     );
 };
+
+export default FiltersForm;

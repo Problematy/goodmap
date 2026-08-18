@@ -1,7 +1,7 @@
 import React from 'react';
 import '@testing-library/jest-dom';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { LocationDetailsBox } from '../../src/components/MarkerPopup/LocationDetails';
+import LocationDetailsBox from '../../src/components/MarkerPopup/LocationDetails';
 import { toast } from '../../src/utils/toast';
 
 const correctMarkerData = {

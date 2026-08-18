@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
 import { Popup } from 'react-leaflet';
 import styled from 'styled-components';
 
@@ -18,11 +19,13 @@ const StyledPopup = styled(Popup)`
  * @param {React.ReactNode} props.children - Content to display inside the popup
  * @returns {React.ReactElement} Styled Popup component that auto-opens on mount
  */
-export const DesktopPopup = ({ children }) => {
+const DesktopPopup = ({ children }) => {
     const popupRef = useRef(null);
 
     useEffect(() => {
         if (popupRef.current) {
+            // Leaflet's internal Marker reference - no public API exposes this.
+            // eslint-disable-next-line no-underscore-dangle
             const marker = popupRef.current._source;
             if (marker) {
                 marker.openPopup();
@@ -32,3 +35,9 @@ export const DesktopPopup = ({ children }) => {
 
     return <StyledPopup ref={popupRef}>{children}</StyledPopup>;
 };
+
+DesktopPopup.propTypes = {
+    children: PropTypes.node.isRequired,
+};
+
+export default DesktopPopup;

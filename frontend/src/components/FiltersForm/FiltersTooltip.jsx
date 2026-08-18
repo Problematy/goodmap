@@ -27,37 +27,35 @@ const IconWrapper = styled.span`
  * @param {string} props.text - The help text to display in the tooltip
  * @returns {React.ReactElement} Info icon with attached MUI tooltip
  */
-const FiltersTooltip = ({ text }) => {
-    return (
-        <Tooltip
-            title={text}
-            placement="top"
-            arrow
-            enterTouchDelay={0}
-            leaveTouchDelay={3000}
-            slotProps={{
-                tooltip: {
-                    sx: {
-                        backgroundColor: 'rgba(50, 50, 50, 0.95)',
-                        fontSize: '12px',
-                        padding: '8px 12px',
-                        maxWidth: '250px',
-                        lineHeight: 1.4,
-                    },
+const FiltersTooltip = ({ text }) => (
+    <Tooltip
+        title={text}
+        placement="top"
+        arrow
+        enterTouchDelay={0}
+        leaveTouchDelay={3000}
+        slotProps={{
+            tooltip: {
+                sx: {
+                    backgroundColor: 'rgba(50, 50, 50, 0.95)',
+                    fontSize: '12px',
+                    padding: '8px 12px',
+                    maxWidth: '250px',
+                    lineHeight: 1.4,
                 },
-                arrow: {
-                    sx: {
-                        color: 'rgba(50, 50, 50, 0.95)',
-                    },
+            },
+            arrow: {
+                sx: {
+                    color: 'rgba(50, 50, 50, 0.95)',
                 },
-            }}
-        >
-            <IconWrapper aria-label={`Help: ${text}`}>
-                <InfoOutlinedIcon sx={{ fontSize: 16 }} />
-            </IconWrapper>
-        </Tooltip>
-    );
-};
+            },
+        }}
+    >
+        <IconWrapper aria-label={`Help: ${text}`}>
+            <InfoOutlinedIcon sx={{ fontSize: 16 }} />
+        </IconWrapper>
+    </Tooltip>
+);
 
 FiltersTooltip.propTypes = {
     text: PropTypes.string.isRequired,

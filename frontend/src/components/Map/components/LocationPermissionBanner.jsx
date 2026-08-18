@@ -12,7 +12,7 @@ const BANNER_DISMISSED_KEY = 'goodmap_location_banner_dismissed';
  *
  * @returns {React.ReactElement|null} Banner component or null if not applicable
  */
-export const LocationPermissionBanner = () => {
+const LocationPermissionBanner = () => {
     const { t } = useTranslation();
     const { permissionState, requestGeolocation } = useLocation();
     const [dismissed, setDismissed] = useState(true);
@@ -51,6 +51,8 @@ export const LocationPermissionBanner = () => {
         </BannerContainer>
     );
 };
+
+export default LocationPermissionBanner;
 
 const BannerContainer = styled.div`
     position: absolute;

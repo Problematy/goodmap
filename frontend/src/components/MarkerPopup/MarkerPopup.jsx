@@ -7,9 +7,9 @@ import { useTranslation } from 'react-i18next';
 import { httpService } from '../../services/http/httpService';
 import { useMapStore } from '../Map/store/map.store';
 
-import { LocationDetailsBox } from './LocationDetails';
-import { MobilePopup } from './MobilePopup';
-import { DesktopPopup } from './DesktopPopup';
+import LocationDetailsBox from './LocationDetails';
+import MobilePopup from './MobilePopup';
+import DesktopPopup from './DesktopPopup';
 import iconAsterisk from '../../res/img/marker-icon-asterisk.png';
 
 /**
@@ -63,6 +63,12 @@ const LocationDetailsBoxWrapper = ({ theplace }) => {
     return <ChosenPopup>{renderContent()}</ChosenPopup>;
 };
 
+LocationDetailsBoxWrapper.propTypes = {
+    theplace: PropTypes.shape({
+        uuid: PropTypes.string.isRequired,
+    }).isRequired,
+};
+
 /**
  * Custom Leaflet icon for markers with remarks/special annotations.
  * Displays an asterisk icon to visually distinguish remarked locations from standard markers.
@@ -84,7 +90,7 @@ const asteriskIcon = new Icon({
  * @param {boolean} [props.place.has_remark] - Whether this location has a remark (uses asterisk icon if true)
  * @returns {React.ReactElement} Leaflet Marker component with click-to-show-details functionality
  */
-export const MarkerPopup = ({ place }) => {
+const MarkerPopup = ({ place }) => {
     const selectedLocationId = useMapStore(state => state.selectedLocationId);
     const setSelectedLocationId = useMapStore(state => state.setSelectedLocationId);
     const [isClicked, setIsClicked] = useState(false);
@@ -123,6 +129,7 @@ export const MarkerPopup = ({ place }) => {
     }
 
     return (
+        // eslint-disable-next-line react/jsx-props-no-spreading -- icon is only conditionally set
         <Marker {...markerProps}>
             {isClicked && <LocationDetailsBoxWrapper theplace={place} />}
         </Marker>
@@ -136,3 +143,5 @@ MarkerPopup.propTypes = {
         uuid: PropTypes.string.isRequired,
     }).isRequired,
 };
+
+export default MarkerPopup;

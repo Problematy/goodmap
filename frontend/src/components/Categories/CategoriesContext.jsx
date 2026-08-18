@@ -1,4 +1,5 @@
 import React, { useState, useContext, createContext, useMemo, useEffect, useCallback } from 'react';
+import PropTypes from 'prop-types';
 import { httpService } from '../../services/http/httpService';
 
 /**
@@ -65,6 +66,10 @@ export const CategoriesProvider = ({ children }) => {
     );
 
     return <CategoriesContext.Provider value={value}>{children}</CategoriesContext.Provider>;
+};
+
+CategoriesProvider.propTypes = {
+    children: PropTypes.node.isRequired,
 };
 
 /**

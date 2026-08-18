@@ -1,7 +1,7 @@
 import React from 'react';
 import '@testing-library/jest-dom';
 import { fireEvent, render, waitFor, within } from '@testing-library/react';
-import { FiltersForm } from '../src/components/FiltersForm/FiltersForm';
+import FiltersForm from '../src/components/FiltersForm/FiltersForm';
 import { CategoriesProvider } from '../src/components/Categories/CategoriesContext';
 import { httpService } from '../src/services/http/httpService';
 

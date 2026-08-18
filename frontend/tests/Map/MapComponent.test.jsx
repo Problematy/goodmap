@@ -1,8 +1,8 @@
 import React from 'react';
 import { render, waitFor, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
-import { MapComponent } from '../../src/components/Map/MapComponent';
-import { FiltersForm } from '../../src/components/FiltersForm/FiltersForm';
+import MapComponent from '../../src/components/Map/MapComponent';
+import FiltersForm from '../../src/components/FiltersForm/FiltersForm';
 import { CategoriesProvider } from '../../src/components/Categories/CategoriesContext';
 import { httpService } from '../../src/services/http/httpService';
 
@@ -46,7 +46,6 @@ describe('MapComponent', () => {
         });
     });
 
-    // eslint-disable-next-line es-x/no-async-functions -- needed to await waitFor
     it('renders without crashing', async () => {
         render(
             <CategoriesProvider>
@@ -77,7 +76,6 @@ describe('MapComponent with FiltersForm', () => {
         globalThis.FEATURE_FLAGS = {};
     });
 
-    // eslint-disable-next-line es-x/no-async-functions -- needed to await waitFor
     it('fetches locations once, already filtered by default-checked options', async () => {
         httpService.getLocations.mockClear();
         httpService.getCategoriesData.mockResolvedValueOnce({

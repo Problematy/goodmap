@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { Button, Tooltip } from '@mui/material';
 import ViewListIcon from '@mui/icons-material/ViewList';
@@ -64,5 +65,9 @@ const Wrapper = styled.div`
     left: 10px;
     z-index: 9999999;
 `;
+
+ListView.propTypes = {
+    onClick: PropTypes.func.isRequired,
+};
 
 export default ListView;

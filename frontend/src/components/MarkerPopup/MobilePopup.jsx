@@ -1,7 +1,21 @@
 import React, { useEffect, useState } from 'react';
+import PropTypes from 'prop-types';
 import { Dialog, DialogContent, DialogTitle, IconButton, Slide } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { useLeafletContext } from '@react-leaflet/core';
+
+/**
+ * Slide transition component for the mobile popup dialog.
+ * Animates the dialog sliding up from the bottom of the screen.
+ *
+ * @param {Object} props - Transition props passed by Material-UI
+ * @param {React.Ref} ref - Forwarded ref for the transition component
+ * @returns {React.ReactElement} Slide transition component
+ */
+const SlideTransition = React.forwardRef((props, ref) => (
+    // eslint-disable-next-line react/jsx-props-no-spreading -- forwards arbitrary MUI transition props
+    <Slide direction="up" ref={ref} {...props} />
+));
 
 /**
  * Mobile-optimized popup component for displaying location details.
@@ -13,7 +27,7 @@ import { useLeafletContext } from '@react-leaflet/core';
  * @param {React.ReactNode} props.children - Content to display inside the popup dialog
  * @returns {React.ReactElement} Material-UI Dialog styled as a bottom sheet
  */
-export const MobilePopup = ({ children }) => {
+const MobilePopup = ({ children }) => {
     const [isOpen, setIsOpen] = useState(true);
     const context = useLeafletContext();
 
@@ -29,6 +43,8 @@ export const MobilePopup = ({ children }) => {
         };
 
         if (overlayContainer) {
+            // Leaflet's internal position - no public API exposes this.
+            // eslint-disable-next-line no-underscore-dangle
             centerMap(overlayContainer._latlng);
 
             overlayContainer.on('click', place => {
@@ -81,14 +97,8 @@ export const MobilePopup = ({ children }) => {
     );
 };
 
-/**
- * Slide transition component for the mobile popup dialog.
- * Animates the dialog sliding up from the bottom of the screen.
- *
- * @param {Object} props - Transition props passed by Material-UI
- * @param {React.Ref} ref - Forwarded ref for the transition component
- * @returns {React.ReactElement} Slide transition component
- */
-const SlideTransition = React.forwardRef(function Transition(props, ref) {
-    return <Slide direction="up" ref={ref} {...props} />;
-});
+MobilePopup.propTypes = {
+    children: PropTypes.node.isRequired,
+};
+
+export default MobilePopup;

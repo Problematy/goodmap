@@ -3,7 +3,7 @@ import '@testing-library/jest-dom';
 import { render } from '@testing-library/react';
 import { MapContainer, TileLayer } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
-import { MarkerPopup } from '../../src/components/MarkerPopup/MarkerPopup';
+import MarkerPopup from '../../src/components/MarkerPopup/MarkerPopup';
 
 /**
  * Integration test for MarkerPopup with MarkerClusterGroup

@@ -5,13 +5,12 @@ import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined
 import ShareIcon from '@mui/icons-material/Share';
 import { useTranslation } from 'react-i18next';
 import { isMobile } from 'react-device-detect';
+import React, { useState } from 'react';
 import { buttonStyleSmall } from '../../styles/buttonStyle';
 import getContentAsString from './fieldContent';
 import FieldRenderer from './FieldRenderer';
-import { ReportProblemForm } from './ReportProblemForm';
+import ReportProblemForm from './ReportProblemForm';
 import { toast } from '../../utils/toast';
-
-import React, { useState } from 'react';
 
 const PopupContainer = styled.div`
     padding: 8px 4px;
@@ -209,7 +208,7 @@ const LocationDetails = ({ place }) => {
 
             {CTACategories.length > 0 && (
                 <CTAContainer>
-                    {CTACategories.map(([_category, value]) => (
+                    {CTACategories.map(([, value]) => (
                         <LocationDetailsValue key={JSON.stringify(value)} valueToDisplay={value} />
                     ))}
                 </CTAContainer>
@@ -222,6 +221,8 @@ LocationDetails.propTypes = {
     place: PropTypes.shape({
         title: PropTypes.string.isRequired,
         subtitle: PropTypes.string,
+        // [category, value] tuples where value's shape varies by field type - can't be typed more precisely.
+        // eslint-disable-next-line react/forbid-prop-types
         data: PropTypes.arrayOf(PropTypes.array).isRequired,
     }).isRequired,
 };
@@ -300,13 +301,13 @@ ShareLocationButton.propTypes = {
  * @param {string} props.place.metadata.uuid - Unique identifier for the location
  * @returns {React.ReactElement} Fragment containing location details, navigation button, and report form
  */
-export const LocationDetailsBox = ({ place }) => {
+const LocationDetailsBox = ({ place }) => {
     const { t } = useTranslation();
     const [showForm, setShowForm] = useState(false);
     const toggleForm = () => setShowForm(!showForm);
 
     return (
-        <React.Fragment>
+        <>
             <LocationDetails place={place} />
 
             <div
@@ -337,7 +338,7 @@ export const LocationDetailsBox = ({ place }) => {
                 </ActionButton>
             </div>
             {showForm && <ReportProblemForm placeId={place.metadata.uuid} />}
-        </React.Fragment>
+        </>
     );
 };
 
@@ -345,6 +346,8 @@ LocationDetailsBox.propTypes = {
     place: PropTypes.shape({
         title: PropTypes.string.isRequired,
         subtitle: PropTypes.string,
+        // [category, value] tuples where value's shape varies by field type - can't be typed more precisely.
+        // eslint-disable-next-line react/forbid-prop-types
         data: PropTypes.arrayOf(PropTypes.array).isRequired,
         position: PropTypes.arrayOf(PropTypes.number).isRequired,
         metadata: PropTypes.shape({
@@ -352,3 +355,5 @@ LocationDetailsBox.propTypes = {
         }).isRequired,
     }).isRequired,
 };
+
+export default LocationDetailsBox;
