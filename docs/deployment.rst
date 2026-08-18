@@ -44,7 +44,7 @@ left half-written, but two processes that read-modify-write concurrently will lo
 the two changes. A read-only map that takes no submissions is safe with any number of
 workers.
 
-**google_hosted_json_file** — read-only, so any number of workers is fine.
+**google_json** — read-only, so any number of workers is fine.
 
 .. _deployment-secrets:
 
@@ -116,7 +116,7 @@ incoming reports change it while the app runs.
   a rename, a copy taken at any moment is a consistent snapshot of some version. Note that
   this file also holds ``site_content``.
 - **MongoDB** — your usual database backups; nothing Goodmap-specific.
-- **google_hosted_json_file** — the blob is your source of truth and the app never writes
+- **google_json** — the blob is your source of truth and the app never writes
   to it. Bucket object versioning gives you history.
 
 Schema keys (``categories``, ``visible_data``, ``location_obligatory_fields``) are read

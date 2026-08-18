@@ -132,7 +132,7 @@ Basic keys
    .. code-block:: yaml
 
       DB:
-        TYPE: google_hosted_json_file
+        TYPE: google_json
         BUCKET_NAME: good-map
         SOURCE_BLOB_NAME: data.json
 
@@ -231,10 +231,10 @@ can read flags Goodmap itself does not know about.
 
 .. _config-plugins:
 
-Plugins
+Plugins configuration
 -------
 
-**Plugins are not configured here.** Every plugin — Goodmap's map overlays and
+**Plugins are not configured in config file.** Every plugin — Goodmap's map overlays and
 marker-field renderers, and platzky's notifiers alike — is activated in the **data
 source**, under its top-level ``plugins`` key:
 

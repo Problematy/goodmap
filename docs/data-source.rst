@@ -382,7 +382,7 @@ Google Cloud Storage
 .. code-block:: yaml
 
    DB:
-     TYPE: google_hosted_json_file
+     TYPE: google_json
      BUCKET_NAME: good-map
      SOURCE_BLOB_NAME: data.json
 
