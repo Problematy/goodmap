@@ -50,8 +50,7 @@ ordinary field of your own:
 
 ``uuid`` (required)
    The point's identity, used in ``/api/location/<uuid>``. **It must
-   be a real UUID** — Goodmap 2.0 dropped support for arbitrary string ids, and a non-UUID
-   id gives a 404 at routing.
+   be a real UUID**.
 
 ``position`` (required)
    ``[latitude, longitude]``, in that order. Latitude is validated to −90..90 and

@@ -140,7 +140,4 @@ Pin an exact version and upgrade deliberately:
 
    goodmap==2.0.0
 
-Before upgrading, read ``CHANGELOG.md`` in the repository. Note that 2.0 **requires every
-point's ``uuid`` to be a real UUID** — arbitrary string ids are no longer routable and
-give a ``404``. Migrate the data before upgrading, and validate it with the script in
-:doc:`data-source`.
+Before upgrading, read ``CHANGELOG.md`` in the repository.
