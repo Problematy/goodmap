@@ -579,7 +579,9 @@ def test_csrf_token_is_session_scoped():
 
     victim = app.test_client()
     page = victim.get("/map")
-    token = re.search(r'name="csrf-token" content="([^"]+)"', page.data.decode("utf-8")).group(1)
+    token_match = re.search(r'name="csrf-token" content="([^"]+)"', page.data.decode("utf-8"))
+    assert token_match is not None
+    token = token_match.group(1)
 
     attacker = app.test_client()
     response = attacker.post(
