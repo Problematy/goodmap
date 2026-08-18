@@ -17,7 +17,6 @@ from spectree import Response, SpecTree
 from werkzeug.exceptions import HTTPException
 
 from goodmap.api_models import (
-    CSRFTokenResponse,
     ErrorResponse,
     LocationReportRequest,
     LocationReportResponse,
@@ -113,7 +112,6 @@ def core_pages(
     database,
     languages: LanguagesMapping,
     notifier_function,
-    csrf_generator,
     location_model,
     photo_attachment_config: AttachmentConfig,
     feature_flags: FeatureFlagSet,
@@ -359,22 +357,6 @@ def core_pages(
         """
         version_info = {"backend": importlib.metadata.version("goodmap")}
         return jsonify(version_info)
-
-    @core_api_blueprint.route("/generate-csrf-token", methods=["GET"])
-    @spec.validate(resp=Response(HTTP_200=CSRFTokenResponse))
-    @deprecation.deprecated(
-        deprecated_in="1.1.8",
-        details="This endpoint for explicit CSRF token generation is deprecated. "
-        "CSRF protection remains active in the application.",
-    )
-    def generate_csrf_token():
-        """Generate CSRF token (DEPRECATED).
-
-        This endpoint is deprecated and maintained only for backward compatibility.
-        CSRF protection remains active in the application.
-        """
-        csrf_token = csrf_generator()
-        return {"csrf_token": csrf_token}
 
     @core_api_blueprint.route("/categories", methods=["GET"])
     @spec.validate()

@@ -50,12 +50,6 @@ class VersionResponse(BaseModel):
     backend: str = Field(..., description="Backend version")
 
 
-class CSRFTokenResponse(BaseModel):
-    """Response model for CSRF token endpoint (deprecated)."""
-
-    csrf_token: str = Field(..., description="CSRF token")
-
-
 class PaginationParams(BaseModel):
     """Common pagination and filtering parameters."""
 

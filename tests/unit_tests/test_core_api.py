@@ -33,12 +33,6 @@ def test_version_endpoint_returns_version(mock_returning_version, test_app):
     assert response.json == {"backend": "0.1.2"}
 
 
-def test_csrf_token_endpoint_returns_token(test_app):
-    response = test_app.get("/api/generate-csrf-token")
-    assert response.status_code == 200
-    assert "csrf_token" in response.json
-
-
 def test_api_doc_index(test_app):
     response = test_app.get("/api/doc")
     assert response.status_code == 200
