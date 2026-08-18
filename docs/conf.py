@@ -4,7 +4,8 @@ import importlib.metadata
 import sys
 from pathlib import Path
 
-# Autodoc imports goodmap, so a source checkout has to be on the path
+# autodoc imports goodmap rather than parsing it, so the repo root (which contains
+# the goodmap/ package) must be on sys.path — docs/ alone is not enough.
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
