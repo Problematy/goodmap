@@ -4,7 +4,6 @@ import importlib.metadata
 import sys
 from pathlib import Path
 
-# Add project to path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
@@ -24,8 +23,8 @@ author = "Goodmap Contributors"
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.intersphinx",
-    "sphinx.ext.viewcode",
     "sphinx.ext.napoleon",
+    "sphinx.ext.viewcode",
     "myst_parser",
 ]
 
@@ -53,11 +52,24 @@ html_sidebars = {
     ]
 }
 
-# Autodoc settings
 autodoc_member_order = "bysource"
 autodoc_typehints = "description"
 
-# Intersphinx mapping
+# Napoleon settings: docstrings in this project are Google style.
+napoleon_google_docstring = True
+napoleon_numpy_docstring = False
+
+_ANY_PY_ROLE = "py:.*"
+nitpick_ignore_regex = [
+    (_ANY_PY_ROLE, r"ConfigDict|callable"),
+    (_ANY_PY_ROLE, r"(annotated_types|pymongo)\..*"),
+    (_ANY_PY_ROLE, r"[gl]e=-?\d+"),
+    (
+        _ANY_PY_ROLE,
+        r"platzky\.(Engine|feature_flags_wrapper\.FeatureFlagSet|plugin\.plugin\.PluginBase)",
+    ),
+]
+
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
     "flask": ("https://flask.palletsprojects.com/en/stable/", None),
@@ -65,12 +77,6 @@ intersphinx_mapping = {
     "platzky": ("https://platzky.readthedocs.io/en/latest/", None),
 }
 
-# Napoleon settings for Google/NumPy style docstrings
-napoleon_google_docstring = True
-napoleon_numpy_docstring = False
-napoleon_include_init_with_doc = True
-
-# Make version available as substitution in RST files
 rst_epilog = f"""
 .. |version| replace:: {version}
 """

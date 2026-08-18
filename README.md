@@ -18,16 +18,8 @@ Each has its own dependency manager (`poetry` for the backend and e2e-tests, `np
 
 #### 0. Clone the repo
 ```
-git clone --recursive
+git clone https://github.com/Problematy/goodmap.git
 ```
-Remember, everytime you want to pull the newest changes, run:
-```
-git pull
-git submodule update
-```
-because `goodmap` contains a submodule.
-
-#TODO remove all submodule connected instructions after removing platzky submodule (see #157)
 
 #### 1. Use python 3.10
 If you have a different version of Python on your system, install python 3.10 alongside. For that, you can use [`pyenv`](https://github.com/pyenv/pyenv). Follow the [documentation](https://github.com/pyenv/pyenv?tab=readme-ov-file#installation). Useful commands: `pyenv help <command>`, `pyenv install`, `pyenv shell`, `pyenv versions`.

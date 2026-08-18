@@ -37,13 +37,6 @@ dependency-check:
 run-example-env:
 	$(PYTHON) flask --app "goodmap.goodmap:create_app(config_path='$(CONFIG_PATH)')" --debug run
 
-verify-json-data:
-ifndef JSON_DATA_FILE
-	$(error "Missing required argument JSON_DATA_FILE: make verify-json-data JSON_DATA_FILE=path/to/json")
-else
-	$(PYTHON) python -m goodmap.data_validator $(JSON_DATA_FILE)
-endif
-
 extract-translations:
 	$(PYTHON) pybabel extract ./goodmap -o extracted.pot -F ./babel.cfg --project=goodmap
 	$(PYTHON) pybabel update -i extracted.pot -d goodmap/locale --ignore-pot-creation-date --ignore-obsolete

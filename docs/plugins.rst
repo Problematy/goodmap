@@ -1,6 +1,11 @@
 Plugins
 =======
 
+Plugins are how you add behaviour to the map without forking Goodmap: a banner over the
+map, a custom renderer for one of your fields. Installing one is ``pip install`` plus a
+few lines in your data source — not in ``config.yml`` (:ref:`plugins-configuration`);
+writing one is the rest of this page.
+
 Goodmap builds on platzky's plugin system and adds its own plugin ecosystem for the
 map. A Goodmap plugin is an ordinary Python package that declares a ``goodmap.plugins``
 entry point and ships a frontend component (served via Module Federation). Goodmap
@@ -15,7 +20,7 @@ Kinds of Goodmap frontend plugins
 
 The capability a plugin provides determines *how* its frontend renders:
 
-**Marker fields** (:class:`goodmap.plugin.MarkerFieldPluginBase`)
+**Marker fields** (``MarkerFieldPluginBase``)
     Render a single location field inside a marker popup (capability ``"MarkerField"``,
     mounted by ``FieldRenderer``). ``FieldRenderer`` renders a field as a **pipe**: the raw
     value flows through a chain of stages — the built-in for the field ``type`` (e.g.
@@ -35,7 +40,7 @@ The capability a plugin provides determines *how* its frontend renders:
     presupposes something renders the type — a built-in, or a renderer it ships with or
     depends on; a type with only wrappers and no renderer is a misconfiguration.
 
-**Map overlays** (:class:`goodmap.plugin.MapOverlayPluginBase`)
+**Map overlays** (``MapOverlayPluginBase``)
     Render a component once *over the whole map*, not tied to any marker — e.g. a
     banner shown when no points are visible in the current view. Overlay components
     are mounted by ``MapOverlays``. They do not transform point/location data.
@@ -53,7 +58,7 @@ field plugin.
 Map overlay plugins
 -------------------
 
-A map overlay subclasses :class:`~goodmap.plugin.MapOverlayPluginBase` and declares a
+A map overlay subclasses ``MapOverlayPluginBase`` and declares a
 ``goodmap.plugins`` entry point:
 
 .. code-block:: python
@@ -103,7 +108,7 @@ Field plugins
 value flows through the built-in for the field ``type`` (if any) and then each field plugin
 attached to that ``type`` via ``config.field``, innermost-first by ``config.order``.
 
-A field plugin is a :class:`~goodmap.plugin.MarkerFieldPluginBase` whose component is a stage
+A field plugin is a ``MarkerFieldPluginBase`` whose component is a stage
 ``({ input, config }) => element`` — it receives the previous stage's output as ``input``.
 There's one kind of field plugin; what it does with ``input`` is what makes it read as a
 "renderer" or a "decorator":
@@ -147,13 +152,17 @@ Both are the same plugin kind. Each sets ``config.field`` to the type it attache
 optionally, ``config.order``; lower order is more innermost, higher order wraps further out.
 A wrapper must have a renderer beneath it (a built-in, or one it depends on).
 
+.. _plugins-configuration:
+
 Configuration
 -------------
 
-Activate a plugin by adding it to the ``plugins`` object in your data source, keyed by
-the entry-point name. The plugin loads only when ``is_active`` is ``true``; its
-``config`` is passed to the plugin's ``__init__`` and (for frontend plugins) delivered
-to the React component as the ``config`` prop:
+Activate a plugin by adding it to the top-level ``plugins`` object in your **data
+source** — never in ``config.yml``, which has no plugin section at all
+(:ref:`data-source-plugins`). platzky's own plugins go in the same place. Entries are
+keyed by the entry-point name. The plugin loads only when ``is_active`` is ``true``; its
+``config`` is passed to the plugin's ``__init__`` and (for frontend plugins) delivered to
+the React component as the ``config`` prop:
 
 .. code-block:: json
 

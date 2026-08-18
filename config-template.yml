@@ -30,13 +30,3 @@ DB:
 #   TYPE: google_hosted_json_file
 #   BUCKET_NAME: good-map
 #   SOURCE_BLOB_NAME: data.json
-
-
-PLUGINS:
-  sendmail:
-    PORT: 465
-    SERVER: "smtp.example.com"
-    RECEIVER: "receiver@example.com"
-    USER: "sender@example.pl"
-    PASSWORD: "PA$$WORD"
-    SUBJECT: "My awesome goodmap application"
