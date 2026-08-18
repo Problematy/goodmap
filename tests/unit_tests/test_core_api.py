@@ -51,12 +51,6 @@ def test_location_schema_endpoint_describes_this_instance(test_app):
     assert set(body["photo"]) == {"allowed_extensions", "allowed_mime_types", "max_size_bytes"}
 
 
-def test_csrf_token_endpoint_returns_token(test_app):
-    response = test_app.get("/api/generate-csrf-token")
-    assert response.status_code == 200
-    assert "csrf_token" in response.json
-
-
 def test_api_doc_index(test_app):
     response = test_app.get("/api/doc")
     assert response.status_code == 200

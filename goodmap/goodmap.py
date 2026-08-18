@@ -8,7 +8,7 @@ from typing import Any
 
 from flask import Blueprint, jsonify, redirect, render_template, session
 from flask_babel import gettext
-from flask_wtf.csrf import CSRFError, generate_csrf
+from flask_wtf.csrf import CSRFError
 from platzky import platzky
 from platzky.config import languages_dict
 from platzky.models import CmsModule
@@ -269,7 +269,6 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         app.db,
         languages_dict(config.languages),
         app.notify,
-        generate_csrf,
         location_model,
         photo_attachment_config=photo_attachment_config,
         feature_flags=config.feature_flags,
