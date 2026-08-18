@@ -86,8 +86,8 @@ class TestSearchbar:
         # Leaflet only requests tiles at the final location once flyTo
         # completes, so waiting for the destination tile implicitly
         # synchronises on the animation end and confirms the map actually
-        # moved (the map's default position is zoom 7, well outside this
-        # pattern's 13-16 range, so this can't pass by coincidence).
+        # moved to the picked suggestion's coordinates (the map's default
+        # position is zoom 7, so this can't pass by coincidence).
         map_tile = page.locator(".leaflet-tile-container > img").first
         expect(map_tile).to_have_attribute(
             "src", re.compile(location["tile_pattern"]), timeout=FLY_TO_TIMEOUT
