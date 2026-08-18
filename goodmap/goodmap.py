@@ -16,9 +16,9 @@ from platzky.plugin.content_transformer import ContentTransformerPluginBase
 from platzky.shortcodes import Shortcode
 from pydantic import BaseModel
 
-from goodmap.admin_api import admin_pages
+from goodmap.api.admin_api import admin_pages
+from goodmap.api.core_api import core_pages
 from goodmap.config import GoodmapConfig
-from goodmap.core_api import core_pages
 from goodmap.data_models.location import create_location_model
 from goodmap.db import (
     extend_db_with_goodmap_queries,

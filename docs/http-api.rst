@@ -87,8 +87,8 @@ Query parameters:
 
    curl 'http://localhost:5000/api/locations?accessible_by=bikes&lat=51.10&lon=17.05&limit=5'
 
-Each point comes back as ``uuid``, ``position`` and ``remark`` — where ``remark`` is a
-**boolean**, whether the point has one, not its text.
+Each point comes back as ``uuid``, ``position`` and ``has_remark`` — a **boolean**, whether
+the point has a remark, not its text.
 
 Invalid or unknown query parameters are ignored rather than rejected.
 

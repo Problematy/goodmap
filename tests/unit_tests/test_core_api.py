@@ -3,8 +3,8 @@ from unittest import mock
 
 import pytest
 
+from goodmap.api.core_api import get_or_none, make_tuple_translation
 from goodmap.config import GoodmapConfig
-from goodmap.core_api import get_or_none, make_tuple_translation
 from goodmap.feature_flags import CategoriesHelp
 from goodmap.goodmap import create_app_from_config
 from tests.unit_tests.conftest import (
@@ -63,7 +63,7 @@ def test_api_doc_index(test_app):
 # --- Categories endpoint tests ---
 
 
-@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("goodmap.api.core_api.gettext", fake_translation)
 def test_categories_endpoints_return_expected_data(test_app):
     # Test /api/categories endpoint
     response = test_app.get("/api/categories")
@@ -82,7 +82,7 @@ def test_categories_endpoints_return_expected_data(test_app):
     }
 
 
-@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("goodmap.api.core_api.gettext", fake_translation)
 def test_categories_endpoints_old_format(test_app_without_helpers):
     # Test /api/categories endpoint (old format)
     response = test_app_without_helpers.get("/api/categories")
@@ -95,7 +95,7 @@ def test_categories_endpoints_old_format(test_app_without_helpers):
     assert response.json == [["test", "test-translated"], ["test2", "test2-translated"]]
 
 
-@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("goodmap.api.core_api.gettext", fake_translation)
 @mock.patch("flask_babel.gettext", fake_translation)
 def test_categories_endpoint_with_categories_help():
     test_app = create_test_app(
@@ -111,7 +111,7 @@ def test_categories_endpoint_with_categories_help():
     assert data["categories_help"][0] == {"option1": "categories_help_option1-translated"}
 
 
-@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("goodmap.api.core_api.gettext", fake_translation)
 @mock.patch("flask_babel.gettext", fake_translation)
 def test_category_data_endpoint_with_categories_options_help():
     test_app = create_test_app(
@@ -157,7 +157,7 @@ def test_category_data_endpoint_with_none_categories_options_help():
 # --- Categories-full endpoint tests ---
 
 
-@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("goodmap.api.core_api.gettext", fake_translation)
 def test_categories_full_endpoint(test_app):
     response = test_app.get("/api/categories-full")
     assert response.status_code == 200
@@ -189,7 +189,7 @@ def test_categories_full_endpoint(test_app):
     assert category["filter_mode"] == "or"
 
 
-@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("goodmap.api.core_api.gettext", fake_translation)
 def test_categories_full_endpoint_reports_configured_filter_mode():
     test_app = create_test_app(
         db_overrides={
@@ -204,7 +204,7 @@ def test_categories_full_endpoint_reports_configured_filter_mode():
     assert category["filter_mode"] == "exclusive"
 
 
-@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("goodmap.api.core_api.gettext", fake_translation)
 def test_categories_full_endpoint_with_default_checked():
     test_app = create_test_app(
         db_overrides={
@@ -221,7 +221,7 @@ def test_categories_full_endpoint_with_default_checked():
     assert category["default_checked"] == ["opt1"]
 
 
-@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("goodmap.api.core_api.gettext", fake_translation)
 def test_categories_full_endpoint_drops_default_checked_not_in_options():
     test_app = create_test_app(
         db_overrides={
@@ -238,7 +238,7 @@ def test_categories_full_endpoint_drops_default_checked_not_in_options():
     assert category["default_checked"] == ["opt1"]
 
 
-@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("goodmap.api.core_api.gettext", fake_translation)
 def test_categories_full_endpoint_without_default_checked():
     test_app = create_test_app(
         db_overrides={
@@ -254,7 +254,7 @@ def test_categories_full_endpoint_without_default_checked():
     assert category["default_checked"] == []
 
 
-@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("goodmap.api.core_api.gettext", fake_translation)
 def test_categories_full_endpoint_with_multiple_categories():
     test_app = create_test_app(
         db_overrides={
@@ -274,7 +274,7 @@ def test_categories_full_endpoint_with_multiple_categories():
     assert "category2" in keys
 
 
-@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("goodmap.api.core_api.gettext", fake_translation)
 def test_categories_full_endpoint_with_categories_help():
     test_app = create_test_app(
         feature_flags=make_flag_set(CategoriesHelp),
@@ -303,7 +303,7 @@ def test_categories_full_endpoint_with_categories_help():
     assert category["options_help"][0] == {"opt1": "categories_options_help_opt1-translated"}
 
 
-@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("goodmap.api.core_api.gettext", fake_translation)
 def test_categories_full_endpoint_without_categories_help():
     test_app = create_test_app(
         feature_flags=make_flag_set(),
@@ -329,8 +329,16 @@ def test_get_locations(test_app):
     response = test_app.get("/api/locations")
     assert response.status_code == 200
     assert response.json == [
-        {"uuid": "11111111-1111-1111-1111-111111111111", "position": [50, 50], "remark": True},
-        {"uuid": "22222222-2222-2222-2222-222222222222", "position": [60, 60], "remark": False},
+        {
+            "uuid": "11111111-1111-1111-1111-111111111111",
+            "position": [50, 50],
+            "has_remark": True,
+        },
+        {
+            "uuid": "22222222-2222-2222-2222-222222222222",
+            "position": [60, 60],
+            "has_remark": False,
+        },
     ]
 
 
@@ -459,7 +467,7 @@ def test_get_locations_threshold_filter_mode():
     }
 
 
-@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("goodmap.api.core_api.gettext", fake_translation)
 @mock.patch("goodmap.formatter.gettext", fake_translation)
 @mock.patch("flask_babel.gettext", fake_translation)
 def test_get_location(test_app):
@@ -501,7 +509,7 @@ def test_reporting_location_success(test_app):
     assert response.status_code == 200
 
 
-@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("goodmap.api.core_api.gettext", fake_translation)
 @mock.patch("flask_babel.gettext", fake_translation)
 def test_reporting_returns_error_when_wrong_json(test_app):
     response = api_post(test_app, "/api/report-location", {"name": "location-id", "position": 50})
@@ -509,7 +517,7 @@ def test_reporting_returns_error_when_wrong_json(test_app):
     assert isinstance(response.json, list)
 
 
-@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("goodmap.api.core_api.gettext", fake_translation)
 @mock.patch("flask_babel.gettext", fake_translation)
 def test_report_location_notification_success(test_app):
     response = api_post(
@@ -555,7 +563,7 @@ def test_report_description_not_in_options_without_other(test_app):
     assert "Invalid report description" in response.json["message"]
 
 
-@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("goodmap.api.core_api.gettext", fake_translation)
 @mock.patch("flask_babel.gettext", fake_translation)
 def test_report_description_free_text_with_other_option():
     """When 'other' is in options, free text within limit should be accepted."""
@@ -566,7 +574,7 @@ def test_report_description_free_text_with_other_option():
     assert response.status_code == 200
 
 
-@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("goodmap.api.core_api.gettext", fake_translation)
 @mock.patch("flask_babel.gettext", fake_translation)
 def test_report_description_exceeds_max_length():
     """Description exceeding max length should be rejected even with 'other'."""
@@ -578,7 +586,7 @@ def test_report_description_exceeds_max_length():
     assert response.status_code in (400, 422)
 
 
-@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("goodmap.api.core_api.gettext", fake_translation)
 @mock.patch("flask_babel.gettext", fake_translation)
 def test_report_description_empty_options_uses_fallback():
     """Empty issue options should fall back to defaults (which include 'other')."""
@@ -588,7 +596,7 @@ def test_report_description_empty_options_uses_fallback():
     assert response.status_code == 200
 
 
-@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("goodmap.api.core_api.gettext", fake_translation)
 @mock.patch("flask_babel.gettext", fake_translation)
 def test_report_description_empty_options_allows_free_text():
     """Empty issue options fallback includes 'other', so free text is allowed."""
@@ -990,7 +998,8 @@ def test_location_clustering_empty_locations():
 
 def test_location_clustering_exception_handling(test_app):
     with mock.patch(
-        "goodmap.core_api.pysupercluster.SuperCluster", side_effect=Exception("Clustering failed")
+        "goodmap.api.core_api.pysupercluster.SuperCluster",
+        side_effect=Exception("Clustering failed"),
     ):
         response = test_app.get("/api/locations-clustered?zoom=10")
         assert response.status_code == 500
@@ -998,7 +1007,7 @@ def test_location_clustering_exception_handling(test_app):
 
 
 def test_location_clustering_logs_on_invalid_parameter(test_app):
-    with mock.patch("goodmap.core_api.logger") as mock_logger:
+    with mock.patch("goodmap.api.core_api.logger") as mock_logger:
         test_app.get("/api/locations-clustered?zoom=invalid")
         mock_logger.warning.assert_called_once()
         assert "Invalid parameter" in mock_logger.warning.call_args[0][0]
@@ -1007,10 +1016,10 @@ def test_location_clustering_logs_on_invalid_parameter(test_app):
 def test_location_clustering_logs_on_exception(test_app):
     with (
         mock.patch(
-            "goodmap.core_api.pysupercluster.SuperCluster",
+            "goodmap.api.core_api.pysupercluster.SuperCluster",
             side_effect=Exception("Clustering failed"),
         ),
-        mock.patch("goodmap.core_api.logger") as mock_logger,
+        mock.patch("goodmap.api.core_api.logger") as mock_logger,
     ):
         test_app.get("/api/locations-clustered?zoom=10")
         mock_logger.exception.assert_called_once()
@@ -1020,7 +1029,7 @@ def test_location_clustering_logs_on_exception(test_app):
 # --- Helper function tests ---
 
 
-@mock.patch("goodmap.core_api.gettext", fake_translation)
+@mock.patch("goodmap.api.core_api.gettext", fake_translation)
 def test_make_tuple_translation():
     keys = ["alpha", "beta"]
     assert make_tuple_translation(keys) == [
@@ -1068,7 +1077,7 @@ def test_issue_options_defaults_to_empty_when_missing():
 
 
 def test_get_locations_from_request_helper(test_app):
-    from goodmap.core_api import get_locations_from_request
+    from goodmap.api.core_api import get_locations_from_request
 
     class MockArgs:
         def to_dict(self, flat=False):

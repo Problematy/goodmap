@@ -87,7 +87,7 @@ class LocationBase(BaseModel, extra="allow"):
     def basic_info(self) -> dict[str, Any]:
         """Get basic location information summary."""
         data = self.model_dump(include={"uuid", "position"})
-        data["remark"] = bool(self.remark)
+        data["has_remark"] = bool(self.remark)
         return data
 
 

@@ -24,17 +24,17 @@ describe('MarkerPopup integration with MarkerClusterGroup', () => {
         {
             position: [51.1095, 17.0525],
             uuid: 'location-1',
-            remark: false,
+            has_remark: false,
         },
         {
             position: [51.10655, 17.0555],
             uuid: 'location-2',
-            remark: true,
+            has_remark: true,
         },
         {
             position: [51.1085, 17.0535],
             uuid: 'location-3',
-            remark: false,
+            has_remark: false,
         },
     ];
 

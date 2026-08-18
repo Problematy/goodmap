@@ -60,7 +60,7 @@ Request and response models
 Pydantic models for the HTTP layer. These are what generate the OpenAPI document served
 at ``/api/doc/openapi.json``, so they and the schema endpoint never disagree.
 
-.. automodule:: goodmap.api_models
+.. automodule:: goodmap.api.api_models
    :members:
    :show-inheritance:
 

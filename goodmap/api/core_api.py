@@ -16,7 +16,7 @@ from platzky.shortcodes import Shortcode
 from spectree import Response, SpecTree
 from werkzeug.exceptions import HTTPException
 
-from goodmap.api_models import (
+from goodmap.api.api_models import (
     CategoriesFullResponse,
     CategoriesResponse,
     CategoryOptionsResponse,
@@ -294,7 +294,7 @@ def core_pages(
         """Get list of locations with basic info.
 
         Returns locations filtered by query parameters,
-        showing only uuid, position, and remark flag.
+        showing only uuid, position, and whether each has a remark.
         """
         locations = get_locations_from_request(database, request.args)
         return jsonify(locations)

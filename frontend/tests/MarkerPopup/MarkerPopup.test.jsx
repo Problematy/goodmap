@@ -10,7 +10,7 @@ jest.mock('../../src/services/http/httpService');
 const location = {
     position: [51.1095, 17.0525],
     uuid: '21231',
-    remark: false,
+    has_remark: false,
 };
 
 const locationData = {
@@ -106,7 +106,7 @@ describe('MarkerPopup with remark', () => {
     });
 
     it('should render marker popup with asterisks when remark is true', () => {
-        const locationWhenRemarkIsTrue = { ...location, remark: true };
+        const locationWhenRemarkIsTrue = { ...location, has_remark: true };
         act(() => {
             render(
                 <MapContainer
@@ -125,7 +125,7 @@ describe('MarkerPopup with remark', () => {
     });
 
     it('should pass custom icon prop when remark is true', () => {
-        const locationWithRemark = { ...location, remark: true };
+        const locationWithRemark = { ...location, has_remark: true };
         act(() => {
             render(
                 <MapContainer

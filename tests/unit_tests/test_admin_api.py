@@ -11,7 +11,7 @@ from tests.unit_tests.conftest import (
 # --- Admin location tests ---
 
 
-@mock.patch("goodmap.admin_api.uuid.uuid4")
+@mock.patch("goodmap.api.admin_api.uuid.uuid4")
 def test_admin_post_location_success(mock_uuid4, test_app):
     from uuid import UUID
 
@@ -34,7 +34,7 @@ def test_admin_post_location_success(mock_uuid4, test_app):
     assert isinstance(resp_json["uuid"], str)
 
 
-@mock.patch("goodmap.admin_api.uuid.uuid4")
+@mock.patch("goodmap.api.admin_api.uuid.uuid4")
 def test_admin_post_location_without_remark_excludes_remark_from_response(mock_uuid4, test_app):
     from uuid import UUID
 
