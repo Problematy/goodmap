@@ -68,7 +68,7 @@ const AutoComplete = ({ onClick }) => {
                             <SuggestionItem
                                 key={item?.place_id}
                                 onClick={() => clickItem(item)}
-                                $secondaryColor={secondaryColor}
+                                $textColor={secondaryColor}
                             >
                                 {item.display_name}
                             </SuggestionItem>
@@ -142,12 +142,12 @@ const SuggestionItem = styled.li`
     padding: 10px 12px;
     border-radius: 6px;
     transition: background-color 0.15s ease;
-    color: ${props => props.$secondaryColor || 'black'};
+    color: ${props => props.$textColor || 'black'};
 
     &:hover {
         background-color: color-mix(
             in srgb,
-            ${props => props.$secondaryColor || 'black'} 10%,
+            ${props => props.$textColor || 'black'} 10%,
             transparent
         );
     }
