@@ -12,6 +12,8 @@ from spectree import BaseFile
 
 from goodmap.data_models.location import Latitude, Longitude
 
+_POSITION_DESCRIPTION = "[latitude, longitude]"
+
 
 class LocationReportRequest(BaseModel):
     """Request model for reporting a location issue."""
@@ -85,7 +87,7 @@ class LocationBasicInfo(BaseModel):
     """One point as returned by the list endpoint: identity and position only."""
 
     uuid: str = Field(..., description="Location UUID")
-    position: tuple[Latitude, Longitude] = Field(..., description="[latitude, longitude]")
+    position: tuple[Latitude, Longitude] = Field(..., description=_POSITION_DESCRIPTION)
     has_remark: bool = Field(
         ..., description="Whether the point has a remark, not the remark itself"
     )
@@ -99,7 +101,7 @@ class ClusterInfo(BaseModel):
     """One entry of the clustered list: either a single point or a cluster of them."""
 
     type: Literal["cluster", "point"] = Field(..., description="Which of the two this entry is")
-    position: tuple[Latitude, Longitude] = Field(..., description="[latitude, longitude]")
+    position: tuple[Latitude, Longitude] = Field(..., description=_POSITION_DESCRIPTION)
     uuid: str | None = Field(None, description="Location UUID; null for a cluster")
     cluster_uuid: str | None = Field(
         None,
@@ -119,7 +121,7 @@ class LocationDetail(BaseModel):
 
     title: str = Field(..., description="The point's name")
     subtitle: str = Field(..., description="The point's type_of_place")
-    position: tuple[Latitude, Longitude] = Field(..., description="[latitude, longitude]")
+    position: tuple[Latitude, Longitude] = Field(..., description=_POSITION_DESCRIPTION)
     data: list[tuple[str, Any]] = Field(
         ..., description="[label, value] pairs for the visible_data fields, translated"
     )
