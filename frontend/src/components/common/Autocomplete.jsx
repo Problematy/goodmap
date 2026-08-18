@@ -57,11 +57,6 @@ const AutoComplete = ({ onClick }) => {
                     placeholder={t('search')}
                     $primaryColor={primaryColor}
                     $secondaryColor={secondaryColor}
-                    style={{
-                        backgroundColor: primaryColor,
-                        borderColor: secondaryColor,
-                        color: secondaryColor,
-                    }}
                 />
             </InputBox>
 
@@ -74,7 +69,6 @@ const AutoComplete = ({ onClick }) => {
                                 key={item?.place_id}
                                 onClick={() => clickItem(item)}
                                 $secondaryColor={secondaryColor}
-                                style={{ color: secondaryColor }}
                             >
                                 {item.display_name}
                             </SuggestionItem>
@@ -112,6 +106,9 @@ const StyledInput = styled.input`
     border-radius: 8px;
     font-size: 1rem;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    background-color: ${props => props.$primaryColor || 'white'};
+    border-color: ${props => props.$secondaryColor || 'black'};
+    color: ${props => props.$secondaryColor || 'black'};
 
     &::placeholder {
         color: ${props => props.$secondaryColor || 'black'};
@@ -145,6 +142,7 @@ const SuggestionItem = styled.li`
     padding: 10px 12px;
     border-radius: 6px;
     transition: background-color 0.15s ease;
+    color: ${props => props.$secondaryColor || 'black'};
 
     &:hover {
         background-color: color-mix(
