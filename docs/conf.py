@@ -58,7 +58,6 @@ autodoc_typehints = "description"
 # Napoleon settings: docstrings in this project are Google style.
 napoleon_google_docstring = True
 napoleon_numpy_docstring = False
-napoleon_include_init_with_doc = True
 
 _ANY_PY_ROLE = "py:.*"
 nitpick_ignore_regex = [
