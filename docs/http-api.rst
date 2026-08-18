@@ -31,8 +31,8 @@ Conventions
 on the ``categories`` in your data source (:doc:`data-source`).
 
 **Writes need a CSRF token.** CSRF protection is on for the whole app, so ``POST``,
-``PUT`` and ``DELETE`` without a token get ``400 {"message": "The CSRF token is
-missing."}``. Send it as an ``X-CSRFToken`` header, from the same session the token was
+``PUT``, ``PATCH`` and ``DELETE`` without a token get ``400 {"message": "The CSRF token
+is missing."}``. Send it as an ``X-CSRFToken`` header, from the same session the token was
 minted in — the token is bound to the session cookie, so the pair travels together.
 Server-rendered pages expose one in a meta tag:
 
@@ -172,10 +172,11 @@ its contents. The schema documents both shapes.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 What *this* instance accepts for a new point: the fields of its location model (minus the
-server-managed ``uuid`` and ``position``), the allowed values per category, the reportable
-issue types, and the photo limits. Since the accepted fields are configured per deployment,
-this is how a client discovers them rather than assuming — it is the same schema the
-built-in suggest form is generated from.
+server-assigned ``uuid`` — ``position`` is required and client-supplied, same as
+``/api/suggest-new-point``), the allowed values per category, the reportable issue types,
+and the photo limits. Since the accepted fields are configured per deployment, this is how
+a client discovers them rather than assuming — it is the same schema the built-in suggest
+form is generated from.
 
 Other read endpoints
 ~~~~~~~~~~~~~~~~~~~~

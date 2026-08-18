@@ -3,7 +3,7 @@ from unittest import mock
 
 import pytest
 
-from goodmap.api.core_api import get_or_none, make_tuple_translation
+from goodmap.api.core_api import get_default_issue_options, get_or_none, make_tuple_translation
 from goodmap.config import GoodmapConfig
 from goodmap.feature_flags import CategoriesHelp
 from goodmap.goodmap import create_app_from_config
@@ -44,11 +44,25 @@ def test_location_schema_endpoint_describes_this_instance(test_app):
         "reported_issue_types",
         "photo",
     }
-    # uuid and position are server-managed and must not be offered as form fields
+    # uuid is server-assigned and must not be offered as a form field; position is
+    # required and client-supplied, same as /api/suggest-new-point, so it must be.
     assert "uuid" not in body["fields"]
-    assert "position" not in body["fields"]
+    assert "position" in body["fields"]
     assert all(set(t) == {"value", "label"} for t in body["reported_issue_types"])
     assert set(body["photo"]) == {"allowed_extensions", "allowed_mime_types", "max_size_bytes"}
+
+
+def test_location_schema_endpoint_falls_back_to_default_issue_options():
+    """An unconfigured reported_issue_types must not undersell what
+    /api/report-location actually accepts (it falls back to the same defaults).
+    """
+    test_app = create_test_app(db_overrides={"reported_issue_types": []})
+    response = test_app.get("/api/location-schema")
+    assert response.status_code == 200
+    data = response.json
+    assert data is not None
+    values = {t["value"] for t in data["reported_issue_types"]}
+    assert values == set(get_default_issue_options())
 
 
 def test_api_doc_index(test_app):

@@ -393,26 +393,25 @@ def core_pages(
         """Get the schema this instance accepts for a new point.
 
         The fields a point may carry are configured per deployment, so there is no
-        fixed payload for /api/suggest-new-point. This returns the accepted fields,
-        the allowed values for each category, the reportable issue types and the
-        photo limits, as the built-in suggest form uses them.
+        fixed payload for /api/suggest-new-point. This returns the accepted fields
+        (excluding only the server-assigned uuid - position is required and must be
+        supplied by the client), the allowed values for each category, the reportable
+        issue types and the photo limits, as the built-in suggest form uses them.
         """
         category_data = database.get_category_data()
         properties = location_model.model_json_schema().get("properties", {})
+        # Matches the fallback /api/report-location applies: an unconfigured
+        # reported_issue_types must not make this endpoint advertise fewer accepted
+        # values than the report endpoint actually accepts.
+        issue_options = database.get_issue_options() or get_default_issue_options()
         return jsonify(
             {
-                "fields": {
-                    name: spec_
-                    for name, spec_ in properties.items()
-                    if name not in ("uuid", "position")
-                },
+                "fields": {name: spec_ for name, spec_ in properties.items() if name != "uuid"},
                 "obligatory_fields": current_app.extensions.get("goodmap", {}).get(
                     "location_obligatory_fields", []
                 ),
                 "categories": category_data.get("categories", {}),
-                "reported_issue_types": [
-                    {"value": t, "label": gettext(t)} for t in database.get_issue_options()
-                ],
+                "reported_issue_types": [{"value": t, "label": gettext(t)} for t in issue_options],
                 "photo": {
                     "allowed_extensions": sorted(photo_attachment_config.allowed_extensions or []),
                     "allowed_mime_types": sorted(photo_attachment_config.allowed_mime_types or []),
