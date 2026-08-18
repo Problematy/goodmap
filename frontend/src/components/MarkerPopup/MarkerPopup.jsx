@@ -132,7 +132,7 @@ export const MarkerPopup = ({ place }) => {
 MarkerPopup.propTypes = {
     place: PropTypes.shape({
         position: PropTypes.arrayOf(PropTypes.number).isRequired,
-        has_remark: PropTypes.bool,
+        has_remark: PropTypes.bool, // eslint-disable-line camelcase -- matches backend API schema property name
         uuid: PropTypes.string.isRequired,
     }).isRequired,
 };

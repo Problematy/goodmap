@@ -24,17 +24,17 @@ describe('MarkerPopup integration with MarkerClusterGroup', () => {
         {
             position: [51.1095, 17.0525],
             uuid: 'location-1',
-            has_remark: false,
+            has_remark: false, // eslint-disable-line camelcase
         },
         {
             position: [51.10655, 17.0555],
             uuid: 'location-2',
-            has_remark: true,
+            has_remark: true, // eslint-disable-line camelcase
         },
         {
             position: [51.1085, 17.0535],
             uuid: 'location-3',
-            has_remark: false,
+            has_remark: false, // eslint-disable-line camelcase
         },
     ];
 
