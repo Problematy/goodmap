@@ -62,7 +62,10 @@ napoleon_numpy_docstring = False
 _ANY_PY_ROLE = "py:.*"
 nitpick_ignore_regex = [
     (_ANY_PY_ROLE, r"ConfigDict|callable"),
-    (_ANY_PY_ROLE, r"(annotated_types|pymongo)\..*"),
+    (_ANY_PY_ROLE, r"(annotated_types|pymongo|spectree)\..*"),
+    # RootModel generics: pydantic's inventory has RootModel but not RootModel[...]
+    # or RootModelRootType, so the parametrised bases autodoc prints cannot resolve.
+    (_ANY_PY_ROLE, r"pydantic\.root_model\..*"),
     (_ANY_PY_ROLE, r"[gl]e=-?\d+"),
     (
         _ANY_PY_ROLE,

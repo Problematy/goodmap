@@ -5,9 +5,10 @@ These models are used by Spectree for automatic OpenAPI schema generation
 and request/response validation.
 """
 
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, RootModel
+from spectree import BaseFile
 
 
 class LocationReportRequest(BaseModel):
@@ -84,12 +85,176 @@ class SuccessResponse(BaseModel):
     message: str = Field(..., description="Success message")
 
 
-class ClusterInfo(BaseModel):
-    """Cluster information for map display."""
+class LocationBasicInfo(BaseModel):
+    """One point as returned by the list endpoint: identity and position only."""
 
-    uuid: str | None = Field(None, description="Location UUID (None for multi-point clusters)")
-    position: tuple[float, float] = Field(..., description="Cluster center coordinates")
-    count: int = Field(..., description="Number of locations in cluster")
+    uuid: str = Field(..., description="Location UUID")
+    position: tuple[float, float] = Field(..., description="[latitude, longitude]")
+    remark: bool = Field(..., description="Whether the point has a remark, not the remark itself")
+
+
+class LocationList(RootModel[list[LocationBasicInfo]]):
+    """List of points, each with identity and position only."""
+
+
+class ClusterInfo(BaseModel):
+    """One entry of the clustered list: either a single point or a cluster of them."""
+
+    type: Literal["cluster", "point"] = Field(..., description="Which of the two this entry is")
+    position: tuple[float, float] = Field(..., description="[latitude, longitude]")
+    uuid: str | None = Field(None, description="Location UUID; null for a cluster")
+    cluster_uuid: str | None = Field(
+        None,
+        description="Render key for a cluster, regenerated per request; null for a point",
+    )
+    cluster_count: int | None = Field(
+        None, description="Number of points the cluster stands for; null for a point"
+    )
+
+
+class ClusterList(RootModel[list[ClusterInfo]]):
+    """Points and clusters in one list, told apart by ``type``."""
+
+
+class LocationDetail(BaseModel):
+    """One point formatted for its map popup."""
+
+    title: str = Field(..., description="The point's name")
+    subtitle: str = Field(..., description="The point's type_of_place")
+    position: tuple[float, float] = Field(..., description="[latitude, longitude]")
+    data: list[tuple[str, Any]] = Field(
+        ..., description="[label, value] pairs for the visible_data fields, translated"
+    )
+    metadata: dict[str, Any] = Field(..., description="The meta_data fields")
+
+
+class CategoriesWithHelp(BaseModel):
+    """Category names plus help text, returned when CATEGORIES_HELP is on."""
+
+    categories: list[tuple[str, str]] = Field(..., description="[key, translated label] pairs")
+    categories_help: list[dict[str, str]] = Field(..., description="Help text per category")
+
+
+class CategoriesResponse(RootModel[CategoriesWithHelp | list[tuple[str, str]]]):
+    """Bare [key, label] pairs, or an object with help text when CATEGORIES_HELP is on."""
+
+
+class CategoryFull(BaseModel):
+    """One category with everything needed to render its filter control."""
+
+    key: str = Field(..., description="Query-parameter name to filter by")
+    name: str = Field(..., description="Translated label")
+    options: list[tuple[str, str]] = Field(..., description="[value, translated label] pairs")
+    default_checked: list[str] = Field(..., description="Values checked on first load")
+    filter_mode: Literal["or", "and", "exclusive", "boolean", "threshold"] = Field(
+        ..., description="Which control to draw and how selections combine"
+    )
+    options_help: list[dict[str, str]] | None = Field(
+        None, description="Present only when the CATEGORIES_HELP feature flag is on"
+    )
+
+
+class CategoriesFullResponse(BaseModel):
+    """Every category with its options, defaults and filter mode."""
+
+    categories: list[CategoryFull] = Field(..., description="One entry per category")
+    categories_help: list[dict[str, str]] | None = Field(
+        None, description="Present only when the CATEGORIES_HELP feature flag is on"
+    )
+
+
+class CategoryOptionsWithHelp(BaseModel):
+    """A category's options plus help text, returned when CATEGORIES_HELP is on."""
+
+    categories_options: list[tuple[str, str]] = Field(
+        ..., description="[value, translated label] pairs"
+    )
+    categories_options_help: list[dict[str, str]] = Field(..., description="Help text per option")
+
+
+class CategoryOptionsResponse(RootModel[CategoryOptionsWithHelp | list[tuple[str, str]]]):
+    """Bare [value, label] pairs, or an object with help text when CATEGORIES_HELP is on."""
+
+
+class LocationQueryParams(BaseModel):
+    """Non-filter query parameters of the location list endpoints.
+
+    Filter parameters are *not* listed here: they are named after the categories in the
+    deployment's own data source, so they differ per instance. Call
+    ``GET /api/categories-full`` to discover the ones this instance accepts.
+    """
+
+    lat: float | None = Field(None, description="Sort by distance from this latitude; requires lon")
+    lon: float | None = Field(
+        None, description="Sort by distance from this longitude; requires lat"
+    )
+    limit: int | None = Field(
+        None, description="Return at most this many points, applied after sorting"
+    )
+
+
+class SuggestNewPointForm(BaseModel):
+    """The multipart/form-data body of a new-point suggestion."""
+
+    location: str = Field(
+        ...,
+        description=(
+            "The whole point as one JSON object, not one form field per property. "
+            "Its accepted fields come from this instance's location_obligatory_fields "
+            "and categories - call GET /api/location-schema to discover them. "
+            "Omit uuid; the server assigns one."
+        ),
+    )
+    photo: BaseFile | None = Field(None, description="Optional photo, subject to ATTACHMENT limits")
+
+
+class IssueType(BaseModel):
+    """One reportable issue type, ready to render in a form."""
+
+    value: str = Field(..., description="Value to send to /api/report-location")
+    label: str = Field(..., description="Translated label")
+
+
+class PhotoLimits(BaseModel):
+    """What a photo attachment may be, from the ATTACHMENT config."""
+
+    allowed_extensions: list[str] = Field(..., description="Permitted file extensions")
+    allowed_mime_types: list[str] = Field(..., description="Permitted MIME types")
+    max_size_bytes: int = Field(..., description="Largest permitted photo, in bytes")
+
+
+class LocationSchemaResponse(BaseModel):
+    """What this instance accepts for a new point - its schema, not a fixed contract."""
+
+    fields: dict[str, Any] = Field(
+        ...,
+        description=(
+            "JSON Schema property per accepted field, from the instance's location model, "
+            "excluding the server-managed uuid and position"
+        ),
+    )
+    obligatory_fields: list[Any] = Field(
+        ..., description="[name, type] pairs every point must carry"
+    )
+    categories: dict[str, list[str]] = Field(
+        ..., description="Filterable fields and their allowed values"
+    )
+    reported_issue_types: list[IssueType] = Field(
+        ..., description="Accepted values for /api/report-location"
+    )
+    photo: PhotoLimits = Field(..., description="Attachment limits for the photo part")
+
+
+class LanguageInfo(BaseModel):
+    """One interface language."""
+
+    name: str = Field(..., description="Language name in that language")
+    flag: str = Field(..., description="Country code used to pick the flag icon")
+    country: str = Field(..., description="Country code")
+
+
+class LanguagesResponse(RootModel[dict[str, LanguageInfo]]):
+    """Interface languages, keyed by language code."""
 
 
 # Note: Full location model is dynamically created from LocationBase

@@ -523,6 +523,74 @@ def _make_test_app_config(feature_flags: Any = None, extra_data: Any = None) -> 
     )
 
 
+def test_csrf_protect_is_initialized_exactly_once():
+    """platzky already initializes CSRFProtect; goodmap must not add a second hook."""
+    config = _make_test_app_config(extra_data={"categories": {}})
+    app = goodmap.create_app_from_config(config)
+    hooks = [f.__name__ for f in app.before_request_funcs.get(None, [])]
+    assert hooks.count("csrf_protect") == 1
+
+
+def test_csrf_failure_returns_json_error():
+    """A rejected write gets the API's JSON error shape, not an HTML error page."""
+    config = _make_test_app_config(extra_data={"categories": {}, "data": []})
+    app = goodmap.create_app_from_config(config)
+    client = app.test_client()
+
+    response = client.post("/api/report-location", json={"id": "x", "description": "y"})
+
+    assert response.status_code == 400
+    assert response.content_type.startswith("application/json")
+    assert response.json == {"message": "The CSRF token is missing."}
+
+
+def test_csrf_accepts_scripted_https_caller_without_referer():
+    """A valid token from the caller's own session works over https with no Referer."""
+    import re
+
+    config = _make_test_app_config(extra_data={"categories": {}, "data": []})
+    app = goodmap.create_app_from_config(config)
+    client = app.test_client()
+
+    page = client.get("/map", base_url="https://localhost")
+    token_match = re.search(r'name="csrf-token" content="([^"]+)"', page.data.decode("utf-8"))
+    assert token_match is not None
+
+    response = client.post(
+        "/api/report-location",
+        json={"id": "x", "description": "y"},
+        headers={"X-CSRFToken": token_match.group(1)},
+        base_url="https://localhost",
+    )
+
+    # Past the CSRF layer: the handler itself may reject the payload, but not with
+    # a CSRF message and never as HTML.
+    assert response.content_type.startswith("application/json")
+    assert "CSRF" not in response.get_data(as_text=True)
+
+
+def test_csrf_token_is_session_scoped():
+    """The token alone is not enough - it must be paired with the session it was minted in."""
+    import re
+
+    config = _make_test_app_config(extra_data={"categories": {}, "data": []})
+    app = goodmap.create_app_from_config(config)
+    assert app.config["WTF_CSRF_TIME_LIMIT"] is None
+
+    victim = app.test_client()
+    page = victim.get("/map")
+    token = re.search(r'name="csrf-token" content="([^"]+)"', page.data.decode("utf-8")).group(1)
+
+    attacker = app.test_client()
+    response = attacker.post(
+        "/api/report-location",
+        json={"id": "x", "description": "y"},
+        headers={"X-CSRFToken": token},
+    )
+    assert response.status_code == 400
+    assert response.json == {"message": "The CSRF session token is missing."}
+
+
 def test_admin_route_disabled():
     """Should redirect to / when admin panel feature flag is disabled."""
     config = _make_test_app_config()

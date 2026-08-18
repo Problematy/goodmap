@@ -7,7 +7,7 @@ from typing import Any
 import deprecation
 import numpy
 import pysupercluster
-from flask import Blueprint, jsonify, make_response, request
+from flask import Blueprint, current_app, jsonify, make_response, request
 from flask_babel import gettext
 from platzky import FeatureFlagSet
 from platzky.attachment import create_attachment
@@ -17,11 +17,22 @@ from spectree import Response, SpecTree
 from werkzeug.exceptions import HTTPException
 
 from goodmap.api_models import (
+    CategoriesFullResponse,
+    CategoriesResponse,
+    CategoryOptionsResponse,
+    ClusteringParams,
+    ClusterList,
     CSRFTokenResponse,
     ErrorResponse,
+    LanguagesResponse,
+    LocationDetail,
+    LocationList,
+    LocationQueryParams,
     LocationReportRequest,
     LocationReportResponse,
+    LocationSchemaResponse,
     SuccessResponse,
+    SuggestNewPointForm,
     VersionResponse,
 )
 from goodmap.clustering import (
@@ -137,12 +148,20 @@ def core_pages(
         title="Goodmap API",
         version="0.1",
         path="doc",
-        annotations=True,
+        # annotations=False: the handlers take no model-annotated parameters, and with
+        # it on spectree refuses skip_validation, which several routes below rely on.
+        annotations=False,
         naming_strategy=_clean_model_name,  # Use clean model names without hash
     )
 
     @core_api_blueprint.route("/suggest-new-point", methods=["POST"])
-    @spec.validate(resp=Response(HTTP_200=SuccessResponse, HTTP_400=ErrorResponse))
+    # skip_validation: the handler returns its own 400 for a missing or malformed
+    # `location` field; letting spectree validate would turn that into a 422.
+    @spec.validate(
+        form=SuggestNewPointForm,
+        resp=Response(HTTP_200=SuccessResponse, HTTP_400=ErrorResponse),
+        skip_validation=True,
+    )
     def suggest_new_point():
         """Suggest new location for review.
 
@@ -268,7 +287,11 @@ def core_pages(
         return make_response(jsonify({"message": gettext("Location reported")}), 200)
 
     @core_api_blueprint.route("/locations", methods=["GET"])
-    @spec.validate()
+    # skip_validation: this endpoint ignores invalid and unknown query parameters by
+    # design, so spectree must document them without rejecting anything.
+    @spec.validate(
+        query=LocationQueryParams, resp=Response(HTTP_200=LocationList), skip_validation=True
+    )
     def get_locations():
         """Get list of locations with basic info.
 
@@ -279,7 +302,13 @@ def core_pages(
         return jsonify(locations)
 
     @core_api_blueprint.route("/locations-clustered", methods=["GET"])
-    @spec.validate(resp=Response(HTTP_400=ErrorResponse))
+    # skip_validation: the handler owns zoom validation and returns 400 with a log line;
+    # letting spectree validate would turn that into a 422 and skip the log.
+    @spec.validate(
+        query=ClusteringParams,
+        resp=Response(HTTP_200=ClusterList, HTTP_400=ErrorResponse),
+        skip_validation=True,
+    )
     def get_locations_clustered():
         """Get clustered locations for map display.
 
@@ -329,7 +358,7 @@ def core_pages(
             return make_response(jsonify({"message": "An error occurred during clustering"}), 500)
 
     @core_api_blueprint.route("/location/<uuid:location_id>", methods=["GET"])
-    @spec.validate(resp=Response(HTTP_404=ErrorResponse))
+    @spec.validate(resp=Response(HTTP_200=LocationDetail, HTTP_404=ErrorResponse))
     def get_location(location_id):
         """Get detailed information for a single location.
 
@@ -376,8 +405,42 @@ def core_pages(
         csrf_token = csrf_generator()
         return {"csrf_token": csrf_token}
 
+    @core_api_blueprint.route("/location-schema", methods=["GET"])
+    @spec.validate(resp=Response(HTTP_200=LocationSchemaResponse))
+    def get_location_schema():
+        """Get the schema this instance accepts for a new point.
+
+        The fields a point may carry are configured per deployment, so there is no
+        fixed payload for /api/suggest-new-point. This returns the accepted fields,
+        the allowed values for each category, the reportable issue types and the
+        photo limits, as the built-in suggest form uses them.
+        """
+        category_data = database.get_category_data()
+        properties = location_model.model_json_schema().get("properties", {})
+        return jsonify(
+            {
+                "fields": {
+                    name: spec_
+                    for name, spec_ in properties.items()
+                    if name not in ("uuid", "position")
+                },
+                "obligatory_fields": current_app.extensions.get("goodmap", {}).get(
+                    "location_obligatory_fields", []
+                ),
+                "categories": category_data.get("categories", {}),
+                "reported_issue_types": [
+                    {"value": t, "label": gettext(t)} for t in database.get_issue_options()
+                ],
+                "photo": {
+                    "allowed_extensions": sorted(photo_attachment_config.allowed_extensions or []),
+                    "allowed_mime_types": sorted(photo_attachment_config.allowed_mime_types or []),
+                    "max_size_bytes": photo_attachment_config.max_size,
+                },
+            }
+        )
+
     @core_api_blueprint.route("/categories", methods=["GET"])
-    @spec.validate()
+    @spec.validate(resp=Response(HTTP_200=CategoriesResponse))
     def get_categories():
         """Get all available location categories.
 
@@ -400,7 +463,7 @@ def core_pages(
         return jsonify({"categories": categories, "categories_help": proper_categories_help})
 
     @core_api_blueprint.route("/categories-full", methods=["GET"])
-    @spec.validate()
+    @spec.validate(resp=Response(HTTP_200=CategoriesFullResponse))
     def get_categories_full():
         """Get all categories with their subcategory options in a single request.
 
@@ -450,7 +513,7 @@ def core_pages(
         return jsonify(response)
 
     @core_api_blueprint.route("/languages", methods=["GET"])
-    @spec.validate()
+    @spec.validate(resp=Response(HTTP_200=LanguagesResponse))
     def get_languages():
         """Get all available interface languages.
 
@@ -459,7 +522,7 @@ def core_pages(
         return jsonify(languages)
 
     @core_api_blueprint.route("/category/<category_type>", methods=["GET"])
-    @spec.validate()
+    @spec.validate(resp=Response(HTTP_200=CategoryOptionsResponse))
     def get_category_types(category_type):
         """Get all available options for a specific category.
 

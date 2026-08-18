@@ -6,9 +6,9 @@ import logging
 import os
 from typing import Any
 
-from flask import Blueprint, redirect, render_template, session
+from flask import Blueprint, jsonify, redirect, render_template, session
 from flask_babel import gettext
-from flask_wtf.csrf import CSRFProtect, generate_csrf
+from flask_wtf.csrf import CSRFError, generate_csrf
 from platzky import platzky
 from platzky.config import languages_dict
 from platzky.models import CmsModule
@@ -231,7 +231,23 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
 
     app.config["PLUGIN_MANIFEST"] = plugin_manifest
 
-    CSRFProtect(app)
+    # CSRF protection itself is initialized by platzky (create_app_from_config runs
+    # CSRFProtect on the engine); initializing it here again would register a second
+    # before_request hook and break any future exempt() registered on one instance only.
+    #
+    # The token is bound to the session, which is the actual protection. The extra
+    # referrer check flask-wtf adds on https would reject scripted API callers that
+    # send a valid token but no Referer header, so it is off.
+    app.config["WTF_CSRF_SSL_STRICT"] = False
+    # The map page is typically left open well past the default 3600s, and the frontend
+    # never refreshes the meta-tag token - so scope the token to the session instead of
+    # rejecting submissions from any tab older than an hour.
+    app.config["WTF_CSRF_TIME_LIMIT"] = None
+
+    @app.errorhandler(CSRFError)
+    def handle_csrf_error(error):
+        """Return CSRF failures in the API's JSON error shape instead of an HTML page."""
+        return jsonify({"message": error.description}), 400
 
     photo_attachment_config = config.attachment
 

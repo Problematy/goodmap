@@ -18,8 +18,10 @@ A running instance also serves its own generated OpenAPI schema:
    * - ``/api/doc/openapi.json``
      - raw OpenAPI document
 
-Use this page for the semantics and the schema endpoint for the exact shapes of the
-release you are running.
+The schema is generated from the code, so it always describes the release you are
+running: every endpoint's parameters, status codes and response shapes. **Use it as the
+reference.** This page covers the parts a schema cannot state — what the endpoints mean,
+how filtering behaves, and which parameters depend on your own data.
 
 Conventions
 -----------
@@ -29,8 +31,9 @@ Conventions
 on the ``categories`` in your data source (:doc:`data-source`).
 
 **Writes need a CSRF token.** CSRF protection is on for the whole app, so ``POST``,
-``PUT`` and ``DELETE`` without a token get ``400 The CSRF token is missing``. Send it as
-an ``X-CSRFToken`` header. Server-rendered pages expose one in a meta tag:
+``PUT`` and ``DELETE`` without a token get ``400 {"message": "The CSRF token is
+missing."}``. Send it as an ``X-CSRFToken`` header, from the same session the token was
+minted in — the token is bound to the session cookie, so the pair travels together. Server-rendered pages expose one in a meta tag:
 
 .. code-block:: html
 
@@ -84,17 +87,8 @@ Query parameters:
 
    curl 'http://localhost:5000/api/locations?accessible_by=bikes&lat=51.10&lon=17.05&limit=5'
 
-.. code-block:: json
-
-   [
-     {
-       "uuid": "7c3d5e7f-9a1b-4c3d-8e5f-7a9b1c3d5e7f",
-       "position": [50.0397, 19.906],
-       "remark": false
-     }
-   ]
-
-``remark`` is a **boolean** — whether the point has a remark, not the remark itself.
+Each point comes back as ``uuid``, ``position`` and ``remark`` — where ``remark`` is a
+**boolean**, whether the point has one, not its text.
 
 Invalid or unknown query parameters are ignored rather than rejected.
 
@@ -108,27 +102,8 @@ level. This is what the frontend calls instead of ``/api/locations`` when
 Takes every parameter of :ref:`api-locations`, plus ``zoom`` (integer, **0–16**, default
 ``7``). A ``zoom`` outside that range is a ``400``.
 
-.. code-block:: json
-
-   [
-     {
-       "type": "cluster",
-       "position": [50.1026, 19.8240],
-       "uuid": null,
-       "cluster_uuid": "34515392-7913-47be-a5b4-0c4b5247ad4c",
-       "cluster_count": 2
-     },
-     {
-       "type": "point",
-       "position": [50.833, 15.917],
-       "uuid": "9b1c3d5e-7f9a-4b1c-8d5e-9f1a3b5c7d9e",
-       "cluster_uuid": null,
-       "cluster_count": null
-     }
-   ]
-
-Both kinds come back in one list, told apart by ``type``. A ``"point"`` carries a real
-``uuid`` you can pass to :ref:`api-location-detail`; a ``"cluster"`` carries a
+Points and clusters come back in one list, told apart by ``type``. A ``"point"`` carries
+a real ``uuid`` you can pass to :ref:`api-location-detail`; a ``"cluster"`` carries a
 freshly-generated ``cluster_uuid`` (not stable across requests — it is a render key, not
 an identifier) and the number of points it stands for. ``position`` is
 ``[latitude, longitude]``, as everywhere else.
@@ -169,20 +144,6 @@ well-formed UUID that does not exist also gives ``404 {"message": "Location not 
 Every category with its options, defaults and filter mode — everything needed to render
 the filter panel in one request.
 
-.. code-block:: json
-
-   {
-     "categories": [
-       {
-         "key": "accessible_by",
-         "name": "accessible_by",
-         "options": [["bikes", "bikes"], ["cars", "cars"]],
-         "default_checked": [],
-         "filter_mode": "or"
-       }
-     ]
-   }
-
 ``key`` is the query-parameter name to filter by; ``name`` is its translated label.
 ``options`` are ``[value, translated label]`` pairs — send the *value*.
 ``filter_mode`` tells you which control to draw: checkboxes for ``or``/``and``, radio
@@ -192,41 +153,32 @@ buttons for ``exclusive``/``threshold``, a single checkbox for ``boolean``
 With ``CATEGORIES_HELP`` on, each category also carries ``options_help``, and the response
 gains a top-level ``categories_help`` — both lists of ``{option: help text}`` objects.
 
-Prefer this endpoint over the two below, which exist for older clients and cost one
-request per category.
+Prefer this endpoint over ``GET /api/categories`` and ``GET /api/category/<name>``, which
+exist for older clients and cost one request per category. Both share one trap worth
+knowing: with ``CATEGORIES_HELP`` **off** they return a bare list of pairs, and with it
+**on** they return an object instead — the response *type* changes with the flag, not just
+its contents. The schema documents both shapes.
 
-``GET /api/categories``
-~~~~~~~~~~~~~~~~~~~~~~~
+.. _api-location-schema:
 
-Category names only, as ``[key, translated name]`` pairs. With ``CATEGORIES_HELP`` on,
-returns ``{"categories": [...], "categories_help": [...]}`` instead — note the response
-*type* changes with the flag.
-
-``GET /api/category/<name>``
+``GET /api/location-schema``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The options for one category, as ``[value, translated label]`` pairs. With
-``CATEGORIES_HELP`` on, returns
-``{"categories_options": [...], "categories_options_help": [...]}``.
+What *this* instance accepts for a new point: the fields of its location model (minus the
+server-managed ``uuid`` and ``position``), the allowed values per category, the reportable
+issue types, and the photo limits. Since the accepted fields are configured per deployment,
+this is how a client discovers them rather than assuming — it is the same schema the
+built-in suggest form is generated from.
 
-``GET /api/languages``
-~~~~~~~~~~~~~~~~~~~~~~
-
-The configured interface languages, exactly as given in ``LANGUAGES``:
-
-.. code-block:: json
-
-   {"en": {"name": "English", "flag": "gb", "country": "GB"}}
-
-``GET /api/version``
+Other read endpoints
 ~~~~~~~~~~~~~~~~~~~~
 
-.. code-block:: json
+``GET /api/languages`` returns the configured languages keyed by language code, exactly as
+given in ``LANGUAGES``.
 
-   {"backend": "<installed-version>"}
-
-The installed package version, normalised to PEP 440 — a release published as
-``2.0.0-alpha.5`` reports as ``2.0.0a5``. Useful as a health check.
+``GET /api/version`` returns the installed package version normalised to PEP 440, so a
+release published as ``2.0.0-alpha.5`` reports as ``2.0.0a5``. It needs no data source,
+which makes it the endpoint to point a load balancer at.
 
 Submissions
 -----------
@@ -244,7 +196,13 @@ the map data.
 
 **The request must be ``multipart/form-data``.** The point goes in a single ``location``
 form field as a JSON object — not as one form field per property — and the optional photo
-goes in a ``photo`` file part. Send the point without a ``uuid``; the server assigns one:
+goes in a ``photo`` file part. Send the point without a ``uuid``; the server assigns one.
+
+That envelope is the same everywhere. **What goes inside the JSON object is not** — the
+accepted fields are whatever *your* data source declares in ``location_obligatory_fields``
+and ``categories`` (:doc:`data-source`), so there is no universal payload to copy. The
+fields below are the ones the :doc:`quickstart` map happens to declare; substitute your
+own:
 
 .. code-block:: bash
 
@@ -252,6 +210,9 @@ goes in a ``photo`` file part. Send the point without a ``uuid``; the server ass
      -H "X-CSRFToken: $TOKEN" \
      -F 'location={"name": "Nowy", "position": [51.11, 17.03], "type_of_place": "small bridge", "accessible_by": ["bikes"], "is_free": "true"}' \
      -F 'photo=@bridge.jpg'
+
+To find the fields a given instance wants, call :ref:`api-location-schema` — the same
+schema the built-in suggest form is generated from.
 
 .. note::
 

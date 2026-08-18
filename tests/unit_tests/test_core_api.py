@@ -33,6 +33,24 @@ def test_version_endpoint_returns_version(mock_returning_version, test_app):
     assert response.json == {"backend": "0.1.2"}
 
 
+def test_location_schema_endpoint_describes_this_instance(test_app):
+    response = test_app.get("/api/location-schema")
+    assert response.status_code == 200
+    body = response.json
+    assert set(body) == {
+        "fields",
+        "obligatory_fields",
+        "categories",
+        "reported_issue_types",
+        "photo",
+    }
+    # uuid and position are server-managed and must not be offered as form fields
+    assert "uuid" not in body["fields"]
+    assert "position" not in body["fields"]
+    assert all(set(t) == {"value", "label"} for t in body["reported_issue_types"])
+    assert set(body["photo"]) == {"allowed_extensions", "allowed_mime_types", "max_size_bytes"}
+
+
 def test_csrf_token_endpoint_returns_token(test_app):
     response = test_app.get("/api/generate-csrf-token")
     assert response.status_code == 200
