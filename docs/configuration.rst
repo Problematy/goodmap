@@ -232,7 +232,7 @@ can read flags Goodmap itself does not know about.
 .. _config-plugins:
 
 Plugins configuration
--------
+---------------------
 
 **Plugins are not configured in config file.** Every plugin — Goodmap's map overlays and
 marker-field renderers, and platzky's notifiers alike — is activated in the **data

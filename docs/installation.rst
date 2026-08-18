@@ -20,17 +20,26 @@ gitignored build output, so a clone additionally needs **Node.js and npm** to bu
 Installing the package
 ----------------------
 
-Goodmap is published on PyPI as `goodmap <https://pypi.org/project/goodmap/>`_:
+Goodmap is published on PyPI as `goodmap <https://pypi.org/project/goodmap/>`_. Use
+whichever tool the project that will host your map already uses:
 
-.. code-block:: bash
+.. list-table::
+   :header-rows: 1
+   :widths: 20 40 40
 
-   pip install goodmap
-
-Or with Poetry, in the project that will host your map:
-
-.. code-block:: bash
-
-   poetry add goodmap
+   * - Tool
+     - Command
+     - Notes
+   * - pip
+     - ``pip install goodmap``
+     - Installs into the active environment. Create a virtualenv first.
+   * - uv
+     - ``uv add goodmap``
+     - Adds it to ``pyproject.toml`` and the lockfile. Use ``uv pip install goodmap``
+       to install into an environment without touching the manifest.
+   * - Poetry
+     - ``poetry add goodmap``
+     - Adds it to ``pyproject.toml`` and the lockfile.
 
 Checking it worked
 ------------------

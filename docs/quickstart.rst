@@ -4,8 +4,8 @@ Quickstart
 Build a working map from an empty directory. You will write two files — a data source
 and a config — and run one command.
 
-The example is a map of climbing crags, filterable by rock type and by whether the
-approach is wheelchair-accessible.
+The example is a map of bridges in Wrocław, filterable by who may cross them and by
+whether they are free to use.
 
 Before you start, install Goodmap (:doc:`installation`):
 
@@ -26,45 +26,47 @@ Create ``data.json``. This one file holds both the points and the map's schema:
      "map": {
        "data": [
          {
-           "uuid": "5f9e1a3c-2b4d-4e6f-8a91-0c2d4e6f8a91",
-           "name": "Kobylany",
-           "position": [50.1655, 19.7420],
-           "type_of_place": "limestone crag",
-           "rock": "limestone",
-           "wheelchair_approach": "false"
+           "uuid": "9264286a-5d33-4e38-ab11-c8e179a7754a",
+           "name": "Grunwaldzki",
+           "position": [51.109444, 17.0525],
+           "type_of_place": "big bridge",
+           "accessible_by": ["pedestrians", "cars"],
+           "is_free": "true"
          },
          {
-           "uuid": "7c3d5e7f-9a1b-4c3d-8e5f-7a9b1c3d5e7f",
-           "name": "Zakrzówek",
-           "position": [50.0397, 19.9060],
-           "type_of_place": "limestone crag",
-           "rock": "limestone",
-           "wheelchair_approach": "true"
+           "uuid": "c8ecf476-5968-40da-ba5c-e810ad9ff203",
+           "name": "Zwierzyniecka",
+           "position": [51.108056, 17.07],
+           "type_of_place": "small bridge",
+           "accessible_by": ["bikes", "pedestrians"],
+           "is_free": "true"
          },
          {
-           "uuid": "9b1c3d5e-7f9a-4b1c-8d5e-9f1a3b5c7d9e",
-           "name": "Rudawy Janowickie",
-           "position": [50.8330, 15.9170],
-           "type_of_place": "granite crag",
-           "rock": "granite",
-           "wheelchair_approach": "false"
+           "uuid": "1a8f9a2e-4b6d-4a1a-9a8e-2f6c7d0b3e9a",
+           "name": "Milenijny",
+           "position": [51.133692, 16.993103],
+           "type_of_place": "big bridge",
+           "accessible_by": ["cars"],
+           "is_free": "false"
          }
        ],
        "location_obligatory_fields": [
          ["name", "str"],
          ["type_of_place", "str"],
-         ["rock", "str"]
+         ["accessible_by", "list"],
+         ["is_free", "str"]
        ],
        "categories": {
-         "rock": ["limestone", "granite", "sandstone"],
-         "wheelchair_approach": ["true", "false"]
+         "accessible_by": ["bikes", "cars", "pedestrians"],
+         "type_of_place": ["big bridge", "small bridge"],
+         "is_free": ["true", "false"]
        },
        "categories_filter_mode": {
-         "wheelchair_approach": "boolean"
+         "is_free": "boolean"
        },
-       "visible_data": ["rock", "wheelchair_approach"],
+       "visible_data": ["accessible_by", "type_of_place", "is_free"],
        "meta_data": ["uuid"],
-       "reported_issue_types": ["overgrown", "access banned", "other"]
+       "reported_issue_types": ["under construction", "has a hole", "other"]
      },
      "site_content": {
        "home_page_path": "/map",
@@ -93,8 +95,8 @@ What each part does:
 
 ``categories_filter_mode``
    How multiple checked values in one category combine. ``boolean`` renders
-   ``wheelchair_approach`` as a single "accessible only" checkbox instead of a
-   true/false pair. Five modes are available — see :ref:`categories-filter-mode`.
+   ``is_free`` as a single "free only" checkbox instead of a true/false pair. Five modes
+   are available — see :ref:`categories-filter-mode`.
 
 ``visible_data``
    Which fields show inside the marker popup. Fields not listed here are never sent to
@@ -114,7 +116,7 @@ Create ``config.yml`` next to it:
 
 .. code-block:: yaml
 
-   APP_NAME: Crags
+   APP_NAME: Bridges in Wrocław
    SECRET_KEY: change-me-before-production
    USE_WWW: False
 
@@ -155,9 +157,9 @@ behaviour on and off — every flag is listed in :ref:`config-feature-flags`.
 
    flask --app "goodmap.goodmap:create_app(config_path='config.yml')" --debug run
 
-Open http://localhost:5000/ — three crags on a map, a rock-type filter, and an
-"accessible only" checkbox in the left panel. Clicking a marker shows its rock type and
-approach.
+Open http://localhost:5000/ — three bridges on a map, an "accessible by" filter, and a
+"free only" checkbox in the left panel. Clicking a marker shows who may cross it and
+whether it is free.
 
 .. note::
 
@@ -173,21 +175,21 @@ check several boxes:
 .. code-block:: bash
 
    curl 'http://localhost:5000/api/locations'
-   curl 'http://localhost:5000/api/locations?rock=granite'
-   curl 'http://localhost:5000/api/locations?rock=granite&rock=limestone'
+   curl 'http://localhost:5000/api/locations?accessible_by=bikes'
+   curl 'http://localhost:5000/api/locations?accessible_by=bikes&accessible_by=cars'
 
 ``/api/locations`` returns only identity and position — the popup contents are a second
 call, so a map with thousands of points stays cheap:
 
 .. code-block:: bash
 
-   curl 'http://localhost:5000/api/location/7c3d5e7f-9a1b-4c3d-8e5f-7a9b1c3d5e7f'
+   curl 'http://localhost:5000/api/location/c8ecf476-5968-40da-ba5c-e810ad9ff203'
 
 Sorting by distance and capping the result set, for a "near me" view:
 
 .. code-block:: bash
 
-   curl 'http://localhost:5000/api/locations?lat=50.06&lon=19.94&limit=5'
+   curl 'http://localhost:5000/api/locations?lat=51.11&lon=17.03&limit=5'
 
 Every endpoint is documented in :doc:`http-api`, and the running app serves its own
 OpenAPI schema at http://localhost:5000/api/doc.
@@ -195,7 +197,7 @@ OpenAPI schema at http://localhost:5000/api/doc.
 5. Change something
 -------------------
 
-Add ``sandstone`` crags, or add a new filterable field:
+Add another bridge, or add a new filterable field:
 
 1. Add the field to a point in ``data.json``.
 2. Add it to ``categories`` with its allowed values, so it becomes filterable.

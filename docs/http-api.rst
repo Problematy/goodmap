@@ -143,15 +143,15 @@ One point, formatted for its popup.
 .. code-block:: json
 
    {
-     "title": "Zakrzówek",
-     "subtitle": "limestone crag",
-     "position": [50.0397, 19.906],
+     "title": "Zwierzyniecka",
+     "subtitle": "small bridge",
+     "position": [51.108056, 17.07],
      "data": [
-       ["rock", "limestone"],
-       ["wheelchair_approach", "true"]
+       ["accessible_by", ["bikes", "pedestrians"]],
+       ["is_free", "true"]
      ],
      "metadata": {
-       "uuid": "7c3d5e7f-9a1b-4c3d-8e5f-7a9b1c3d5e7f"
+       "uuid": "c8ecf476-5968-40da-ba5c-e810ad9ff203"
      }
    }
 
@@ -174,9 +174,9 @@ the filter panel in one request.
    {
      "categories": [
        {
-         "key": "rock",
-         "name": "rock",
-         "options": [["limestone", "limestone"], ["granite", "granite"]],
+         "key": "accessible_by",
+         "name": "accessible_by",
+         "options": [["bikes", "bikes"], ["cars", "cars"]],
          "default_checked": [],
          "filter_mode": "or"
        }
@@ -250,8 +250,8 @@ goes in a ``photo`` file part. Send the point without a ``uuid``; the server ass
 
    curl -X POST http://localhost:5000/api/suggest-new-point \
      -H "X-CSRFToken: $TOKEN" \
-     -F 'location={"name": "Nowy", "position": [50.1, 19.9], "type_of_place": "granite crag", "rock": "granite"}' \
-     -F 'photo=@crag.jpg'
+     -F 'location={"name": "Nowy", "position": [51.11, 17.03], "type_of_place": "small bridge", "accessible_by": ["bikes"], "is_free": "true"}' \
+     -F 'photo=@bridge.jpg'
 
 .. note::
 
