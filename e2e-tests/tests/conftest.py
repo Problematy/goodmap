@@ -65,15 +65,33 @@ ALL_MOBILE_DEVICES = list(MOBILE_DEVICES.keys())
 
 UI_VERTICAL_ALIGNMENT_TOLERANCE = 3
 
+# Tile x/y below are the actual OpenStreetMap slippy-map tile numbers for each
+# location's lat/lon at the zoom level flyTo lands on (16 for the "go to my
+# location" button, 13 for the searchbar - see LocationControl.jsx and
+# MapAutocomplete.jsx). Each has a couple of neighboring tiles included since
+# the test only waits for the first tile image in the DOM, which isn't
+# necessarily the exact center tile. Recomputed at https://tools.geofabrik.de/calc/
+# (or any lat/lon-to-tile calculator) if a location's coordinates change.
 TEST_LOCATIONS = {
     "RYSY_MOUNTAIN": {
         "lat": 49.179,
         "lon": 20.088,
-        "tile_pattern": r"https://[abc]\.tile\.openstreetmap\.org/1[3-6]/\d+/\d+\.png",
+        "tile_pattern": (
+            r"https://[abc]\.tile\.openstreetmap\.org/16/"
+            r"(36423|36424|36425)/(22455|22456|22457)\.png"
+        ),
     },
     # Matches Zwierzyniecka's seeded position exactly, so it's guaranteed to
     # sort first by distance in tests that rely on that ordering.
     "WROCLAW_CENTER": {"lat": 51.108056, "lon": 17.07},
+    "WROCLAW_MARKET_SQUARE": {
+        "lat": 51.1102,
+        "lon": 17.0326,
+        "tile_pattern": (
+            r"https://[abc]\.tile\.openstreetmap\.org/13/"
+            r"(4482|4483|4484)/(2737|2738|2739)\.png"
+        ),
+    },
 }
 
 

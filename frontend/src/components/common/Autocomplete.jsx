@@ -57,20 +57,19 @@ const AutoComplete = ({ onClick }) => {
                     placeholder={t('search')}
                     $primaryColor={primaryColor}
                     $secondaryColor={secondaryColor}
-                    style={{
-                        backgroundColor: primaryColor,
-                        borderColor: secondaryColor,
-                        color: secondaryColor,
-                    }}
                 />
             </InputBox>
 
             {data.some(it => it.display_name !== searchTerm) && (
-                <SuggestionList>
+                <SuggestionList style={{ backgroundColor: primaryColor }}>
                     {data
                         .filter(it => it.display_name !== searchTerm)
                         .map(item => (
-                            <SuggestionItem key={item?.place_id} onClick={() => clickItem(item)}>
+                            <SuggestionItem
+                                key={item?.place_id}
+                                onClick={() => clickItem(item)}
+                                $textColor={secondaryColor}
+                            >
                                 {item.display_name}
                             </SuggestionItem>
                         ))}
@@ -107,6 +106,9 @@ const StyledInput = styled.input`
     border-radius: 8px;
     font-size: 1rem;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    background-color: ${props => props.$primaryColor || 'white'};
+    border-color: ${props => props.$secondaryColor || 'black'};
+    color: ${props => props.$secondaryColor || 'black'};
 
     &::placeholder {
         color: ${props => props.$secondaryColor || 'black'};
@@ -115,7 +117,8 @@ const StyledInput = styled.input`
     }
 
     &:focus {
-        box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.3);
+        box-shadow: 0 0 0 3px
+            color-mix(in srgb, ${props => props.$secondaryColor || 'black'} 30%, transparent);
     }
 `;
 
@@ -126,7 +129,6 @@ const SuggestionList = styled.ul`
     min-width: 100%;
     max-width: 100%;
     border-radius: 8px;
-    background-color: white;
     padding: 4px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     margin: 0;
@@ -140,9 +142,14 @@ const SuggestionItem = styled.li`
     padding: 10px 12px;
     border-radius: 6px;
     transition: background-color 0.15s ease;
+    color: ${props => props.$textColor || 'black'};
 
     &:hover {
-        background-color: rgba(0, 102, 204, 0.1);
+        background-color: color-mix(
+            in srgb,
+            ${props => props.$textColor || 'black'} 10%,
+            transparent
+        );
     }
 `;
 
