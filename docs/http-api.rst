@@ -281,11 +281,3 @@ description that satisfies neither rule gives ``400``.
 
 The report is stored with ``"status": "pending"`` and ``"priority": "medium"`` in the
 data source, for triage.
-
-``GET /api/generate-csrf-token``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. deprecated:: 1.1.8
-
-   Deprecated since 1.1.8 and kept only for backward compatibility. Read the token from
-   the ``csrf-token`` meta tag instead. CSRF protection itself is unaffected.
