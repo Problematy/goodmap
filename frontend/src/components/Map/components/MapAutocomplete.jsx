@@ -10,17 +10,27 @@ import Autocomplete from '../../common/Autocomplete';
  *
  * @returns {React.ReactElement} Autocomplete component wrapped in a positioned container
  */
+const isValidCoordinate = (raw, min, max) => {
+    if (raw == null || (typeof raw === 'string' && raw.trim() === '')) {
+        return false;
+    }
+    const value = Number(raw);
+    return Number.isFinite(value) && value >= min && value <= max;
+};
+
 const MapAutocomplete = () => {
     const map = useMap();
 
     const onPick = pick => {
-        const lat = Number(pick?.lat);
-        const lon = Number(pick?.lon);
-        if (!pick || Number.isNaN(lat) || Number.isNaN(lon)) {
+        if (
+            !pick ||
+            !isValidCoordinate(pick.lat, -90, 90) ||
+            !isValidCoordinate(pick.lon, -180, 180)
+        ) {
             console.warn('Invalid pick coordinates:', pick);
             return;
         }
-        map.flyTo([lat, lon], 13);
+        map.flyTo([Number(pick.lat), Number(pick.lon)], 13);
     };
 
     return (

@@ -76,7 +76,7 @@ class TestSearchbar:
         """
         location = TEST_LOCATIONS["WROCLAW_MARKET_SQUARE"]
 
-        search_input = page.get_by_placeholder("Search address")
+        search_input = page.get_by_placeholder("Search for an address")
         search_input.fill(SEARCH_TERM)
 
         suggestion = page.get_by_text(FAKE_NOMINATIM_RESULT["display_name"])
