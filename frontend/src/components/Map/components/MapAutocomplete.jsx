@@ -14,11 +14,13 @@ const MapAutocomplete = () => {
     const map = useMap();
 
     const onPick = pick => {
-        if (!pick || typeof pick.lat !== 'number' || typeof pick.lon !== 'number') {
+        const lat = Number(pick?.lat);
+        const lon = Number(pick?.lon);
+        if (!pick || Number.isNaN(lat) || Number.isNaN(lon)) {
             console.warn('Invalid pick coordinates:', pick);
             return;
         }
-        map.flyTo([pick.lat, pick.lon], 13);
+        map.flyTo([lat, lon], 13);
     };
 
     return (

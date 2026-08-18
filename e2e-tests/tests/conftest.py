@@ -74,6 +74,11 @@ TEST_LOCATIONS = {
     # Matches Zwierzyniecka's seeded position exactly, so it's guaranteed to
     # sort first by distance in tests that rely on that ordering.
     "WROCLAW_CENTER": {"lat": 51.108056, "lon": 17.07},
+    "WROCLAW_MARKET_SQUARE": {
+        "lat": 51.1102,
+        "lon": 17.0326,
+        "tile_pattern": r"https://[abc]\.tile\.openstreetmap\.org/1[3-6]/\d+/\d+\.png",
+    },
 }
 
 
