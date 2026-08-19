@@ -26,6 +26,8 @@ jobs:
             BSD-2-Clause,
             BSD-3-Clause,
             ISC,
+            0BSD,
+            Zlib,
             CC0-1.0,
             Unlicense,
             EPL-1.0,
