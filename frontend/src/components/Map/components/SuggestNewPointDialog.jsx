@@ -104,8 +104,11 @@ const useScrollToTop = trigger => {
 };
 
 /**
- * The suggestion form itself. Mounted only once the location schema is known, so the
- * fields it generates can be built in one pass from the deployment's obligatory fields.
+ * The dialog and its schema-driven form, mounted by SuggestNewPointDialog only once
+ * the location schema has loaded.
+ *
+ * Its inputs are generated from the schema's obligatory_fields, so mounting earlier
+ * would seed a form with no fields and force a rebuild when the schema arrived.
  *
  * @param {{open: boolean, onClose: () => void, locationSchema: Object}} props
  * @returns {React.ReactElement} Dialog with the new point suggestion form
