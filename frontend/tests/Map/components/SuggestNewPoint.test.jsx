@@ -556,4 +556,26 @@ describe('SuggestNewPointButton', () => {
         const options = await screen.findAllByRole('option');
         expect(options.map(option => option.textContent)).toEqual(['Bikes', 'Cars', 'Pedestrians']);
     });
+    it('offers a retry instead of the form when the schema fails to load', async () => {
+        const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+        mockGeolocationSuccess();
+        httpService.getLocationSchema.mockRejectedValue(new Error('schema unavailable'));
+
+        renderWithProvider(<SuggestNewPointButton />);
+        await openDialog();
+
+        // With no schema there are no fields to fill, so a submitted form could only be
+        // rejected by the backend: the failure is stated instead of offering one.
+        expect(screen.getByText('Failed to load the suggestion form.')).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /submit/i })).not.toBeInTheDocument();
+
+        httpService.getLocationSchema.mockResolvedValue(FULL_SCHEMA);
+        fireEvent.click(screen.getByRole('button', { name: /retry/i }));
+
+        await waitFor(() =>
+            expect(screen.getByRole('button', { name: /submit/i })).toBeInTheDocument(),
+        );
+
+        consoleErrorSpy.mockRestore();
+    });
 });

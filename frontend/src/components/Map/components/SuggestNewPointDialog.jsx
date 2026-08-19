@@ -456,13 +456,35 @@ SuggestNewPointForm.propTypes = {
  *
  * The form's fields are generated from the deployment's location schema, so there is
  * nothing to render until that has arrived - holding the form back until then is what
- * lets it build its fields once, instead of rebuilding them when the schema lands.
+ * lets it build its fields once, instead of rebuilding them when the schema lands. If
+ * the schema could not be fetched at all, this says so instead of showing a form that
+ * has no fields to fill and could never be submitted.
  *
  * @param {{open: boolean, onClose: () => void}} props
- * @returns {React.ReactElement|null} The suggestion form, or null while the schema loads
+ * @returns {React.ReactElement|null} The form, a retry prompt, or null while it loads
  */
 const SuggestNewPointDialog = ({ open, onClose }) => {
-    const { locationSchema } = useDeploymentData();
+    const { t } = useTranslation();
+    const { locationSchema, schemaError, refetchLocationSchema } = useDeploymentData();
+
+    // Without the schema there are no fields to fill, so offering the form anyway would
+    // only produce a submission the backend is bound to reject. Say so and offer a retry.
+    if (schemaError) {
+        return (
+            <Dialog open={open} onClose={onClose}>
+                <DialogTitle>{t('suggestNewPointDialogTitle')}</DialogTitle>
+                <DialogContent>
+                    <Alert severity="error">{t('loadSuggestFormError')}</Alert>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={onClose}>{t('cancel')}</Button>
+                    <Button variant="contained" onClick={refetchLocationSchema}>
+                        {t('retry')}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        );
+    }
 
     if (!locationSchema) {
         return null;

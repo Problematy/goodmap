@@ -71,10 +71,9 @@ export const DeploymentDataProvider = ({ children }) => {
             setLocationSchema({ ...EMPTY_SCHEMA, ...(await httpService.getLocationSchema()) });
         } catch (error) {
             console.error('Failed to load location schema:', error);
-            // Settle on the empty schema rather than leaving it null: null means "still
-            // loading" and holds the suggest form back, which would turn a failed fetch
-            // into a button that silently does nothing.
-            setLocationSchema(EMPTY_SCHEMA);
+            // Left null: a failed request must not read as a resolved schema, or the
+            // suggest form renders with no fields and can never be submitted. Consumers
+            // tell the two apart by schemaError - null alone only means "not yet".
             setSchemaError(true);
         }
     }, []);
@@ -98,6 +97,7 @@ export const DeploymentDataProvider = ({ children }) => {
             refetchCategories: fetchCategories,
             locationSchema,
             schemaError,
+            refetchLocationSchema: fetchLocationSchema,
         }),
         [
             categoriesData,
@@ -107,6 +107,7 @@ export const DeploymentDataProvider = ({ children }) => {
             fetchCategories,
             locationSchema,
             schemaError,
+            fetchLocationSchema,
         ],
     );
 
@@ -128,8 +129,9 @@ DeploymentDataProvider.propTypes = {
  * - defaultChecked: options pre-selected by the deployment, keyed by category
  * - categoriesLoading / categoriesError: state of the category definitions fetch
  * - refetchCategories: retries that fetch
- * - locationSchema: schema for a new point, null until it arrives
+ * - locationSchema: schema for a new point, null until it arrives (and if it failed)
  * - schemaError: true if fetching the location schema failed
+ * - refetchLocationSchema: retries that fetch
  *
  * @throws {Error} If used outside of DeploymentDataProvider
  * @return {Object} The deployment data described above
