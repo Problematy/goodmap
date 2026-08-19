@@ -202,8 +202,7 @@ Other read endpoints
 given in ``LANGUAGES``.
 
 ``GET /api/version`` returns the installed package version normalised to PEP 440, so a
-release published as ``2.0.0-alpha.5`` reports as ``2.0.0a5``. It needs no data source,
-which makes it the endpoint to point a load balancer at.
+release published as ``2.0.0-alpha.5`` reports as ``2.0.0a5``.
 
 Submissions
 -----------
