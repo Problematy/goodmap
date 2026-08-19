@@ -212,7 +212,7 @@ const ReportProblemForm = ({ placeId }) => {
     if (schemaError) {
         return (
             <ErrorMessage>
-                {t('loadReportFormError')}
+                <span role="alert">{t('loadReportFormError')}</span>
                 <div>
                     <RetryButton type="button" onClick={refetchLocationSchema}>
                         {t('retry')}

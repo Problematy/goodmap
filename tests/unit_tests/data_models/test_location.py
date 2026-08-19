@@ -131,7 +131,7 @@ def test_category_validation_rejects_invalid_list_item():
 
 def test_basic_info_includes_category_field_values():
     """basic_info() should surface category field values (for pin icon/color
-    selection) alongside the existing uuid/position/remark."""
+    selection) alongside the existing uuid/position/has_remark."""
     location_model = create_location_model(
         obligatory_fields=[("type_of_place", "str"), ("name", "str")],
         categories={"type_of_place": ["parcel_locker", "container"]},
@@ -142,17 +142,17 @@ def test_basic_info_includes_category_field_values():
     assert location.basic_info() == {
         "uuid": "1",
         "position": (50, 50),
-        "remark": False,
+        "has_remark": False,
         "type_of_place": "parcel_locker",
     }
 
 
 def test_basic_info_omits_category_fields_when_none_configured():
     """Backward compatibility: deployments without categories get the original
-    uuid/position/remark shape, unchanged."""
+    uuid/position/has_remark shape, unchanged."""
     location_model = create_location_model(obligatory_fields=[("name", "str")], categories={})
     location = location_model(uuid="1", name="test", position=(50, 50))
-    assert location.basic_info() == {"uuid": "1", "position": (50, 50), "remark": False}
+    assert location.basic_info() == {"uuid": "1", "position": (50, 50), "has_remark": False}
 
 
 def test_create_location_model_with_int_field():
