@@ -282,9 +282,6 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         db.get_home_page_path()). Deployments set site_content.home_page_path
         to "/map" so visiting / still renders this view, with no redirect.
 
-        The frontend reads what this deployment accepts from /api/location-schema
-        rather than from an inlined copy, so there is one source of truth for it.
-
         Returns:
             Rendered map.html template with feature flags and the plugin manifest
         """
