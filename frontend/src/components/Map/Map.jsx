@@ -4,12 +4,15 @@ import { createPortal } from 'react-dom';
 import FiltersForm from '../FiltersForm/FiltersForm';
 import MapComponent from './MapComponent';
 import { CategoriesProvider } from '../Categories/CategoriesContext';
+import { LocationSchemaProvider } from './context/LocationSchemaContext';
 import AppToaster from '../common/AppToaster';
 
 /**
  * Wrapper component that renders the map and filters form into their respective DOM placeholders.
  * Uses React portals to render components into pre-existing DOM elements outside the React tree.
- * Wraps both components with CategoriesProvider for shared filter state management.
+ * Wraps both components with CategoriesProvider for shared filter state management, and
+ * with LocationSchemaProvider so the suggest and report forms know what this deployment
+ * accepts without each fetching it.
  *
  * @returns {React.ReactElement|null} Portals for FiltersForm and MapComponent, or null if placeholders not found
  */
@@ -24,9 +27,11 @@ const MapWrap = () => {
 
     return (
         <CategoriesProvider>
-            <AppToaster />
-            {createPortal(<FiltersForm />, filtersPlaceholder)}
-            {createPortal(<MapComponent />, mapPlaceholder)}
+            <LocationSchemaProvider>
+                <AppToaster />
+                {createPortal(<FiltersForm />, filtersPlaceholder)}
+                {createPortal(<MapComponent />, mapPlaceholder)}
+            </LocationSchemaProvider>
         </CategoriesProvider>
     );
 };

@@ -5,6 +5,15 @@ import ReportProblemForm from '../../src/components/MarkerPopup/ReportProblemFor
 jest.mock('axios');
 const axios = require('axios');
 
+// The schema comes from a provider that fetches it; these tests exercise the form, so
+// the hook is stubbed to keep them synchronous and focused.
+jest.mock('../../src/components/Map/context/LocationSchemaContext', () => ({
+    useLocationSchema: jest.fn(),
+}));
+const { useLocationSchema } = require('../../src/components/Map/context/LocationSchemaContext');
+
+const mockSchema = (schema = {}) => useLocationSchema.mockReturnValue({ locationSchema: schema });
+
 axios.post.mockResolvedValue({ data: { success: true } });
 
 const PLACE_ID = 'test-id';
@@ -45,6 +54,7 @@ beforeEach(() => {
     metaTag.setAttribute('name', 'csrf-token');
     metaTag.setAttribute('content', CSRF_TOKEN);
     document.head.appendChild(metaTag);
+    mockSchema();
 });
 
 afterEach(() => {
@@ -52,7 +62,6 @@ afterEach(() => {
     if (metaTag) {
         metaTag.remove();
     }
-    delete globalThis.LOCATION_SCHEMA;
 });
 
 describe('ReportProblemForm', () => {
@@ -81,8 +90,8 @@ describe('ReportProblemForm', () => {
         expect(queryByText(/Submit/i)).toBeNull();
     });
 
-    it('renders dynamic issue types from LOCATION_SCHEMA', () => {
-        globalThis.LOCATION_SCHEMA = CUSTOM_ISSUE_TYPES;
+    it('renders dynamic issue types from the deployment schema', () => {
+        mockSchema(CUSTOM_ISSUE_TYPES);
         const { getByText, queryByText, select } = renderForm();
 
         const optionTexts = Array.from(select.querySelectorAll('option')).map(o => o.textContent);
@@ -97,7 +106,7 @@ describe('ReportProblemForm', () => {
     });
 
     it('submits dynamic issue type value as description', () => {
-        globalThis.LOCATION_SCHEMA = CUSTOM_ISSUE_TYPES;
+        mockSchema(CUSTOM_ISSUE_TYPES);
         const { getByText, select } = renderForm();
         fireEvent.change(select, { target: { value: 'under construction' } });
         fireEvent.click(getByText(/Submit/i));
@@ -105,8 +114,8 @@ describe('ReportProblemForm', () => {
         return expectReportSubmitted('under construction');
     });
 
-    it('falls back to default options when LOCATION_SCHEMA is undefined', () => {
-        delete globalThis.LOCATION_SCHEMA;
+    it('falls back to default options when the schema has not loaded', () => {
+        mockSchema({});
         const { getByText } = renderForm();
 
         expect(getByText('this point is not here')).toBeTruthy();
@@ -117,7 +126,7 @@ describe('ReportProblemForm', () => {
 
     it('falls back to default options when reported_issue_types is empty', () => {
         // eslint-disable-next-line camelcase -- matches backend API schema property name
-        globalThis.LOCATION_SCHEMA = { reported_issue_types: [] };
+        mockSchema({ reported_issue_types: [] });
         const { getByText } = renderForm();
 
         expect(getByText('this point is not here')).toBeTruthy();

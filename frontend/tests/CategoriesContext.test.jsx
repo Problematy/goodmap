@@ -5,12 +5,17 @@ import FiltersForm from '../src/components/FiltersForm/FiltersForm';
 import SuggestNewPointButton from '../src/components/Map/components/SuggestNewPointButton';
 import { CategoriesProvider } from '../src/components/Categories/CategoriesContext';
 import { LocationProvider } from '../src/components/Map/context/LocationContext';
+import { LocationSchemaProvider } from '../src/components/Map/context/LocationSchemaContext';
 import httpService from '../src/services/http/httpService';
 
 jest.mock('axios');
 jest.mock('../src/services/http/httpService', () => ({
     __esModule: true,
-    default: { getCategoriesData: jest.fn(), getLocations: jest.fn() },
+    default: {
+        getCategoriesData: jest.fn(),
+        getLocations: jest.fn(),
+        getLocationSchema: jest.fn(),
+    },
 }));
 jest.mock('../src/utils/toast', () => ({
     __esModule: true,
@@ -22,14 +27,16 @@ jest.mock('browser-image-compression');
 // The provider owns the fetch so they share one request instead of making two.
 test('categories are fetched once for all consumers', async () => {
     httpService.getCategoriesData.mockResolvedValue({ categories: [], defaultChecked: {} });
-    globalThis.LOCATION_SCHEMA = { obligatory_fields: [['name', 'str']], categories: {} };
+    httpService.getLocationSchema.mockResolvedValue({});
 
     render(
         <CategoriesProvider>
-            <LocationProvider>
-                <FiltersForm />
-                <SuggestNewPointButton />
-            </LocationProvider>
+            <LocationSchemaProvider>
+                <LocationProvider>
+                    <FiltersForm />
+                    <SuggestNewPointButton />
+                </LocationProvider>
+            </LocationSchemaProvider>
         </CategoriesProvider>,
     );
 

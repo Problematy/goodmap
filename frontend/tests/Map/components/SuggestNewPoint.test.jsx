@@ -6,6 +6,7 @@ import imageCompression from 'browser-image-compression';
 import SuggestNewPointButton from '../../../src/components/Map/components/SuggestNewPointButton';
 import { LocationProvider } from '../../../src/components/Map/context/LocationContext';
 import { CategoriesProvider } from '../../../src/components/Categories/CategoriesContext';
+import { LocationSchemaProvider } from '../../../src/components/Map/context/LocationSchemaContext';
 import {
     mockGeolocationSuccess,
     mockGeolocationError,
@@ -25,7 +26,9 @@ import toast from '../../../src/utils/toast';
 const renderWithProvider = component =>
     render(
         <CategoriesProvider>
-            <LocationProvider>{component}</LocationProvider>
+            <LocationSchemaProvider>
+                <LocationProvider>{component}</LocationProvider>
+            </LocationSchemaProvider>
         </CategoriesProvider>,
     );
 
@@ -34,6 +37,7 @@ jest.mock('../../../src/services/http/httpService', () => ({
     __esModule: true,
     default: {
         getCategoriesData: jest.fn(),
+        getLocationSchema: jest.fn(),
     },
 }));
 jest.mock('../../../src/utils/toast', () => ({
@@ -49,7 +53,7 @@ beforeEach(() => {
     metaTag.setAttribute('content', 'test-csrf-token');
     document.head.appendChild(metaTag);
 
-    globalThis.LOCATION_SCHEMA = FULL_SCHEMA;
+    httpService.getLocationSchema.mockResolvedValue(FULL_SCHEMA);
 
     // Mock categories data matching httpService.getCategoriesData()'s real
     // { categories: [{ categoryKey, categoryName, options }] } shape.
@@ -82,7 +86,6 @@ afterEach(() => {
     if (metaTag) {
         metaTag.remove();
     }
-    delete globalThis.LOCATION_SCHEMA;
     jest.clearAllMocks();
 });
 
@@ -447,7 +450,7 @@ describe('SuggestNewPointButton', () => {
 
         axios.post.mockRejectedValue(new Error('Network error'));
         mockGeolocationSuccess();
-        globalThis.LOCATION_SCHEMA = SIMPLE_SCHEMA;
+        httpService.getLocationSchema.mockResolvedValue(SIMPLE_SCHEMA);
 
         renderWithProvider(<SuggestNewPointButton />);
         await openDialog();
@@ -474,7 +477,7 @@ describe('SuggestNewPointButton', () => {
 
         axios.post.mockRejectedValue({ response: { data: { message: backendMessage } } });
         mockGeolocationSuccess();
-        globalThis.LOCATION_SCHEMA = SIMPLE_SCHEMA;
+        httpService.getLocationSchema.mockResolvedValue(SIMPLE_SCHEMA);
 
         renderWithProvider(<SuggestNewPointButton />);
         await openDialog();
@@ -499,7 +502,7 @@ describe('SuggestNewPointButton', () => {
                 }),
         );
         mockGeolocationSuccess();
-        globalThis.LOCATION_SCHEMA = SIMPLE_SCHEMA;
+        httpService.getLocationSchema.mockResolvedValue(SIMPLE_SCHEMA);
 
         renderWithProvider(<SuggestNewPointButton />);
         await openDialog();
@@ -526,7 +529,7 @@ describe('SuggestNewPointButton', () => {
     it('closes dialog and resets form on successful submission', async () => {
         axios.post.mockResolvedValue({ data: { message: 'Success' } });
         mockGeolocationSuccess();
-        globalThis.LOCATION_SCHEMA = SIMPLE_SCHEMA;
+        httpService.getLocationSchema.mockResolvedValue(SIMPLE_SCHEMA);
 
         renderWithProvider(<SuggestNewPointButton />);
         await openDialog();

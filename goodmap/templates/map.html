@@ -122,7 +122,6 @@ window.SHOW_ACCESSIBILITY_TABLE = {{ feature_flags.SHOW_ACCESSIBILITY_TABLE | de
 window.FEATURE_FLAGS = {{ feature_flags | tojson }};
 // Location schema for dynamic form building
 // Contains required fields and available categories for new location suggestions
-globalThis.LOCATION_SCHEMA = {{ location_schema | tojson }};
 window.PLUGIN_MANIFEST = {{ plugin_manifest | tojson }};
 </script>
 <script src="{{ goodmap_frontend_lib_url }}" crossorigin="anonymous"></script>

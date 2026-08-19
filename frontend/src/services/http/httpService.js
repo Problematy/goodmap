@@ -1,5 +1,6 @@
 import {
     CATEGORIES_FULL,
+    LOCATION_SCHEMA,
     LOCATION,
     LOCATIONS,
     SEARCH_ADDRESS,
@@ -74,6 +75,24 @@ const httpService = {
      *   category data plus a map of category key to the option values that should be
      *   pre-checked by default.
      */
+    /**
+     * Fetches the schema this deployment accepts for a new point.
+     *
+     * The accepted fields are configured per deployment, so they are read from the
+     * running instance rather than assumed.
+     *
+     * @returns {Promise<Object>} Promise resolving to the location schema
+     */
+    getLocationSchema: async () => {
+        const response = await fetch(LOCATION_SCHEMA, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+        return jsonOrThrow(response, 'location schema');
+    },
+
     getCategoriesData: async () => {
         const response = await fetch(CATEGORIES_FULL).then(res => res.json());
         const useCategoriesHelp = Boolean(globalThis.FEATURE_FLAGS?.CATEGORIES_HELP);

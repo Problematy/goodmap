@@ -26,6 +26,7 @@ import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import imageCompression from 'browser-image-compression';
 import getCsrfToken from '../../../utils/csrf';
+import { useLocationSchema } from '../context/LocationSchemaContext';
 import { useLocation } from '../context/LocationContext';
 import { useCategories } from '../../Categories/CategoriesContext';
 import toast from '../../../utils/toast';
@@ -107,9 +108,9 @@ const useScrollToTop = trigger => {
 };
 
 /**
- * Dialog form for suggesting a new map point. Fields are generated dynamically from
- * window.LOCATION_SCHEMA and include the user's position, an optional photo, and every
- * obligatory location attribute defined by the backend.
+ * Dialog form for suggesting a new map point. Fields are generated dynamically from the
+ * deployment's location schema and include the user's position, an optional photo, and
+ * every obligatory location attribute defined by the backend.
  *
  * @param {{open: boolean, onClose: () => void}} props
  * @returns {React.ReactElement} Dialog with the new point suggestion form
@@ -140,10 +141,7 @@ const SuggestNewPointDialog = ({ open, onClose }) => {
         }
     }, [open]);
 
-    const locationSchema = globalThis.LOCATION_SCHEMA || {
-        obligatory_fields: [],
-        categories: {},
-    };
+    const { locationSchema } = useLocationSchema();
     const {
         allowed_extensions: allowedPhotoExtensions = [],
         allowed_mime_types: allowedPhotoMimeTypes = [],
@@ -172,6 +170,13 @@ const SuggestNewPointDialog = ({ open, onClose }) => {
     };
 
     const [formFields, setFormFields] = useState(initializeFormFields);
+
+    // The schema is fetched, so it is empty on the first render and the initial state
+    // above has nothing to build from. Rebuild the fields once it arrives.
+    useEffect(() => {
+        setFormFields(initializeFormFields());
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [locationSchema]);
 
     const handleLocateMe = () => {
         requestLocationWithFeedback();
@@ -317,7 +322,9 @@ const SuggestNewPointDialog = ({ open, onClose }) => {
                     >
                         {categoryOptions.map(option => (
                             <MenuItem key={option} value={option}>
-                                <Checkbox checked={formFields[fieldName].includes(option)} />
+                                <Checkbox
+                                    checked={(formFields[fieldName] || []).includes(option)}
+                                />
                                 <ListItemText primary={getOptionLabel(fieldName, option)} />
                             </MenuItem>
                         ))}

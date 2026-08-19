@@ -107,8 +107,9 @@ def test_frontend_lib_url_uses_bundled_static_when_present():
     assert 'src="/static/frontend/index.min.js"' in response.data.decode("utf-8")
 
 
-def test_map_route_returns_location_schema():
-    """Test that the /map route returns successfully with location_schema"""
+def test_location_schema_endpoint_reports_configured_categories():
+    """The schema the frontend builds its form from comes from /api/location-schema,
+    not from anything inlined into the map page."""
     config = GoodmapConfig(
         APP_NAME="test_app",
         SECRET_KEY="test_secret",
@@ -131,22 +132,19 @@ def test_map_route_returns_location_schema():
     app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
     client = app.test_client()
 
-    response = client.get("/map")
+    response = client.get("/api/location-schema")
     assert response.status_code == 200
 
-    # Verify location_schema is present in the response
-    response_text = response.data.decode("utf-8")
-    assert "LOCATION_SCHEMA" in response_text
-    assert "obligatory_fields" in response_text
-    assert "categories" in response_text
-    assert "accessibility" in response_text
-    assert "amenities" in response_text
+    schema = response.json
+    assert schema is not None
+    assert "obligatory_fields" in schema
+    assert set(schema["categories"]) == {"accessibility", "amenities"}
 
 
 def test_map_route_includes_photo_constraints():
     """The frontend sources photo upload limits (max size, allowed types) live from
     the backend's AttachmentConfig rather than hardcoding its own copy - this test
-    guards the `photo` key in location_schema that makes that possible.
+    guards the `photo` key in /api/location-schema that makes that possible.
     """
     config = GoodmapConfig(
         APP_NAME="test_app",
@@ -162,13 +160,14 @@ def test_map_route_includes_photo_constraints():
     app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
     client = app.test_client()
 
-    response = client.get("/map")
+    response = client.get("/api/location-schema")
     assert response.status_code == 200
 
-    response_text = response.data.decode("utf-8")
-    assert '"max_size_bytes":5242880' in response_text
-    assert '"allowed_mime_types":["image/jpeg"]' in response_text
-    assert '"allowed_extensions":["jpeg","jpg"]' in response_text
+    assert response.json is not None
+    photo = response.json["photo"]
+    assert photo["max_size_bytes"] == 5242880
+    assert photo["allowed_mime_types"] == ["image/jpeg"]
+    assert photo["allowed_extensions"] == ["jpeg", "jpg"]
 
 
 def _minimal_config() -> GoodmapConfig:
@@ -264,17 +263,18 @@ def test_map_route_overrides_photo_constraints():
     app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
     client = app.test_client()
 
-    response = client.get("/map")
+    response = client.get("/api/location-schema")
     assert response.status_code == 200
 
-    response_text = response.data.decode("utf-8")
-    assert '"max_size_bytes":8388608' in response_text
-    assert '"allowed_mime_types":["image/jpeg","image/png"]' in response_text
-    assert '"allowed_extensions":["jpeg","jpg","png"]' in response_text
+    assert response.json is not None
+    photo = response.json["photo"]
+    assert photo["max_size_bytes"] == 8388608
+    assert photo["allowed_mime_types"] == ["image/jpeg", "image/png"]
+    assert photo["allowed_extensions"] == ["jpeg", "jpg", "png"]
 
 
-def test_map_route_location_schema_with_lazy_loading():
-    """Test that location_schema includes obligatory_fields when USE_LAZY_LOADING is enabled"""
+def test_location_schema_endpoint_with_lazy_loading():
+    """The schema includes obligatory_fields when USE_LAZY_LOADING is enabled."""
     config = GoodmapConfig(
         APP_NAME="test_app",
         SECRET_KEY="test_secret",
@@ -300,15 +300,20 @@ def test_map_route_location_schema_with_lazy_loading():
     app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
     client = app.test_client()
 
-    response = client.get("/map")
+    response = client.get("/api/location-schema")
     assert response.status_code == 200
 
-    # Verify location_schema includes obligatory_fields
-    response_text = response.data.decode("utf-8")
-    assert "LOCATION_SCHEMA" in response_text
-    assert "name" in response_text
-    assert "position" in response_text
-    assert "test_category" in response_text
+    schema = response.json
+    assert schema is not None
+    assert [f[0] for f in schema["obligatory_fields"]] == [
+        "name",
+        "position",
+        "test_category",
+    ]
+    # position is client-supplied, so it must be offered as a field; uuid is not
+    assert "position" in schema["fields"]
+    assert "uuid" not in schema["fields"]
+    assert "test_category" in schema["categories"]
 
 
 def _plugin_ep(name: str, plugin_dir: str | None, base: type = MapOverlayPluginBase):

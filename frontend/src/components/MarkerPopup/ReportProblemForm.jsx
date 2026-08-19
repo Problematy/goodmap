@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import getCsrfToken from '../../utils/csrf';
+import { useLocationSchema } from '../Map/context/LocationSchemaContext';
 
 /**
  * Styled form component with flexbox column layout.
@@ -123,14 +124,14 @@ const SuccessMessage = styled.div`
  */
 /**
  * Get issue type options from backend configuration or fall back to defaults.
- * Dynamic types come from LOCATION_SCHEMA.reported_issue_types (configured per deployment).
+ * Dynamic types come from the deployment's location schema (reported_issue_types).
  * Default types are kept for backward compatibility with backends that don't provide this field (until 2.0.0).
  *
  * @param {Function} t - Translation function
+ * @param {Array<{value: string, label: string}>} [dynamicTypes] - Types this deployment declares
  * @returns {Array<{value: string, label: string}>} Issue type options (without "other", which is always appended)
  */
-const getIssueTypeOptions = t => {
-    const dynamicTypes = globalThis.LOCATION_SCHEMA?.reported_issue_types;
+const getIssueTypeOptions = (t, dynamicTypes) => {
     if (dynamicTypes && dynamicTypes.length > 0) {
         return dynamicTypes.map(type => ({
             value: type.value,
@@ -147,12 +148,13 @@ const getIssueTypeOptions = t => {
 
 const ReportProblemForm = ({ placeId }) => {
     const { t } = useTranslation();
+    const { locationSchema } = useLocationSchema();
     const [problem, setProblem] = useState('');
     const [problemType, setProblemType] = useState('');
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [responseMessage, setResponseMessage] = useState('');
 
-    const issueTypeOptions = getIssueTypeOptions(t);
+    const issueTypeOptions = getIssueTypeOptions(t, locationSchema.reported_issue_types);
 
     const handleSubmit = async event => {
         event.preventDefault();
