@@ -307,7 +307,7 @@ const SuggestNewPointForm = ({ open, onClose, locationSchema }) => {
                     <Select
                         labelId={`${fieldName}-label`}
                         multiple
-                        value={formFields[fieldName] || []}
+                        value={formFields[fieldName]}
                         onChange={handleFieldChange(fieldName)}
                         input={<OutlinedInput label={fieldLabel} />}
                         renderValue={selected => getSelectedDisplay(fieldName, selected)}
@@ -315,9 +315,7 @@ const SuggestNewPointForm = ({ open, onClose, locationSchema }) => {
                     >
                         {categoryOptions.map(option => (
                             <MenuItem key={option} value={option}>
-                                <Checkbox
-                                    checked={(formFields[fieldName] || []).includes(option)}
-                                />
+                                <Checkbox checked={formFields[fieldName].includes(option)} />
                                 <ListItemText primary={getOptionLabel(fieldName, option)} />
                             </MenuItem>
                         ))}
@@ -332,7 +330,7 @@ const SuggestNewPointForm = ({ open, onClose, locationSchema }) => {
                     <InputLabel id={`${fieldName}-label`}>{fieldLabel}</InputLabel>
                     <Select
                         labelId={`${fieldName}-label`}
-                        value={formFields[fieldName] || ''}
+                        value={formFields[fieldName]}
                         onChange={handleFieldChange(fieldName)}
                         data-testid={`${fieldName}-select`}
                     >
@@ -350,7 +348,7 @@ const SuggestNewPointForm = ({ open, onClose, locationSchema }) => {
             <TextField
                 key={fieldName}
                 label={fieldLabel}
-                value={formFields[fieldName] || ''}
+                value={formFields[fieldName]}
                 onChange={handleFieldChange(fieldName)}
                 fullWidth
                 margin="dense"
