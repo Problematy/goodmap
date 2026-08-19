@@ -2,7 +2,7 @@ import React from 'react';
 import '@testing-library/jest-dom/extend-expect';
 import { render, screen, act, waitFor } from '@testing-library/react';
 import AccessibilityTable from '../../../src/components/Map/components/AccessibilityTable';
-import { httpService } from '../../../src/services/http/httpService';
+import httpService from '../../../src/services/http/httpService';
 
 import { CategoriesProvider } from '../../../src/components/Categories/CategoriesContext';
 

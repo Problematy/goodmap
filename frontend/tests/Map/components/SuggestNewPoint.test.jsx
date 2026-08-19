@@ -19,8 +19,8 @@ import {
     fillTextField,
 } from '../../utils/dialogHelpers';
 import { ERROR_MESSAGES, FILE_SIZES, SIMPLE_SCHEMA, FULL_SCHEMA } from '../../utils/testConstants';
-import { httpService } from '../../../src/services/http/httpService';
-import { toast } from '../../../src/utils/toast';
+import httpService from '../../../src/services/http/httpService';
+import toast from '../../../src/utils/toast';
 
 const renderWithProvider = component =>
     render(
@@ -31,12 +31,14 @@ const renderWithProvider = component =>
 
 jest.mock('axios');
 jest.mock('../../../src/services/http/httpService', () => ({
-    httpService: {
+    __esModule: true,
+    default: {
         getCategoriesData: jest.fn(),
     },
 }));
 jest.mock('../../../src/utils/toast', () => ({
-    toast: { success: jest.fn(), error: jest.fn() },
+    __esModule: true,
+    default: { success: jest.fn(), error: jest.fn() },
 }));
 jest.mock('browser-image-compression');
 

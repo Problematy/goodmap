@@ -27,6 +27,21 @@
         "no-console": "warn",
         "func-names": "error",
         "no-process-exit": "error",
+        "no-restricted-syntax": [
+            "error",
+            {
+                "selector": "ForInStatement",
+                "message": "for..in iterates over the prototype chain; use Object.{keys,values,entries} instead."
+            },
+            {
+                "selector": "LabeledStatement",
+                "message": "Labels are a form of GOTO; use functions or early returns instead."
+            },
+            {
+                "selector": "WithStatement",
+                "message": "`with` is disallowed in strict mode because it makes scope ambiguous."
+            }
+        ],
         "object-shorthand": "error",
         "template-curly-spacing": "off",
         "computed-property-spacing": "off",

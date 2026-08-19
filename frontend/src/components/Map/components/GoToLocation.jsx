@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useMap } from 'react-leaflet';
-import { httpService } from '../../../services/http/httpService';
-import { useMapStore } from '../store/map.store';
+import httpService from '../../../services/http/httpService';
+import useMapStore from '../store/map.store';
 
 /**
  * Component that handles navigating to a specific location by ID.

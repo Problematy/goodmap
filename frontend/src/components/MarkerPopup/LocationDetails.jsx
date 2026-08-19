@@ -10,7 +10,7 @@ import { buttonStyleSmall } from '../../styles/buttonStyle';
 import getContentAsString from './fieldContent';
 import FieldRenderer from './FieldRenderer';
 import ReportProblemForm from './ReportProblemForm';
-import { toast } from '../../utils/toast';
+import toast from '../../utils/toast';
 
 const PopupContainer = styled.div`
     padding: 8px 4px;

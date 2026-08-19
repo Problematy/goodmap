@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useMap } from 'react-leaflet';
-import { useMapStore } from '../store/map.store';
+import useMapStore from '../store/map.store';
 
 /**
  * Component that saves the current map configuration (zoom level) to the map store.

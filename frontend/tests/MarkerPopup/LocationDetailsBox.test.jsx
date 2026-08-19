@@ -2,7 +2,7 @@ import React from 'react';
 import '@testing-library/jest-dom';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import LocationDetailsBox from '../../src/components/MarkerPopup/LocationDetails';
-import { toast } from '../../src/utils/toast';
+import toast from '../../src/utils/toast';
 
 const correctMarkerData = {
     title: 'Most Grunwaldzki',
@@ -106,7 +106,8 @@ describe('should render marker popup correctly', () => {
 });
 
 jest.mock('../../src/utils/toast', () => ({
-    toast: {
+    __esModule: true,
+    default: {
         success: jest.fn(),
         error: jest.fn(),
         info: jest.fn(),

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useMap } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
-import { httpService } from '../../../services/http/httpService';
+import httpService from '../../../services/http/httpService';
 import MarkerPopup from '../../MarkerPopup/MarkerPopup';
 import { useCategories } from '../../Categories/CategoriesContext';
 import ClusterMarker from '../../MarkerPopup/ClusterMarker';

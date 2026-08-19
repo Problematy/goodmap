@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import toast, { ToastBar, Toaster } from 'react-hot-toast';
 import { IconButton } from '@mui/material';
 import Close from '@mui/icons-material/Close';
-import { useMaxToasts } from '../../utils/hooks/useMaxToasts';
+import useMaxToasts from '../../utils/hooks/useMaxToasts';
 
 /**
  * Global toast notification component for displaying user feedback messages.

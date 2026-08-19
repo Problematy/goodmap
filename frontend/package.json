@@ -15,10 +15,10 @@
         "watch": "webpack --progress -d --config webpack.config.js --watch",
         "test": "jest --config jest.config.js",
         "coverage": "jest --coverage --config jest.config.js",
-        "lint-fix": "eslint src/**/*.jsx tests/**/*.jsx --fix",
-        "lint": "eslint src/**/*.jsx tests/**/*.jsx",
-        "prettier-fix": "prettier --write \"src/**/*.jsx\" \"tests/**/*.jsx\"",
-        "prettier": "prettier --check \"src/**/*.jsx\" \"tests/**/*.jsx\""
+        "lint-fix": "eslint \"src/**/*.{js,jsx}\" \"tests/**/*.{js,jsx}\" --fix",
+        "lint": "eslint \"src/**/*.{js,jsx}\" \"tests/**/*.{js,jsx}\"",
+        "prettier-fix": "prettier --write \"src/**/*.{js,jsx}\" \"tests/**/*.{js,jsx}\"",
+        "prettier": "prettier --check \"src/**/*.{js,jsx}\" \"tests/**/*.{js,jsx}\""
     },
     "files": [
         "dist"

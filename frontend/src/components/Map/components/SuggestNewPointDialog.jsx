@@ -25,10 +25,10 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import imageCompression from 'browser-image-compression';
-import { getCsrfToken } from '../../../utils/csrf';
+import getCsrfToken from '../../../utils/csrf';
 import { useLocation } from '../context/LocationContext';
 import { useCategories } from '../../Categories/CategoriesContext';
-import { toast } from '../../../utils/toast';
+import toast from '../../../utils/toast';
 
 // Map a category's options to a { key: translation } object.
 // Options come as [[key, translation], ...] or [key, ...].

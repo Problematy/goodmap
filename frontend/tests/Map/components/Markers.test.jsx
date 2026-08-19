@@ -2,12 +2,13 @@ import React from 'react';
 import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import { MapContainer } from 'react-leaflet';
-import { Markers } from '../../../src/components/Map/components/Markers';
+import Markers from '../../../src/components/Map/components/Markers';
 import { CategoriesProvider } from '../../../src/components/Categories/CategoriesContext';
-import { httpService } from '../../../src/services/http/httpService';
+import httpService from '../../../src/services/http/httpService';
 
 jest.mock('../../../src/services/http/httpService', () => ({
-    httpService: {
+    __esModule: true,
+    default: {
         getCategoriesData: jest.fn(),
         getLocations: jest.fn(),
     },

@@ -26,7 +26,7 @@
  *   headers: { 'X-CSRFToken': csrfToken }
  * });
  */
-export const getCsrfToken = () => {
+const getCsrfToken = () => {
     const metaTag = document.querySelector('meta[name="csrf-token"]');
     const token = metaTag?.getAttribute('content');
 
@@ -38,3 +38,5 @@ export const getCsrfToken = () => {
 
     return token;
 };
+
+export default getCsrfToken;

@@ -10,7 +10,7 @@ import Paper from '@mui/material/Paper';
 import Arrow from '@mui/icons-material/ArrowLeftRounded';
 import { IconButton } from '@mui/material';
 import PropTypes from 'prop-types';
-import { httpService } from '../../../services/http/httpService';
+import httpService from '../../../services/http/httpService';
 import FieldRenderer from '../../MarkerPopup/FieldRenderer';
 import { useCategories } from '../../Categories/CategoriesContext';
 

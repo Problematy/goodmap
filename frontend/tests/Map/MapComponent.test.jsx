@@ -4,7 +4,7 @@ import '@testing-library/jest-dom/extend-expect';
 import MapComponent from '../../src/components/Map/MapComponent';
 import FiltersForm from '../../src/components/FiltersForm/FiltersForm';
 import { CategoriesProvider } from '../../src/components/Categories/CategoriesContext';
-import { httpService } from '../../src/services/http/httpService';
+import httpService from '../../src/services/http/httpService';
 
 jest.mock('../../src/services/http/httpService');
 
