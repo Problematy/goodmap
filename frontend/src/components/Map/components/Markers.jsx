@@ -61,10 +61,6 @@ export const Markers = ({ onLoadingChange = null }) => {
             try {
                 locations = await httpService.getLocations(categories);
             } catch (error) {
-                // The request can be rejected outright (e.g. a filter value the backend
-                // refuses). Leaving the old markers up would show results that do not
-                // match the current filters, and never settling the loaded flag would
-                // leave the map stuck in its loading state.
                 console.error('Failed to load locations:', error);
                 setMarkers([]);
                 setAreMarkersLoaded(true);
