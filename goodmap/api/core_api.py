@@ -436,10 +436,13 @@ def core_pages(
         The fields a point may carry are configured per deployment, so there is no
         fixed payload for /api/suggest-new-point. This returns the accepted fields
         (excluding only the server-assigned uuid - position is required and must be
-        supplied by the client), the allowed values for each category, the reportable
-        issue types and the photo limits, as the built-in suggest form uses them.
+        supplied by the client), the reportable issue types and the photo limits, as
+        the built-in suggest form uses them.
+
+        The allowed values per category are deliberately not repeated here:
+        /api/categories-full is the one place that reports them, so a client cannot
+        read two versions of the same list and find them disagreeing.
         """
-        category_data = database.get_category_data()
         properties = location_model.model_json_schema().get("properties", {})
         # Matches the fallback /api/report-location applies: an unconfigured
         # reported_issue_types must not make this endpoint advertise fewer accepted
@@ -451,7 +454,6 @@ def core_pages(
                 "obligatory_fields": current_app.extensions.get("goodmap", {}).get(
                     "location_obligatory_fields", []
                 ),
-                "categories": category_data.get("categories", {}),
                 "reported_issue_types": [{"value": t, "label": gettext(t)} for t in issue_options],
                 "photo": {
                     "allowed_extensions": sorted(photo_attachment_config.allowed_extensions or []),

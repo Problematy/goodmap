@@ -22,7 +22,6 @@ DeploymentDataContext.displayName = 'DeploymentDataContext';
 /* eslint-disable camelcase -- these are the API's own field names */
 const EMPTY_SCHEMA = {
     obligatory_fields: [],
-    categories: {},
     fields: {},
     reported_issue_types: [],
     photo: {},

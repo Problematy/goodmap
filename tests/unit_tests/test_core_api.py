@@ -40,10 +40,11 @@ def test_location_schema_endpoint_describes_this_instance(test_app):
     assert set(body) == {
         "fields",
         "obligatory_fields",
-        "categories",
         "reported_issue_types",
         "photo",
     }
+    # Category values live in /api/categories-full alone, so they must not reappear here.
+    assert "categories" not in body
     # uuid is server-assigned and must not be offered as a form field; position is
     # required and client-supplied, same as /api/suggest-new-point, so it must be.
     assert "uuid" not in body["fields"]

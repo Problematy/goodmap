@@ -211,10 +211,14 @@ buttons for ``exclusive``/``threshold``, a single checkbox for ``boolean``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 What this instance accepts for a new point: the fields of its location model (all of them
-except the server-assigned ``uuid``), the allowed values per category, the reportable
-issue types, and the photo limits. This is how a client learns what to put in
-``/api/suggest-new-point``'s ``location`` payload rather than assuming — it is the same
-schema the built-in suggest form is generated from.
+except the server-assigned ``uuid``), the reportable issue types, and the photo limits.
+This is how a client learns what to put in ``/api/suggest-new-point``'s ``location``
+payload rather than assuming — it is the same schema the built-in suggest form is
+generated from.
+
+The allowed values for a category are **not** repeated here. ``/api/categories-full``
+above reports them, with their translated labels, and is the single place to read them
+from — so a client cannot end up holding two versions of the same list.
 
 ``GET /api/languages``
 ~~~~~~~~~~~~~~~~~~~~~~

@@ -107,40 +107,6 @@ def test_frontend_lib_url_uses_bundled_static_when_present():
     assert 'src="/static/frontend/index.min.js"' in response.data.decode("utf-8")
 
 
-def test_location_schema_endpoint_reports_configured_categories():
-    """The schema the frontend builds its form from comes from /api/location-schema,
-    not from anything inlined into the map page."""
-    config = GoodmapConfig(
-        APP_NAME="test_app",
-        SECRET_KEY="test_secret",
-        USE_WWW=False,
-        BLOG_PREFIX="/blog",
-        DB=JsonDbConfig(
-            DATA={
-                "site_content": {"pages": []},
-                "categories": {
-                    "accessibility": ["wheelchair", "elevator"],
-                    "amenities": ["wifi", "parking"],
-                },
-            },
-            TYPE="json",
-        ),
-    )
-    app = goodmap.create_app_from_config(config)
-    # CSRF protection must be disabled in test environment to allow API testing
-    # This is safe because tests run in isolation, not in production
-    app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
-    client = app.test_client()
-
-    response = client.get("/api/location-schema")
-    assert response.status_code == 200
-
-    schema = response.json
-    assert schema is not None
-    assert "obligatory_fields" in schema
-    assert set(schema["categories"]) == {"accessibility", "amenities"}
-
-
 def test_map_route_includes_photo_constraints():
     """The frontend sources photo upload limits (max size, allowed types) live from
     the backend's AttachmentConfig rather than hardcoding its own copy - this test
@@ -313,7 +279,6 @@ def test_location_schema_endpoint_with_lazy_loading():
     # position is client-supplied, so it must be offered as a field; uuid is not
     assert "position" in schema["fields"]
     assert "uuid" not in schema["fields"]
-    assert "test_category" in schema["categories"]
 
 
 def _plugin_ep(name: str, plugin_dir: str | None, base: type = MapOverlayPluginBase):

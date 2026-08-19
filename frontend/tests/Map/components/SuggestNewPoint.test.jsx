@@ -542,26 +542,18 @@ describe('SuggestNewPointButton', () => {
             expect(axios.post).toHaveBeenCalledTimes(1);
         });
     });
-    it('offers only category options the definitions can label', async () => {
+    it('builds category options from the category definitions', async () => {
         mockGeolocationSuccess();
-        // The schema advertises a value the category definitions carry no label for.
-        // Options and their labels must come from one source, so the stale value is
-        // simply not offered - rather than rendered with its raw key as the label.
-        httpService.getLocationSchema.mockResolvedValue({
-            ...FULL_SCHEMA,
-            categories: {
-                ...FULL_SCHEMA.categories,
-                accessible_by: [...FULL_SCHEMA.categories.accessible_by, 'hovercrafts'],
-            },
-        });
 
         renderWithProvider(<SuggestNewPointButton />);
         await openDialog();
 
         fireEvent.mouseDown(screen.getByRole('combobox', { name: /accessible by/i }));
 
+        // The schema says accessible_by is obligatory but no longer carries its values:
+        // both the values and their labels come from the category definitions, which
+        // are now the only place either is reported.
         const options = await screen.findAllByRole('option');
         expect(options.map(option => option.textContent)).toEqual(['Bikes', 'Cars', 'Pedestrians']);
-        expect(screen.queryByText('hovercrafts')).not.toBeInTheDocument();
     });
 });

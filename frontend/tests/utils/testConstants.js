@@ -50,7 +50,6 @@ export const PHOTO_SCHEMA = {
  */
 export const SIMPLE_SCHEMA = {
     obligatory_fields: [['name', 'str']],
-    categories: {},
     photo: PHOTO_SCHEMA,
 };
 
@@ -63,9 +62,5 @@ export const FULL_SCHEMA = {
         ['accessible_by', 'list'],
         ['type_of_place', 'str'],
     ],
-    categories: {
-        accessible_by: ['bikes', 'cars', 'pedestrians'],
-        type_of_place: ['big bridge', 'small bridge'],
-    },
     photo: PHOTO_SCHEMA,
 };
