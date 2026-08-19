@@ -134,3 +134,15 @@ describe('ReportProblemForm', () => {
         expect(getByText("it's broken")).toBeTruthy();
     });
 });
+
+// A schema that has not arrived is not the same as one declaring no issue types: the
+// legacy fallbacks are not a stand-in for values this deployment may not accept.
+test('offers no issue types until the schema has loaded', () => {
+    useDeploymentData.mockReturnValue({ locationSchema: null });
+
+    const { select } = renderForm();
+
+    expect(select.disabled).toBe(true);
+    expect(select.querySelectorAll('option')).toHaveLength(1);
+    expect(select.textContent).not.toMatch(/not here|overload|broken/i);
+});

@@ -216,6 +216,10 @@ This is how a client learns what to put in ``/api/suggest-new-point``'s ``locati
 payload rather than assuming — it is the same schema the built-in suggest form is
 generated from.
 
+A field's own allowed values are part of its schema, reported as ``enum_items``. For the
+same values with translated labels, ready to render a filter panel, use
+``/api/categories-full`` above.
+
 ``GET /api/languages``
 ~~~~~~~~~~~~~~~~~~~~~~
 

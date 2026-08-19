@@ -43,13 +43,32 @@ def test_location_schema_endpoint_describes_this_instance(test_app):
         "reported_issue_types",
         "photo",
     }
-    assert "categories" not in body
     # uuid is server-assigned and must not be offered as a form field; position is
     # required and client-supplied, same as /api/suggest-new-point, so it must be.
     assert "uuid" not in body["fields"]
     assert "position" in body["fields"]
     assert all(set(t) == {"value", "label"} for t in body["reported_issue_types"])
     assert set(body["photo"]) == {"allowed_extensions", "allowed_mime_types", "max_size_bytes"}
+
+
+def test_location_schema_reports_allowed_values_inside_each_field():
+    """A field's allowed values are part of its own schema under `fields`.
+
+    Removing the top-level `categories` key removed a second copy of them in a different
+    shape, not the values themselves - a client building a suggest payload still needs
+    them, and this is where it reads them from.
+    """
+    test_app = create_test_app(
+        db_overrides={
+            "categories": {"accessible_by": ["bikes", "cars"]},
+            "location_obligatory_fields": [("accessible_by", "list"), ("name", "str")],
+        }
+    )
+    response = test_app.get("/api/location-schema")
+    assert response.status_code == 200
+    body = response.json
+    # frozenset-backed, so the order carries no meaning
+    assert set(body["fields"]["accessible_by"]["enum_items"]) == {"bikes", "cars"}
 
 
 def test_location_schema_endpoint_falls_back_to_default_issue_options():

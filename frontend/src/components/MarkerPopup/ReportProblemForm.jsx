@@ -154,7 +154,14 @@ const ReportProblemForm = ({ placeId }) => {
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [responseMessage, setResponseMessage] = useState('');
 
-    const issueTypeOptions = getIssueTypeOptions(t, locationSchema?.reported_issue_types);
+    // Until the schema arrives, this deployment's own issue types are unknown, and the
+    // legacy fallbacks below are not a stand-in for them: offering those would let a
+    // report be filed against a value this instance may not accept. A loaded schema that
+    // simply declares none is a different case, and does fall back.
+    const isSchemaLoaded = Boolean(locationSchema);
+    const issueTypeOptions = isSchemaLoaded
+        ? getIssueTypeOptions(t, locationSchema.reported_issue_types)
+        : [];
 
     const handleSubmit = async event => {
         event.preventDefault();
@@ -186,14 +193,18 @@ const ReportProblemForm = ({ placeId }) => {
         <Form onSubmit={handleSubmit}>
             <Label>
                 {t('reportProblemLabel')}
-                <Select value={problemType} onChange={e => setProblemType(e.target.value)}>
+                <Select
+                    value={problemType}
+                    onChange={e => setProblemType(e.target.value)}
+                    disabled={!isSchemaLoaded}
+                >
                     <option value="">{t('reportChooseOption')}</option>
                     {issueTypeOptions.map(opt => (
                         <option key={opt.value} value={opt.value}>
                             {opt.label}
                         </option>
                     ))}
-                    <option value="other">{t('reportOther')}</option>
+                    {isSchemaLoaded && <option value="other">{t('reportOther')}</option>}
                 </Select>
             </Label>
             {problemType === 'other' && (

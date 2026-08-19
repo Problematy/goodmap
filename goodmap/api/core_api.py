@@ -439,6 +439,9 @@ def core_pages(
         supplied by the client), the reportable issue types and the photo limits, as
         the built-in suggest form uses them.
 
+        A field's own allowed values are part of its schema under `fields`. What this no
+        longer carries is a separate top-level `categories` map repeating them in another
+        shape; /api/categories-full reports the same values with translated labels.
         """
         properties = location_model.model_json_schema().get("properties", {})
         # Matches the fallback /api/report-location applies: an unconfigured
@@ -476,7 +479,6 @@ def core_pages(
         categories_default_checked = categories_data.get("categories_default_checked", {})
         categories_filter_mode = categories_data.get("categories_filter_mode", {})
 
-        # TODO: reject empty categories at startup - they make obligatory fields unfillable
         for key, options in categories_data["categories"].items():
             category_entry = {
                 "key": key,
