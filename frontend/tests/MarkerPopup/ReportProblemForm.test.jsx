@@ -137,12 +137,26 @@ describe('ReportProblemForm', () => {
 
 // A schema that has not arrived is not the same as one declaring no issue types: the
 // legacy fallbacks are not a stand-in for values this deployment may not accept.
-test('offers no issue types until the schema has loaded', () => {
+test('renders nothing until the schema has loaded', () => {
     useDeploymentData.mockReturnValue({ locationSchema: null });
 
-    const { select } = renderForm();
+    const { container } = render(<ReportProblemForm placeId={PLACE_ID} />);
 
-    expect(select.disabled).toBe(true);
-    expect(select.querySelectorAll('option')).toHaveLength(1);
-    expect(select.textContent).not.toMatch(/not here|overload|broken/i);
+    expect(container.innerHTML).toBe('');
+});
+
+// Withholding the form on a failed fetch would otherwise leave it never appearing at all.
+test('offers a retry when the schema could not be loaded', () => {
+    const refetchLocationSchema = jest.fn();
+    useDeploymentData.mockReturnValue({
+        locationSchema: null,
+        schemaError: true,
+        refetchLocationSchema,
+    });
+
+    const { getByText, getByRole } = render(<ReportProblemForm placeId={PLACE_ID} />);
+
+    expect(getByText(/failed to load the report form/i)).toBeTruthy();
+    fireEvent.click(getByRole('button', { name: /retry/i }));
+    expect(refetchLocationSchema).toHaveBeenCalledTimes(1);
 });

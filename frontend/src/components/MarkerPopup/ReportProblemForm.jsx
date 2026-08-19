@@ -101,6 +101,28 @@ const SubmitButton = styled.input`
 /**
  * Styled success message component.
  */
+const ErrorMessage = styled.div`
+    padding: 12px 15px;
+    background-color: #fdecea;
+    border: 1px solid #f5c6cb;
+    border-radius: 8px;
+    color: #b71c1c;
+    font-size: 13px;
+    margin: 10px 15px;
+    text-align: center;
+`;
+
+const RetryButton = styled.button`
+    margin-top: 8px;
+    font-size: 13px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid currentColor;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+`;
+
 const SuccessMessage = styled.div`
     padding: 12px 15px;
     background-color: #e8f5e9;
@@ -148,20 +170,15 @@ const getIssueTypeOptions = (t, dynamicTypes) => {
 
 const ReportProblemForm = ({ placeId }) => {
     const { t } = useTranslation();
-    const { locationSchema } = useDeploymentData();
+    const { locationSchema, schemaError, refetchLocationSchema } = useDeploymentData();
     const [problem, setProblem] = useState('');
     const [problemType, setProblemType] = useState('');
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [responseMessage, setResponseMessage] = useState('');
 
-    // Until the schema arrives, this deployment's own issue types are unknown, and the
-    // legacy fallbacks below are not a stand-in for them: offering those would let a
-    // report be filed against a value this instance may not accept. A loaded schema that
-    // simply declares none is a different case, and does fall back.
-    const isSchemaLoaded = Boolean(locationSchema);
-    const issueTypeOptions = isSchemaLoaded
-        ? getIssueTypeOptions(t, locationSchema.reported_issue_types)
-        : [];
+    // Only reached once the schema is known, so a loaded schema declaring no issue
+    // types is the one case that falls back to the legacy defaults.
+    const issueTypeOptions = getIssueTypeOptions(t, locationSchema?.reported_issue_types);
 
     const handleSubmit = async event => {
         event.preventDefault();
@@ -189,22 +206,38 @@ const ReportProblemForm = ({ placeId }) => {
         return <SuccessMessage>{responseMessage}</SuccessMessage>;
     }
 
+    // This deployment's own issue types are the only ones it is guaranteed to accept, so
+    // the form is withheld until they are known: the legacy fallbacks are not a stand-in
+    // for them. A failed fetch has to say so, or the form would just never appear.
+    if (schemaError) {
+        return (
+            <ErrorMessage>
+                {t('loadReportFormError')}
+                <div>
+                    <RetryButton type="button" onClick={refetchLocationSchema}>
+                        {t('retry')}
+                    </RetryButton>
+                </div>
+            </ErrorMessage>
+        );
+    }
+
+    if (!locationSchema) {
+        return null;
+    }
+
     return (
         <Form onSubmit={handleSubmit}>
             <Label>
                 {t('reportProblemLabel')}
-                <Select
-                    value={problemType}
-                    onChange={e => setProblemType(e.target.value)}
-                    disabled={!isSchemaLoaded}
-                >
+                <Select value={problemType} onChange={e => setProblemType(e.target.value)}>
                     <option value="">{t('reportChooseOption')}</option>
                     {issueTypeOptions.map(opt => (
                         <option key={opt.value} value={opt.value}>
                             {opt.label}
                         </option>
                     ))}
-                    {isSchemaLoaded && <option value="other">{t('reportOther')}</option>}
+                    <option value="other">{t('reportOther')}</option>
                 </Select>
             </Label>
             {problemType === 'other' && (

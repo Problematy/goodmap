@@ -41,6 +41,7 @@
     "linkCopyFailed": "Failed to copy link",
     "loadFiltersError": "Failed to load filters.",
     "loadSuggestFormError": "Failed to load the suggestion form.",
+    "loadReportFormError": "Failed to load the report form.",
     "retry": "Retry",
     "clearFilters": "Clear filters",
     "clearAllFiltersAriaLabel": "Clear all filters",
