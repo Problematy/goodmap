@@ -54,12 +54,6 @@ class VersionResponse(BaseModel):
     backend: str = Field(..., description="Backend version")
 
 
-class ClusteringParams(BaseModel):
-    """Parameters for clustering request."""
-
-    zoom: int = Field(7, ge=0, le=16, description="Map zoom level for clustering")
-
-
 class ErrorResponse(BaseModel):
     """Standard error response."""
 
@@ -150,13 +144,21 @@ class LocationQueryParams(BaseModel):
     ``GET /api/categories-full`` to discover the ones this instance accepts.
     """
 
-    lat: float | None = Field(None, description="Sort by distance from this latitude; requires lon")
-    lon: float | None = Field(
+    lat: Latitude | None = Field(
+        None, description="Sort by distance from this latitude; requires lon"
+    )
+    lon: Longitude | None = Field(
         None, description="Sort by distance from this longitude; requires lat"
     )
     limit: int | None = Field(
-        None, description="Return at most this many points, applied after sorting"
+        None, ge=1, description="Return at most this many points, applied after sorting"
     )
+
+
+class ClusteredQueryParams(LocationQueryParams):
+    """Query parameters of the clustered list: the plain list's, plus ``zoom``."""
+
+    zoom: int = Field(7, ge=0, le=16, description="Map zoom level for clustering")
 
 
 class IssueType(BaseModel):

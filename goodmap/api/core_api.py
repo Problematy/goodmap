@@ -19,7 +19,7 @@ from werkzeug.exceptions import HTTPException
 
 from goodmap.api.api_models import (
     CategoriesFullResponse,
-    ClusteringParams,
+    ClusteredQueryParams,
     ClusterList,
     ErrorResponse,
     LanguagesResponse,
@@ -130,6 +130,32 @@ def safe_location_loads(raw_location: str) -> dict[str, Any]:
     return parsed
 
 
+def _validation_error_to_api_shape(req, resp, req_validation_error, instance):
+    """Rewrite spectree's raw pydantic error into the API's documented error shape.
+
+    Spectree answers a failed request model with a bare list of pydantic error dicts,
+    which contradicts the "errors are {"message": ...}" contract every other endpoint
+    keeps, and leaks input values and errors.pydantic.dev links to the caller. The
+    detail goes to the log instead, same as the handlers' own error paths.
+    """
+    if req_validation_error is None or resp is None:
+        return
+    errors = req_validation_error.errors()
+    logger.warning(
+        "Request validation failed: %s",
+        errors,
+        extra={"path": getattr(req, "path", None)},
+    )
+    # Name the offending parameters but not their values or pydantic's internals: the
+    # caller sent those names, so echoing them back leaks nothing and saves a guess.
+    fields = sorted({str(loc) for e in errors for loc in e.get("loc", ())})
+    body = {"message": ERROR_INVALID_REQUEST_DATA}
+    if fields:
+        body["error"] = f"invalid or out of range: {', '.join(fields)}"
+    resp.set_data(json_lib.dumps(body))
+    resp.content_type = "application/json"
+
+
 def core_pages(
     database,
     languages: LanguagesMapping,
@@ -157,18 +183,14 @@ def core_pages(
         title="Goodmap API",
         version="0.1",
         path="doc",
-        # annotations=False: the handlers take no model-annotated parameters, and with
-        # it on spectree refuses skip_validation, which several routes below rely on.
-        annotations=False,
         naming_strategy=_clean_model_name,  # Use clean model names without hash
         tags=[TAG_DEPLOYMENT_SPECIFIC, TAG_MAP_DATA, TAG_SUBMISSIONS, TAG_META],
+        validation_error_status=400,
+        validation_error_model=ErrorResponse,
+        before=_validation_error_to_api_shape,
     )
 
     @core_api_blueprint.route("/suggest-new-point", methods=["POST"])
-    # No form= model: the point's fields are the deployment's own location_model, so a
-    # static schema could only say "location is a string" - which the docstring already
-    # says, in words, without spectree then 500ing on an attached photo it cannot
-    # serialize into a validation error. The handler validates against location_model.
     @spec.validate(
         tags=[TAG_SUBMISSIONS], resp=Response(HTTP_200=SuccessResponse, HTTP_400=ErrorResponse)
     )
@@ -298,13 +320,13 @@ def core_pages(
         return make_response(jsonify({"message": gettext("Location reported")}), 200)
 
     @core_api_blueprint.route("/locations", methods=["GET"])
-    # skip_validation: this endpoint ignores invalid and unknown query parameters by
-    # design, so spectree must document them without rejecting anything.
+    # lat/lon/limit are validated: a value that cannot mean anything (lat=abc, lat=999,
+    # limit=-3) is a caller mistake worth reporting, not worth silently ignoring. The
+    # deployment's own category filters are not declared here and pass through untouched.
     @spec.validate(
         tags=[TAG_MAP_DATA],
         query=LocationQueryParams,
-        resp=Response(HTTP_200=LocationList),
-        skip_validation=True,
+        resp=Response(HTTP_200=LocationList, HTTP_400=ErrorResponse),
     )
     def get_locations():
         """Get list of locations with basic info.
@@ -316,13 +338,11 @@ def core_pages(
         return jsonify(locations)
 
     @core_api_blueprint.route("/locations-clustered", methods=["GET"])
-    # skip_validation: the handler owns zoom validation and returns 400 with a log line;
-    # letting spectree validate would turn that into a 422 and skip the log.
+    # Same contract as /api/locations, plus zoom - validated for the same reason.
     @spec.validate(
         tags=[TAG_MAP_DATA],
-        query=ClusteringParams,
+        query=ClusteredQueryParams,
         resp=Response(HTTP_200=ClusterList, HTTP_400=ErrorResponse),
-        skip_validation=True,
     )
     def get_locations_clustered():
         """Get clustered locations for map display.
@@ -332,14 +352,8 @@ def core_pages(
         """
         try:
             query_params = request.args.to_dict(flat=False)
+            # Range-checked by ClusteredQueryParams before the handler runs.
             zoom = int(query_params.get("zoom", [7])[0])
-
-            # Validate zoom level (aligned with SuperCluster min_zoom/max_zoom)
-            if not MIN_ZOOM <= zoom <= MAX_ZOOM:
-                return make_response(
-                    jsonify({"message": f"Zoom must be between {MIN_ZOOM} and {MAX_ZOOM}"}),
-                    400,
-                )
 
             points = get_locations_from_request(database, request.args)
             if not points:

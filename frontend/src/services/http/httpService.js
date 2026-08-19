@@ -14,6 +14,27 @@ import { useMapStore } from '../../components/Map/store/map.store';
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
+ * Returns the parsed JSON body, or throws if the response was not a success.
+ *
+ * Without this a rejected request (e.g. 400 for an out-of-range lat) resolves to the
+ * API's `{message}` error object, which then reaches the callers as if it were the
+ * data they asked for and fails later with a confusing shape error.
+ *
+ * @param {Response} response - fetch response
+ * @param {string} what - short description of the request, used in the error message
+ * @returns {Promise<any>} The parsed JSON body
+ * @throws {Error} If the response status is not ok
+ */
+const jsonOrThrow = async (response, what) => {
+    if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        const detail = body?.message ? `: ${body.message}` : '';
+        throw new Error(`Failed to fetch ${what} (HTTP ${response.status})${detail}`);
+    }
+    return response.json();
+};
+
+/**
  * Converts filter object to URL query string parameters.
  * Also includes map configuration (zoom, bounds) if server-side clustering is enabled.
  *
@@ -96,7 +117,7 @@ export const httpService = {
                 'Content-Type': 'application/json',
             },
         });
-        return response.json();
+        return jsonOrThrow(response, 'locations');
     },
 
     /**
@@ -119,7 +140,7 @@ export const httpService = {
                 },
             },
         );
-        return response.json();
+        return jsonOrThrow(response, 'nearby locations');
     },
 
     /**
@@ -143,7 +164,7 @@ export const httpService = {
                 'Content-Type': 'application/json',
             },
         });
-        return response.json();
+        return jsonOrThrow(response, 'location details');
     },
 
     /**

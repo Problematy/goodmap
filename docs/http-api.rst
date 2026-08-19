@@ -44,7 +44,9 @@ minted in. There is no endpoint that issues a token on its own — a script need
 a page first, the same as a browser does (:ref:`api-csrf-scripted`).
 
 **Errors are ``{"message": "..."}``**, occasionally with an extra ``error`` field.
-Messages are deliberately generic — the details go to the server log, not the response.
+Messages are deliberately generic — the offending values go to the server log, not the
+response. A rejected query parameter names which one it was, without echoing the value:
+``{"message": "Invalid request data", "error": "invalid or out of range: zoom"}``.
 
 **Strings are translated** to the request's language before being returned, so category
 keys and field names come back as display text (:ref:`config-translations`).
@@ -115,10 +117,10 @@ Query parameters:
      - Filter value; repeat for several. Combined per :ref:`categories-filter-mode`.
    * - ``lat``, ``lon``
      - Sort results by distance from this coordinate, nearest first. Both required, or
-       neither applies.
+       neither applies. Ranges are the usual **−90..90** and **−180..180**.
    * - ``limit``
-     - Return at most this many points. Applied after sorting, so ``lat``/``lon``/``limit``
-       together give "the N nearest".
+     - Return at most this many points, **1 or more**. Applied after sorting, so
+       ``lat``/``lon``/``limit`` together give "the N nearest".
 
 .. code-block:: bash
 
@@ -127,7 +129,11 @@ Query parameters:
 Each point comes back as ``uuid``, ``position`` and ``has_remark`` — a **boolean**, whether
 the point has a remark, not its text.
 
-Invalid or unknown query parameters are ignored rather than rejected.
+A ``lat``, ``lon`` or ``limit`` that cannot mean anything — not a number, or outside the
+range above — is a ``400 {"message": "Invalid request data"}`` rather than a silently
+different result. Any *other* parameter is passed through to the filters untouched: the
+valid filter names come from your own ``categories`` and cannot be checked against a fixed
+list, so an unknown one is simply a filter that matches nothing.
 
 ``GET /api/locations-clustered``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -137,7 +143,8 @@ level. This is what the frontend calls instead of ``/api/locations`` when
 ``USE_SERVER_SIDE_CLUSTERING`` is on.
 
 Takes every parameter of :ref:`api-locations`, plus ``zoom`` (integer, **0–16**, default
-``7``). A ``zoom`` outside that range is a ``400``.
+``7``), and rejects unusable values the same way — a ``zoom`` outside that range, like a
+bad ``lat``, is a ``400``.
 
 Points and clusters come back in one list, told apart by ``type``. A ``"point"`` carries
 a real ``uuid`` you can pass to :ref:`api-location-detail`; a ``"cluster"`` carries a

@@ -262,6 +262,39 @@ def test_get_locations(test_app):
     ]
 
 
+@pytest.mark.parametrize(
+    "query",
+    [
+        "lat=abc",  # not a number
+        "lat=999",  # outside -90..90
+        "lon=999",  # outside -180..180
+        "limit=notanumber",
+        "limit=0",  # a limit of nothing is a caller mistake, not an empty map
+        "limit=-3",
+    ],
+)
+def test_get_locations_rejects_unusable_parameters(test_app, query):
+    """lat/lon/limit values that cannot mean anything are reported, not ignored."""
+    response = test_app.get(f"/api/locations?{query}")
+    assert response.status_code == 400
+    assert response.json["message"] == "Invalid request data"
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        "",
+        "lat=51.1&lon=17.05&limit=5",
+        "unknown_param=x",  # not declared, and cannot be - filters are per-deployment
+        "test-category=test",
+    ],
+)
+def test_get_locations_accepts_valid_and_undeclared_parameters(test_app, query):
+    """Declared params are checked; anything else passes through to the filters."""
+    response = test_app.get(f"/api/locations?{query}")
+    assert response.status_code == 200
+
+
 def test_get_locations_multi_value_same_category_uses_or_semantics():
     """Selecting several checkboxes within one category should return the union
     of matches, not only entries that have every selected value."""
@@ -433,8 +466,8 @@ def test_reporting_location_success(test_app):
 @mock.patch("flask_babel.gettext", fake_translation)
 def test_reporting_returns_error_when_wrong_json(test_app):
     response = api_post(test_app, "/api/report-location", {"name": "location-id", "position": 50})
-    assert response.status_code == 422
-    assert isinstance(response.json, list)
+    assert response.status_code == 400
+    assert response.json["message"] == "Invalid request data"
 
 
 @mock.patch("goodmap.api.core_api.gettext", fake_translation)
@@ -451,7 +484,8 @@ def test_report_location_with_invalid_json(test_app):
     response = test_app.post(
         "/api/report-location", data="invalid json", content_type="application/json"
     )
-    assert response.status_code == 422
+    assert response.status_code == 400
+    assert response.json["message"] == "Invalid request data"
 
 
 def test_report_location_unexpected_error(test_app):
@@ -893,20 +927,21 @@ def test_location_clustering_low_zoom_creates_clusters(test_app):
 
 
 @pytest.mark.parametrize(
-    "zoom,expected_status,check_message",
+    "zoom,expected_status",
     [
-        ("invalid", 400, "Invalid parameters provided"),
-        ("-1", 400, "Zoom must be between 0 and 16"),
-        ("17", 400, "Zoom must be between 0 and 16"),
-        ("0", 200, None),
-        ("16", 200, None),
+        ("invalid", 400),
+        ("-1", 400),
+        ("17", 400),
+        ("0", 200),
+        ("16", 200),
     ],
 )
-def test_location_clustering_zoom_validation(test_app, zoom, expected_status, check_message):
+def test_location_clustering_zoom_validation(test_app, zoom, expected_status):
     response = test_app.get(f"/api/locations-clustered?zoom={zoom}")
     assert response.status_code == expected_status
-    if check_message:
-        assert check_message in response.json["message"]
+    if expected_status == 400:
+        assert response.json["message"] == "Invalid request data"
+        assert "zoom" in response.json["error"]
 
 
 def test_location_clustering_empty_locations():
@@ -927,10 +962,11 @@ def test_location_clustering_exception_handling(test_app):
 
 
 def test_location_clustering_logs_on_invalid_parameter(test_app):
+    """The rejected value itself goes to the log, not to the caller."""
     with mock.patch("goodmap.api.core_api.logger") as mock_logger:
         test_app.get("/api/locations-clustered?zoom=invalid")
         mock_logger.warning.assert_called_once()
-        assert "Invalid parameter" in mock_logger.warning.call_args[0][0]
+        assert "Request validation failed" in mock_logger.warning.call_args[0][0]
 
 
 def test_location_clustering_logs_on_exception(test_app):
