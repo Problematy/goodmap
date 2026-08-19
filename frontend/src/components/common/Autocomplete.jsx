@@ -20,13 +20,14 @@ const AutoComplete = ({ onClick }) => {
     const { t } = useTranslation();
     const timeoutRef = useRef(null);
 
-    useEffect(() => {
-        return () => {
+    useEffect(
+        () => () => {
             if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
             }
-        };
-    }, []);
+        },
+        [],
+    );
 
     const handleInputChange = e => {
         const term = e.target.value;

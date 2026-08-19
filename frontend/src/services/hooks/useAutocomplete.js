@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { httpService } from '../http/httpService';
+import httpService from '../http/httpService';
 
 /**
  * Custom hook for address autocomplete functionality.

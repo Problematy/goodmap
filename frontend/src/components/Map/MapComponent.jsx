@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
 import { MapContainer, TileLayer } from 'react-leaflet';
 import Control from 'react-leaflet-custom-control';
-import { LocationControl } from './components/LocationControl';
-import { SuggestNewPointButton } from './components/SuggestNewPointButton';
-import { LocationPermissionBanner } from './components/LocationPermissionBanner';
-import { mapConfig } from './map.config';
-import { CustomZoomControl } from './components/ZoomControl';
+import LocationControl from './components/LocationControl';
+import SuggestNewPointButton from './components/SuggestNewPointButton';
+import LocationPermissionBanner from './components/LocationPermissionBanner';
+import mapConfig from './map.config';
+import CustomZoomControl from './components/ZoomControl';
 import MapAutocomplete from './components/MapAutocomplete';
 import ListViewButton from './components/ListView';
 import AccessibilityTable from './components/AccessibilityTable';
 import SaveMapConfiguration from './components/SaveMapConfiguration';
-import { Markers } from './components/Markers';
-import { MapLoadingOverlay } from './components/MapLoadingOverlay';
+import Markers from './components/Markers';
+import MapLoadingOverlay from './components/MapLoadingOverlay';
 import { LocationProvider, useLocation } from './context/LocationContext';
-import { GoToLocation } from './components/GoToLocation';
+import GoToLocation from './components/GoToLocation';
 import MapOverlays from '../../plugins/MapOverlays';
 
 /**
@@ -83,10 +83,10 @@ const MapComponentInner = () => {
  *
  * @returns {React.ReactElement} MapContainer with markers and controls, or AccessibilityTable when list view is active
  */
-export const MapComponent = () => {
-    return (
-        <LocationProvider>
-            <MapComponentInner />
-        </LocationProvider>
-    );
-};
+const MapComponent = () => (
+    <LocationProvider>
+        <MapComponentInner />
+    </LocationProvider>
+);
+
+export default MapComponent;

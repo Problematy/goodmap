@@ -2,7 +2,7 @@ import React from 'react';
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import { MapContainer } from 'react-leaflet';
-import { ClusterMarker } from '../../src/components/MarkerPopup/ClusterMarker';
+import ClusterMarker from '../../src/components/MarkerPopup/ClusterMarker';
 
 const correctClusterData = {
     position: [51.1095, 17.0525],

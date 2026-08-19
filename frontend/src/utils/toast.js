@@ -8,8 +8,10 @@ import { toast as toastify } from 'react-hot-toast';
  * @property {Function} error - Displays an error toast notification
  * @property {Function} info - Displays an info/loading toast notification
  */
-export const toast = {
+const toast = {
     success: toastify.success,
     error: toastify.error,
     info: toastify.loading,
 };
+
+export default toast;

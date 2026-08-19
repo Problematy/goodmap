@@ -2,8 +2,8 @@ import React from 'react';
 import '@testing-library/jest-dom';
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import { MapContainer } from 'react-leaflet';
-import { MarkerPopup } from '../../src/components/MarkerPopup/MarkerPopup';
-import { httpService } from '../../src/services/http/httpService';
+import MarkerPopup from '../../src/components/MarkerPopup/MarkerPopup';
+import httpService from '../../src/services/http/httpService';
 
 jest.mock('../../src/services/http/httpService');
 

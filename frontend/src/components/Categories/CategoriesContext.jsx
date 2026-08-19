@@ -1,5 +1,6 @@
 import React, { useState, useContext, createContext, useMemo, useEffect, useCallback } from 'react';
-import { httpService } from '../../services/http/httpService';
+import PropTypes from 'prop-types';
+import httpService from '../../services/http/httpService';
 
 /**
  * React Context for managing categories state across the application.
@@ -65,6 +66,10 @@ export const CategoriesProvider = ({ children }) => {
     );
 
     return <CategoriesContext.Provider value={value}>{children}</CategoriesContext.Provider>;
+};
+
+CategoriesProvider.propTypes = {
+    children: PropTypes.node.isRequired,
 };
 
 /**

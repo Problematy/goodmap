@@ -24,11 +24,11 @@ import AddAPhotoIcon from '@mui/icons-material/AddAPhoto';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
-import { getCsrfToken } from '../../../utils/csrf';
+import imageCompression from 'browser-image-compression';
+import getCsrfToken from '../../../utils/csrf';
 import { useLocation } from '../context/LocationContext';
 import { useCategories } from '../../Categories/CategoriesContext';
-import { toast } from '../../../utils/toast';
-import imageCompression from 'browser-image-compression';
+import toast from '../../../utils/toast';
 
 // Map a category's options to a { key: translation } object.
 // Options come as [[key, translation], ...] or [key, ...].
@@ -36,7 +36,8 @@ const mapCategoryOptions = categoryOptions => {
     const optionMap = {};
     categoryOptions.forEach(opt => {
         if (Array.isArray(opt)) {
-            optionMap[opt[0]] = opt[1];
+            const [key, value] = opt;
+            optionMap[key] = value;
         } else {
             optionMap[opt] = opt;
         }
@@ -113,7 +114,7 @@ const useScrollToTop = trigger => {
  * @param {{open: boolean, onClose: () => void}} props
  * @returns {React.ReactElement} Dialog with the new point suggestion form
  */
-export const SuggestNewPointDialog = ({ open, onClose }) => {
+const SuggestNewPointDialog = ({ open, onClose }) => {
     const { t } = useTranslation();
     const { userPosition, requestLocationWithFeedback } = useLocation();
     const { categoriesData } = useCategories();
@@ -280,24 +281,19 @@ export const SuggestNewPointDialog = ({ open, onClose }) => {
     };
 
     // Helper to get translated field label
-    const getFieldLabel = fieldName => {
-        // Check static translations first, then category translations, then fallback to raw name
-        return (
-            staticFieldTranslations[fieldName] ||
-            categoryTranslations.fieldNames[fieldName] ||
-            fieldName
-        );
-    };
+    // Check static translations first, then category translations, then fallback to raw name
+    const getFieldLabel = fieldName =>
+        staticFieldTranslations[fieldName] ||
+        categoryTranslations.fieldNames[fieldName] ||
+        fieldName;
 
     // Helper to get translated option label
-    const getOptionLabel = (fieldName, optionKey) => {
-        return categoryTranslations.options[fieldName]?.[optionKey] || optionKey;
-    };
+    const getOptionLabel = (fieldName, optionKey) =>
+        categoryTranslations.options[fieldName]?.[optionKey] || optionKey;
 
     // Helper to get translated selected values for display
-    const getSelectedDisplay = (fieldName, selectedValues) => {
-        return selectedValues.map(val => getOptionLabel(fieldName, val)).join(', ');
-    };
+    const getSelectedDisplay = (fieldName, selectedValues) =>
+        selectedValues.map(val => getOptionLabel(fieldName, val)).join(', ');
 
     // Render form field based on field type and whether it's a category
     const renderFormField = (fieldName, fieldType) => {
@@ -328,7 +324,8 @@ export const SuggestNewPointDialog = ({ open, onClose }) => {
                     </Select>
                 </FormControl>
             );
-        } else if (isCategory) {
+        }
+        if (isCategory) {
             // Single select for category fields
             return (
                 <FormControl fullWidth margin="dense" key={fieldName}>
@@ -347,20 +344,19 @@ export const SuggestNewPointDialog = ({ open, onClose }) => {
                     </Select>
                 </FormControl>
             );
-        } else {
-            // Text field for non-category fields
-            return (
-                <TextField
-                    key={fieldName}
-                    label={fieldLabel}
-                    value={formFields[fieldName] || ''}
-                    onChange={handleFieldChange(fieldName)}
-                    fullWidth
-                    margin="dense"
-                    data-testid={`${fieldName}-input`}
-                />
-            );
         }
+        // Text field for non-category fields
+        return (
+            <TextField
+                key={fieldName}
+                label={fieldLabel}
+                value={formFields[fieldName] || ''}
+                onChange={handleFieldChange(fieldName)}
+                fullWidth
+                margin="dense"
+                data-testid={`${fieldName}-input`}
+            />
+        );
     };
 
     return (
@@ -445,3 +441,5 @@ SuggestNewPointDialog.propTypes = {
     open: PropTypes.bool.isRequired,
     onClose: PropTypes.func.isRequired,
 };
+
+export default SuggestNewPointDialog;

@@ -16,7 +16,7 @@ import styled from 'styled-components';
  * @param {number} props.cluster.cluster_count - Number of markers in this cluster
  * @returns {React.ReactElement} Marker component with custom cluster icon
  */
-export const ClusterMarker = ({ cluster }) => {
+const ClusterMarker = ({ cluster }) => {
     const map = useMap();
     const handleClusterClick = () => {
         const targetZoom = Math.min(map.getZoom() + 5, map.getMaxZoom());
@@ -24,14 +24,16 @@ export const ClusterMarker = ({ cluster }) => {
     };
 
     // Create a DivIcon with the rendered React component (memoized to prevent recreation)
-    const clusterIcon = useMemo(() => {
-        return new DivIcon({
-            html: ReactDOMServer.renderToString(<ClusterMarkerIcon cluster={cluster} />),
-            className: 'custom-cluster-icon',
-            iconSize: [30, 30],
-            iconAnchor: [15, 15],
-        });
-    }, [cluster.cluster_count]);
+    const clusterIcon = useMemo(
+        () =>
+            new DivIcon({
+                html: ReactDOMServer.renderToString(<ClusterMarkerIcon cluster={cluster} />),
+                className: 'custom-cluster-icon',
+                iconSize: [30, 30],
+                iconAnchor: [15, 15],
+            }),
+        [cluster.cluster_count],
+    );
 
     return (
         <Marker
@@ -53,13 +55,11 @@ export const ClusterMarker = ({ cluster }) => {
  * @param {number} props.cluster.cluster_count - Number of markers in this cluster
  * @returns {React.ReactElement} Styled circular icon with cluster count
  */
-const ClusterMarkerIcon = ({ cluster }) => {
-    return (
-        <ClusterMarkerContainer>
-            <span>{cluster.cluster_count}</span>
-        </ClusterMarkerContainer>
-    );
-};
+const ClusterMarkerIcon = ({ cluster }) => (
+    <ClusterMarkerContainer>
+        <span>{cluster.cluster_count}</span>
+    </ClusterMarkerContainer>
+);
 
 /**
  * Styled container for the cluster marker icon.
@@ -97,3 +97,5 @@ ClusterMarker.propTypes = {
         cluster_count: PropTypes.number.isRequired,
     }).isRequired,
 };
+
+export default ClusterMarker;

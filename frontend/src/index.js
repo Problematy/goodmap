@@ -1,6 +1,6 @@
-import { MapContainer } from './components/Map/Map';
+import MapContainer from './components/Map/Map';
 import './i18n';
-import { loadPlugins } from './plugins/pluginLoader';
+import loadPlugins from './plugins/pluginLoader';
 
 (async () => {
     await loadPlugins();

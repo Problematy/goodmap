@@ -56,7 +56,7 @@ const LoadingText = styled.p`
  * @param {string} [props.text] - Optional loading text to display
  * @returns {React.ReactElement} Loading overlay with spinner or custom GIF
  */
-export const MapLoadingOverlay = ({ isLoading, text = null }) => {
+const MapLoadingOverlay = ({ isLoading, text = null }) => {
     const customGif = globalThis.MAP_LOADING_GIF;
 
     return (
@@ -71,3 +71,5 @@ MapLoadingOverlay.propTypes = {
     isLoading: PropTypes.bool.isRequired,
     text: PropTypes.string,
 };
+
+export default MapLoadingOverlay;

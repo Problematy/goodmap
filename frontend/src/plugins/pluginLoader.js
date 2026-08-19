@@ -12,7 +12,7 @@ async function loadRemoteScript(url) {
     });
 }
 
-export async function loadPlugins() {
+async function loadPlugins() {
     const manifest = globalThis.PLUGIN_MANIFEST;
     if (!Array.isArray(manifest) || manifest.length === 0) return;
 
@@ -23,10 +23,14 @@ export async function loadPlugins() {
     // per-capability module from it.
     const initialized = new Set();
 
+    // Sequential by design: each container must finish init() against the shared scope before
+    // the next one loads, so the awaits below cannot be parallelized with Promise.all.
+    /* eslint-disable no-await-in-loop */
     for (const { pluginName, url, module: moduleName, config, capability } of manifest) {
         try {
             if (!initialized.has(pluginName)) {
                 await loadRemoteScript(url);
+                // eslint-disable-next-line camelcase
                 await window[pluginName].init(__webpack_share_scopes__.default);
                 initialized.add(pluginName);
             }
@@ -36,4 +40,7 @@ export async function loadPlugins() {
             console.warn(`Failed to load plugin "${pluginName}" (${capability}):`, e);
         }
     }
+    /* eslint-enable no-await-in-loop */
 }
+
+export default loadPlugins;

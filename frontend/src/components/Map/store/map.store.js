@@ -1,8 +1,10 @@
-import {create} from 'zustand';
+import { create } from 'zustand';
 
-export const useMapStore = create((set) => ({
+const useMapStore = create(set => ({
     mapConfiguration: null,
-    setMapConfiguration: (mapConfiguration) => set({mapConfiguration}),
+    setMapConfiguration: mapConfiguration => set({ mapConfiguration }),
     selectedLocationId: null,
-    setSelectedLocationId: (selectedLocationId) => set({selectedLocationId}),
+    setSelectedLocationId: selectedLocationId => set({ selectedLocationId }),
 }));
+
+export default useMapStore;

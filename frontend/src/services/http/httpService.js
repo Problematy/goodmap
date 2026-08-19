@@ -5,7 +5,7 @@ import {
     SEARCH_ADDRESS,
     LOCATIONS_CLUSTERED,
 } from './endpoints';
-import { useMapStore } from '../../components/Map/store/map.store';
+import useMapStore from '../../components/Map/store/map.store';
 
 // UUID allowlist used to validate location ids before they are placed in a
 // request URL. An inline regex (not uuid.validate()) is used deliberately:
@@ -63,7 +63,7 @@ function filtersToQuery(filters) {
  * HTTP service object containing all API interaction methods.
  * Provides methods for fetching categories, locations, languages, and address search.
  */
-export const httpService = {
+const httpService = {
     /**
      * Fetches complete categories data including subcategories in a single request.
      * Uses the /api/categories-full endpoint to avoid waterfall requests.
@@ -208,3 +208,5 @@ export const httpService = {
         return fetch(`${SEARCH_ADDRESS}?${queryString}`).then(response => response.json());
     },
 };
+
+export default httpService;

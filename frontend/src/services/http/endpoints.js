@@ -27,4 +27,3 @@ export const LOCATIONS_CLUSTERED = '/api/locations-clustered';
  * Converts addresses/place names to geographic coordinates.
  */
 export const SEARCH_ADDRESS = 'https://nominatim.openstreetmap.org/search';
-

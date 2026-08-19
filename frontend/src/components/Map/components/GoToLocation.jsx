@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useMap } from 'react-leaflet';
-import { httpService } from '../../../services/http/httpService';
-import { useMapStore } from '../store/map.store';
+import httpService from '../../../services/http/httpService';
+import useMapStore from '../store/map.store';
 
 /**
  * Component that handles navigating to a specific location by ID.
@@ -10,7 +10,7 @@ import { useMapStore } from '../store/map.store';
  *
  * @returns {null} This component renders nothing
  */
-export const GoToLocation = () => {
+const GoToLocation = () => {
     const map = useMap();
     const [hasNavigated, setHasNavigated] = useState(false);
     const setSelectedLocationId = useMapStore(state => state.setSelectedLocationId);
@@ -50,3 +50,5 @@ export const GoToLocation = () => {
 
     return null;
 };
+
+export default GoToLocation;

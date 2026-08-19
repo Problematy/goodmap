@@ -86,4 +86,4 @@ const LocationControl = () => {
     );
 };
 
-export { LocationControl };
+export default LocationControl;

@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useMap } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
-import { httpService } from '../../../services/http/httpService';
-import { MarkerPopup } from '../../MarkerPopup/MarkerPopup';
+import httpService from '../../../services/http/httpService';
+import MarkerPopup from '../../MarkerPopup/MarkerPopup';
 import { useCategories } from '../../Categories/CategoriesContext';
-import { ClusterMarker } from '../../MarkerPopup/ClusterMarker';
+import ClusterMarker from '../../MarkerPopup/ClusterMarker';
 
 /**
  * Converts location data into marker components.
@@ -43,7 +43,7 @@ const getMarkers = locations => {
  * @param {Function} [props.onLoadingChange] - Callback fired when loading state changes
  * @returns {React.ReactElement|Array} MarkerClusterGroup containing location markers, or empty array while loading
  */
-export const Markers = ({ onLoadingChange = null }) => {
+const Markers = ({ onLoadingChange = null }) => {
     const { categories, isInitialized } = useCategories();
     const [markers, setMarkers] = useState([]);
     const [areMarkersLoaded, setAreMarkersLoaded] = useState(false);
@@ -74,7 +74,7 @@ export const Markers = ({ onLoadingChange = null }) => {
 
             // Only use client-side clustering when server-side clustering is disabled
             const markerCluster = useServerSideClustering ? (
-                <>{markersToAdd}</>
+                markersToAdd
             ) : (
                 <MarkerClusterGroup
                     eventHandlers={{
@@ -124,3 +124,5 @@ export const Markers = ({ onLoadingChange = null }) => {
 Markers.propTypes = {
     onLoadingChange: PropTypes.func,
 };
+
+export default Markers;

@@ -2,7 +2,8 @@ import { render, fireEvent, waitFor, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import React from 'react';
 import axios from 'axios';
-import { SuggestNewPointButton } from '../../../src/components/Map/components/SuggestNewPointButton';
+import imageCompression from 'browser-image-compression';
+import SuggestNewPointButton from '../../../src/components/Map/components/SuggestNewPointButton';
 import { LocationProvider } from '../../../src/components/Map/context/LocationContext';
 import { CategoriesProvider } from '../../../src/components/Categories/CategoriesContext';
 import {
@@ -18,26 +19,26 @@ import {
     fillTextField,
 } from '../../utils/dialogHelpers';
 import { ERROR_MESSAGES, FILE_SIZES, SIMPLE_SCHEMA, FULL_SCHEMA } from '../../utils/testConstants';
-import { httpService } from '../../../src/services/http/httpService';
-import { toast } from '../../../src/utils/toast';
-import imageCompression from 'browser-image-compression';
+import httpService from '../../../src/services/http/httpService';
+import toast from '../../../src/utils/toast';
 
-const renderWithProvider = component => {
-    return render(
+const renderWithProvider = component =>
+    render(
         <CategoriesProvider>
             <LocationProvider>{component}</LocationProvider>
         </CategoriesProvider>,
     );
-};
 
 jest.mock('axios');
 jest.mock('../../../src/services/http/httpService', () => ({
-    httpService: {
+    __esModule: true,
+    default: {
         getCategoriesData: jest.fn(),
     },
 }));
 jest.mock('../../../src/utils/toast', () => ({
-    toast: { success: jest.fn(), error: jest.fn() },
+    __esModule: true,
+    default: { success: jest.fn(), error: jest.fn() },
 }));
 jest.mock('browser-image-compression');
 

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import toast, { ToastBar, Toaster } from 'react-hot-toast';
 import { IconButton } from '@mui/material';
 import Close from '@mui/icons-material/Close';
-import { useMaxToasts } from '../../utils/hooks/useMaxToasts';
+import useMaxToasts from '../../utils/hooks/useMaxToasts';
 
 /**
  * Global toast notification component for displaying user feedback messages.
@@ -12,7 +12,7 @@ import { useMaxToasts } from '../../utils/hooks/useMaxToasts';
  *
  * @returns {React.ReactElement} Toaster component configured for the application
  */
-export const AppToaster = () => {
+const AppToaster = () => {
     useMaxToasts();
 
     // #main-row's stacking context would trap the toast below the MUI Dialog.
@@ -56,3 +56,5 @@ export const AppToaster = () => {
         document.getElementById('overlay-root'),
     );
 };
+
+export default AppToaster;
