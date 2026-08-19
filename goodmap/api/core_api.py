@@ -48,8 +48,6 @@ from goodmap.json_security import (
     safe_json_loads,
 )
 
-# SuperCluster configuration constants (MIN_ZOOM/MAX_ZOOM live in clustering.py, so the
-# request model and the clusterer cannot disagree about the accepted range)
 CLUSTER_RADIUS = 200
 CLUSTER_EXTENT = 512
 
@@ -335,9 +333,6 @@ def core_pages(
         return api_error(gettext("Location reported"), 200)
 
     @core_api_blueprint.route("/locations", methods=["GET"])
-    # lat/lon/limit are validated: a value that cannot mean anything (lat=abc, lat=999,
-    # limit=-3) is a caller mistake worth reporting, not worth silently ignoring. The
-    # deployment's own category filters are not declared here and pass through untouched.
     @spec.validate(
         tags=[TAG_MAP_DATA],
         query=LocationQueryParams,
@@ -353,7 +348,6 @@ def core_pages(
         return jsonify(locations)
 
     @core_api_blueprint.route("/locations-clustered", methods=["GET"])
-    # Same contract as /api/locations, plus zoom - validated for the same reason.
     @spec.validate(
         tags=[TAG_MAP_DATA],
         query=ClusteredQueryParams,
@@ -367,7 +361,6 @@ def core_pages(
         """
         try:
             query_params = request.args.to_dict(flat=False)
-            # Range-checked by ClusteredQueryParams before the handler runs.
             zoom = int(query_params.get("zoom", [7])[0])
 
             points = get_locations_from_request(database, request.args)
