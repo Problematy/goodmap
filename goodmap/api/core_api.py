@@ -63,19 +63,19 @@ ERROR_INVALID_DESCRIPTION = "Invalid report description"
 
 logger = logging.getLogger(__name__)
 
-# The API surface - paths, methods, response envelopes, status codes - is the same in
+# The API surface - paths, methods, response shapes, status codes - is the same in
 # every deployment. The *values* flowing through it are not: filters, accepted point
 # fields and reportable issues all come from that deployment's own data source. These
 # tags group the endpoints in /api/doc so that split is visible, and point at the
-# discovery endpoints that report what a given instance actually declares.
-TAG_DISCOVERY = Tag(
-    name="discovery",
+# endpoints that report what a given instance actually declares.
+TAG_DEPLOYMENT_SPECIFIC = Tag(
+    name="deployment_specific",
     description="What this particular deployment declares - call these to find out, "
     "rather than assuming; the answers differ between instances.",
 )
 TAG_MAP_DATA = Tag(
     name="map data",
-    description="Reading points. Response envelopes are fixed; which filters apply and "
+    description="Reading points. Response shapes are fixed; which filters apply and "
     "which fields come back depend on this deployment's data source.",
 )
 TAG_SUBMISSIONS = Tag(
@@ -161,7 +161,7 @@ def core_pages(
         # it on spectree refuses skip_validation, which several routes below rely on.
         annotations=False,
         naming_strategy=_clean_model_name,  # Use clean model names without hash
-        tags=[TAG_DISCOVERY, TAG_MAP_DATA, TAG_SUBMISSIONS, TAG_META],
+        tags=[TAG_DEPLOYMENT_SPECIFIC, TAG_MAP_DATA, TAG_SUBMISSIONS, TAG_META],
     )
 
     @core_api_blueprint.route("/suggest-new-point", methods=["POST"])
@@ -407,7 +407,7 @@ def core_pages(
         return jsonify(version_info)
 
     @core_api_blueprint.route("/location-schema", methods=["GET"])
-    @spec.validate(tags=[TAG_DISCOVERY], resp=Response(HTTP_200=LocationSchemaResponse))
+    @spec.validate(tags=[TAG_DEPLOYMENT_SPECIFIC], resp=Response(HTTP_200=LocationSchemaResponse))
     def get_location_schema():
         """Get the schema this instance accepts for a new point.
 
@@ -440,7 +440,7 @@ def core_pages(
         )
 
     @core_api_blueprint.route("/categories-full", methods=["GET"])
-    @spec.validate(tags=[TAG_DISCOVERY], resp=Response(HTTP_200=CategoriesFullResponse))
+    @spec.validate(tags=[TAG_DEPLOYMENT_SPECIFIC], resp=Response(HTTP_200=CategoriesFullResponse))
     def get_categories_full():
         """Get all categories with their subcategory options in a single request.
 
@@ -490,7 +490,7 @@ def core_pages(
         return jsonify(response)
 
     @core_api_blueprint.route("/languages", methods=["GET"])
-    @spec.validate(tags=[TAG_DISCOVERY], resp=Response(HTTP_200=LanguagesResponse))
+    @spec.validate(tags=[TAG_DEPLOYMENT_SPECIFIC], resp=Response(HTTP_200=LanguagesResponse))
     def get_languages():
         """Get all available interface languages.
 

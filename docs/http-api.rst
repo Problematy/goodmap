@@ -24,11 +24,11 @@ reference.** This page covers what a schema cannot state — what the endpoints 
 how they behave.
 
 **The API surface is the same in every deployment**: same paths, same methods, same
-response envelopes, same status codes. That part is documented here in full. The *values*
+response shapes, same status codes. That part is documented here in full. The *values*
 moving through it are not — filters, the fields a point may carry, the issues that can be
 reported all come from each deployment's own data source. Those are documented by your
 running instance rather than by this page; see
-`Discovery: what your deployment declares`_.
+`Deployment-specific: what your instance declares`_.
 
 Conventions
 -----------
@@ -175,14 +175,14 @@ in neither list are not returned at all.
 The path segment must be a valid UUID; anything else fails routing with ``404``. A
 well-formed UUID that does not exist also gives ``404 {"message": "Location not found"}``.
 
-Discovery: what your deployment declares
-----------------------------------------
+Deployment-specific: what your instance declares
+------------------------------------------------
 
 The endpoints above have a fixed shape, but the *values* moving through them do not.
 Which filters apply, which fields a point may carry, which issues can be reported — all
 of that comes from your own data source (:doc:`data-source`), so it differs between
 instances. Rather than enumerating one instance's values here, these endpoints report
-what yours actually declares. They are grouped under the ``discovery`` tag in
+what yours actually declares. They are grouped under the ``deployment_specific`` tag in
 ``/api/doc``, and a running instance is always the authority.
 
 ``GET /api/categories-full``
@@ -239,7 +239,7 @@ the map data.
 form field as a JSON object — not as one form field per property — and the optional photo
 goes in a ``photo`` file part. Send the point without a ``uuid``; the server assigns one.
 
-That envelope is the same everywhere. **What goes inside the JSON object is not** — the
+That shape is the same everywhere. **What goes inside the JSON object is not** — the
 accepted fields are whatever *your* data source declares in ``location_obligatory_fields``
 and ``categories`` (:doc:`data-source`), so there is no universal payload to copy. The
 fields below are the ones the :doc:`quickstart` map happens to declare; substitute your
