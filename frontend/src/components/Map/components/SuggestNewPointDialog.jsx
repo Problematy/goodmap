@@ -46,8 +46,6 @@ const mapCategoryOptions = categoryOptions => {
 };
 
 // Build { fieldNames, options } translation maps from the fetched category definitions.
-// Every category key is registered, even when it has no options, so a category with an
-// empty option list stays distinguishable from a field that is not a category at all.
 const buildCategoryTranslations = categoriesData => {
     const fieldNames = {};
     const options = {};

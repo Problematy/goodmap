@@ -479,6 +479,7 @@ def core_pages(
         categories_default_checked = categories_data.get("categories_default_checked", {})
         categories_filter_mode = categories_data.get("categories_filter_mode", {})
 
+        # TODO: reject empty categories at startup - they make obligatory fields unfillable
         for key, options in categories_data["categories"].items():
             category_entry = {
                 "key": key,
