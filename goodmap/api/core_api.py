@@ -7,24 +7,34 @@ from typing import Any
 import deprecation
 import numpy
 import pysupercluster
-from flask import Blueprint, jsonify, make_response, request
+from flask import Blueprint, current_app, jsonify, make_response, request
 from flask_babel import gettext
 from platzky import FeatureFlagSet
 from platzky.attachment import create_attachment
 from platzky.config import AttachmentConfig, LanguagesMapping
 from platzky.shortcodes import Shortcode
 from spectree import Response, SpecTree
+from spectree.models import Tag
 from werkzeug.exceptions import HTTPException
 
-from goodmap.api_models import (
-    CSRFTokenResponse,
+from goodmap.api.api_models import (
+    CategoriesFullResponse,
+    ClusteredQueryParams,
+    ClusterList,
     ErrorResponse,
+    LanguagesResponse,
+    LocationDetail,
+    LocationList,
+    LocationQueryParams,
     LocationReportRequest,
     LocationReportResponse,
+    LocationSchemaResponse,
     SuccessResponse,
     VersionResponse,
 )
 from goodmap.clustering import (
+    MAX_ZOOM,
+    MIN_ZOOM,
     map_clustering_data_to_proper_lazy_loading_object,
     match_clusters_uuids,
 )
@@ -38,9 +48,6 @@ from goodmap.json_security import (
     safe_json_loads,
 )
 
-# SuperCluster configuration constants
-MIN_ZOOM = 0
-MAX_ZOOM = 16
 CLUSTER_RADIUS = 200
 CLUSTER_EXTENT = 512
 
@@ -52,8 +59,34 @@ ERROR_INVALID_REQUEST_DATA = "Invalid request data"
 ERROR_INVALID_LOCATION_DATA = "Invalid location data"
 ERROR_LOCATION_NOT_FOUND = "Location not found"
 ERROR_INVALID_DESCRIPTION = "Invalid report description"
+ERROR_INVALID_PARAMETERS = "Invalid parameters provided"
+ERROR_PAYLOAD_TOO_COMPLEX = "Invalid request: JSON payload too complex or too large"
+ERROR_CLUSTERING_FAILED = "An error occurred during clustering"
+ERROR_SUGGESTION_FAILED = "An error occurred while processing your suggestion"
 
 logger = logging.getLogger(__name__)
+
+# The API surface - paths, methods, response shapes, status codes - is the same in
+# every deployment. The *values* flowing through it are not: filters, accepted point
+# fields and reportable issues all come from that deployment's own data source. These
+# tags group the endpoints in /api/doc so that split is visible, and point at the
+# endpoints that report what a given instance actually declares.
+TAG_DEPLOYMENT_SPECIFIC = Tag(
+    name="deployment_specific",
+    description="What this particular deployment declares - call these to find out, "
+    "rather than assuming; the answers differ between instances.",
+)
+TAG_MAP_DATA = Tag(
+    name="map data",
+    description="Reading points. Response shapes are fixed; which filters apply and "
+    "which fields come back depend on this deployment's data source.",
+)
+TAG_SUBMISSIONS = Tag(
+    name="submissions",
+    description="Visitor-submitted points and reports. Both land in a moderation queue "
+    "and need a CSRF token.",
+)
+TAG_META = Tag(name="meta", description="Fixed in every deployment.")
 
 
 @deprecation.deprecated(
@@ -67,17 +100,22 @@ def get_default_issue_options():
     return ["notHere", "overload", "broken", "other"]
 
 
+def translated_help(options, prefix: str) -> list[dict[str, str]]:
+    """Build the ``[{option: help text}]`` shape the help fields use.
+
+    The help text is looked up under ``<prefix>_<option>``, so the data source only
+    stores which options have help, not the text itself.
+    """
+    return [{option: gettext(f"{prefix}_{option}")} for option in options or []]
+
+
+def api_error(message: str, status: int):
+    """Build the API's standard error response: a JSON body of just {"message": ...}."""
+    return make_response(jsonify({"message": message}), status)
+
+
 def make_tuple_translation(keys_to_translate):
     return [(x, gettext(x)) for x in keys_to_translate]
-
-
-def get_or_none(data, *keys):
-    for key in keys:
-        if isinstance(data, dict):
-            data = data.get(key)
-        else:
-            return None
-    return data
 
 
 def get_locations_from_request(database, request_args):
@@ -96,6 +134,20 @@ def get_locations_from_request(database, request_args):
     return [x.basic_info() for x in all_locations]
 
 
+def photo_attachment_from_request(photo_attachment_config: AttachmentConfig):
+    """Build the attachment for the request's optional ``photo`` part, or None.
+
+    Raises ValueError, from create_attachment, if the photo breaks the configured
+    format or size limits - the caller answers with the configured message.
+    """
+    photo_file = request.files.get("photo")
+    if not (photo_file and photo_file.filename):
+        return None
+    content = photo_file.read()
+    mime = photo_file.content_type or "application/octet-stream"
+    return create_attachment(photo_file.filename, content, mime, photo_attachment_config)
+
+
 def safe_location_loads(raw_location: str) -> dict[str, Any]:
     """Parse a suggested-location payload, requiring it to be a JSON object.
 
@@ -109,11 +161,36 @@ def safe_location_loads(raw_location: str) -> dict[str, Any]:
     return parsed
 
 
+def _validation_error_to_api_shape(req, resp, req_validation_error, instance):
+    """Rewrite spectree's raw pydantic error into the API's documented error shape.
+
+    Spectree answers a failed request model with a bare list of pydantic error dicts,
+    which contradicts the "errors are {"message": ...}" contract every other endpoint
+    keeps, and leaks input values and errors.pydantic.dev links to the caller. The
+    detail goes to the log instead, same as the handlers' own error paths.
+    """
+    if req_validation_error is None or resp is None:
+        return
+    errors = req_validation_error.errors()
+    logger.warning(
+        "Request validation failed: %s",
+        errors,
+        extra={"path": getattr(req, "path", None)},
+    )
+    # Name the offending parameters but not their values or pydantic's internals: the
+    # caller sent those names, so echoing them back leaks nothing and saves a guess.
+    fields = sorted({str(loc) for e in errors for loc in e.get("loc", ())})
+    body = {"message": ERROR_INVALID_REQUEST_DATA}
+    if fields:
+        body["error"] = f"invalid or out of range: {', '.join(fields)}"
+    resp.set_data(json_lib.dumps(body))
+    resp.content_type = "application/json"
+
+
 def core_pages(
     database,
     languages: LanguagesMapping,
     notifier_function,
-    csrf_generator,
     location_model,
     photo_attachment_config: AttachmentConfig,
     feature_flags: FeatureFlagSet,
@@ -137,12 +214,17 @@ def core_pages(
         title="Goodmap API",
         version="0.1",
         path="doc",
-        annotations=True,
         naming_strategy=_clean_model_name,  # Use clean model names without hash
+        tags=[TAG_DEPLOYMENT_SPECIFIC, TAG_MAP_DATA, TAG_SUBMISSIONS, TAG_META],
+        validation_error_status=400,
+        validation_error_model=ErrorResponse,
+        before=_validation_error_to_api_shape,
     )
 
     @core_api_blueprint.route("/suggest-new-point", methods=["POST"])
-    @spec.validate(resp=Response(HTTP_200=SuccessResponse, HTTP_400=ErrorResponse))
+    @spec.validate(
+        tags=[TAG_SUBMISSIONS], resp=Response(HTTP_200=SuccessResponse, HTTP_400=ErrorResponse)
+    )
     def suggest_new_point():
         """Suggest new location for review.
 
@@ -151,7 +233,6 @@ def core_pages(
         validated using the Pydantic location model.
         """
         try:
-            photo_attachment = None
             raw_location = request.form.get("location", "")
             try:
                 suggested_location = safe_location_loads(raw_location)
@@ -161,35 +242,20 @@ def core_pages(
                     f"JSON parsing blocked for security: {e}",
                     extra={"value_size": len(raw_location)},
                 )
-                return make_response(
-                    jsonify(
-                        {
-                            "message": "Invalid request: JSON payload too complex or too large",
-                        }
-                    ),
-                    400,
-                )
+                return api_error(ERROR_PAYLOAD_TOO_COMPLEX, 400)
             except ValueError:
                 logger.warning("Invalid location payload in suggest endpoint")
-                return make_response(jsonify({"message": ERROR_INVALID_REQUEST_DATA}), 400)
+                return api_error(ERROR_INVALID_REQUEST_DATA, 400)
 
-            # Extract and validate photo attachment if present
-            photo_file = request.files.get("photo")
-            if photo_file and photo_file.filename:
-                photo_content = photo_file.read()
-                photo_mime = photo_file.content_type or "application/octet-stream"
-
-                try:
-                    photo_attachment = create_attachment(
-                        photo_file.filename, photo_content, photo_mime, photo_attachment_config
-                    )
-                except ValueError as e:
-                    logger.warning(
-                        "Rejected photo: %s",
-                        e,
-                        extra={"photo_filename": repr(photo_file.filename)},
-                    )
-                    return make_response(jsonify({"message": error_invalid_photo}), 400)
+            try:
+                photo_attachment = photo_attachment_from_request(photo_attachment_config)
+            except ValueError as e:
+                logger.warning(
+                    "Rejected photo: %s",
+                    e,
+                    extra={"photo_filename": repr(request.files["photo"].filename)},
+                )
+                return api_error(error_invalid_photo, 400)
 
             suggested_location.update({"uuid": str(uuid.uuid4())})
             location = location_model.model_validate(suggested_location)
@@ -210,20 +276,19 @@ def core_pages(
                 e.validation_errors,
                 extra={"errors": e.validation_errors},
             )
-            return make_response(jsonify({"message": ERROR_INVALID_LOCATION_DATA}), 400)
+            return api_error(ERROR_INVALID_LOCATION_DATA, 400)
         except HTTPException:
             # Carries its own status (e.g. 413 for a body past MAX_CONTENT_LENGTH);
             # reporting it as a 500 would misattribute a client error to the server.
             raise
         except Exception:
             logger.exception("Error in suggest location endpoint")
-            return make_response(
-                jsonify({"message": "An error occurred while processing your suggestion"}), 500
-            )
-        return make_response(jsonify({"message": "Location suggested"}), 200)
+            return api_error(ERROR_SUGGESTION_FAILED, 500)
+        return api_error("Location suggested", 200)
 
     @core_api_blueprint.route("/report-location", methods=["POST"])
     @spec.validate(
+        tags=[TAG_SUBMISSIONS],
         json=LocationReportRequest,
         resp=Response(HTTP_200=LocationReportResponse, HTTP_400=ErrorResponse),
     )
@@ -244,9 +309,9 @@ def core_pages(
 
             if description not in issue_options:
                 if "other" not in issue_options:
-                    return make_response(jsonify({"message": ERROR_INVALID_DESCRIPTION}), 400)
+                    return api_error(ERROR_INVALID_DESCRIPTION, 400)
                 if len(description) > MAX_DESCRIPTION_LENGTH:
-                    return make_response(jsonify({"message": ERROR_INVALID_DESCRIPTION}), 400)
+                    return api_error(ERROR_INVALID_DESCRIPTION, 400)
 
             report = {
                 "uuid": str(uuid.uuid4()),
@@ -264,22 +329,30 @@ def core_pages(
         except Exception:
             logger.exception("Error in report location endpoint")
             error_message = gettext("Error sending notification")
-            return make_response(jsonify({"message": error_message}), 500)
-        return make_response(jsonify({"message": gettext("Location reported")}), 200)
+            return api_error(error_message, 500)
+        return api_error(gettext("Location reported"), 200)
 
     @core_api_blueprint.route("/locations", methods=["GET"])
-    @spec.validate()
+    @spec.validate(
+        tags=[TAG_MAP_DATA],
+        query=LocationQueryParams,
+        resp=Response(HTTP_200=LocationList, HTTP_400=ErrorResponse),
+    )
     def get_locations():
         """Get list of locations with basic info.
 
         Returns locations filtered by query parameters,
-        showing only uuid, position, and remark flag.
+        showing only uuid, position, and whether each has a remark.
         """
         locations = get_locations_from_request(database, request.args)
         return jsonify(locations)
 
     @core_api_blueprint.route("/locations-clustered", methods=["GET"])
-    @spec.validate(resp=Response(HTTP_400=ErrorResponse))
+    @spec.validate(
+        tags=[TAG_MAP_DATA],
+        query=ClusteredQueryParams,
+        resp=Response(HTTP_200=ClusterList, HTTP_400=ErrorResponse),
+    )
     def get_locations_clustered():
         """Get clustered locations for map display.
 
@@ -289,13 +362,6 @@ def core_pages(
         try:
             query_params = request.args.to_dict(flat=False)
             zoom = int(query_params.get("zoom", [7])[0])
-
-            # Validate zoom level (aligned with SuperCluster min_zoom/max_zoom)
-            if not MIN_ZOOM <= zoom <= MAX_ZOOM:
-                return make_response(
-                    jsonify({"message": f"Zoom must be between {MIN_ZOOM} and {MAX_ZOOM}"}),
-                    400,
-                )
 
             points = get_locations_from_request(database, request.args)
             if not points:
@@ -323,13 +389,15 @@ def core_pages(
             return jsonify(map_clustering_data_to_proper_lazy_loading_object(clusters))
         except ValueError as e:
             logger.warning("Invalid parameter in clustering request: %s", e)
-            return make_response(jsonify({"message": "Invalid parameters provided"}), 400)
+            return api_error(ERROR_INVALID_PARAMETERS, 400)
         except Exception as e:
             logger.exception("Clustering operation failed: %s", e)
-            return make_response(jsonify({"message": "An error occurred during clustering"}), 500)
+            return api_error(ERROR_CLUSTERING_FAILED, 500)
 
     @core_api_blueprint.route("/location/<uuid:location_id>", methods=["GET"])
-    @spec.validate(resp=Response(HTTP_404=ErrorResponse))
+    @spec.validate(
+        tags=[TAG_MAP_DATA], resp=Response(HTTP_200=LocationDetail, HTTP_404=ErrorResponse)
+    )
     def get_location(location_id):
         """Get detailed information for a single location.
 
@@ -343,7 +411,7 @@ def core_pages(
         location = database.get_location(location_id)
         if location is None:
             logger.info(ERROR_LOCATION_NOT_FOUND, extra={"uuid": location_id})
-            return make_response(jsonify({"message": ERROR_LOCATION_NOT_FOUND}), 404)
+            return api_error(ERROR_LOCATION_NOT_FOUND, 404)
 
         visible_data = database.get_visible_data()
         meta_data = database.get_meta_data()
@@ -351,7 +419,7 @@ def core_pages(
         return jsonify(formatted_data)
 
     @core_api_blueprint.route("/version", methods=["GET"])
-    @spec.validate(resp=Response(HTTP_200=VersionResponse))
+    @spec.validate(tags=[TAG_META], resp=Response(HTTP_200=VersionResponse))
     def get_version():
         """Get backend version information.
 
@@ -360,47 +428,41 @@ def core_pages(
         version_info = {"backend": importlib.metadata.version("goodmap")}
         return jsonify(version_info)
 
-    @core_api_blueprint.route("/generate-csrf-token", methods=["GET"])
-    @spec.validate(resp=Response(HTTP_200=CSRFTokenResponse))
-    @deprecation.deprecated(
-        deprecated_in="1.1.8",
-        details="This endpoint for explicit CSRF token generation is deprecated. "
-        "CSRF protection remains active in the application.",
-    )
-    def generate_csrf_token():
-        """Generate CSRF token (DEPRECATED).
+    @core_api_blueprint.route("/location-schema", methods=["GET"])
+    @spec.validate(tags=[TAG_DEPLOYMENT_SPECIFIC], resp=Response(HTTP_200=LocationSchemaResponse))
+    def get_location_schema():
+        """Get the schema this instance accepts for a new point.
 
-        This endpoint is deprecated and maintained only for backward compatibility.
-        CSRF protection remains active in the application.
+        The fields a point may carry are configured per deployment, so there is no
+        fixed payload for /api/suggest-new-point. This returns the accepted fields
+        (excluding only the server-assigned uuid - position is required and must be
+        supplied by the client), the allowed values for each category, the reportable
+        issue types and the photo limits, as the built-in suggest form uses them.
         """
-        csrf_token = csrf_generator()
-        return {"csrf_token": csrf_token}
-
-    @core_api_blueprint.route("/categories", methods=["GET"])
-    @spec.validate()
-    def get_categories():
-        """Get all available location categories.
-
-        Returns list of categories with optional help text
-        if CATEGORIES_HELP feature flag is enabled.
-        """
-        raw_categories = database.get_categories()
-        categories = make_tuple_translation(raw_categories)
-
-        if CategoriesHelp not in feature_flags:
-            return jsonify(categories)
-
         category_data = database.get_category_data()
-        categories_help = category_data.get("categories_help")
-        proper_categories_help = []
-        if categories_help is not None:
-            for option in categories_help:
-                proper_categories_help.append({option: gettext(f"categories_help_{option}")})
-
-        return jsonify({"categories": categories, "categories_help": proper_categories_help})
+        properties = location_model.model_json_schema().get("properties", {})
+        # Matches the fallback /api/report-location applies: an unconfigured
+        # reported_issue_types must not make this endpoint advertise fewer accepted
+        # values than the report endpoint actually accepts.
+        issue_options = database.get_issue_options() or get_default_issue_options()
+        return jsonify(
+            {
+                "fields": {name: spec_ for name, spec_ in properties.items() if name != "uuid"},
+                "obligatory_fields": current_app.extensions.get("goodmap", {}).get(
+                    "location_obligatory_fields", []
+                ),
+                "categories": category_data.get("categories", {}),
+                "reported_issue_types": [{"value": t, "label": gettext(t)} for t in issue_options],
+                "photo": {
+                    "allowed_extensions": sorted(photo_attachment_config.allowed_extensions or []),
+                    "allowed_mime_types": sorted(photo_attachment_config.allowed_mime_types or []),
+                    "max_size_bytes": photo_attachment_config.max_size,
+                },
+            }
+        )
 
     @core_api_blueprint.route("/categories-full", methods=["GET"])
-    @spec.validate()
+    @spec.validate(tags=[TAG_DEPLOYMENT_SPECIFIC], resp=Response(HTTP_200=CategoriesFullResponse))
     def get_categories_full():
         """Get all categories with their subcategory options in a single request.
 
@@ -408,6 +470,7 @@ def core_pages(
         This endpoint eliminates the need for multiple sequential requests.
         """
         categories_data = database.get_category_data()
+        with_help = CategoriesHelp in feature_flags
         result = []
 
         categories_options_help = categories_data.get("categories_options_help", {})
@@ -427,66 +490,30 @@ def core_pages(
                 "filter_mode": categories_filter_mode.get(key, "or"),
             }
 
-            if CategoriesHelp in feature_flags:
-                option_help_list = categories_options_help.get(key, [])
-                proper_options_help = []
-                for option in option_help_list:
-                    proper_options_help.append(
-                        {option: gettext(f"categories_options_help_{option}")}
-                    )
-                category_entry["options_help"] = proper_options_help
+            if with_help:
+                category_entry["options_help"] = translated_help(
+                    categories_options_help.get(key), "categories_options_help"
+                )
 
             result.append(category_entry)
 
         response = {"categories": result}
 
-        if CategoriesHelp in feature_flags:
-            categories_help = categories_data.get("categories_help", [])
-            proper_categories_help = []
-            for option in categories_help:
-                proper_categories_help.append({option: gettext(f"categories_help_{option}")})
-            response["categories_help"] = proper_categories_help
+        if with_help:
+            response["categories_help"] = translated_help(
+                categories_data.get("categories_help"), "categories_help"
+            )
 
         return jsonify(response)
 
     @core_api_blueprint.route("/languages", methods=["GET"])
-    @spec.validate()
+    @spec.validate(tags=[TAG_DEPLOYMENT_SPECIFIC], resp=Response(HTTP_200=LanguagesResponse))
     def get_languages():
         """Get all available interface languages.
 
         Returns list of supported languages for the application.
         """
         return jsonify(languages)
-
-    @core_api_blueprint.route("/category/<category_type>", methods=["GET"])
-    @spec.validate()
-    def get_category_types(category_type):
-        """Get all available options for a specific category.
-
-        Returns list of category options with optional help text
-        if CATEGORIES_HELP feature flag is enabled.
-        """
-        category_data = database.get_category_data(category_type)
-        local_data = make_tuple_translation(category_data["categories"][category_type])
-
-        categories_options_help = get_or_none(
-            category_data, "categories_options_help", category_type
-        )
-        proper_categories_options_help = []
-        if categories_options_help is not None:
-            for option in categories_options_help:
-                proper_categories_options_help.append(
-                    {option: gettext(f"categories_options_help_{option}")}
-                )
-        if CategoriesHelp not in feature_flags:
-            return jsonify(local_data)
-
-        return jsonify(
-            {
-                "categories_options": local_data,
-                "categories_options_help": proper_categories_options_help,
-            }
-        )
 
     # Register Spectree with blueprint after all routes are defined
     spec.register(core_api_blueprint)

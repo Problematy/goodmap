@@ -523,6 +523,101 @@ def _make_test_app_config(feature_flags: Any = None, extra_data: Any = None) -> 
     )
 
 
+def test_csrf_protect_is_initialized_exactly_once():
+    """platzky already initializes CSRFProtect; goodmap must not add a second hook."""
+    config = _make_test_app_config(extra_data={"categories": {}})
+    app = goodmap.create_app_from_config(config)
+    hooks = [f.__name__ for f in app.before_request_funcs.get(None, [])]
+    assert hooks.count("csrf_protect") == 1
+
+
+def test_csrf_failure_returns_json_error():
+    """A rejected write gets the API's JSON error shape, not an HTML error page."""
+    config = _make_test_app_config(extra_data={"categories": {}, "data": []})
+    app = goodmap.create_app_from_config(config)
+    client = app.test_client()
+
+    response = client.post("/api/report-location", json={"id": "x", "description": "y"})
+
+    assert response.status_code == 400
+    assert response.content_type.startswith("application/json")
+    assert response.json == {"message": "The CSRF token is missing."}
+
+
+def test_csrf_enforces_referer_on_https():
+    """WTF_CSRF_SSL_STRICT is left on: https requires a same-origin Referer, on top
+    of the token/session check, as defense-in-depth against a forged cross-origin
+    request. A real browser sends a matching Referer automatically for a same-origin
+    request, so this only rejects scripted callers that omit it or spoof it.
+    """
+    import re
+
+    config = _make_test_app_config(extra_data={"categories": {}, "data": []})
+    app = goodmap.create_app_from_config(config)
+    client = app.test_client()
+
+    page = client.get("/map", base_url="https://localhost")
+    token_match = re.search(r'name="csrf-token" content="([^"]+)"', page.data.decode("utf-8"))
+    assert token_match is not None
+    token = token_match.group(1)
+    payload = {"id": "x", "description": "y"}
+
+    # Same-origin Referer, as a real browser sends by default: past the CSRF layer.
+    # The handler may still reject the payload, but not with a CSRF message.
+    response = client.post(
+        "/api/report-location",
+        json=payload,
+        headers={"X-CSRFToken": token, "Referer": "https://localhost/map"},
+        base_url="https://localhost",
+    )
+    assert "CSRF" not in response.get_data(as_text=True)
+
+    # No Referer at all: rejected.
+    response = client.post(
+        "/api/report-location",
+        json=payload,
+        headers={"X-CSRFToken": token},
+        base_url="https://localhost",
+    )
+    assert response.status_code == 400
+    assert response.json == {"message": "The referrer header is missing."}
+
+    # Cross-origin Referer: rejected. This is the actual attack the check defends
+    # against - a request that carries a valid token but did not originate here.
+    response = client.post(
+        "/api/report-location",
+        json=payload,
+        headers={"X-CSRFToken": token, "Referer": "https://evil.example/"},
+        base_url="https://localhost",
+    )
+    assert response.status_code == 400
+    assert response.json == {"message": "The referrer does not match the host."}
+
+
+def test_csrf_token_is_session_scoped():
+    """The token alone is not enough - it must be paired with the session it was minted in."""
+    import re
+
+    config = _make_test_app_config(extra_data={"categories": {}, "data": []})
+    app = goodmap.create_app_from_config(config)
+    assert app.config["WTF_CSRF_TIME_LIMIT"] is None
+
+    victim = app.test_client()
+    page = victim.get("/map")
+    token_match = re.search(r'name="csrf-token" content="([^"]+)"', page.data.decode("utf-8"))
+    assert token_match is not None
+    token = token_match.group(1)
+
+    attacker = app.test_client()
+    response = attacker.post(
+        "/api/report-location",
+        json={"id": "x", "description": "y"},
+        headers={"X-CSRFToken": token},
+    )
+    assert response.status_code == 400
+    assert response.json == {"message": "The CSRF session token is missing."}
+
+
 def test_admin_route_disabled():
     """Should redirect to / when admin panel feature flag is disabled."""
     config = _make_test_app_config()

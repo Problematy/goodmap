@@ -6,9 +6,9 @@ import logging
 import os
 from typing import Any
 
-from flask import Blueprint, redirect, render_template, session
+from flask import Blueprint, jsonify, redirect, render_template, session
 from flask_babel import gettext
-from flask_wtf.csrf import CSRFProtect, generate_csrf
+from flask_wtf.csrf import CSRFError
 from platzky import platzky
 from platzky.config import languages_dict
 from platzky.models import CmsModule
@@ -16,9 +16,9 @@ from platzky.plugin.content_transformer import ContentTransformerPluginBase
 from platzky.shortcodes import Shortcode
 from pydantic import BaseModel
 
-from goodmap.admin_api import admin_pages
+from goodmap.api.admin_api import admin_pages
+from goodmap.api.core_api import core_pages
 from goodmap.config import GoodmapConfig
-from goodmap.core_api import core_pages
 from goodmap.data_models.location import create_location_model
 from goodmap.db import (
     extend_db_with_goodmap_queries,
@@ -231,7 +231,19 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
 
     app.config["PLUGIN_MANIFEST"] = plugin_manifest
 
-    CSRFProtect(app)
+    # CSRF protection itself is initialized by platzky (create_app_from_config runs
+    # CSRFProtect on the engine); initializing it here again would register a second
+    # before_request hook and break any future exempt() registered on one instance only.
+    #
+    # The map page is typically left open well past the default 3600s, and the frontend
+    # never refreshes the meta-tag token - so scope the token to the session instead of
+    # rejecting submissions from any tab older than an hour.
+    app.config["WTF_CSRF_TIME_LIMIT"] = None
+
+    @app.errorhandler(CSRFError)
+    def handle_csrf_error(error):
+        """Return CSRF failures in the API's JSON error shape instead of an HTML page."""
+        return jsonify({"message": error.description}), 400
 
     photo_attachment_config = config.attachment
 
@@ -253,7 +265,6 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         app.db,
         languages_dict(config.languages),
         app.notify,
-        generate_csrf,
         location_model,
         photo_attachment_config=photo_attachment_config,
         feature_flags=config.feature_flags,

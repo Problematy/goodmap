@@ -6,7 +6,7 @@ from flask import Blueprint, jsonify, make_response, request
 from spectree import Response, SpecTree
 from werkzeug.exceptions import BadRequest
 
-from goodmap.api_models import (
+from goodmap.api.api_models import (
     ErrorResponse,
     ReportUpdateRequest,
     SuggestionStatusRequest,

@@ -18,8 +18,17 @@ A running instance also serves its own generated OpenAPI schema:
    * - ``/api/doc/openapi.json``
      - raw OpenAPI document
 
-Use this page for the semantics and the schema endpoint for the exact shapes of the
-release you are running.
+The schema is generated from the code, so it always describes the release you are
+running: every endpoint's parameters, status codes and response shapes. **Use it as the
+reference.** This page covers what a schema cannot state — what the endpoints mean and
+how they behave.
+
+**The API surface is the same in every deployment**: same paths, same methods, same
+response shapes, same status codes. That part is documented here in full. The *values*
+moving through it are not — filters, the fields a point may carry, the issues that can be
+reported all come from each deployment's own data source. Those are documented by your
+running instance rather than by this page; see
+`Deployment-specific: what your instance declares`_.
 
 Conventions
 -----------
@@ -29,8 +38,25 @@ Conventions
 on the ``categories`` in your data source (:doc:`data-source`).
 
 **Writes need a CSRF token.** CSRF protection is on for the whole app, so ``POST``,
-``PUT`` and ``DELETE`` without a token get ``400 The CSRF token is missing``. Send it as
-an ``X-CSRFToken`` header. Server-rendered pages expose one in a meta tag:
+``PUT``, ``PATCH`` and ``DELETE`` without a token get ``400 {"message": "The CSRF token
+is missing."}``. Send it as an ``X-CSRFToken`` header, from the same session the token was
+minted in. There is no endpoint that issues a token on its own — a script needs to fetch
+a page first, the same as a browser does (:ref:`api-csrf-scripted`).
+
+**Errors are ``{"message": "..."}``**, occasionally with an extra ``error`` field.
+Messages are deliberately generic — the offending values go to the server log, not the
+response. A rejected query parameter names which one it was, without echoing the value:
+``{"message": "Invalid request data", "error": "invalid or out of range: zoom"}``.
+
+**Strings are translated** to the request's language before being returned, so category
+keys and field names come back as display text (:ref:`config-translations`).
+
+.. _api-csrf-scripted:
+
+Calling writes from a script
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A browser gets the token for free, from a meta tag on every server-rendered page:
 
 .. code-block:: html
 
@@ -45,11 +71,27 @@ an ``X-CSRFToken`` header. Server-rendered pages expose one in a meta tag:
        body: JSON.stringify({ id: locationUuid, description: 'has a hole' }),
    });
 
-**Errors are ``{"message": "..."}``**, occasionally with an extra ``error`` field.
-Messages are deliberately generic — the details go to the server log, not the response.
+A scripted client has no meta tag to read, so it needs both pieces the browser gets for
+free: the token, and the session cookie it is bound to. **A bare token is not enough** —
+without the matching cookie the request fails with a different error,
+``400 {"message": "The CSRF session token is missing."}``. Fetch a page first to get
+both, keeping cookies in a jar to reuse on the write:
 
-**Strings are translated** to the request's language before being returned, so category
-keys and field names come back as display text (:ref:`config-translations`).
+.. code-block:: bash
+
+   JAR=$(mktemp)
+   TOKEN=$(curl -s -c "$JAR" http://localhost:5000/ | grep -oP 'name="csrf-token" content="\K[^"]+')
+   curl -X POST http://localhost:5000/api/report-location \
+     -b "$JAR" \
+     -H "Content-Type: application/json" \
+     -H "X-CSRFToken: $TOKEN" \
+     -d '{"id": "9264286a-5d33-4e38-ab11-c8e179a7754a", "description": "has a hole"}'
+
+Over https, a matching ``Referer`` header is required too — same-origin defense in
+depth, on top of the token. Browsers send this automatically for a same-origin request,
+so it is invisible in normal use; a scripted client (``curl``, a backend job) must set it
+explicitly, e.g. ``-H "Referer: https://your-host/"``, or the request gets
+``400 {"message": "The referrer header is missing."}``.
 
 Reading the map
 ---------------
@@ -75,28 +117,23 @@ Query parameters:
      - Filter value; repeat for several. Combined per :ref:`categories-filter-mode`.
    * - ``lat``, ``lon``
      - Sort results by distance from this coordinate, nearest first. Both required, or
-       neither applies.
+       neither applies. Ranges are the usual **−90..90** and **−180..180**.
    * - ``limit``
-     - Return at most this many points. Applied after sorting, so ``lat``/``lon``/``limit``
-       together give "the N nearest".
+     - Return at most this many points, **1 or more**. Applied after sorting, so
+       ``lat``/``lon``/``limit`` together give "the N nearest".
 
 .. code-block:: bash
 
    curl 'http://localhost:5000/api/locations?accessible_by=bikes&lat=51.10&lon=17.05&limit=5'
 
-.. code-block:: json
+Each point comes back as ``uuid``, ``position`` and ``has_remark`` — a **boolean**, whether
+the point has a remark, not its text.
 
-   [
-     {
-       "uuid": "7c3d5e7f-9a1b-4c3d-8e5f-7a9b1c3d5e7f",
-       "position": [50.0397, 19.906],
-       "remark": false
-     }
-   ]
-
-``remark`` is a **boolean** — whether the point has a remark, not the remark itself.
-
-Invalid or unknown query parameters are ignored rather than rejected.
+A ``lat``, ``lon`` or ``limit`` that cannot mean anything — not a number, or outside the
+range above — is a ``400 {"message": "Invalid request data"}`` rather than a silently
+different result. Any *other* parameter is passed through to the filters untouched: the
+valid filter names come from your own ``categories`` and cannot be checked against a fixed
+list, so an unknown one is simply a filter that matches nothing.
 
 ``GET /api/locations-clustered``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -106,29 +143,11 @@ level. This is what the frontend calls instead of ``/api/locations`` when
 ``USE_SERVER_SIDE_CLUSTERING`` is on.
 
 Takes every parameter of :ref:`api-locations`, plus ``zoom`` (integer, **0–16**, default
-``7``). A ``zoom`` outside that range is a ``400``.
+``7``), and rejects unusable values the same way — a ``zoom`` outside that range, like a
+bad ``lat``, is a ``400``.
 
-.. code-block:: json
-
-   [
-     {
-       "type": "cluster",
-       "position": [50.1026, 19.8240],
-       "uuid": null,
-       "cluster_uuid": "34515392-7913-47be-a5b4-0c4b5247ad4c",
-       "cluster_count": 2
-     },
-     {
-       "type": "point",
-       "position": [50.833, 15.917],
-       "uuid": "9b1c3d5e-7f9a-4b1c-8d5e-9f1a3b5c7d9e",
-       "cluster_uuid": null,
-       "cluster_count": null
-     }
-   ]
-
-Both kinds come back in one list, told apart by ``type``. A ``"point"`` carries a real
-``uuid`` you can pass to :ref:`api-location-detail`; a ``"cluster"`` carries a
+Points and clusters come back in one list, told apart by ``type``. A ``"point"`` carries
+a real ``uuid`` you can pass to :ref:`api-location-detail`; a ``"cluster"`` carries a
 freshly-generated ``cluster_uuid`` (not stable across requests — it is a render key, not
 an identifier) and the number of points it stands for. ``position`` is
 ``[latitude, longitude]``, as everywhere else.
@@ -163,70 +182,51 @@ in neither list are not returned at all.
 The path segment must be a valid UUID; anything else fails routing with ``404``. A
 well-formed UUID that does not exist also gives ``404 {"message": "Location not found"}``.
 
+Deployment-specific: what your instance declares
+------------------------------------------------
+
+The endpoints above have a fixed shape, but the *values* moving through them do not.
+Which filters apply, which fields a point may carry, which issues can be reported — all
+of that comes from your own data source (:doc:`data-source`), so it differs between
+instances. Rather than enumerating one instance's values here, these endpoints report
+what yours actually declares. They are grouped under the ``deployment_specific`` tag in
+``/api/doc``, and a running instance is always the authority.
+
 ``GET /api/categories-full``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Every category with its options, defaults and filter mode — everything needed to render
-the filter panel in one request.
+the filter panel in one request, and the way to learn which filter parameters
+:ref:`api-locations` accepts on this instance.
 
-.. code-block:: json
-
-   {
-     "categories": [
-       {
-         "key": "accessible_by",
-         "name": "accessible_by",
-         "options": [["bikes", "bikes"], ["cars", "cars"]],
-         "default_checked": [],
-         "filter_mode": "or"
-       }
-     ]
-   }
-
-``key`` is the query-parameter name to filter by; ``name`` is its translated label.
-``options`` are ``[value, translated label]`` pairs — send the *value*.
-``filter_mode`` tells you which control to draw: checkboxes for ``or``/``and``, radio
+``key`` is the query-parameter name to filter by; ``options`` are
+``[value, translated label]`` pairs — send the *value*. ``filter_mode`` is one of the five
+fixed modes and tells you which control to draw: checkboxes for ``or``/``and``, radio
 buttons for ``exclusive``/``threshold``, a single checkbox for ``boolean``
 (:ref:`categories-filter-mode`).
 
-With ``CATEGORIES_HELP`` on, each category also carries ``options_help``, and the response
-gains a top-level ``categories_help`` — both lists of ``{option: help text}`` objects.
+.. _api-location-schema:
 
-Prefer this endpoint over the two below, which exist for older clients and cost one
-request per category.
-
-``GET /api/categories``
-~~~~~~~~~~~~~~~~~~~~~~~
-
-Category names only, as ``[key, translated name]`` pairs. With ``CATEGORIES_HELP`` on,
-returns ``{"categories": [...], "categories_help": [...]}`` instead — note the response
-*type* changes with the flag.
-
-``GET /api/category/<name>``
+``GET /api/location-schema``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The options for one category, as ``[value, translated label]`` pairs. With
-``CATEGORIES_HELP`` on, returns
-``{"categories_options": [...], "categories_options_help": [...]}``.
+What this instance accepts for a new point: the fields of its location model (all of them
+except the server-assigned ``uuid``), the allowed values per category, the reportable
+issue types, and the photo limits. This is how a client learns what to put in
+``/api/suggest-new-point``'s ``location`` payload rather than assuming — it is the same
+schema the built-in suggest form is generated from.
 
 ``GET /api/languages``
 ~~~~~~~~~~~~~~~~~~~~~~
 
-The configured interface languages, exactly as given in ``LANGUAGES``:
+The configured interface languages, keyed by language code, exactly as given in
+``LANGUAGES``.
 
-.. code-block:: json
+Fixed everywhere
+----------------
 
-   {"en": {"name": "English", "flag": "gb", "country": "GB"}}
-
-``GET /api/version``
-~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: json
-
-   {"backend": "<installed-version>"}
-
-The installed package version, normalised to PEP 440 — a release published as
-``2.0.0-alpha.5`` reports as ``2.0.0a5``. Useful as a health check.
+``GET /api/version`` returns the installed package version normalised to PEP 440, so a
+release published as ``2.0.0-alpha.5`` reports as ``2.0.0a5``.
 
 Submissions
 -----------
@@ -244,14 +244,26 @@ the map data.
 
 **The request must be ``multipart/form-data``.** The point goes in a single ``location``
 form field as a JSON object — not as one form field per property — and the optional photo
-goes in a ``photo`` file part. Send the point without a ``uuid``; the server assigns one:
+goes in a ``photo`` file part. Send the point without a ``uuid``; the server assigns one.
+
+That shape is the same everywhere. **What goes inside the JSON object is not** — the
+accepted fields are whatever *your* data source declares in ``location_obligatory_fields``
+and ``categories`` (:doc:`data-source`), so there is no universal payload to copy. The
+fields below are the ones the :doc:`quickstart` map happens to declare; substitute your
+own:
 
 .. code-block:: bash
 
    curl -X POST http://localhost:5000/api/suggest-new-point \
+     -b "$JAR" \
      -H "X-CSRFToken: $TOKEN" \
      -F 'location={"name": "Nowy", "position": [51.11, 17.03], "type_of_place": "small bridge", "accessible_by": ["bikes"], "is_free": "true"}' \
      -F 'photo=@bridge.jpg'
+
+(``$JAR`` and ``$TOKEN`` as obtained above.)
+
+To find the fields a given instance wants, call :ref:`api-location-schema` — the same
+schema the built-in suggest form is generated from.
 
 .. note::
 
@@ -320,11 +332,3 @@ description that satisfies neither rule gives ``400``.
 
 The report is stored with ``"status": "pending"`` and ``"priority": "medium"`` in the
 data source, for triage.
-
-``GET /api/generate-csrf-token``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. deprecated:: 1.1.8
-
-   Deprecated since 1.1.8 and kept only for backward compatibility. Read the token from
-   the ``csrf-token`` meta tag instead. CSRF protection itself is unaffected.

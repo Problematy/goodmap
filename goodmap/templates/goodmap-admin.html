@@ -201,12 +201,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Category fetch
   function initCategories() {
-    return Promise.all([
-      fetch('/api/category/accessible_by').then(r => r.json()),
-      fetch('/api/category/type_of_place').then(r => r.json())
-    ]).then(([accessOpts, typeOpts]) => {
-      categories.accessible_by = accessOpts.map(o => o[0]);
-      categories.type_of_place = typeOpts.map(o => o[0]);
+    return fetch('/api/categories-full').then(r => {
+      // fetch() only rejects on network failure, so an error status would otherwise
+      // reach the mapping below as a body with no `categories` and throw there.
+      if (!r.ok) throw new Error('categories-full request failed (' + r.status + ')');
+      return r.json();
+    }).then(data => {
+      const byKey = Object.fromEntries(data.categories.map(c => [c.key, c.options]));
+      categories.accessible_by = (byKey.accessible_by || []).map(o => o[0]);
+      categories.type_of_place = (byKey.type_of_place || []).map(o => o[0]);
     });
   }
 

@@ -57,7 +57,15 @@ export const Markers = ({ onLoadingChange = null }) => {
         setAreMarkersLoaded(false);
 
         const fetchMarkers = async () => {
-            const locations = await httpService.getLocations(categories);
+            let locations;
+            try {
+                locations = await httpService.getLocations(categories);
+            } catch (error) {
+                console.error('Failed to load locations:', error);
+                setMarkers([]);
+                setAreMarkersLoaded(true);
+                return;
+            }
 
             const markersToAdd = getMarkers(locations);
 

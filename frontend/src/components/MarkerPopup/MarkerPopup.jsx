@@ -81,7 +81,7 @@ const asteriskIcon = new Icon({
  * @param {Object} props - Component props
  * @param {Object} props.place - Location data object
  * @param {number[]} props.place.position - Coordinates [latitude, longitude]
- * @param {boolean} [props.place.remark] - Whether this location has a remark (uses asterisk icon if true)
+ * @param {boolean} [props.place.has_remark] - Whether this location has a remark (uses asterisk icon if true)
  * @returns {React.ReactElement} Leaflet Marker component with click-to-show-details functionality
  */
 export const MarkerPopup = ({ place }) => {
@@ -113,12 +113,12 @@ export const MarkerPopup = ({ place }) => {
         eventHandlers: {
             click: handleMarkerClick,
         },
-        alt: place.remark ? 'Marker-Asterisk' : 'Marker',
+        alt: place.has_remark ? 'Marker-Asterisk' : 'Marker',
     };
 
     // Only add icon prop if we have a custom icon (for remarks)
     // This prevents passing undefined which can cause issues with MarkerClusterGroup
-    if (place.remark) {
+    if (place.has_remark) {
         markerProps.icon = asteriskIcon;
     }
 
@@ -132,7 +132,7 @@ export const MarkerPopup = ({ place }) => {
 MarkerPopup.propTypes = {
     place: PropTypes.shape({
         position: PropTypes.arrayOf(PropTypes.number).isRequired,
-        remark: PropTypes.bool,
+        has_remark: PropTypes.bool, // eslint-disable-line camelcase -- matches backend API schema property name
         uuid: PropTypes.string.isRequired,
     }).isRequired,
 };

@@ -122,15 +122,6 @@ incoming reports change it while the app runs.
 Schema keys (``categories``, ``visible_data``, ``location_obligatory_fields``) are read
 at startup, so changing them means restarting the app. Point data is re-read per request.
 
-Health checks
--------------
-
-``GET /api/version`` is cheap and needs no data source, returning
-``{"backend": "<installed-version>"}``. Point your load balancer at it.
-
-For a check that also proves the data source is reachable, use ``GET /api/locations`` —
-it touches the backend, though on a large map it is not free.
-
 Upgrading
 ---------
 
