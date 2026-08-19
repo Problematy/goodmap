@@ -6,6 +6,12 @@ from scipy.spatial import KDTree
 # Maximum distance to consider a point-cluster match (accounts for floating point errors)
 DISTANCE_THRESHOLD = 1e-8
 
+# Zoom range SuperCluster is built for. Also the range the API accepts, so that a zoom
+# the clusterer could serve is never rejected by validation, and vice versa - keep the
+# request model and the SuperCluster call reading these, not their own copies.
+MIN_ZOOM = 0
+MAX_ZOOM = 16
+
 logger = logging.getLogger(__name__)
 
 

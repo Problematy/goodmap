@@ -9,6 +9,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, RootModel
 
+from goodmap.clustering import MAX_ZOOM, MIN_ZOOM
 from goodmap.data_models.location import Latitude, Longitude
 
 _POSITION_DESCRIPTION = "[latitude, longitude]"
@@ -158,7 +159,7 @@ class LocationQueryParams(BaseModel):
 class ClusteredQueryParams(LocationQueryParams):
     """Query parameters of the clustered list: the plain list's, plus ``zoom``."""
 
-    zoom: int = Field(7, ge=0, le=16, description="Map zoom level for clustering")
+    zoom: int = Field(7, ge=MIN_ZOOM, le=MAX_ZOOM, description="Map zoom level for clustering")
 
 
 class IssueType(BaseModel):

@@ -33,6 +33,8 @@ from goodmap.api.api_models import (
     VersionResponse,
 )
 from goodmap.clustering import (
+    MAX_ZOOM,
+    MIN_ZOOM,
     map_clustering_data_to_proper_lazy_loading_object,
     match_clusters_uuids,
 )
@@ -46,9 +48,8 @@ from goodmap.json_security import (
     safe_json_loads,
 )
 
-# SuperCluster configuration constants
-MIN_ZOOM = 0
-MAX_ZOOM = 16
+# SuperCluster configuration constants (MIN_ZOOM/MAX_ZOOM live in clustering.py, so the
+# request model and the clusterer cannot disagree about the accepted range)
 CLUSTER_RADIUS = 200
 CLUSTER_EXTENT = 512
 
@@ -60,6 +61,10 @@ ERROR_INVALID_REQUEST_DATA = "Invalid request data"
 ERROR_INVALID_LOCATION_DATA = "Invalid location data"
 ERROR_LOCATION_NOT_FOUND = "Location not found"
 ERROR_INVALID_DESCRIPTION = "Invalid report description"
+ERROR_INVALID_PARAMETERS = "Invalid parameters provided"
+ERROR_PAYLOAD_TOO_COMPLEX = "Invalid request: JSON payload too complex or too large"
+ERROR_CLUSTERING_FAILED = "An error occurred during clustering"
+ERROR_SUGGESTION_FAILED = "An error occurred while processing your suggestion"
 
 logger = logging.getLogger(__name__)
 
@@ -97,6 +102,20 @@ def get_default_issue_options():
     return ["notHere", "overload", "broken", "other"]
 
 
+def translated_help(options, prefix: str) -> list[dict[str, str]]:
+    """Build the ``[{option: help text}]`` shape the help fields use.
+
+    The help text is looked up under ``<prefix>_<option>``, so the data source only
+    stores which options have help, not the text itself.
+    """
+    return [{option: gettext(f"{prefix}_{option}")} for option in options or []]
+
+
+def api_error(message: str, status: int):
+    """Build the API's standard error response: a JSON body of just {"message": ...}."""
+    return make_response(jsonify({"message": message}), status)
+
+
 def make_tuple_translation(keys_to_translate):
     return [(x, gettext(x)) for x in keys_to_translate]
 
@@ -115,6 +134,20 @@ def get_locations_from_request(database, request_args):
     query_params = request_args.to_dict(flat=False)
     all_locations = database.get_locations(query_params)
     return [x.basic_info() for x in all_locations]
+
+
+def photo_attachment_from_request(photo_attachment_config: AttachmentConfig):
+    """Build the attachment for the request's optional ``photo`` part, or None.
+
+    Raises ValueError, from create_attachment, if the photo breaks the configured
+    format or size limits - the caller answers with the configured message.
+    """
+    photo_file = request.files.get("photo")
+    if not (photo_file and photo_file.filename):
+        return None
+    content = photo_file.read()
+    mime = photo_file.content_type or "application/octet-stream"
+    return create_attachment(photo_file.filename, content, mime, photo_attachment_config)
 
 
 def safe_location_loads(raw_location: str) -> dict[str, Any]:
@@ -202,7 +235,6 @@ def core_pages(
         validated using the Pydantic location model.
         """
         try:
-            photo_attachment = None
             raw_location = request.form.get("location", "")
             try:
                 suggested_location = safe_location_loads(raw_location)
@@ -212,35 +244,20 @@ def core_pages(
                     f"JSON parsing blocked for security: {e}",
                     extra={"value_size": len(raw_location)},
                 )
-                return make_response(
-                    jsonify(
-                        {
-                            "message": "Invalid request: JSON payload too complex or too large",
-                        }
-                    ),
-                    400,
-                )
+                return api_error(ERROR_PAYLOAD_TOO_COMPLEX, 400)
             except ValueError:
                 logger.warning("Invalid location payload in suggest endpoint")
-                return make_response(jsonify({"message": ERROR_INVALID_REQUEST_DATA}), 400)
+                return api_error(ERROR_INVALID_REQUEST_DATA, 400)
 
-            # Extract and validate photo attachment if present
-            photo_file = request.files.get("photo")
-            if photo_file and photo_file.filename:
-                photo_content = photo_file.read()
-                photo_mime = photo_file.content_type or "application/octet-stream"
-
-                try:
-                    photo_attachment = create_attachment(
-                        photo_file.filename, photo_content, photo_mime, photo_attachment_config
-                    )
-                except ValueError as e:
-                    logger.warning(
-                        "Rejected photo: %s",
-                        e,
-                        extra={"photo_filename": repr(photo_file.filename)},
-                    )
-                    return make_response(jsonify({"message": error_invalid_photo}), 400)
+            try:
+                photo_attachment = photo_attachment_from_request(photo_attachment_config)
+            except ValueError as e:
+                logger.warning(
+                    "Rejected photo: %s",
+                    e,
+                    extra={"photo_filename": repr(request.files["photo"].filename)},
+                )
+                return api_error(error_invalid_photo, 400)
 
             suggested_location.update({"uuid": str(uuid.uuid4())})
             location = location_model.model_validate(suggested_location)
@@ -261,17 +278,15 @@ def core_pages(
                 e.validation_errors,
                 extra={"errors": e.validation_errors},
             )
-            return make_response(jsonify({"message": ERROR_INVALID_LOCATION_DATA}), 400)
+            return api_error(ERROR_INVALID_LOCATION_DATA, 400)
         except HTTPException:
             # Carries its own status (e.g. 413 for a body past MAX_CONTENT_LENGTH);
             # reporting it as a 500 would misattribute a client error to the server.
             raise
         except Exception:
             logger.exception("Error in suggest location endpoint")
-            return make_response(
-                jsonify({"message": "An error occurred while processing your suggestion"}), 500
-            )
-        return make_response(jsonify({"message": "Location suggested"}), 200)
+            return api_error(ERROR_SUGGESTION_FAILED, 500)
+        return api_error("Location suggested", 200)
 
     @core_api_blueprint.route("/report-location", methods=["POST"])
     @spec.validate(
@@ -296,9 +311,9 @@ def core_pages(
 
             if description not in issue_options:
                 if "other" not in issue_options:
-                    return make_response(jsonify({"message": ERROR_INVALID_DESCRIPTION}), 400)
+                    return api_error(ERROR_INVALID_DESCRIPTION, 400)
                 if len(description) > MAX_DESCRIPTION_LENGTH:
-                    return make_response(jsonify({"message": ERROR_INVALID_DESCRIPTION}), 400)
+                    return api_error(ERROR_INVALID_DESCRIPTION, 400)
 
             report = {
                 "uuid": str(uuid.uuid4()),
@@ -316,8 +331,8 @@ def core_pages(
         except Exception:
             logger.exception("Error in report location endpoint")
             error_message = gettext("Error sending notification")
-            return make_response(jsonify({"message": error_message}), 500)
-        return make_response(jsonify({"message": gettext("Location reported")}), 200)
+            return api_error(error_message, 500)
+        return api_error(gettext("Location reported"), 200)
 
     @core_api_blueprint.route("/locations", methods=["GET"])
     # lat/lon/limit are validated: a value that cannot mean anything (lat=abc, lat=999,
@@ -381,10 +396,10 @@ def core_pages(
             return jsonify(map_clustering_data_to_proper_lazy_loading_object(clusters))
         except ValueError as e:
             logger.warning("Invalid parameter in clustering request: %s", e)
-            return make_response(jsonify({"message": "Invalid parameters provided"}), 400)
+            return api_error(ERROR_INVALID_PARAMETERS, 400)
         except Exception as e:
             logger.exception("Clustering operation failed: %s", e)
-            return make_response(jsonify({"message": "An error occurred during clustering"}), 500)
+            return api_error(ERROR_CLUSTERING_FAILED, 500)
 
     @core_api_blueprint.route("/location/<uuid:location_id>", methods=["GET"])
     @spec.validate(
@@ -403,7 +418,7 @@ def core_pages(
         location = database.get_location(location_id)
         if location is None:
             logger.info(ERROR_LOCATION_NOT_FOUND, extra={"uuid": location_id})
-            return make_response(jsonify({"message": ERROR_LOCATION_NOT_FOUND}), 404)
+            return api_error(ERROR_LOCATION_NOT_FOUND, 404)
 
         visible_data = database.get_visible_data()
         meta_data = database.get_meta_data()
@@ -462,6 +477,7 @@ def core_pages(
         This endpoint eliminates the need for multiple sequential requests.
         """
         categories_data = database.get_category_data()
+        with_help = CategoriesHelp in feature_flags
         result = []
 
         categories_options_help = categories_data.get("categories_options_help", {})
@@ -481,25 +497,19 @@ def core_pages(
                 "filter_mode": categories_filter_mode.get(key, "or"),
             }
 
-            if CategoriesHelp in feature_flags:
-                option_help_list = categories_options_help.get(key, [])
-                proper_options_help = []
-                for option in option_help_list:
-                    proper_options_help.append(
-                        {option: gettext(f"categories_options_help_{option}")}
-                    )
-                category_entry["options_help"] = proper_options_help
+            if with_help:
+                category_entry["options_help"] = translated_help(
+                    categories_options_help.get(key), "categories_options_help"
+                )
 
             result.append(category_entry)
 
         response = {"categories": result}
 
-        if CategoriesHelp in feature_flags:
-            categories_help = categories_data.get("categories_help", [])
-            proper_categories_help = []
-            for option in categories_help:
-                proper_categories_help.append({option: gettext(f"categories_help_{option}")})
-            response["categories_help"] = proper_categories_help
+        if with_help:
+            response["categories_help"] = translated_help(
+                categories_data.get("categories_help"), "categories_help"
+            )
 
         return jsonify(response)
 
