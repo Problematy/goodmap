@@ -439,9 +439,6 @@ def core_pages(
         supplied by the client), the reportable issue types and the photo limits, as
         the built-in suggest form uses them.
 
-        The allowed values per category are deliberately not repeated here:
-        /api/categories-full is the one place that reports them, so a client cannot
-        read two versions of the same list and find them disagreeing.
         """
         properties = location_model.model_json_schema().get("properties", {})
         # Matches the fallback /api/report-location applies: an unconfigured
