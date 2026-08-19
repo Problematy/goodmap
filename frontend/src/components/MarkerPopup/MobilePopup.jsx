@@ -43,9 +43,7 @@ const MobilePopup = ({ children }) => {
         };
 
         if (overlayContainer) {
-            // Leaflet's internal position - no public API exposes this.
-            // eslint-disable-next-line no-underscore-dangle
-            centerMap(overlayContainer._latlng);
+            centerMap(overlayContainer.getLatLng());
 
             overlayContainer.on('click', place => {
                 centerMap(place.latlng);
