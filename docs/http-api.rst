@@ -33,8 +33,21 @@ on the ``categories`` in your data source (:doc:`data-source`).
 **Writes need a CSRF token.** CSRF protection is on for the whole app, so ``POST``,
 ``PUT``, ``PATCH`` and ``DELETE`` without a token get ``400 {"message": "The CSRF token
 is missing."}``. Send it as an ``X-CSRFToken`` header, from the same session the token was
-minted in — the token is bound to the session cookie, so the pair travels together.
-Server-rendered pages expose one in a meta tag:
+minted in. There is no endpoint that issues a token on its own — a script needs to fetch
+a page first, the same as a browser does (:ref:`api-csrf-scripted`).
+
+**Errors are ``{"message": "..."}``**, occasionally with an extra ``error`` field.
+Messages are deliberately generic — the details go to the server log, not the response.
+
+**Strings are translated** to the request's language before being returned, so category
+keys and field names come back as display text (:ref:`config-translations`).
+
+.. _api-csrf-scripted:
+
+Calling writes from a script
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A browser gets the token for free, from a meta tag on every server-rendered page:
 
 .. code-block:: html
 
@@ -70,12 +83,6 @@ depth, on top of the token. Browsers send this automatically for a same-origin r
 so it is invisible in normal use; a scripted client (``curl``, a backend job) must set it
 explicitly, e.g. ``-H "Referer: https://your-host/"``, or the request gets
 ``400 {"message": "The referrer header is missing."}``.
-
-**Errors are ``{"message": "..."}``**, occasionally with an extra ``error`` field.
-Messages are deliberately generic — the details go to the server log, not the response.
-
-**Strings are translated** to the request's language before being returned, so category
-keys and field names come back as display text (:ref:`config-translations`).
 
 Reading the map
 ---------------
