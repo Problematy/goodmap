@@ -14,6 +14,7 @@ from platzky.attachment import create_attachment
 from platzky.config import AttachmentConfig, LanguagesMapping
 from platzky.shortcodes import Shortcode
 from spectree import Response, SpecTree
+from spectree.models import Tag
 from werkzeug.exceptions import HTTPException
 
 from goodmap.api.api_models import (
@@ -29,7 +30,6 @@ from goodmap.api.api_models import (
     LocationReportResponse,
     LocationSchemaResponse,
     SuccessResponse,
-    SuggestNewPointForm,
     VersionResponse,
 )
 from goodmap.clustering import (
@@ -62,6 +62,28 @@ ERROR_LOCATION_NOT_FOUND = "Location not found"
 ERROR_INVALID_DESCRIPTION = "Invalid report description"
 
 logger = logging.getLogger(__name__)
+
+# The API surface - paths, methods, response envelopes, status codes - is the same in
+# every deployment. The *values* flowing through it are not: filters, accepted point
+# fields and reportable issues all come from that deployment's own data source. These
+# tags group the endpoints in /api/doc so that split is visible, and point at the
+# discovery endpoints that report what a given instance actually declares.
+TAG_DISCOVERY = Tag(
+    name="discovery",
+    description="What this particular deployment declares - call these to find out, "
+    "rather than assuming; the answers differ between instances.",
+)
+TAG_MAP_DATA = Tag(
+    name="map data",
+    description="Reading points. Response envelopes are fixed; which filters apply and "
+    "which fields come back depend on this deployment's data source.",
+)
+TAG_SUBMISSIONS = Tag(
+    name="submissions",
+    description="Visitor-submitted points and reports. Both land in a moderation queue "
+    "and need a CSRF token.",
+)
+TAG_META = Tag(name="meta", description="Fixed in every deployment.")
 
 
 @deprecation.deprecated(
@@ -139,15 +161,16 @@ def core_pages(
         # it on spectree refuses skip_validation, which several routes below rely on.
         annotations=False,
         naming_strategy=_clean_model_name,  # Use clean model names without hash
+        tags=[TAG_DISCOVERY, TAG_MAP_DATA, TAG_SUBMISSIONS, TAG_META],
     )
 
     @core_api_blueprint.route("/suggest-new-point", methods=["POST"])
-    # skip_validation: the handler returns its own 400 for a missing or malformed
-    # `location` field; letting spectree validate would turn that into a 422.
+    # No form= model: the point's fields are the deployment's own location_model, so a
+    # static schema could only say "location is a string" - which the docstring already
+    # says, in words, without spectree then 500ing on an attached photo it cannot
+    # serialize into a validation error. The handler validates against location_model.
     @spec.validate(
-        form=SuggestNewPointForm,
-        resp=Response(HTTP_200=SuccessResponse, HTTP_400=ErrorResponse),
-        skip_validation=True,
+        tags=[TAG_SUBMISSIONS], resp=Response(HTTP_200=SuccessResponse, HTTP_400=ErrorResponse)
     )
     def suggest_new_point():
         """Suggest new location for review.
@@ -230,6 +253,7 @@ def core_pages(
 
     @core_api_blueprint.route("/report-location", methods=["POST"])
     @spec.validate(
+        tags=[TAG_SUBMISSIONS],
         json=LocationReportRequest,
         resp=Response(HTTP_200=LocationReportResponse, HTTP_400=ErrorResponse),
     )
@@ -277,7 +301,10 @@ def core_pages(
     # skip_validation: this endpoint ignores invalid and unknown query parameters by
     # design, so spectree must document them without rejecting anything.
     @spec.validate(
-        query=LocationQueryParams, resp=Response(HTTP_200=LocationList), skip_validation=True
+        tags=[TAG_MAP_DATA],
+        query=LocationQueryParams,
+        resp=Response(HTTP_200=LocationList),
+        skip_validation=True,
     )
     def get_locations():
         """Get list of locations with basic info.
@@ -292,6 +319,7 @@ def core_pages(
     # skip_validation: the handler owns zoom validation and returns 400 with a log line;
     # letting spectree validate would turn that into a 422 and skip the log.
     @spec.validate(
+        tags=[TAG_MAP_DATA],
         query=ClusteringParams,
         resp=Response(HTTP_200=ClusterList, HTTP_400=ErrorResponse),
         skip_validation=True,
@@ -345,7 +373,9 @@ def core_pages(
             return make_response(jsonify({"message": "An error occurred during clustering"}), 500)
 
     @core_api_blueprint.route("/location/<uuid:location_id>", methods=["GET"])
-    @spec.validate(resp=Response(HTTP_200=LocationDetail, HTTP_404=ErrorResponse))
+    @spec.validate(
+        tags=[TAG_MAP_DATA], resp=Response(HTTP_200=LocationDetail, HTTP_404=ErrorResponse)
+    )
     def get_location(location_id):
         """Get detailed information for a single location.
 
@@ -367,7 +397,7 @@ def core_pages(
         return jsonify(formatted_data)
 
     @core_api_blueprint.route("/version", methods=["GET"])
-    @spec.validate(resp=Response(HTTP_200=VersionResponse))
+    @spec.validate(tags=[TAG_META], resp=Response(HTTP_200=VersionResponse))
     def get_version():
         """Get backend version information.
 
@@ -377,7 +407,7 @@ def core_pages(
         return jsonify(version_info)
 
     @core_api_blueprint.route("/location-schema", methods=["GET"])
-    @spec.validate(resp=Response(HTTP_200=LocationSchemaResponse))
+    @spec.validate(tags=[TAG_DISCOVERY], resp=Response(HTTP_200=LocationSchemaResponse))
     def get_location_schema():
         """Get the schema this instance accepts for a new point.
 
@@ -410,7 +440,7 @@ def core_pages(
         )
 
     @core_api_blueprint.route("/categories-full", methods=["GET"])
-    @spec.validate(resp=Response(HTTP_200=CategoriesFullResponse))
+    @spec.validate(tags=[TAG_DISCOVERY], resp=Response(HTTP_200=CategoriesFullResponse))
     def get_categories_full():
         """Get all categories with their subcategory options in a single request.
 
@@ -460,7 +490,7 @@ def core_pages(
         return jsonify(response)
 
     @core_api_blueprint.route("/languages", methods=["GET"])
-    @spec.validate(resp=Response(HTTP_200=LanguagesResponse))
+    @spec.validate(tags=[TAG_DISCOVERY], resp=Response(HTTP_200=LanguagesResponse))
     def get_languages():
         """Get all available interface languages.
 

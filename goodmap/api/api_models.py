@@ -8,7 +8,6 @@ and request/response validation.
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field, RootModel
-from spectree import BaseFile
 
 from goodmap.data_models.location import Latitude, Longitude
 
@@ -53,15 +52,6 @@ class VersionResponse(BaseModel):
     """Response model for version endpoint."""
 
     backend: str = Field(..., description="Backend version")
-
-
-class PaginationParams(BaseModel):
-    """Common pagination and filtering parameters."""
-
-    page: int | None = Field(None, ge=1, description="Page number (1-indexed)")
-    per_page: int | None = Field(None, ge=1, le=100, description="Items per page")
-    sort_by: str | None = Field(None, description="Field to sort by")
-    sort_order: Literal["asc", "desc"] | None = Field(None, description="Sort direction")
 
 
 class ClusteringParams(BaseModel):
@@ -169,21 +159,6 @@ class LocationQueryParams(BaseModel):
     )
 
 
-class SuggestNewPointForm(BaseModel):
-    """The multipart/form-data body of a new-point suggestion."""
-
-    location: str = Field(
-        ...,
-        description=(
-            "The whole point as one JSON object, not one form field per property. "
-            "Its accepted fields come from this instance's location_obligatory_fields "
-            "and categories - call GET /api/location-schema to discover them. "
-            "Omit uuid; the server assigns one."
-        ),
-    )
-    photo: BaseFile | None = Field(None, description="Optional photo, subject to ATTACHMENT limits")
-
-
 class IssueType(BaseModel):
     """One reportable issue type, ready to render in a form."""
 
@@ -206,7 +181,7 @@ class LocationSchemaResponse(BaseModel):
         ...,
         description=(
             "JSON Schema property per accepted field, from the instance's location model, "
-            "excluding the server-managed uuid and position"
+            "excluding only the server-assigned uuid"
         ),
     )
     obligatory_fields: list[Any] = Field(

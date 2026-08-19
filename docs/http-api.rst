@@ -20,8 +20,15 @@ A running instance also serves its own generated OpenAPI schema:
 
 The schema is generated from the code, so it always describes the release you are
 running: every endpoint's parameters, status codes and response shapes. **Use it as the
-reference.** This page covers the parts a schema cannot state — what the endpoints mean,
-how filtering behaves, and which parameters depend on your own data.
+reference.** This page covers what a schema cannot state — what the endpoints mean and
+how they behave.
+
+**The API surface is the same in every deployment**: same paths, same methods, same
+response envelopes, same status codes. That part is documented here in full. The *values*
+moving through it are not — filters, the fields a point may carry, the issues that can be
+reported all come from each deployment's own data source. Those are documented by your
+running instance rather than by this page; see
+`Discovery: what your deployment declares`_.
 
 Conventions
 -----------
@@ -168,38 +175,48 @@ in neither list are not returned at all.
 The path segment must be a valid UUID; anything else fails routing with ``404``. A
 well-formed UUID that does not exist also gives ``404 {"message": "Location not found"}``.
 
+Discovery: what your deployment declares
+----------------------------------------
+
+The endpoints above have a fixed shape, but the *values* moving through them do not.
+Which filters apply, which fields a point may carry, which issues can be reported — all
+of that comes from your own data source (:doc:`data-source`), so it differs between
+instances. Rather than enumerating one instance's values here, these endpoints report
+what yours actually declares. They are grouped under the ``discovery`` tag in
+``/api/doc``, and a running instance is always the authority.
+
 ``GET /api/categories-full``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Every category with its options, defaults and filter mode — everything needed to render
-the filter panel in one request.
+the filter panel in one request, and the way to learn which filter parameters
+:ref:`api-locations` accepts on this instance.
 
-``key`` is the query-parameter name to filter by; ``name`` is its translated label.
-``options`` are ``[value, translated label]`` pairs — send the *value*.
-``filter_mode`` tells you which control to draw: checkboxes for ``or``/``and``, radio
+``key`` is the query-parameter name to filter by; ``options`` are
+``[value, translated label]`` pairs — send the *value*. ``filter_mode`` is one of the five
+fixed modes and tells you which control to draw: checkboxes for ``or``/``and``, radio
 buttons for ``exclusive``/``threshold``, a single checkbox for ``boolean``
 (:ref:`categories-filter-mode`).
-
-With ``CATEGORIES_HELP`` on, each category also carries ``options_help``, and the response
-gains a top-level ``categories_help`` — both lists of ``{option: help text}`` objects.
 
 .. _api-location-schema:
 
 ``GET /api/location-schema``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-What *this* instance accepts for a new point: the fields of its location model (minus the
-server-assigned ``uuid`` — ``position`` is required and client-supplied, same as
-``/api/suggest-new-point``), the allowed values per category, the reportable issue types,
-and the photo limits. Since the accepted fields are configured per deployment, this is how
-a client discovers them rather than assuming — it is the same schema the built-in suggest
-form is generated from.
+What this instance accepts for a new point: the fields of its location model (all of them
+except the server-assigned ``uuid``), the allowed values per category, the reportable
+issue types, and the photo limits. This is how a client learns what to put in
+``/api/suggest-new-point``'s ``location`` payload rather than assuming — it is the same
+schema the built-in suggest form is generated from.
 
-Other read endpoints
-~~~~~~~~~~~~~~~~~~~~
+``GET /api/languages``
+~~~~~~~~~~~~~~~~~~~~~~
 
-``GET /api/languages`` returns the configured languages keyed by language code, exactly as
-given in ``LANGUAGES``.
+The configured interface languages, keyed by language code, exactly as given in
+``LANGUAGES``.
+
+Fixed everywhere
+----------------
 
 ``GET /api/version`` returns the installed package version normalised to PEP 440, so a
 release published as ``2.0.0-alpha.5`` reports as ``2.0.0a5``.
