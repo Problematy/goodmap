@@ -2,7 +2,7 @@ import React from 'react';
 import '@testing-library/jest-dom';
 import { fireEvent, render, waitFor, within } from '@testing-library/react';
 import FiltersForm from '../src/components/FiltersForm/FiltersForm';
-import { CategoriesProvider } from '../src/components/Categories/CategoriesContext';
+import AppProviders from './utils/providers';
 import httpService from '../src/services/http/httpService';
 
 jest.mock('../src/services/http/httpService');
@@ -32,9 +32,9 @@ describe('Creates good filter_form box', () => {
             json: jest.fn().mockResolvedValue(categories),
         });
         render(
-            <CategoriesProvider>
+            <AppProviders>
                 <FiltersForm />
-            </CategoriesProvider>,
+            </AppProviders>,
         );
         await waitFor(() => expect(document.querySelector('#filter-label-types')).not.toBeNull());
     });
@@ -99,9 +99,9 @@ describe('Pre-checks options configured as default-checked', () => {
             defaultChecked: { types: ['shoes'] },
         });
         render(
-            <CategoriesProvider>
+            <AppProviders>
                 <FiltersForm />
-            </CategoriesProvider>,
+            </AppProviders>,
         );
         await waitFor(() => expect(document.querySelector('#shoes')).not.toBeNull());
     });
@@ -143,9 +143,9 @@ describe('Renders exclusive (single-select) categories as radio buttons', () => 
             defaultChecked: {},
         });
         render(
-            <CategoriesProvider>
+            <AppProviders>
                 <FiltersForm />
-            </CategoriesProvider>,
+            </AppProviders>,
         );
         await waitFor(() => expect(document.querySelector('#free')).not.toBeNull());
     });
@@ -204,9 +204,9 @@ describe('Groups boolean categories into a shared "Others" section', () => {
             defaultChecked: {},
         });
         render(
-            <CategoriesProvider>
+            <AppProviders>
                 <FiltersForm />
-            </CategoriesProvider>,
+            </AppProviders>,
         );
         await waitFor(() => expect(document.querySelector('#is_free')).not.toBeNull());
     });
@@ -265,9 +265,9 @@ describe('Renders threshold categories as radio buttons too', () => {
             defaultChecked: {},
         });
         render(
-            <CategoriesProvider>
+            <AppProviders>
                 <FiltersForm />
-            </CategoriesProvider>,
+            </AppProviders>,
         );
         await waitFor(() => expect(document.getElementById('10')).not.toBeNull());
     });
@@ -311,9 +311,9 @@ describe('Distinguishes "and" categories with a visible hint, but keeps checkbox
             defaultChecked: {},
         });
         render(
-            <CategoriesProvider>
+            <AppProviders>
                 <FiltersForm />
-            </CategoriesProvider>,
+            </AppProviders>,
         );
         await waitFor(() => expect(document.querySelector('#lighting')).not.toBeNull());
     });

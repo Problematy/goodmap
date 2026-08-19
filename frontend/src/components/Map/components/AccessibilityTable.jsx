@@ -12,7 +12,7 @@ import { IconButton } from '@mui/material';
 import PropTypes from 'prop-types';
 import httpService from '../../../services/http/httpService';
 import FieldRenderer from '../../MarkerPopup/FieldRenderer';
-import { useCategories } from '../../Categories/CategoriesContext';
+import { useFilters } from '../../../context/FiltersContext';
 
 /**
  * Accessibility table component that displays location data in a tabular format.
@@ -28,7 +28,7 @@ import { useCategories } from '../../Categories/CategoriesContext';
  * @returns {React.ReactElement} Table container with location data and back button
  */
 const AccessibilityTable = ({ userPosition, setIsAccessibilityTableOpen }) => {
-    const { categories } = useCategories();
+    const { selectedFilters } = useFilters();
     const { t } = useTranslation();
 
     const [data, setData] = useState(null);
@@ -37,11 +37,11 @@ const AccessibilityTable = ({ userPosition, setIsAccessibilityTableOpen }) => {
 
     useEffect(() => {
         httpService
-            .getLocationsData(userPosition.lat, userPosition.lng, categories)
+            .getLocationsData(userPosition.lat, userPosition.lng, selectedFilters)
             .then(places => {
                 setData(places);
             });
-    }, [categories, userPosition]);
+    }, [selectedFilters, userPosition]);
 
     useEffect(() => {
         if (!data) {

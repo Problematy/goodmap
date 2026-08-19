@@ -190,9 +190,6 @@ class LocationSchemaResponse(BaseModel):
     obligatory_fields: list[Any] = Field(
         ..., description="[name, type] pairs every point must carry"
     )
-    categories: dict[str, list[str]] = Field(
-        ..., description="Filterable fields and their allowed values"
-    )
     reported_issue_types: list[IssueType] = Field(
         ..., description="Accepted values for /api/report-location"
     )

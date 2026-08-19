@@ -7,7 +7,6 @@ import os
 from typing import Any
 
 from flask import Blueprint, jsonify, redirect, render_template, session
-from flask_babel import gettext
 from flask_wtf.csrf import CSRFError
 from platzky import platzky
 from platzky.config import languages_dict
@@ -276,55 +275,20 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
 
     @goodmap.route("/map")
     def index():
-        """Render main map interface with location schema.
+        """Render the main map interface.
 
         Registered at /map rather than / because platzky (>=2.0.0a8) reserves
         the root path for its own homepage dispatch (see
         db.get_home_page_path()). Deployments set site_content.home_page_path
         to "/map" so visiting / still renders this view, with no redirect.
 
-        Prepares and passes location schema including obligatory fields and
-        categories to the frontend for dynamic form generation.
-
         Returns:
-            Rendered map.html template with feature flags and location schema
+            Rendered map.html template with feature flags and the plugin manifest
         """
-        # Prepare location schema for frontend dynamic forms
-        # Include full schema from Pydantic model for better type information
-        category_data = app.db.get_category_data()  # type: ignore[attr-defined]
-        categories = category_data.get("categories", {})
-
-        # Get full JSON schema from Pydantic model
-        model_json_schema = location_model.model_json_schema()
-        properties = model_json_schema.get("properties", {})
-
-        # Filter out uuid and position from properties for frontend form
-        form_fields = {
-            name: spec for name, spec in properties.items() if name not in ("uuid", "position")
-        }
-
-        issue_options_raw = app.db.get_issue_options()  # type: ignore[attr-defined]
-        reported_issue_types = [{"value": t, "label": gettext(t)} for t in issue_options_raw]
-
-        location_schema = {  # TODO remove backward compatibility - deprecation
-            "obligatory_fields": app.extensions["goodmap"][
-                "location_obligatory_fields"
-            ],  # Backward compatibility
-            "categories": categories,  # Backward compatibility
-            "fields": form_fields,
-            "reported_issue_types": reported_issue_types,
-            "photo": {
-                "allowed_extensions": sorted(photo_attachment_config.allowed_extensions or []),
-                "allowed_mime_types": sorted(photo_attachment_config.allowed_mime_types or []),
-                "max_size_bytes": photo_attachment_config.max_size,
-            },
-        }
-
         return render_template(
             "map.html",
             feature_flags=config.feature_flags,
             goodmap_frontend_lib_url=config.goodmap_frontend_lib_url,
-            location_schema=location_schema,
             plugin_manifest=plugin_manifest,
         )
 

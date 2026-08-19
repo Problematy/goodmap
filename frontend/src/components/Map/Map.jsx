@@ -3,13 +3,16 @@ import React from 'react';
 import { createPortal } from 'react-dom';
 import FiltersForm from '../FiltersForm/FiltersForm';
 import MapComponent from './MapComponent';
-import { CategoriesProvider } from '../Categories/CategoriesContext';
+import { DeploymentDataProvider } from '../../context/DeploymentDataContext';
+import { FiltersProvider } from '../../context/FiltersContext';
 import AppToaster from '../common/AppToaster';
 
 /**
  * Wrapper component that renders the map and filters form into their respective DOM placeholders.
  * Uses React portals to render components into pre-existing DOM elements outside the React tree.
- * Wraps both components with CategoriesProvider for shared filter state management.
+ * Wraps both components with DeploymentDataProvider, which fetches this deployment's
+ * fixed data (category definitions and the new-point schema) once for every consumer,
+ * and with FiltersProvider, which owns the one thing that changes as the app runs.
  *
  * @returns {React.ReactElement|null} Portals for FiltersForm and MapComponent, or null if placeholders not found
  */
@@ -23,11 +26,13 @@ const MapWrap = () => {
     }
 
     return (
-        <CategoriesProvider>
-            <AppToaster />
-            {createPortal(<FiltersForm />, filtersPlaceholder)}
-            {createPortal(<MapComponent />, mapPlaceholder)}
-        </CategoriesProvider>
+        <DeploymentDataProvider>
+            <FiltersProvider>
+                <AppToaster />
+                {createPortal(<FiltersForm />, filtersPlaceholder)}
+                {createPortal(<MapComponent />, mapPlaceholder)}
+            </FiltersProvider>
+        </DeploymentDataProvider>
     );
 };
 

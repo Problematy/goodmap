@@ -32,6 +32,9 @@ const ClusterMarker = ({ cluster }) => {
                 iconSize: [30, 30],
                 iconAnchor: [15, 15],
             }),
+        // ClusterMarkerIcon renders cluster_count alone, so depending on the whole
+        // cluster would rebuild the icon on every new object identity for nothing.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [cluster.cluster_count],
     );
 

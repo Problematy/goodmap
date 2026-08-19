@@ -27,7 +27,7 @@ import { useTranslation } from 'react-i18next';
 import imageCompression from 'browser-image-compression';
 import getCsrfToken from '../../../utils/csrf';
 import { useLocation } from '../context/LocationContext';
-import { useCategories } from '../../Categories/CategoriesContext';
+import { useDeploymentData } from '../../../context/DeploymentDataContext';
 import toast from '../../../utils/toast';
 
 // Map a category's options to a { key: translation } object.
@@ -52,10 +52,7 @@ const buildCategoryTranslations = categoriesData => {
 
     categoriesData.forEach(({ categoryKey, categoryName, options: categoryOptions }) => {
         fieldNames[categoryKey] = categoryName;
-
-        if (categoryOptions?.length) {
-            options[categoryKey] = mapCategoryOptions(categoryOptions);
-        }
+        options[categoryKey] = mapCategoryOptions(categoryOptions ?? []);
     });
 
     return { fieldNames, options };
@@ -107,17 +104,19 @@ const useScrollToTop = trigger => {
 };
 
 /**
- * Dialog form for suggesting a new map point. Fields are generated dynamically from
- * window.LOCATION_SCHEMA and include the user's position, an optional photo, and every
- * obligatory location attribute defined by the backend.
+ * The dialog and its schema-driven form, mounted by SuggestNewPointDialog only once
+ * the location schema has loaded.
  *
- * @param {{open: boolean, onClose: () => void}} props
+ * Its inputs are generated from the schema's obligatory_fields, so mounting earlier
+ * would seed a form with no fields and force a rebuild when the schema arrived.
+ *
+ * @param {{open: boolean, onClose: () => void, locationSchema: Object}} props
  * @returns {React.ReactElement} Dialog with the new point suggestion form
  */
-const SuggestNewPointDialog = ({ open, onClose }) => {
+const SuggestNewPointForm = ({ open, onClose, locationSchema }) => {
     const { t } = useTranslation();
     const { userPosition, requestLocationWithFeedback } = useLocation();
-    const { categoriesData } = useCategories();
+    const { categoriesData } = useDeploymentData();
     const [photo, setPhoto] = useState(null);
     const [photoURL, setPhotoURL] = useState(null);
     // Shown inline in the dialog: a toast here can end up behind it.
@@ -140,10 +139,6 @@ const SuggestNewPointDialog = ({ open, onClose }) => {
         }
     }, [open]);
 
-    const locationSchema = globalThis.LOCATION_SCHEMA || {
-        obligatory_fields: [],
-        categories: {},
-    };
     const {
         allowed_extensions: allowedPhotoExtensions = [],
         allowed_mime_types: allowedPhotoMimeTypes = [],
@@ -297,8 +292,11 @@ const SuggestNewPointDialog = ({ open, onClose }) => {
 
     // Render form field based on field type and whether it's a category
     const renderFormField = (fieldName, fieldType) => {
-        const isCategory = fieldName in locationSchema.categories;
-        const categoryOptions = isCategory ? locationSchema.categories[fieldName] : [];
+        // Values and labels both come from the category definitions, so an option can
+        // never render with a label this component has no entry for.
+        const optionLabels = categoryTranslations.options[fieldName];
+        const isCategory = Boolean(optionLabels);
+        const categoryOptions = isCategory ? Object.keys(optionLabels) : [];
         const fieldLabel = getFieldLabel(fieldName);
 
         if (fieldType === 'list' && isCategory) {
@@ -309,7 +307,7 @@ const SuggestNewPointDialog = ({ open, onClose }) => {
                     <Select
                         labelId={`${fieldName}-label`}
                         multiple
-                        value={formFields[fieldName] || []}
+                        value={formFields[fieldName]}
                         onChange={handleFieldChange(fieldName)}
                         input={<OutlinedInput label={fieldLabel} />}
                         renderValue={selected => getSelectedDisplay(fieldName, selected)}
@@ -332,7 +330,7 @@ const SuggestNewPointDialog = ({ open, onClose }) => {
                     <InputLabel id={`${fieldName}-label`}>{fieldLabel}</InputLabel>
                     <Select
                         labelId={`${fieldName}-label`}
-                        value={formFields[fieldName] || ''}
+                        value={formFields[fieldName]}
                         onChange={handleFieldChange(fieldName)}
                         data-testid={`${fieldName}-select`}
                     >
@@ -350,7 +348,7 @@ const SuggestNewPointDialog = ({ open, onClose }) => {
             <TextField
                 key={fieldName}
                 label={fieldLabel}
-                value={formFields[fieldName] || ''}
+                value={formFields[fieldName]}
                 onChange={handleFieldChange(fieldName)}
                 fullWidth
                 margin="dense"
@@ -435,6 +433,62 @@ const SuggestNewPointDialog = ({ open, onClose }) => {
             </form>
         </Dialog>
     );
+};
+
+SuggestNewPointForm.propTypes = {
+    open: PropTypes.bool.isRequired,
+    onClose: PropTypes.func.isRequired,
+    // Only the parts this form reads; the schema itself carries more.
+    locationSchema: PropTypes.shape({
+        obligatory_fields: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.string)),
+        photo: PropTypes.shape({
+            allowed_extensions: PropTypes.arrayOf(PropTypes.string),
+            allowed_mime_types: PropTypes.arrayOf(PropTypes.string),
+            max_size_bytes: PropTypes.number,
+        }),
+    }).isRequired,
+};
+
+/**
+ * Dialog for suggesting a new map point.
+ *
+ * The form's fields are generated from the deployment's location schema, so there is
+ * nothing to render until that has arrived - holding the form back until then is what
+ * lets it build its fields once, instead of rebuilding them when the schema lands. If
+ * the schema could not be fetched at all, this says so instead of showing a form that
+ * has no fields to fill and could never be submitted.
+ *
+ * @param {{open: boolean, onClose: () => void}} props
+ * @returns {React.ReactElement|null} The form, a retry prompt, or null while it loads
+ */
+const SuggestNewPointDialog = ({ open, onClose }) => {
+    const { t } = useTranslation();
+    const { locationSchema, schemaError, refetchLocationSchema } = useDeploymentData();
+
+    // Without the schema there are no fields to fill, so offering the form anyway would
+    // only produce a submission the backend is bound to reject. Say so and offer a retry.
+    if (schemaError) {
+        return (
+            <Dialog open={open} onClose={onClose}>
+                <DialogTitle>{t('suggestNewPointDialogTitle')}</DialogTitle>
+                <DialogContent>
+                    <Alert severity="error">{t('loadSuggestFormError')}</Alert>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={onClose}>{t('cancel')}</Button>
+                    <Button variant="contained" onClick={refetchLocationSchema}>
+                        {t('retry')}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        );
+    }
+
+    if (!locationSchema) {
+        return null;
+    }
+
+    return <SuggestNewPointForm open={open} onClose={onClose} locationSchema={locationSchema} />;
 };
 
 SuggestNewPointDialog.propTypes = {

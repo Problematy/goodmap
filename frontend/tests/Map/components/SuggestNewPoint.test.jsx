@@ -5,7 +5,7 @@ import axios from 'axios';
 import imageCompression from 'browser-image-compression';
 import SuggestNewPointButton from '../../../src/components/Map/components/SuggestNewPointButton';
 import { LocationProvider } from '../../../src/components/Map/context/LocationContext';
-import { CategoriesProvider } from '../../../src/components/Categories/CategoriesContext';
+import AppProviders from '../../utils/providers';
 import {
     mockGeolocationSuccess,
     mockGeolocationError,
@@ -24,9 +24,9 @@ import toast from '../../../src/utils/toast';
 
 const renderWithProvider = component =>
     render(
-        <CategoriesProvider>
+        <AppProviders>
             <LocationProvider>{component}</LocationProvider>
-        </CategoriesProvider>,
+        </AppProviders>,
     );
 
 jest.mock('axios');
@@ -34,6 +34,7 @@ jest.mock('../../../src/services/http/httpService', () => ({
     __esModule: true,
     default: {
         getCategoriesData: jest.fn(),
+        getLocationSchema: jest.fn(),
     },
 }));
 jest.mock('../../../src/utils/toast', () => ({
@@ -49,7 +50,7 @@ beforeEach(() => {
     metaTag.setAttribute('content', 'test-csrf-token');
     document.head.appendChild(metaTag);
 
-    globalThis.LOCATION_SCHEMA = FULL_SCHEMA;
+    httpService.getLocationSchema.mockResolvedValue(FULL_SCHEMA);
 
     // Mock categories data matching httpService.getCategoriesData()'s real
     // { categories: [{ categoryKey, categoryName, options }] } shape.
@@ -82,7 +83,6 @@ afterEach(() => {
     if (metaTag) {
         metaTag.remove();
     }
-    delete globalThis.LOCATION_SCHEMA;
     jest.clearAllMocks();
 });
 
@@ -447,7 +447,7 @@ describe('SuggestNewPointButton', () => {
 
         axios.post.mockRejectedValue(new Error('Network error'));
         mockGeolocationSuccess();
-        globalThis.LOCATION_SCHEMA = SIMPLE_SCHEMA;
+        httpService.getLocationSchema.mockResolvedValue(SIMPLE_SCHEMA);
 
         renderWithProvider(<SuggestNewPointButton />);
         await openDialog();
@@ -474,7 +474,7 @@ describe('SuggestNewPointButton', () => {
 
         axios.post.mockRejectedValue({ response: { data: { message: backendMessage } } });
         mockGeolocationSuccess();
-        globalThis.LOCATION_SCHEMA = SIMPLE_SCHEMA;
+        httpService.getLocationSchema.mockResolvedValue(SIMPLE_SCHEMA);
 
         renderWithProvider(<SuggestNewPointButton />);
         await openDialog();
@@ -499,7 +499,7 @@ describe('SuggestNewPointButton', () => {
                 }),
         );
         mockGeolocationSuccess();
-        globalThis.LOCATION_SCHEMA = SIMPLE_SCHEMA;
+        httpService.getLocationSchema.mockResolvedValue(SIMPLE_SCHEMA);
 
         renderWithProvider(<SuggestNewPointButton />);
         await openDialog();
@@ -526,7 +526,7 @@ describe('SuggestNewPointButton', () => {
     it('closes dialog and resets form on successful submission', async () => {
         axios.post.mockResolvedValue({ data: { message: 'Success' } });
         mockGeolocationSuccess();
-        globalThis.LOCATION_SCHEMA = SIMPLE_SCHEMA;
+        httpService.getLocationSchema.mockResolvedValue(SIMPLE_SCHEMA);
 
         renderWithProvider(<SuggestNewPointButton />);
         await openDialog();
@@ -541,5 +541,41 @@ describe('SuggestNewPointButton', () => {
             expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
             expect(axios.post).toHaveBeenCalledTimes(1);
         });
+    });
+    it('builds category options from the category definitions', async () => {
+        mockGeolocationSuccess();
+
+        renderWithProvider(<SuggestNewPointButton />);
+        await openDialog();
+
+        fireEvent.mouseDown(screen.getByRole('combobox', { name: /accessible by/i }));
+
+        // The schema says accessible_by is obligatory but no longer carries its values:
+        // both the values and their labels come from the category definitions, which
+        // are now the only place either is reported.
+        const options = await screen.findAllByRole('option');
+        expect(options.map(option => option.textContent)).toEqual(['Bikes', 'Cars', 'Pedestrians']);
+    });
+    it('offers a retry instead of the form when the schema fails to load', async () => {
+        const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+        mockGeolocationSuccess();
+        httpService.getLocationSchema.mockRejectedValue(new Error('schema unavailable'));
+
+        renderWithProvider(<SuggestNewPointButton />);
+        await openDialog();
+
+        // With no schema there are no fields to fill, so a submitted form could only be
+        // rejected by the backend: the failure is stated instead of offering one.
+        expect(screen.getByText('Failed to load the suggestion form.')).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /submit/i })).not.toBeInTheDocument();
+
+        httpService.getLocationSchema.mockResolvedValue(FULL_SCHEMA);
+        fireEvent.click(screen.getByRole('button', { name: /retry/i }));
+
+        await waitFor(() =>
+            expect(screen.getByRole('button', { name: /submit/i })).toBeInTheDocument(),
+        );
+
+        consoleErrorSpy.mockRestore();
     });
 });

@@ -39,6 +39,8 @@
     "linkCopied": "Посилання скопійовано",
     "linkCopyFailed": "Не вдалося скопіювати посилання",
     "loadFiltersError": "Не вдалося завантажити фільтри.",
+    "loadSuggestFormError": "Не вдалося завантажити форму пропозиції.",
+    "loadReportFormError": "Не вдалося завантажити форму скарги.",
     "retry": "Спробувати ще раз",
     "clearFilters": "Очистити фільтри",
     "clearAllFiltersAriaLabel": "Очистити всі фільтри",

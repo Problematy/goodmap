@@ -4,7 +4,7 @@ import { render, screen, act, waitFor } from '@testing-library/react';
 import AccessibilityTable from '../../../src/components/Map/components/AccessibilityTable';
 import httpService from '../../../src/services/http/httpService';
 
-import { CategoriesProvider } from '../../../src/components/Categories/CategoriesContext';
+import AppProviders from '../../utils/providers';
 
 jest.mock('../../../src/services/http/httpService');
 
@@ -44,12 +44,12 @@ describe('Accessibility Table', () => {
         const lng = 17.0555;
         return act(() => {
             render(
-                <CategoriesProvider>
+                <AppProviders>
                     <AccessibilityTable
                         userPosition={{ lat, lng }}
                         setIsAccessibilityTableOpen={() => {}}
                     />
-                </CategoriesProvider>,
+                </AppProviders>,
             );
         });
     });

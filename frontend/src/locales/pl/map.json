@@ -40,6 +40,8 @@
     "linkCopied": "Link skopiowany do schowka",
     "linkCopyFailed": "Nie udało się skopiować linku",
     "loadFiltersError": "Nie udało się załadować filtrów.",
+    "loadSuggestFormError": "Nie udało się załadować formularza propozycji.",
+    "loadReportFormError": "Nie udało się załadować formularza zgłoszenia.",
     "retry": "Spróbuj ponownie",
     "clearFilters": "Wyczyść filtry",
     "clearAllFiltersAriaLabel": "Wyczyść wszystkie filtry",

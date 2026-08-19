@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import getCsrfToken from '../../utils/csrf';
+import { useDeploymentData } from '../../context/DeploymentDataContext';
 
 /**
  * Styled form component with flexbox column layout.
@@ -100,6 +101,28 @@ const SubmitButton = styled.input`
 /**
  * Styled success message component.
  */
+const ErrorMessage = styled.div`
+    padding: 12px 15px;
+    background-color: #fdecea;
+    border: 1px solid #f5c6cb;
+    border-radius: 8px;
+    color: #b71c1c;
+    font-size: 13px;
+    margin: 10px 15px;
+    text-align: center;
+`;
+
+const RetryButton = styled.button`
+    margin-top: 8px;
+    font-size: 13px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid currentColor;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+`;
+
 const SuccessMessage = styled.div`
     padding: 12px 15px;
     background-color: #e8f5e9;
@@ -123,14 +146,14 @@ const SuccessMessage = styled.div`
  */
 /**
  * Get issue type options from backend configuration or fall back to defaults.
- * Dynamic types come from LOCATION_SCHEMA.reported_issue_types (configured per deployment).
+ * Dynamic types come from the deployment's location schema (reported_issue_types).
  * Default types are kept for backward compatibility with backends that don't provide this field (until 2.0.0).
  *
  * @param {Function} t - Translation function
+ * @param {Array<{value: string, label: string}>} [dynamicTypes] - Types this deployment declares
  * @returns {Array<{value: string, label: string}>} Issue type options (without "other", which is always appended)
  */
-const getIssueTypeOptions = t => {
-    const dynamicTypes = globalThis.LOCATION_SCHEMA?.reported_issue_types;
+const getIssueTypeOptions = (t, dynamicTypes) => {
     if (dynamicTypes && dynamicTypes.length > 0) {
         return dynamicTypes.map(type => ({
             value: type.value,
@@ -147,12 +170,15 @@ const getIssueTypeOptions = t => {
 
 const ReportProblemForm = ({ placeId }) => {
     const { t } = useTranslation();
+    const { locationSchema, schemaError, refetchLocationSchema } = useDeploymentData();
     const [problem, setProblem] = useState('');
     const [problemType, setProblemType] = useState('');
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [responseMessage, setResponseMessage] = useState('');
 
-    const issueTypeOptions = getIssueTypeOptions(t);
+    // Only reached once the schema is known, so a loaded schema declaring no issue
+    // types is the one case that falls back to the legacy defaults.
+    const issueTypeOptions = getIssueTypeOptions(t, locationSchema?.reported_issue_types);
 
     const handleSubmit = async event => {
         event.preventDefault();
@@ -178,6 +204,26 @@ const ReportProblemForm = ({ placeId }) => {
 
     if (isSubmitted) {
         return <SuccessMessage>{responseMessage}</SuccessMessage>;
+    }
+
+    // This deployment's own issue types are the only ones it is guaranteed to accept, so
+    // the form is withheld until they are known: the legacy fallbacks are not a stand-in
+    // for them. A failed fetch has to say so, or the form would just never appear.
+    if (schemaError) {
+        return (
+            <ErrorMessage>
+                {t('loadReportFormError')}
+                <div>
+                    <RetryButton type="button" onClick={refetchLocationSchema}>
+                        {t('retry')}
+                    </RetryButton>
+                </div>
+            </ErrorMessage>
+        );
+    }
+
+    if (!locationSchema) {
+        return null;
     }
 
     return (

@@ -5,6 +5,12 @@
 export const CATEGORIES_FULL = '/api/categories-full';
 
 /**
+ * API endpoint describing what this deployment accepts for a new point:
+ * the fields, their allowed values, reportable issue types and photo limits.
+ */
+export const LOCATION_SCHEMA = '/api/location-schema';
+
+/**
  * API endpoint for fetching a single location by ID.
  * Use with location UUID appended: /api/location/{uuid}
  */

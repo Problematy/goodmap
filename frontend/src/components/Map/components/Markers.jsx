@@ -4,7 +4,7 @@ import { useMap } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import httpService from '../../../services/http/httpService';
 import MarkerPopup from '../../MarkerPopup/MarkerPopup';
-import { useCategories } from '../../Categories/CategoriesContext';
+import { useFilters } from '../../../context/FiltersContext';
 import ClusterMarker from '../../MarkerPopup/ClusterMarker';
 
 /**
@@ -44,7 +44,7 @@ const getMarkers = locations => {
  * @returns {React.ReactElement|Array} MarkerClusterGroup containing location markers, or empty array while loading
  */
 const Markers = ({ onLoadingChange = null }) => {
-    const { categories, isInitialized } = useCategories();
+    const { selectedFilters, isInitialized } = useFilters();
     const [markers, setMarkers] = useState([]);
     const [areMarkersLoaded, setAreMarkersLoaded] = useState(false);
     const map = useMap();
@@ -59,7 +59,7 @@ const Markers = ({ onLoadingChange = null }) => {
         const fetchMarkers = async () => {
             let locations;
             try {
-                locations = await httpService.getLocations(categories);
+                locations = await httpService.getLocations(selectedFilters);
             } catch (error) {
                 console.error('Failed to load locations:', error);
                 setMarkers([]);
@@ -100,7 +100,7 @@ const Markers = ({ onLoadingChange = null }) => {
         return () => {
             setMarkers([]);
         };
-    }, [categories, isInitialized]);
+    }, [selectedFilters, isInitialized]);
 
     useEffect(() => {
         const mapContainer = map.getContainer();
