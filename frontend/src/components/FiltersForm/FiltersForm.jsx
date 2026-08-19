@@ -242,12 +242,8 @@ const LoadingSkeleton = () => (
 
 const FiltersForm = () => {
     const { t } = useTranslation();
-    const {
-        categoriesData,
-        categoriesLoading,
-        categoriesError,
-        refetchCategories,
-    } = useDeploymentData();
+    const { categoriesData, categoriesLoading, categoriesError, refetchCategories } =
+        useDeploymentData();
     const { selectedFilters, setSelectedFilters } = useFilters();
 
     const handleCheckboxChange = event => {

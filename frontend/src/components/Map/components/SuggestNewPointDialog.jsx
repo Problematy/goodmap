@@ -439,7 +439,15 @@ const SuggestNewPointForm = ({ open, onClose, locationSchema }) => {
 SuggestNewPointForm.propTypes = {
     open: PropTypes.bool.isRequired,
     onClose: PropTypes.func.isRequired,
-    locationSchema: PropTypes.object.isRequired,
+    // Only the parts this form reads; the schema itself carries more.
+    locationSchema: PropTypes.shape({
+        obligatory_fields: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.string)),
+        photo: PropTypes.shape({
+            allowed_extensions: PropTypes.arrayOf(PropTypes.string),
+            allowed_mime_types: PropTypes.arrayOf(PropTypes.string),
+            max_size_bytes: PropTypes.number,
+        }),
+    }).isRequired,
 };
 
 /**

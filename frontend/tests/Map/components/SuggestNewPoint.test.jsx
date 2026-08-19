@@ -561,11 +561,7 @@ describe('SuggestNewPointButton', () => {
         fireEvent.mouseDown(screen.getByRole('combobox', { name: /accessible by/i }));
 
         const options = await screen.findAllByRole('option');
-        expect(options.map(option => option.textContent)).toEqual([
-            'Bikes',
-            'Cars',
-            'Pedestrians',
-        ]);
+        expect(options.map(option => option.textContent)).toEqual(['Bikes', 'Cars', 'Pedestrians']);
         expect(screen.queryByText('hovercrafts')).not.toBeInTheDocument();
     });
 });

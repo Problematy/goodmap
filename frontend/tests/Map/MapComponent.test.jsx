@@ -58,7 +58,6 @@ describe('MapComponent', () => {
         await waitFor(() => expect(screen.getAllByRole('presentation').length).toBeGreaterThan(0));
     });
 
-    // eslint-disable-next-line es-x/no-async-functions -- needed to await waitFor
     it('does not fetch locations before filter state is initialized', async () => {
         httpService.getLocations.mockClear();
         // Never resolves, so the provider leaves the filter state uninitialized.
