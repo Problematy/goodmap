@@ -67,6 +67,7 @@ def test_location_schema_reports_allowed_values_inside_each_field():
     response = test_app.get("/api/location-schema")
     assert response.status_code == 200
     body = response.json
+    assert body is not None
     # frozenset-backed, so the order carries no meaning
     assert set(body["fields"]["accessible_by"]["enum_items"]) == {"bikes", "cars"}
 
