@@ -7,12 +7,12 @@ const axios = require('axios');
 
 // The schema comes from a provider that fetches it; these tests exercise the form, so
 // the hook is stubbed to keep them synchronous and focused.
-jest.mock('../../src/components/Map/context/LocationSchemaContext', () => ({
-    useLocationSchema: jest.fn(),
+jest.mock('../../src/context/DeploymentDataContext', () => ({
+    useDeploymentData: jest.fn(),
 }));
-const { useLocationSchema } = require('../../src/components/Map/context/LocationSchemaContext');
+const { useDeploymentData } = require('../../src/context/DeploymentDataContext');
 
-const mockSchema = (schema = {}) => useLocationSchema.mockReturnValue({ locationSchema: schema });
+const mockSchema = (schema = {}) => useDeploymentData.mockReturnValue({ locationSchema: schema });
 
 axios.post.mockResolvedValue({ data: { success: true } });
 

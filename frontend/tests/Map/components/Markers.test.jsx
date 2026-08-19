@@ -3,7 +3,7 @@ import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
 import { MapContainer } from 'react-leaflet';
 import Markers from '../../../src/components/Map/components/Markers';
-import { CategoriesProvider } from '../../../src/components/Categories/CategoriesContext';
+import AppProviders from '../../utils/providers';
 import httpService from '../../../src/services/http/httpService';
 
 jest.mock('../../../src/services/http/httpService', () => ({
@@ -11,20 +11,23 @@ jest.mock('../../../src/services/http/httpService', () => ({
     default: {
         getCategoriesData: jest.fn(),
         getLocations: jest.fn(),
+        getLocationSchema: jest.fn(),
     },
 }));
 
 const renderMarkers = onLoadingChange =>
     render(
-        <CategoriesProvider>
+        <AppProviders>
             <MapContainer center={[51.1, 17.03]} zoom={13} maxZoom={19} style={{ height: '100vh' }}>
                 <Markers onLoadingChange={onLoadingChange} />
             </MapContainer>
-        </CategoriesProvider>,
+        </AppProviders>,
     );
 
 beforeEach(() => {
     httpService.getCategoriesData.mockResolvedValue({ categories: [], defaultChecked: {} });
+    // The provider fetches this alongside the categories; Markers itself never reads it.
+    httpService.getLocationSchema.mockResolvedValue({});
     // Server-side clustering settles the loading state directly, rather than waiting on
     // a Leaflet cluster event, which keeps these assertions about Markers itself.
     globalThis.FEATURE_FLAGS = { USE_SERVER_SIDE_CLUSTERING: true };

@@ -5,8 +5,7 @@ import axios from 'axios';
 import imageCompression from 'browser-image-compression';
 import SuggestNewPointButton from '../../../src/components/Map/components/SuggestNewPointButton';
 import { LocationProvider } from '../../../src/components/Map/context/LocationContext';
-import { CategoriesProvider } from '../../../src/components/Categories/CategoriesContext';
-import { LocationSchemaProvider } from '../../../src/components/Map/context/LocationSchemaContext';
+import AppProviders from '../../utils/providers';
 import {
     mockGeolocationSuccess,
     mockGeolocationError,
@@ -25,11 +24,9 @@ import toast from '../../../src/utils/toast';
 
 const renderWithProvider = component =>
     render(
-        <CategoriesProvider>
-            <LocationSchemaProvider>
-                <LocationProvider>{component}</LocationProvider>
-            </LocationSchemaProvider>
-        </CategoriesProvider>,
+        <AppProviders>
+            <LocationProvider>{component}</LocationProvider>
+        </AppProviders>,
     );
 
 jest.mock('axios');
@@ -544,5 +541,31 @@ describe('SuggestNewPointButton', () => {
             expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
             expect(axios.post).toHaveBeenCalledTimes(1);
         });
+    });
+    it('offers only category options the definitions can label', async () => {
+        mockGeolocationSuccess();
+        // The schema advertises a value the category definitions carry no label for.
+        // Options and their labels must come from one source, so the stale value is
+        // simply not offered - rather than rendered with its raw key as the label.
+        httpService.getLocationSchema.mockResolvedValue({
+            ...FULL_SCHEMA,
+            categories: {
+                ...FULL_SCHEMA.categories,
+                accessible_by: [...FULL_SCHEMA.categories.accessible_by, 'hovercrafts'],
+            },
+        });
+
+        renderWithProvider(<SuggestNewPointButton />);
+        await openDialog();
+
+        fireEvent.mouseDown(screen.getByRole('combobox', { name: /accessible by/i }));
+
+        const options = await screen.findAllByRole('option');
+        expect(options.map(option => option.textContent)).toEqual([
+            'Bikes',
+            'Cars',
+            'Pedestrians',
+        ]);
+        expect(screen.queryByText('hovercrafts')).not.toBeInTheDocument();
     });
 });

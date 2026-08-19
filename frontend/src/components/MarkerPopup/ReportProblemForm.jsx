@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import getCsrfToken from '../../utils/csrf';
-import { useLocationSchema } from '../Map/context/LocationSchemaContext';
+import { useDeploymentData } from '../../context/DeploymentDataContext';
 
 /**
  * Styled form component with flexbox column layout.
@@ -148,13 +148,13 @@ const getIssueTypeOptions = (t, dynamicTypes) => {
 
 const ReportProblemForm = ({ placeId }) => {
     const { t } = useTranslation();
-    const { locationSchema } = useLocationSchema();
+    const { locationSchema } = useDeploymentData();
     const [problem, setProblem] = useState('');
     const [problemType, setProblemType] = useState('');
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [responseMessage, setResponseMessage] = useState('');
 
-    const issueTypeOptions = getIssueTypeOptions(t, locationSchema.reported_issue_types);
+    const issueTypeOptions = getIssueTypeOptions(t, locationSchema?.reported_issue_types);
 
     const handleSubmit = async event => {
         event.preventDefault();

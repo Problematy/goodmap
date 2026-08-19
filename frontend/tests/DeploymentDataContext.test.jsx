@@ -3,9 +3,8 @@ import { render, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import FiltersForm from '../src/components/FiltersForm/FiltersForm';
 import SuggestNewPointButton from '../src/components/Map/components/SuggestNewPointButton';
-import { CategoriesProvider } from '../src/components/Categories/CategoriesContext';
 import { LocationProvider } from '../src/components/Map/context/LocationContext';
-import { LocationSchemaProvider } from '../src/components/Map/context/LocationSchemaContext';
+import AppProviders from './utils/providers';
 import httpService from '../src/services/http/httpService';
 
 jest.mock('axios');
@@ -30,14 +29,12 @@ test('categories are fetched once for all consumers', async () => {
     httpService.getLocationSchema.mockResolvedValue({});
 
     render(
-        <CategoriesProvider>
-            <LocationSchemaProvider>
-                <LocationProvider>
-                    <FiltersForm />
-                    <SuggestNewPointButton />
-                </LocationProvider>
-            </LocationSchemaProvider>
-        </CategoriesProvider>,
+        <AppProviders>
+            <LocationProvider>
+                <FiltersForm />
+                <SuggestNewPointButton />
+            </LocationProvider>
+        </AppProviders>,
     );
 
     await waitFor(() => expect(httpService.getCategoriesData).toHaveBeenCalled());

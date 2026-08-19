@@ -26,9 +26,8 @@ import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import imageCompression from 'browser-image-compression';
 import getCsrfToken from '../../../utils/csrf';
-import { useLocationSchema } from '../context/LocationSchemaContext';
 import { useLocation } from '../context/LocationContext';
-import { useCategories } from '../../Categories/CategoriesContext';
+import { useDeploymentData } from '../../../context/DeploymentDataContext';
 import toast from '../../../utils/toast';
 
 // Map a category's options to a { key: translation } object.
@@ -47,16 +46,15 @@ const mapCategoryOptions = categoryOptions => {
 };
 
 // Build { fieldNames, options } translation maps from the fetched category definitions.
+// Every category key is registered, even when it has no options, so a category with an
+// empty option list stays distinguishable from a field that is not a category at all.
 const buildCategoryTranslations = categoriesData => {
     const fieldNames = {};
     const options = {};
 
     categoriesData.forEach(({ categoryKey, categoryName, options: categoryOptions }) => {
         fieldNames[categoryKey] = categoryName;
-
-        if (categoryOptions?.length) {
-            options[categoryKey] = mapCategoryOptions(categoryOptions);
-        }
+        options[categoryKey] = mapCategoryOptions(categoryOptions ?? []);
     });
 
     return { fieldNames, options };
@@ -108,17 +106,16 @@ const useScrollToTop = trigger => {
 };
 
 /**
- * Dialog form for suggesting a new map point. Fields are generated dynamically from the
- * deployment's location schema and include the user's position, an optional photo, and
- * every obligatory location attribute defined by the backend.
+ * The suggestion form itself. Mounted only once the location schema is known, so the
+ * fields it generates can be built in one pass from the deployment's obligatory fields.
  *
- * @param {{open: boolean, onClose: () => void}} props
+ * @param {{open: boolean, onClose: () => void, locationSchema: Object}} props
  * @returns {React.ReactElement} Dialog with the new point suggestion form
  */
-const SuggestNewPointDialog = ({ open, onClose }) => {
+const SuggestNewPointForm = ({ open, onClose, locationSchema }) => {
     const { t } = useTranslation();
     const { userPosition, requestLocationWithFeedback } = useLocation();
-    const { categoriesData } = useCategories();
+    const { categoriesData } = useDeploymentData();
     const [photo, setPhoto] = useState(null);
     const [photoURL, setPhotoURL] = useState(null);
     // Shown inline in the dialog: a toast here can end up behind it.
@@ -141,7 +138,6 @@ const SuggestNewPointDialog = ({ open, onClose }) => {
         }
     }, [open]);
 
-    const { locationSchema } = useLocationSchema();
     const {
         allowed_extensions: allowedPhotoExtensions = [],
         allowed_mime_types: allowedPhotoMimeTypes = [],
@@ -170,13 +166,6 @@ const SuggestNewPointDialog = ({ open, onClose }) => {
     };
 
     const [formFields, setFormFields] = useState(initializeFormFields);
-
-    // The schema is fetched, so it is empty on the first render and the initial state
-    // above has nothing to build from. Rebuild the fields once it arrives.
-    useEffect(() => {
-        setFormFields(initializeFormFields());
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [locationSchema]);
 
     const handleLocateMe = () => {
         requestLocationWithFeedback();
@@ -302,8 +291,11 @@ const SuggestNewPointDialog = ({ open, onClose }) => {
 
     // Render form field based on field type and whether it's a category
     const renderFormField = (fieldName, fieldType) => {
-        const isCategory = fieldName in locationSchema.categories;
-        const categoryOptions = isCategory ? locationSchema.categories[fieldName] : [];
+        // Values and labels both come from the category definitions, so an option can
+        // never render with a label this component has no entry for.
+        const optionLabels = categoryTranslations.options[fieldName];
+        const isCategory = Boolean(optionLabels);
+        const categoryOptions = isCategory ? Object.keys(optionLabels) : [];
         const fieldLabel = getFieldLabel(fieldName);
 
         if (fieldType === 'list' && isCategory) {
@@ -442,6 +434,32 @@ const SuggestNewPointDialog = ({ open, onClose }) => {
             </form>
         </Dialog>
     );
+};
+
+SuggestNewPointForm.propTypes = {
+    open: PropTypes.bool.isRequired,
+    onClose: PropTypes.func.isRequired,
+    locationSchema: PropTypes.object.isRequired,
+};
+
+/**
+ * Dialog for suggesting a new map point.
+ *
+ * The form's fields are generated from the deployment's location schema, so there is
+ * nothing to render until that has arrived - holding the form back until then is what
+ * lets it build its fields once, instead of rebuilding them when the schema lands.
+ *
+ * @param {{open: boolean, onClose: () => void}} props
+ * @returns {React.ReactElement|null} The suggestion form, or null while the schema loads
+ */
+const SuggestNewPointDialog = ({ open, onClose }) => {
+    const { locationSchema } = useDeploymentData();
+
+    if (!locationSchema) {
+        return null;
+    }
+
+    return <SuggestNewPointForm open={open} onClose={onClose} locationSchema={locationSchema} />;
 };
 
 SuggestNewPointDialog.propTypes = {

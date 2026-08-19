@@ -2,7 +2,8 @@ import React from 'react';
 import styled, { keyframes } from 'styled-components';
 import { useTranslation } from 'react-i18next';
 import { Tooltip } from '@mui/material';
-import { useCategories } from '../Categories/CategoriesContext';
+import { useDeploymentData } from '../../context/DeploymentDataContext';
+import { useFilters } from '../../context/FiltersContext';
 import FiltersTooltip from './FiltersTooltip';
 
 const shimmer = keyframes`
@@ -242,19 +243,18 @@ const LoadingSkeleton = () => (
 const FiltersForm = () => {
     const { t } = useTranslation();
     const {
-        categories: selectedFilters,
-        setCategories,
         categoriesData,
-        isLoading,
-        hasError,
+        categoriesLoading,
+        categoriesError,
         refetchCategories,
-    } = useCategories();
+    } = useDeploymentData();
+    const { selectedFilters, setSelectedFilters } = useFilters();
 
     const handleCheckboxChange = event => {
         const { value, checked } = event.target;
         const { category } = event.target.dataset;
 
-        setCategories(prevSelectedFilters => {
+        setSelectedFilters(prevSelectedFilters => {
             const newSelectedFilters = { ...prevSelectedFilters };
 
             if (checked) {
@@ -275,14 +275,14 @@ const FiltersForm = () => {
         const { value } = event.target;
         const { category } = event.target.dataset;
 
-        setCategories(prevSelectedFilters => ({
+        setSelectedFilters(prevSelectedFilters => ({
             ...prevSelectedFilters,
             [category]: [value],
         }));
     };
 
     const handleClearFilters = () => {
-        setCategories({});
+        setSelectedFilters({});
     };
 
     const renderModeBadge = mode => {
@@ -423,7 +423,7 @@ const FiltersForm = () => {
         );
     }
 
-    if (isLoading) {
+    if (categoriesLoading) {
         return (
             <form>
                 <LoadingSkeleton />
@@ -431,7 +431,7 @@ const FiltersForm = () => {
         );
     }
 
-    if (hasError) {
+    if (categoriesError) {
         return (
             <form>
                 <ErrorMessage>{t('loadFiltersError')}</ErrorMessage>
