@@ -10,7 +10,7 @@ import useMapStore from '../Map/store/map.store';
 import LocationDetailsBox from './LocationDetails';
 import MobilePopup from './MobilePopup';
 import DesktopPopup from './DesktopPopup';
-import { getTypedMarkerIcon } from './getTypedMarkerIcon';
+import getTypedMarkerIcon from './getTypedMarkerIcon';
 import iconAsterisk from '../../res/img/marker-icon-asterisk.png';
 
 /**

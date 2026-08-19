@@ -1,4 +1,4 @@
-import { getTypedMarkerIcon } from '../../src/components/MarkerPopup/getTypedMarkerIcon';
+import getTypedMarkerIcon from '../../src/components/MarkerPopup/getTypedMarkerIcon';
 
 // window.MARKER_STYLES is server-rendered JSON (see goodmap's map.html/db.get_marker_styles),
 // so fixtures are parsed from JSON strings here too - keeps the snake_case backend field
@@ -25,7 +25,7 @@ describe('getTypedMarkerIcon', () => {
         setMarkerStyles(`{
             "icon_field": "pointType",
             "color_field": "pointStatus",
-            "icons": { "parcelLocker": "M0 0h16v16H0z" },
+            "icons": { "parcelLocker": "https://cdn.example.com/parcel-locker.svg" },
             "colors": { "open": "#2e7d32" }
         }`);
 
@@ -37,7 +37,7 @@ describe('getTypedMarkerIcon', () => {
     it('builds a DivIcon when the icon field matches a configured glyph', () => {
         setMarkerStyles(`{
             "icon_field": "pointType",
-            "icons": { "parcelLocker": "M0 0h16v16H0z" }
+            "icons": { "parcelLocker": "https://cdn.example.com/parcel-locker.svg" }
         }`);
 
         const icon = getTypedMarkerIcon({
@@ -47,9 +47,34 @@ describe('getTypedMarkerIcon', () => {
         });
 
         expect(icon).not.toBeNull();
-        expect(icon.options.html).toContain('M0 0h16v16H0z');
+        expect(icon.options.html).toContain('https://cdn.example.com/parcel-locker.svg');
         expect(icon.options.html).toContain('#2a81cb'); // fallback color, no color_field set
         expect(icon.options.iconSize).toEqual([30, 42]);
+    });
+
+    it('masks the icon URL through CSS so it picks up the matched color, instead of embedding SVG path data', () => {
+        setMarkerStyles(`{
+            "icon_field": "pointType",
+            "color_field": "pointStatus",
+            "icons": { "parcelLocker": "https://cdn.example.com/parcel-locker.svg" },
+            "colors": { "open": "#2e7d32" }
+        }`);
+
+        const icon = getTypedMarkerIcon({
+            uuid: '1',
+            position: [50, 50],
+            pointType: 'parcelLocker',
+            pointStatus: 'open',
+        });
+
+        // the glyph URL drives a CSS mask (mask-image / -webkit-mask-image) on a
+        // <div>, not an inline <path d="...">, so any icon set (not just
+        // single-path ones) works and no extra <path> is added beyond the pin
+        // body's own teardrop shape.
+        expect(icon.options.html).toContain(
+            'mask-image:url(https://cdn.example.com/parcel-locker.svg)',
+        );
+        expect(icon.options.html.match(/<path/g)).toHaveLength(1);
     });
 
     it('builds a DivIcon when the color field matches a configured color, with no glyph', () => {
@@ -81,7 +106,7 @@ describe('getTypedMarkerIcon', () => {
     it('adds an asterisk badge when place.has_remark is set and a match was found', () => {
         setMarkerStyles(`{
             "icon_field": "pointType",
-            "icons": { "parcelLocker": "M0 0h16v16H0z" }
+            "icons": { "parcelLocker": "https://cdn.example.com/parcel-locker.svg" }
         }`);
 
         const icon = getTypedMarkerIcon({
@@ -92,14 +117,14 @@ describe('getTypedMarkerIcon', () => {
         });
 
         expect(icon).not.toBeNull();
-        expect(icon.options.html).toContain('M0 0h16v16H0z'); // keeps the type glyph
+        expect(icon.options.html).toContain('https://cdn.example.com/parcel-locker.svg'); // keeps the type glyph
         expect(icon.options.html).toContain('>*</text>'); // asterisk badge overlay
     });
 
     it('omits the asterisk badge when place.has_remark is not set', () => {
         setMarkerStyles(`{
             "icon_field": "pointType",
-            "icons": { "parcelLocker": "M0 0h16v16H0z" }
+            "icons": { "parcelLocker": "https://cdn.example.com/parcel-locker.svg" }
         }`);
 
         const icon = getTypedMarkerIcon({
@@ -114,15 +139,13 @@ describe('getTypedMarkerIcon', () => {
     it('returns null (falls back to the plain asterisk icon) when has_remark is set but nothing matches', () => {
         setMarkerStyles('{}');
 
-        expect(
-            getTypedMarkerIcon({ uuid: '1', position: [50, 50], has_remark: true }),
-        ).toBeNull();
+        expect(getTypedMarkerIcon({ uuid: '1', position: [50, 50], has_remark: true })).toBeNull();
     });
 
     it('uses default_color from MARKER_STYLES when the matched value has no color entry', () => {
         setMarkerStyles(`{
             "icon_field": "pointType",
-            "icons": { "parcelLocker": "M0 0h16v16H0z" },
+            "icons": { "parcelLocker": "https://cdn.example.com/parcel-locker.svg" },
             "default_color": "#123456"
         }`);
 

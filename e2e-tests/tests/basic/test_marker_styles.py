@@ -12,8 +12,16 @@ from playwright.sync_api import Page, expect
 
 from tests.conftest import BASE_URL, MARKER_LOAD_TIMEOUT, open_test_popup
 
-BIG_BRIDGE_GLYPH = "M1 11h14v2H1zM2 7h1v4H2zM13 7h1v4h-1zM4 5h1v6H4zM11 5h1v6h-1zM7 4h2v7H7z"
-SMALL_BRIDGE_GLYPH = "M2 9c2-3 10-3 12 0"
+# "big bridge" and "small bridge" each get their own Phosphor Icons (MIT) glyph -
+# see e2e_test_data_initial.json's marker_styles.icons and getTypedMarkerIcon.jsx
+# (icon URLs are CSS mask-image'd onto the pin, tinted by the matched color,
+# rather than embedded as inline SVG path data).
+BIG_BRIDGE_GLYPH_URL = (
+    "https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/fill/bridge-fill.svg"
+)
+SMALL_BRIDGE_GLYPH_URL = (
+    "https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/fill/footprints-fill.svg"
+)
 
 
 class TestMarkerStyles:
@@ -34,11 +42,13 @@ class TestMarkerStyles:
         marker = page.locator(".custom-typed-marker-icon")
         expect(marker).to_have_count(1, timeout=MARKER_LOAD_TIMEOUT)
 
-        paths = marker.locator("path")
-        # First path is the pin shape itself, filled with speed_limit=50's color.
-        expect(paths.first).to_have_attribute("fill", "#c62828")
-        # Second path is the type_of_place glyph, configured for "big bridge".
-        expect(paths.nth(1)).to_have_attribute("d", BIG_BRIDGE_GLYPH)
+        # The pin shape itself, filled with speed_limit=50's color.
+        expect(marker.locator("path")).to_have_attribute("fill", "#c62828")
+        # The type_of_place glyph, configured for "big bridge" - masked onto a div
+        # via CSS rather than embedded as an inline <path>.
+        glyph = marker.locator(".custom-typed-marker-glyph")
+        expect(glyph).to_have_count(1)
+        expect(glyph).to_have_css("mask-image", f'url("{BIG_BRIDGE_GLYPH_URL}")')
         # No remark on Pokoju, so no asterisk badge.
         expect(marker.locator("text")).to_have_count(0)
 
@@ -70,7 +80,8 @@ class TestMarkerStyles:
         marker = page.locator(".custom-typed-marker-icon")
         expect(marker).to_have_count(1, timeout=MARKER_LOAD_TIMEOUT)
 
-        paths = marker.locator("path")
-        expect(paths.first).to_have_attribute("fill", "#2e7d32")  # speed_limit=10
-        expect(paths.nth(1)).to_have_attribute("d", SMALL_BRIDGE_GLYPH)
+        expect(marker.locator("path")).to_have_attribute("fill", "#2e7d32")  # speed_limit=10
+        glyph = marker.locator(".custom-typed-marker-glyph")
+        expect(glyph).to_have_count(1)
+        expect(glyph).to_have_css("mask-image", f'url("{SMALL_BRIDGE_GLYPH_URL}")')
         expect(marker.locator("text")).to_have_text("*")
