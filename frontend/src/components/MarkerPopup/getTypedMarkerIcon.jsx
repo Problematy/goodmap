@@ -5,24 +5,16 @@ import ReactDOMServer from 'react-dom/server';
 
 const PIN_WIDTH = 72;
 const PIN_HEIGHT = 80;
-// Matches the accent color used elsewhere on the page (buttons, left panel).
-const FALLBACK_COLOR = globalThis.SECONDARY_COLOR || '#2a81cb';
+const FALLBACK_COLOR = globalThis.SECONDARY_COLOR || 'black';
 
-// Phosphor Icons "map-pin-simple" shape (MIT, phosphoricons.com), masked as
-// the pin body - see PinIcon below. PIN_WIDTH is wider than the icon's own
-// aspect ratio so its ball has room for the type icon.
+// TODO make pin shape configurable
 const PIN_SHAPE_URL =
     'https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/fill/map-pin-simple-fill.svg';
 
-// The icon's artwork leaves blank margin below the stem tip, which becomes
-// real empty space once stretched to fill the box - so the anchor has to
-// target the actual rendered tip, not the box edge, or the marker floats
-// above its true location. Measured empirically from a screenshot rather
-// than the raw path coordinates, since drop-shadow/antialiasing shift the
-// rendered edge slightly.
-const STEM_TIP_FRACTION = 0.8875;
-
 const TYPE_ICON_SIZE = 24;
+
+// Because the pin shape is not a perfectly aligned, anchor point is not at the bottom of the pin
+// we need to adjust the anchor and popup positions accordingly
 const TYPE_ICON_OFFSET_TOP = 10;
 const TYPE_ICON_OFFSET_LEFT = 24;
 
@@ -99,15 +91,6 @@ PinIcon.propTypes = {
  * `null` when neither `icon_field` nor `color_field` matched - callers should
  * omit the `icon` prop then and fall back to Leaflet's default marker (or the
  * plain asterisk icon for a remarked location).
- *
- * Expected shape of window.MARKER_STYLES:
- *   {
- *     icon_field: 'type_of_place',
- *     color_field: 'status',
- *     icons: { parcel_locker: 'https://cdn.example.com/parcel-locker.svg' },
- *     colors: { open: '#2e7d32' },
- *     default_color: '#2a81cb',
- *   }
  *
  * @param {Object} place - Location data, as returned by GET /api/locations
  * @returns {import('leaflet').DivIcon|null}
