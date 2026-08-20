@@ -1,8 +1,9 @@
 import warnings
+from typing import cast
 
 import pytest
 
-from goodmap.data_models.location import create_location_model
+from goodmap.data_models.location import LocationBase, create_location_model
 from goodmap.exceptions import LocationValidationError
 
 
@@ -139,6 +140,7 @@ def test_basic_info_includes_category_field_values():
     location = location_model(
         uuid="1", name="test", type_of_place="parcel_locker", position=(50, 50)
     )
+    location = cast(LocationBase, location)
     assert location.basic_info() == {
         "uuid": "1",
         "position": (50, 50),
@@ -152,6 +154,7 @@ def test_basic_info_omits_category_fields_when_none_configured():
     uuid/position/has_remark shape, unchanged."""
     location_model = create_location_model(obligatory_fields=[("name", "str")], categories={})
     location = location_model(uuid="1", name="test", position=(50, 50))
+    location = cast(LocationBase, location)
     assert location.basic_info() == {"uuid": "1", "position": (50, 50), "has_remark": False}
 
 
