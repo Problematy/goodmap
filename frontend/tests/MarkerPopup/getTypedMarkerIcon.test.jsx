@@ -67,7 +67,7 @@ describe('getTypedMarkerIcon', () => {
             pointStatus: 'open',
         });
 
-        // both the pin body (map-pin-fill.svg) and the type icon are CSS-masked
+        // both the pin body (our own marker-pin.svg) and the type icon are CSS-masked
         // <div>s tinted via background-color, not inline SVG <path d="...">, so
         // any icon set (not just single-path ones) works for either.
         expect(icon.options.html).toContain(
