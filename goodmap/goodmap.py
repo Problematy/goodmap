@@ -131,8 +131,18 @@ def _setup_location_model(
     except (KeyError, AttributeError):
         categories = {}
 
-    if categories:
-        location_model = create_location_model(obligatory_fields, categories)
+    try:
+        marker_styles = extended_db.get_marker_styles()
+    except (KeyError, AttributeError):
+        marker_styles = {}
+    marker_style_fields = {
+        field
+        for field in (marker_styles.get("icon_field"), marker_styles.get("color_field"))
+        if field is not None
+    }
+
+    if categories or marker_style_fields:
+        location_model = create_location_model(obligatory_fields, categories, marker_style_fields)
         extended_db = extend_db_with_goodmap_queries(extended_db, location_model)
 
     return obligatory_fields, categories, location_model, extended_db

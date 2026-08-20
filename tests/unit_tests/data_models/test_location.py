@@ -131,11 +131,12 @@ def test_category_validation_rejects_invalid_list_item():
 
 
 def test_basic_info_includes_category_field_values():
-    """basic_info() should surface category field values (for pin icon/color
+    """basic_info() should surface marker_style_fields' values (for pin icon/color
     selection) alongside the existing uuid/position/has_remark."""
     location_model = create_location_model(
         obligatory_fields=[("type_of_place", "str"), ("name", "str")],
         categories={"type_of_place": ["parcel_locker", "container"]},
+        marker_style_fields={"type_of_place"},
     )
     location = location_model(
         uuid="1", name="test", type_of_place="parcel_locker", position=(50, 50)
@@ -156,6 +157,31 @@ def test_basic_info_omits_category_fields_when_none_configured():
     location = location_model(uuid="1", name="test", position=(50, 50))
     location = cast(LocationBase, location)
     assert location.basic_info() == {"uuid": "1", "position": (50, 50), "has_remark": False}
+
+
+def test_basic_info_omits_category_fields_not_referenced_by_marker_style_fields():
+    """A category not used by marker_styles.icon_field/color_field shouldn't ride
+    along on basic_info() just because it's a category - only marker_style_fields
+    controls what pin styling needs, not the full category set (a deployment can
+    have categories unrelated to marker display, e.g. used only for filtering)."""
+    location_model = create_location_model(
+        obligatory_fields=[("type_of_place", "str"), ("accessibility", "str")],
+        categories={
+            "type_of_place": ["parcel_locker", "container"],
+            "accessibility": ["wheelchair", "none"],
+        },
+        marker_style_fields={"type_of_place"},
+    )
+    location = location_model(
+        uuid="1", type_of_place="parcel_locker", accessibility="wheelchair", position=(50, 50)
+    )
+    location = cast(LocationBase, location)
+    assert location.basic_info() == {
+        "uuid": "1",
+        "position": (50, 50),
+        "has_remark": False,
+        "type_of_place": "parcel_locker",
+    }
 
 
 def test_create_location_model_with_int_field():

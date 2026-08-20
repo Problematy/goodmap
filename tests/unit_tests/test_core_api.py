@@ -316,13 +316,14 @@ def test_get_locations_accepts_valid_and_undeclared_parameters(test_app, query):
 
 
 def test_get_locations_includes_category_field_for_pin_styling():
-    """/api/locations should surface category field values (e.g. a point-type
-    category), so the frontend can pick a marker icon/color without a full
-    per-location detail fetch."""
+    """/api/locations should surface the field marker_styles.icon_field points at
+    (e.g. a point-type category), so the frontend can pick a marker icon/color
+    without a full per-location detail fetch."""
     client = create_test_app(
         db_overrides={
             "categories": {"point_type": ["parcel_locker", "container"]},
             "location_obligatory_fields": [("point_type", "str"), ("name", "str")],
+            "marker_styles": {"icon_field": "point_type", "icons": {}, "colors": {}},
             "data": [
                 {
                     "name": "locker-1",
