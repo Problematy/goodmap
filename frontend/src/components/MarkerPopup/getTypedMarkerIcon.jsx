@@ -8,9 +8,9 @@ const PIN_HEIGHT = 80;
 // Matches the accent color used elsewhere on the page (buttons, left panel).
 const FALLBACK_COLOR = globalThis.SECONDARY_COLOR || '#2a81cb';
 
-// Phosphor Icons "map-pin-simple" glyph (MIT, phosphoricons.com), masked as
+// Phosphor Icons "map-pin-simple" shape (MIT, phosphoricons.com), masked as
 // the pin body - see PinIcon below. PIN_WIDTH is wider than the icon's own
-// aspect ratio so its ball has room for the glyph.
+// aspect ratio so its ball has room for the type icon.
 const PIN_SHAPE_URL =
     'https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/fill/map-pin-simple-fill.svg';
 
@@ -22,9 +22,9 @@ const PIN_SHAPE_URL =
 // rendered edge slightly.
 const STEM_TIP_FRACTION = 0.8875;
 
-const GLYPH_SIZE = 24;
-const GLYPH_OFFSET_TOP = 10;
-const GLYPH_OFFSET_LEFT = 24;
+const TYPE_ICON_SIZE = 24;
+const TYPE_ICON_OFFSET_TOP = 10;
+const TYPE_ICON_OFFSET_LEFT = 24;
 
 const maskStyle = (url, color) => ({
     backgroundColor: color,
@@ -37,12 +37,12 @@ const maskStyle = (url, color) => ({
 });
 
 /**
- * Pin shape masked to `color`, optionally holding a glyph (`glyphUrl`) inside
+ * Pin shape masked to `color`, optionally holding a type icon (`typeIconUrl`) inside
  * its head, and an asterisk badge when `hasRemark` is set - so a remarked
  * location keeps its type/color styling instead of losing it to a plain
  * asterisk marker.
  */
-const PinIcon = ({ color, glyphUrl, hasRemark }) => (
+const PinIcon = ({ color, typeIconUrl, hasRemark }) => (
     <div style={{ position: 'relative', width: PIN_WIDTH, height: PIN_HEIGHT }}>
         <div
             className="custom-typed-marker-pin"
@@ -53,16 +53,16 @@ const PinIcon = ({ color, glyphUrl, hasRemark }) => (
                 ...maskStyle(PIN_SHAPE_URL, color),
             }}
         />
-        {glyphUrl !== '' && (
+        {typeIconUrl !== '' && (
             <div
-                className="custom-typed-marker-glyph"
+                className="custom-typed-marker-type-icon"
                 style={{
                     position: 'absolute',
-                    top: GLYPH_OFFSET_TOP,
-                    left: GLYPH_OFFSET_LEFT,
-                    width: GLYPH_SIZE,
-                    height: GLYPH_SIZE,
-                    ...maskStyle(glyphUrl, '#ffffff'),
+                    top: TYPE_ICON_OFFSET_TOP,
+                    left: TYPE_ICON_OFFSET_LEFT,
+                    width: TYPE_ICON_SIZE,
+                    height: TYPE_ICON_SIZE,
+                    ...maskStyle(typeIconUrl, '#ffffff'),
                 }}
             />
         )}
@@ -89,7 +89,7 @@ const PinIcon = ({ color, glyphUrl, hasRemark }) => (
 
 PinIcon.propTypes = {
     color: PropTypes.string.isRequired,
-    glyphUrl: PropTypes.string.isRequired,
+    typeIconUrl: PropTypes.string.isRequired,
     hasRemark: PropTypes.bool.isRequired,
 };
 
@@ -122,10 +122,10 @@ const getTypedMarkerIcon = place => {
         default_color: defaultColor,
     } = markerStyles;
 
-    const glyphUrl = icons?.[place[iconField]] || '';
+    const typeIconUrl = icons?.[place[iconField]] || '';
     const matchedColor = colors?.[place[colorField]] || '';
 
-    if (!glyphUrl && !matchedColor) {
+    if (!typeIconUrl && !matchedColor) {
         return null;
     }
 
@@ -133,7 +133,7 @@ const getTypedMarkerIcon = place => {
         html: ReactDOMServer.renderToString(
             <PinIcon
                 color={matchedColor || defaultColor || FALLBACK_COLOR}
-                glyphUrl={glyphUrl}
+                typeIconUrl={typeIconUrl}
                 hasRemark={Boolean(place.has_remark)}
             />,
         ),

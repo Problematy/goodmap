@@ -34,7 +34,7 @@ describe('getTypedMarkerIcon', () => {
         ).toBeNull();
     });
 
-    it('builds a DivIcon when the icon field matches a configured glyph', () => {
+    it('builds a DivIcon when the icon field matches a configured type icon', () => {
         setMarkerStyles(`{
             "icon_field": "pointType",
             "icons": { "parcelLocker": "https://cdn.example.com/parcel-locker.svg" }
@@ -67,7 +67,7 @@ describe('getTypedMarkerIcon', () => {
             pointStatus: 'open',
         });
 
-        // both the pin body (map-pin-fill.svg) and the glyph are CSS-masked
+        // both the pin body (map-pin-fill.svg) and the type icon are CSS-masked
         // <div>s tinted via background-color, not inline SVG <path d="...">, so
         // any icon set (not just single-path ones) works for either.
         expect(icon.options.html).toContain(
@@ -77,7 +77,7 @@ describe('getTypedMarkerIcon', () => {
         expect(icon.options.html).not.toContain('<svg');
     });
 
-    it('builds a DivIcon when the color field matches a configured color, with no glyph', () => {
+    it('builds a DivIcon when the color field matches a configured color, with no type icon', () => {
         setMarkerStyles(`{
             "color_field": "pointStatus",
             "colors": { "open": "#2e7d32" }
@@ -117,7 +117,7 @@ describe('getTypedMarkerIcon', () => {
         });
 
         expect(icon).not.toBeNull();
-        expect(icon.options.html).toContain('https://cdn.example.com/parcel-locker.svg'); // keeps the type glyph
+        expect(icon.options.html).toContain('https://cdn.example.com/parcel-locker.svg'); // keeps the type icon
         expect(icon.options.html).toContain('>*</span>'); // asterisk badge overlay
     });
 

@@ -12,14 +12,14 @@ from playwright.sync_api import Page, expect
 
 from tests.conftest import BASE_URL, MARKER_LOAD_TIMEOUT, open_test_popup
 
-# "big bridge" and "small bridge" each get their own Phosphor Icons (MIT) glyph -
-# see e2e_test_data_initial.json's marker_styles.icons and getTypedMarkerIcon.jsx
-# (icon URLs are CSS mask-image'd onto the pin, tinted by the matched color,
-# rather than embedded as inline SVG path data).
-BIG_BRIDGE_GLYPH_URL = (
+# "big bridge" and "small bridge" each get their own Phosphor Icons (MIT) type
+# icon - see e2e_test_data_initial.json's marker_styles.icons and
+# getTypedMarkerIcon.jsx (icon URLs are CSS mask-image'd onto the pin, tinted
+# by the matched color, rather than embedded as inline SVG path data).
+BIG_BRIDGE_TYPE_ICON_URL = (
     "https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/fill/bridge-fill.svg"
 )
-SMALL_BRIDGE_GLYPH_URL = (
+SMALL_BRIDGE_TYPE_ICON_URL = (
     "https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/fill/footprints-fill.svg"
 )
 
@@ -27,7 +27,7 @@ SMALL_BRIDGE_GLYPH_URL = (
 class TestMarkerStyles:
     """Test suite for marker_styles-driven pin icons/colors"""
 
-    def test_fast_bridge_marker_uses_type_glyph_and_red_speed_color(self, page: Page):
+    def test_fast_bridge_marker_uses_type_icon_and_red_speed_color(self, page: Page):
         """Pokoju (big bridge, speed_limit=50, no remark) is the only seeded bridge
         with all three of lighting+benches+toilets (amenities is an "and" category -
         see test_and_filter_within_category_narrows_results in test_map.py), so
@@ -46,24 +46,38 @@ class TestMarkerStyles:
         # speed_limit=50's color.
         pin = marker.locator(".custom-typed-marker-pin")
         expect(pin).to_have_css("background-color", "rgb(198, 40, 40)")  # #c62828
-        # The type_of_place glyph, configured for "big bridge" - masked onto a div
+        # The type_of_place icon, configured for "big bridge" - masked onto a div
         # via CSS rather than embedded as an inline <path>.
-        glyph = marker.locator(".custom-typed-marker-glyph")
-        expect(glyph).to_have_count(1)
-        expect(glyph).to_have_css("mask-image", f'url("{BIG_BRIDGE_GLYPH_URL}")')
+        type_icon = marker.locator(".custom-typed-marker-type-icon")
+        expect(type_icon).to_have_count(1)
+        expect(type_icon).to_have_css("mask-image", f'url("{BIG_BRIDGE_TYPE_ICON_URL}")')
         # No remark on Pokoju, so no asterisk badge.
         expect(marker.locator("span")).to_have_count(0)
 
-    # Note: a second real-browser color case (e.g. speed_limit=10 -> green) isn't
-    # covered here. The only speed=10 bridge without a remark (Piaskowy) can't be
-    # isolated to a standalone marker via the left panel's filters - its amenities
-    # ([benches]) are a subset of a remarked neighbor's (Tumski, [lighting,
-    # benches]) barely 230m away, so any filter combo that includes Piaskowy also
-    # includes Tumski, and Leaflet.markercluster groups them into one cluster
-    # bubble at the map's default zoom, hiding both individual markers. The
-    # color-lookup logic itself (arbitrary field values, including a "10" ->
-    # green case) is covered generically at the unit level in
-    # frontend/tests/MarkerPopup/getTypedMarkerIcon.test.jsx.
+    def test_slow_bridge_marker_uses_type_icon_and_green_speed_color(self, page: Page):
+        """Piaskowy (small bridge, speed_limit=10, no remark, toilets) is the
+        only seeded speed<=10 bridge with toilets - the other two speed=10
+        bridges (Zwierzyniecka, Tumski) have lighting/benches but neither has
+        toilets, so combining the speed_limit=10 radio with the toilets
+        checkbox isolates it without relying on clustering distance/zoom
+        assumptions. "cars" is unchecked first since Piaskowy is
+        pedestrians-only."""
+        page.goto(BASE_URL, wait_until="domcontentloaded")
+
+        page.get_by_role("checkbox", name="cars", exact=False).click()
+        page.get_by_role("radio", name="10 km/h", exact=False).click()
+        page.get_by_role("checkbox", name="toilets", exact=False).click()
+
+        marker = page.locator(".custom-typed-marker-icon")
+        expect(marker).to_have_count(1, timeout=MARKER_LOAD_TIMEOUT)
+
+        pin = marker.locator(".custom-typed-marker-pin")
+        expect(pin).to_have_css("background-color", "rgb(46, 125, 50)")  # #2e7d32 (speed_limit=10)
+        type_icon = marker.locator(".custom-typed-marker-type-icon")
+        expect(type_icon).to_have_count(1)
+        expect(type_icon).to_have_css("mask-image", f'url("{SMALL_BRIDGE_TYPE_ICON_URL}")')
+        # No remark on Piaskowy, so no asterisk badge.
+        expect(marker.locator("span")).to_have_count(0)
 
     def test_remarked_bridge_keeps_type_and_color_styling_with_asterisk_badge(self, page: Page):
         """Zwierzyniecka has both a remark and marker_styles-matching fields
@@ -84,7 +98,7 @@ class TestMarkerStyles:
 
         pin = marker.locator(".custom-typed-marker-pin")
         expect(pin).to_have_css("background-color", "rgb(46, 125, 50)")  # #2e7d32 (speed_limit=10)
-        glyph = marker.locator(".custom-typed-marker-glyph")
-        expect(glyph).to_have_count(1)
-        expect(glyph).to_have_css("mask-image", f'url("{SMALL_BRIDGE_GLYPH_URL}")')
+        type_icon = marker.locator(".custom-typed-marker-type-icon")
+        expect(type_icon).to_have_count(1)
+        expect(type_icon).to_have_css("mask-image", f'url("{SMALL_BRIDGE_TYPE_ICON_URL}")')
         expect(marker.locator("span")).to_have_text("*")
