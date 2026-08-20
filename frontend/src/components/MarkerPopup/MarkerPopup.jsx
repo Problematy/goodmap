@@ -107,10 +107,6 @@ const MarkerPopup = ({ place }) => {
         eventHandlers: {
             click: handleMarkerClick,
         },
-        // getTypedMarkerIcon renders as a <div>, not an <img>, so 'alt' has no
-        // visible effect once it returns an icon - kept as plain text for the
-        // one case it still applies to: Leaflet's own default marker below.
-        alt: 'Marker',
     };
 
     // getTypedMarkerIcon returns our own pin whenever there's a marker_styles
