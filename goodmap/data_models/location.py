@@ -6,8 +6,7 @@ for location-based applications with custom fields.
 """
 
 import warnings
-from collections.abc import Iterable
-from typing import Annotated, Any, ClassVar, Type, cast
+from typing import Annotated, Any, Type, cast
 
 from annotated_types import Ge, Le
 from pydantic import (
@@ -37,11 +36,6 @@ class LocationBase(BaseModel, extra="allow"):
     position: tuple[Latitude, Longitude]
     uuid: str = Field(..., max_length=100)  # TODO make this UUID and deprecate string
     remark: str | None = None
-
-    # Names of category fields whose values should ride along on basic_info(),
-    # e.g. so the frontend can pick a pin icon/color without a full detail fetch.
-    # Populated by create_location_model(); empty for the base class.
-    pin_marker_fields: ClassVar[frozenset[str]] = frozenset()
 
     @model_validator(mode="before")
     @classmethod
@@ -233,7 +227,6 @@ def _build_field_definition(field_type_str: str, allowed_values: frozenset[str])
 def create_location_model(
     obligatory_fields: list[tuple[str, str]] | list[tuple[str, Type[Any]]],
     categories: dict[str, list[str]],
-    marker_style_fields: Iterable[str] = (),
 ) -> Type[BaseModel]:
     """Dynamically create a Location model with additional required fields.
 
@@ -245,9 +238,6 @@ def create_location_model(
                           - String type name: "str", "list", "int", "float", "bool", "dict"
                           - Python type object: str, list, int, etc. (deprecated)
         categories: Dict mapping field names to allowed values (enums).
-        marker_style_fields: Field names referenced by the deployment's marker_styles
-                          config (icon_field/color_field) - the only ones whose values
-                          need to ride along on basic_info() for pin styling.
 
     Returns:
         A Location model class extending LocationBase with additional fields
@@ -272,11 +262,9 @@ def create_location_model(
             allowed = frozenset()
         fields[field_name] = _build_field_definition(field_type_str, allowed)
 
-    location_model = create_model(
+    return create_model(
         "Location",
         __base__=LocationBase,
         __module__="goodmap.data_models.location",
         **fields,
     )
-    location_model.pin_marker_fields = frozenset(marker_style_fields) & fields.keys()
-    return location_model

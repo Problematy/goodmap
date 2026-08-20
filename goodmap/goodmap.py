@@ -112,14 +112,18 @@ def _register_plugin_static_resources(
 
 def _setup_location_model(
     db: Any,
-) -> tuple[list[Any], dict[str, Any], type[BaseModel], Any]:
+) -> tuple[list[Any], dict[str, Any], type[BaseModel], Any, frozenset[str]]:
     """Configure location model and db with lazy-loading and categories support.
 
     Args:
         db: The database instance to extend with location queries.
 
     Returns:
-        Tuple of (obligatory_fields, categories, location_model, db).
+        Tuple of (obligatory_fields, categories, location_model, db, pin_marker_fields).
+        pin_marker_fields is app-wiring knowledge - which of this deployment's fields
+        the marker_styles config (icon_field/color_field) actually points at - not
+        something the location model itself needs to know; it's threaded to core_pages()
+        for goodmap.api.api_models.marker_style_values() to use.
     """
     obligatory_fields = get_location_obligatory_fields(db)
     location_model = create_location_model(obligatory_fields, {})
@@ -142,10 +146,13 @@ def _setup_location_model(
     }
 
     if categories or marker_style_fields:
-        location_model = create_location_model(obligatory_fields, categories, marker_style_fields)
+        location_model = create_location_model(obligatory_fields, categories)
         extended_db = extend_db_with_goodmap_queries(extended_db, location_model)
 
-    return obligatory_fields, categories, location_model, extended_db
+    field_names = {name for name, _ in obligatory_fields}
+    pin_marker_fields = frozenset(marker_style_fields) & field_names
+
+    return obligatory_fields, categories, location_model, extended_db, pin_marker_fields
 
 
 def create_app(config_path: str) -> platzky.Engine:
@@ -206,11 +213,14 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         app.config["MAX_CONTENT_LENGTH"] = config.attachment.max_size + MULTIPART_OVERHEAD_ALLOWANCE
 
     if app.is_enabled(UseLazyLoading):
-        location_obligatory_fields, _, location_model, app.db = _setup_location_model(app.db)
+        location_obligatory_fields, _, location_model, app.db, pin_marker_fields = (
+            _setup_location_model(app.db)
+        )
     else:
         location_obligatory_fields = []
         location_model = create_location_model([], {})
         app.db = extend_db_with_goodmap_queries(app.db, location_model)
+        pin_marker_fields = frozenset()
 
     app.extensions["goodmap"] = {"location_obligatory_fields": location_obligatory_fields}
 
@@ -278,6 +288,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         photo_attachment_config=photo_attachment_config,
         feature_flags=config.feature_flags,
         shortcodes=shortcodes,
+        pin_marker_fields=pin_marker_fields,
     )
     app.register_blueprint(cp)
 

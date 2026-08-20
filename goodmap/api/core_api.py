@@ -198,6 +198,7 @@ def core_pages(
     photo_attachment_config: AttachmentConfig,
     feature_flags: FeatureFlagSet,
     shortcodes: dict[str, Shortcode],
+    pin_marker_fields: frozenset[str] = frozenset(),
 ) -> Blueprint:
     core_api_blueprint = Blueprint("api", __name__, url_prefix="/api")
 
@@ -442,7 +443,7 @@ def core_pages(
             location = database.get_location(location_uuid)
             if location is None:
                 continue
-            styling = marker_style_values(location, location_model.pin_marker_fields)
+            styling = marker_style_values(location, pin_marker_fields)
             if styling:
                 result[location_uuid] = styling
         return jsonify(result)

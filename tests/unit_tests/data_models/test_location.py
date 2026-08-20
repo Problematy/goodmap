@@ -1,5 +1,5 @@
 import warnings
-from typing import Type, cast
+from typing import cast
 
 import pytest
 
@@ -130,14 +130,14 @@ def test_category_validation_rejects_invalid_list_item():
         location_model(uuid="2", tags=["red", "yellow"], position=(50, 50))
 
 
-def test_basic_info_omits_marker_style_field_values():
-    """basic_info() carries identity/position only - marker styling values are
+def test_basic_info_omits_category_field_values():
+    """basic_info() carries identity/position only, even for a category field a
+    deployment's marker_styles config might reference - marker styling values are
     fetched separately (see goodmap.api.api_models.marker_style_values and
     lazy-load-marker-styling-plan.md), only once a marker is actually visible."""
     location_model = create_location_model(
         obligatory_fields=[("type_of_place", "str"), ("name", "str")],
         categories={"type_of_place": ["parcel_locker", "container"]},
-        marker_style_fields={"type_of_place"},
     )
     location = location_model(
         uuid="1", name="test", type_of_place="parcel_locker", position=(50, 50)
@@ -153,24 +153,6 @@ def test_basic_info_omits_category_fields_when_none_configured():
     location = location_model(uuid="1", name="test", position=(50, 50))
     location = cast(LocationBase, location)
     assert location.basic_info() == {"uuid": "1", "position": (50, 50), "has_remark": False}
-
-
-def test_pin_marker_fields_omits_categories_not_referenced_by_marker_style_fields():
-    """A category not used by marker_styles.icon_field/color_field shouldn't land
-    in pin_marker_fields just because it's a category - only marker_style_fields
-    controls what pin styling needs, not the full category set (a deployment can
-    have categories unrelated to marker display, e.g. used only for filtering)."""
-    location_model = create_location_model(
-        obligatory_fields=[("type_of_place", "str"), ("accessibility", "str")],
-        categories={
-            "type_of_place": ["parcel_locker", "container"],
-            "accessibility": ["wheelchair", "none"],
-        },
-        marker_style_fields={"type_of_place"},
-    )
-    assert cast(Type[LocationBase], location_model).pin_marker_fields == frozenset(
-        {"type_of_place"}
-    )
 
 
 def test_create_location_model_with_int_field():
