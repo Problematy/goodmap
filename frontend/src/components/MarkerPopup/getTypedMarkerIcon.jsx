@@ -2,14 +2,16 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { DivIcon } from 'leaflet';
 import ReactDOMServer from 'react-dom/server';
+// Phosphor Icons "map-pin-simple" (fill style), MIT license, phosphoricons.com -
+// vendored locally (see the .svg file) instead of fetched from a CDN, since
+// it's a fixed asset we chose, not deployment config, and every styled marker
+// on every deployment depends on it.
+// TODO make pin shape configurable
+import PIN_SHAPE_URL from '../../res/svg/marker-pin.svg';
 
 const PIN_WIDTH = 72;
 const PIN_HEIGHT = 80;
 const FALLBACK_COLOR = globalThis.SECONDARY_COLOR || 'black';
-
-// TODO make pin shape configurable
-const PIN_SHAPE_URL =
-    'https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/fill/map-pin-simple-fill.svg';
 
 const TYPE_ICON_SIZE = 24;
 
@@ -17,6 +19,13 @@ const TYPE_ICON_SIZE = 24;
 // we need to adjust the anchor and popup positions accordingly
 const TYPE_ICON_OFFSET_TOP = 10;
 const TYPE_ICON_OFFSET_LEFT = 24;
+
+// The pin's own artwork doesn't reach the bottom of its viewBox, so the
+// anchor Leaflet pins to the map coordinate has to target the actual
+// rendered tip, not the box edge, or the marker floats above its true
+// location. Measured empirically from a screenshot rather than the raw path
+// coordinates, since drop-shadow/antialiasing shift the rendered edge a bit.
+const STEM_TIP_FRACTION = 0.8875;
 
 const maskStyle = (url, color) => ({
     backgroundColor: color,

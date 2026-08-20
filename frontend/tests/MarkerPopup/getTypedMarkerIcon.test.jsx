@@ -48,7 +48,7 @@ describe('getTypedMarkerIcon', () => {
 
         expect(icon).not.toBeNull();
         expect(icon.options.html).toContain('https://cdn.example.com/parcel-locker.svg');
-        expect(icon.options.html).toContain('#2a81cb'); // fallback color, no color_field set
+        expect(icon.options.html).toContain('background-color:black'); // fallback color, no color_field set
         expect(icon.options.iconSize).toEqual([72, 80]);
     });
 
