@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## [2.0.0-alpha.6](https://github.com/Problematy/goodmap/compare/2.0.0-alpha.5...2.0.0-alpha.6) (2026-08-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* removed deprecated api methods ([#396](https://github.com/Problematy/goodmap/issues/396))
+
+### Bug Fixes
+
+* photos are optional ([#390](https://github.com/Problematy/goodmap/issues/390)) ([326005c](https://github.com/Problematy/goodmap/commit/326005c179c43c8e9da3dd6d16cde6604e9aed32))
+* removed deprecated api methods ([#396](https://github.com/Problematy/goodmap/issues/396)) ([6428961](https://github.com/Problematy/goodmap/commit/6428961246a25cbe22ca38e024f387e01f7a8899))
+* searchbar works with theme colors ([#395](https://github.com/Problematy/goodmap/issues/395)) ([8757473](https://github.com/Problematy/goodmap/commit/87574730830d25ff2b7ad6dc5db31f7ce261db71))
+
 ## [2.0.0-alpha.5](https://github.com/Problematy/goodmap/compare/2.0.0-alpha.4...2.0.0-alpha.5) (2026-07-28)
 
 
