@@ -137,8 +137,8 @@ const getTypedMarkerIcon = place => {
         default_color: defaultColor,
     } = markerStyles;
 
-    const glyphUrl = (iconField && icons && icons[place[iconField]]) || '';
-    const matchedColor = (colorField && colors && colors[place[colorField]]) || '';
+    const glyphUrl = icons?.[place[iconField]] || '';
+    const matchedColor = colors?.[place[colorField]] || '';
 
     if (!glyphUrl && !matchedColor) {
         return null;
