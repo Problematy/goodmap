@@ -49,7 +49,7 @@ describe('getTypedMarkerIcon', () => {
         expect(icon).not.toBeNull();
         expect(icon.options.html).toContain('https://cdn.example.com/parcel-locker.svg');
         expect(icon.options.html).toContain('#2a81cb'); // fallback color, no color_field set
-        expect(icon.options.iconSize).toEqual([30, 42]);
+        expect(icon.options.iconSize).toEqual([72, 80]);
     });
 
     it('masks the icon URL through CSS so it picks up the matched color, instead of embedding SVG path data', () => {
@@ -67,14 +67,14 @@ describe('getTypedMarkerIcon', () => {
             pointStatus: 'open',
         });
 
-        // the glyph URL drives a CSS mask (mask-image / -webkit-mask-image) on a
-        // <div>, not an inline <path d="...">, so any icon set (not just
-        // single-path ones) works and no extra <path> is added beyond the pin
-        // body's own teardrop shape.
+        // both the pin body (map-pin-fill.svg) and the glyph are CSS-masked
+        // <div>s tinted via background-color, not inline SVG <path d="...">, so
+        // any icon set (not just single-path ones) works for either.
         expect(icon.options.html).toContain(
             'mask-image:url(https://cdn.example.com/parcel-locker.svg)',
         );
-        expect(icon.options.html.match(/<path/g)).toHaveLength(1);
+        expect(icon.options.html).not.toContain('<path');
+        expect(icon.options.html).not.toContain('<svg');
     });
 
     it('builds a DivIcon when the color field matches a configured color, with no glyph', () => {
@@ -118,7 +118,7 @@ describe('getTypedMarkerIcon', () => {
 
         expect(icon).not.toBeNull();
         expect(icon.options.html).toContain('https://cdn.example.com/parcel-locker.svg'); // keeps the type glyph
-        expect(icon.options.html).toContain('>*</text>'); // asterisk badge overlay
+        expect(icon.options.html).toContain('>*</span>'); // asterisk badge overlay
     });
 
     it('omits the asterisk badge when place.has_remark is not set', () => {
@@ -133,7 +133,7 @@ describe('getTypedMarkerIcon', () => {
             pointType: 'parcelLocker',
         });
 
-        expect(icon.options.html).not.toContain('<text');
+        expect(icon.options.html).not.toContain('>*</span>');
     });
 
     it('returns null (falls back to the plain asterisk icon) when has_remark is set but nothing matches', () => {

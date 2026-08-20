@@ -42,15 +42,17 @@ class TestMarkerStyles:
         marker = page.locator(".custom-typed-marker-icon")
         expect(marker).to_have_count(1, timeout=MARKER_LOAD_TIMEOUT)
 
-        # The pin shape itself, filled with speed_limit=50's color.
-        expect(marker.locator("path")).to_have_attribute("fill", "#c62828")
+        # The pin shape itself (a masked div, not an inline <path>), filled with
+        # speed_limit=50's color.
+        pin = marker.locator(".custom-typed-marker-pin")
+        expect(pin).to_have_css("background-color", "rgb(198, 40, 40)")  # #c62828
         # The type_of_place glyph, configured for "big bridge" - masked onto a div
         # via CSS rather than embedded as an inline <path>.
         glyph = marker.locator(".custom-typed-marker-glyph")
         expect(glyph).to_have_count(1)
         expect(glyph).to_have_css("mask-image", f'url("{BIG_BRIDGE_GLYPH_URL}")')
         # No remark on Pokoju, so no asterisk badge.
-        expect(marker.locator("text")).to_have_count(0)
+        expect(marker.locator("span")).to_have_count(0)
 
     # Note: a second real-browser color case (e.g. speed_limit=10 -> green) isn't
     # covered here. The only speed=10 bridge without a remark (Piaskowy) can't be
@@ -80,8 +82,9 @@ class TestMarkerStyles:
         marker = page.locator(".custom-typed-marker-icon")
         expect(marker).to_have_count(1, timeout=MARKER_LOAD_TIMEOUT)
 
-        expect(marker.locator("path")).to_have_attribute("fill", "#2e7d32")  # speed_limit=10
+        pin = marker.locator(".custom-typed-marker-pin")
+        expect(pin).to_have_css("background-color", "rgb(46, 125, 50)")  # #2e7d32 (speed_limit=10)
         glyph = marker.locator(".custom-typed-marker-glyph")
         expect(glyph).to_have_count(1)
         expect(glyph).to_have_css("mask-image", f'url("{SMALL_BRIDGE_GLYPH_URL}")')
-        expect(marker.locator("text")).to_have_text("*")
+        expect(marker.locator("span")).to_have_text("*")
