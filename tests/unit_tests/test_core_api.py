@@ -1173,7 +1173,6 @@ def test_issue_options_defaults_to_empty_when_missing():
     config_data = get_test_config_data()
     config_data["FEATURE_FLAGS"] = {
         "CATEGORIES_HELP": True,
-        "USE_LAZY_LOADING": True,
         "ENABLE_ADMIN_PANEL": True,
     }
     config_data["DB"]["DATA"].pop("reported_issue_types", None)

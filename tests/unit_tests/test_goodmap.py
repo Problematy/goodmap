@@ -14,7 +14,7 @@ from platzky.db.json_db import JsonDbConfig
 
 from goodmap import goodmap
 from goodmap.config import GoodmapConfig
-from goodmap.feature_flags import EnableAdminPanel, UseLazyLoading
+from goodmap.feature_flags import EnableAdminPanel
 from goodmap.plugin import (
     CAPABILITY_BASES,
     MapOverlayPluginBase,
@@ -37,7 +37,14 @@ def test_create_app():
 def test_create_app_from_config():
     with patch("platzky.platzky.create_app_from_config", MagicMock()) as mock_platzky_app_creation:
         mock_platzky_app_creation.return_value.is_enabled.return_value = False
-        with patch("goodmap.goodmap.extend_db_with_goodmap_queries", MagicMock()) as mock_extend_db:
+        with (
+            patch("goodmap.goodmap.extend_db_with_goodmap_queries", MagicMock()) as mock_extend_db,
+            patch("goodmap.goodmap.get_location_obligatory_fields", return_value=[]),
+            patch("goodmap.goodmap.get_category_data") as mock_get_category_data,
+            patch("goodmap.goodmap.get_marker_styles") as mock_get_marker_styles,
+        ):
+            mock_get_category_data.return_value.return_value = {"categories": {}}
+            mock_get_marker_styles.return_value.return_value = {}
             goodmap.create_app_from_config(config)
             mock_platzky_app_creation.assert_called_once_with(
                 config,
@@ -56,12 +63,13 @@ def test_create_app_delegation(mock_parse_yaml, mock_create_app_from_config):
 
 
 @mock.patch("goodmap.goodmap.get_location_obligatory_fields")
-def test_use_lazy_loading_branch(mock_get_location_obligatory_fields):
+def test_location_model_is_always_built_from_the_data_source(mock_get_location_obligatory_fields):
+    """Building the location model from location_obligatory_fields/categories is
+    unconditional - there's no flag that skips it (see feature_flags.py)."""
     config = GoodmapConfig(
         APP_NAME="test_lazy",
         SECRET_KEY="secret",
         DB=JsonDbConfig(DATA={"site_content": {}, "location_obligatory_fields": []}, TYPE="json"),
-        FEATURE_FLAGS=make_flag_set(UseLazyLoading),
     )
 
     app = goodmap.create_app_from_config(config)
@@ -284,8 +292,9 @@ def test_map_route_overrides_photo_constraints():
     assert photo["allowed_extensions"] == ["jpeg", "jpg", "png"]
 
 
-def test_location_schema_endpoint_with_lazy_loading():
-    """The schema includes obligatory_fields when USE_LAZY_LOADING is enabled."""
+def test_location_schema_endpoint_includes_obligatory_fields():
+    """The schema includes this deployment's obligatory_fields - unconditional,
+    there's no flag that skips building the location model from them."""
     config = GoodmapConfig(
         APP_NAME="test_app",
         SECRET_KEY="test_secret",
@@ -303,7 +312,6 @@ def test_location_schema_endpoint_with_lazy_loading():
             },
             TYPE="json",
         ),
-        FEATURE_FLAGS=make_flag_set(UseLazyLoading),
     )
     app = goodmap.create_app_from_config(config)
     # CSRF protection must be disabled in test environment to allow API testing

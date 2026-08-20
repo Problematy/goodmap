@@ -667,7 +667,7 @@ def json_db_get_category_data(self, category_type=None):
     """Return category data from in-memory JSON database, optionally filtered by type."""
     if category_type:
         return {
-            "categories": {category_type: self.data["categories"].get(category_type, [])},
+            "categories": {category_type: self.data.get("categories", {}).get(category_type, [])},
             "categories_help": self.data.get("categories_help", []),
             "categories_options_help": {
                 category_type: self.data.get("categories_options_help", {}).get(category_type, [])
@@ -682,7 +682,7 @@ def json_db_get_category_data(self, category_type=None):
             },
         }
     return {
-        "categories": self.data["categories"],
+        "categories": self.data.get("categories", {}),
         "categories_help": self.data.get("categories_help", []),
         "categories_options_help": self.data.get("categories_options_help", {}),
         "categories_default_checked": self.data.get("categories_default_checked", {}),
@@ -696,7 +696,7 @@ def json_file_db_get_category_data(self, category_type=None):
         data = json.load(file)["map"]
         if category_type:
             return {
-                "categories": {category_type: data["categories"].get(category_type, [])},
+                "categories": {category_type: data.get("categories", {}).get(category_type, [])},
                 "categories_help": data.get("categories_help", []),
                 "categories_options_help": {
                     category_type: data.get("categories_options_help", {}).get(category_type, [])
@@ -709,7 +709,7 @@ def json_file_db_get_category_data(self, category_type=None):
                 },
             }
         return {
-            "categories": data["categories"],
+            "categories": data.get("categories", {}),
             "categories_help": data.get("categories_help", []),
             "categories_options_help": data.get("categories_options_help", {}),
             "categories_default_checked": data.get("categories_default_checked", {}),

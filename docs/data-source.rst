@@ -27,8 +27,9 @@ and their schema, alongside platzky's ``site_content`` section:
 
 Note that ``plugins`` is a **sibling** of ``map``, not a key inside it.
 
-Only ``data`` and ``categories`` are structurally required; ``suggestions`` and
-``reports`` are created by the app as users submit things.
+Only ``data`` is structurally required. ``categories`` defaults to no categories
+if omitted (a map with only plain, unfiltered points is a valid setup); ``suggestions``
+and ``reports`` are created by the app as users submit things.
 
 Points
 ------
@@ -107,12 +108,6 @@ This drives three things at once:
 - **The suggest-a-point form.** The frontend generates its fields from this schema.
 - **Length limits.** String fields are capped at 200 characters, lists at 20 items of at
   most 100 characters each.
-
-.. important::
-
-   This key is only read when the ``USE_LAZY_LOADING`` feature flag is on. With it off,
-   nothing beyond ``uuid``/``position``/``remark`` is validated and the suggest form comes
-   up empty. See :ref:`config-feature-flags`.
 
 .. _data-model-visible_data:
 
