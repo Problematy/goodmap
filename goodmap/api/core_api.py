@@ -345,8 +345,9 @@ def core_pages(
     def get_locations():
         """Get list of locations with basic info.
 
-        Returns locations filtered by query parameters,
-        showing only uuid, position, and whether each has a remark.
+        Returns locations filtered by query parameters, showing only uuid and
+        position. Pin styling (has_remark, marker_styles field values) is fetched
+        separately, per-uuid, via /api/locations/marker-styles.
         """
         locations = get_locations_from_request(database, request.args)
         return jsonify(locations)
@@ -429,11 +430,11 @@ def core_pages(
         resp=Response(HTTP_200=LocationMarkerStyles),
     )
     def get_locations_marker_styles():
-        """Get pin styling field values for specific locations, by uuid.
+        """Get pin styling data for specific locations, by uuid.
 
-        For lazily fetching marker_styles-relevant field values only once a
-        client-side-clustered marker becomes individually visible, instead of
-        the frontend getting them upfront for every location (see
+        For lazily fetching has_remark and marker_styles-relevant field values
+        only once a client-side-clustered marker becomes individually visible,
+        instead of the frontend getting them upfront for every location (see
         lazy-load-marker-styling-plan.md). Unknown or missing uuids are
         silently omitted from the response rather than erroring the whole
         request - a marker that's re-clustered mid-flight isn't a client bug.
@@ -443,9 +444,7 @@ def core_pages(
             location = database.get_location(location_uuid)
             if location is None:
                 continue
-            styling = marker_style_values(location, pin_marker_fields)
-            if styling:
-                result[location_uuid] = styling
+            result[location_uuid] = marker_style_values(location, pin_marker_fields)
         return jsonify(result)
 
     @core_api_blueprint.route("/version", methods=["GET"])

@@ -89,7 +89,10 @@ PinIcon.propTypes = {
  * matched, or `null` (falls back to Leaflet's default marker) when there's
  * neither a match nor a remark to show.
  *
- * @param {Object} place - Location data, as returned by GET /api/locations
+ * @param {Object} place - Location data from GET /api/locations, merged with any
+ *   styling lazily fetched for it from GET /api/locations/marker-styles (has_remark
+ *   and marker_styles field values aren't in the initial /api/locations response -
+ *   see lazy-load-marker-styling-plan.md)
  * @returns {import('leaflet').DivIcon|null}
  */
 const getTypedMarkerIcon = place => {

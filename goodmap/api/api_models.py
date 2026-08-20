@@ -73,9 +73,6 @@ class LocationBasicInfo(BaseModel):
 
     uuid: str = Field(..., description="Location UUID")
     position: tuple[Latitude, Longitude] = Field(..., description=_POSITION_DESCRIPTION)
-    has_remark: bool = Field(
-        ..., description="Whether the point has a remark, not the remark itself"
-    )
 
 
 class LocationList(RootModel[list[LocationBasicInfo]]):
@@ -83,10 +80,11 @@ class LocationList(RootModel[list[LocationBasicInfo]]):
 
 
 class LocationMarkerStyles(RootModel[dict[str, dict[str, Any]]]):
-    """Map of uuid -> pin styling field values (whatever marker_styles.icon_field/
-    color_field point at), for lazily fetching styling once a marker becomes
-    individually visible instead of getting it upfront for every location.
-    Unknown/missing uuids are simply absent from the response, not an error."""
+    """Map of uuid -> pin styling data: has_remark (drives the asterisk badge) plus
+    whatever marker_styles.icon_field/color_field point at (drive icon/color) - for
+    lazily fetching it once a marker becomes individually visible instead of getting
+    it upfront for every location. Unknown/missing uuids are simply absent from the
+    response, not an error."""
 
 
 class MarkerStylesQueryParams(BaseModel):
@@ -96,17 +94,19 @@ class MarkerStylesQueryParams(BaseModel):
 
 
 def marker_style_values(location: BaseModel, style_fields: frozenset[str]) -> dict[str, Any]:
-    """Pin styling field values for `location`, as /api/locations/marker-styles returns them.
+    """Pin styling data for `location`, as /api/locations/marker-styles returns it.
 
-    This is API response shaping, not something the location domain model needs to
-    know how to do itself - it belongs alongside the models it fills, not on
-    LocationBase.
+    Always includes has_remark (drives the asterisk badge), plus the value of any
+    of `style_fields` this location actually has (drive icon/color). This is API
+    response shaping, not something the location domain model needs to know how to
+    do itself - it belongs alongside the models it fills, not on LocationBase.
     """
-    return {
-        field: value
-        for field in sorted(style_fields)
-        if (value := getattr(location, field, None)) is not None
-    }
+    data: dict[str, Any] = {"has_remark": bool(getattr(location, "remark", None))}
+    for field in sorted(style_fields):
+        value = getattr(location, field, None)
+        if value is not None:
+            data[field] = value
+    return data
 
 
 class ClusterInfo(BaseModel):

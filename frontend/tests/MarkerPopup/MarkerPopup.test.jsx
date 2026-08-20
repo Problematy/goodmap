@@ -36,6 +36,23 @@ const locationData = {
 };
 
 httpService.getLocation.mockResolvedValue(locationData);
+// Every mount now fires a lazy marker-styles request (see requestMarkerStyle.js) -
+// a harmless default so it always resolves, even in tests that don't care about it.
+httpService.getMarkerStyles.mockResolvedValue({});
+
+/**
+ * requestMarkerStyle.js debounces/batches uuids through module-level state shared
+ * by every test in this file. Describes below that render with real timers must
+ * drain that debounce window before finishing, or its still-pending timer fires
+ * during a later (fake-timer) describe and merges its uuid into that batch.
+ */
+const flushMarkerStyleDebounce = () =>
+    act(
+        () =>
+            new Promise(resolve => {
+                setTimeout(resolve, 200);
+            }),
+    );
 
 describe('MarkerPopup', () => {
     beforeEach(() => {
@@ -55,8 +72,9 @@ describe('MarkerPopup', () => {
         );
     });
 
-    afterEach(() => {
+    afterEach(async () => {
         globalThis.fetch.mockRestore();
+        await flushMarkerStyleDebounce();
     });
 
     it('should render marker without popup', () => {
@@ -102,8 +120,9 @@ describe('MarkerPopup with remark', () => {
         });
     });
 
-    afterEach(() => {
+    afterEach(async () => {
         globalThis.fetch.mockRestore();
+        await flushMarkerStyleDebounce();
     });
 
     it('should render our own pin with an asterisk badge when remark is true', () => {
@@ -156,6 +175,15 @@ describe('MarkerPopup with remark', () => {
 });
 
 describe('MarkerPopup lazy marker styling', () => {
+    // A uuid distinct from `location`'s (used by the describes above, which run with
+    // real timers) so a leftover real setTimeout from those can't resolve into this
+    // describe's store state mid-test and make "already known" skip our own request.
+    const lazyLocation = {
+        position: [51.2, 17.1],
+        uuid: 'lazy-marker-styling-uuid',
+        has_remark: false, // eslint-disable-line camelcase -- matches backend API schema property name
+    };
+
     beforeEach(() => {
         jest.useFakeTimers();
         useMarkerStylesStore.setState({ stylesByUuid: {} });
@@ -164,7 +192,7 @@ describe('MarkerPopup lazy marker styling', () => {
             icons: { parcelLocker: 'https://cdn.example.com/parcel-locker.svg' },
         };
         httpService.getMarkerStyles.mockResolvedValue({
-            [location.uuid]: { pointType: 'parcelLocker' },
+            [lazyLocation.uuid]: { pointType: 'parcelLocker' },
         });
     });
 
@@ -177,34 +205,34 @@ describe('MarkerPopup lazy marker styling', () => {
         await act(async () => {
             render(
                 <MapContainer
-                    center={location.position}
+                    center={lazyLocation.position}
                     zoom={10}
                     style={{ height: '100vh', width: '100%' }}
                 >
-                    <MarkerPopup place={location} key={location.uuid} />
+                    <MarkerPopup place={lazyLocation} key={lazyLocation.uuid} />
                 </MapContainer>,
             );
         });
 
-        expect(httpService.getMarkerStyles).not.toHaveBeenCalled();
+        expect(httpService.getMarkerStyles).not.toHaveBeenCalledWith([lazyLocation.uuid]);
 
         await act(async () => {
             jest.advanceTimersByTime(200);
             await Promise.resolve();
         });
 
-        expect(httpService.getMarkerStyles).toHaveBeenCalledWith([location.uuid]);
+        expect(httpService.getMarkerStyles).toHaveBeenCalledWith([lazyLocation.uuid]);
     });
 
     it('re-renders the marker with the lazily-fetched icon once it arrives', async () => {
         await act(async () => {
             render(
                 <MapContainer
-                    center={location.position}
+                    center={lazyLocation.position}
                     zoom={10}
                     style={{ height: '100vh', width: '100%' }}
                 >
-                    <MarkerPopup place={location} key={location.uuid} />
+                    <MarkerPopup place={lazyLocation} key={lazyLocation.uuid} />
                 </MapContainer>,
             );
         });

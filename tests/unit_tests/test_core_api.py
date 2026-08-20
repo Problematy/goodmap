@@ -272,12 +272,10 @@ def test_get_locations(test_app):
         {
             "uuid": "11111111-1111-1111-1111-111111111111",
             "position": [50, 50],
-            "has_remark": True,
         },
         {
             "uuid": "22222222-2222-2222-2222-222222222222",
             "position": [60, 60],
-            "has_remark": False,
         },
     ]
 
@@ -344,7 +342,6 @@ def test_get_locations_omits_marker_style_field_values():
         {
             "uuid": "11111111-1111-1111-1111-111111111111",
             "position": [50, 50],
-            "has_remark": False,
         },
     ]
 
@@ -379,7 +376,10 @@ def test_get_locations_marker_styles_returns_requested_uuids_styling():
 
     assert response.status_code == 200
     assert response.json == {
-        "11111111-1111-1111-1111-111111111111": {"point_type": "parcel_locker"},
+        "11111111-1111-1111-1111-111111111111": {
+            "has_remark": False,
+            "point_type": "parcel_locker",
+        },
     }
 
 
@@ -415,8 +415,14 @@ def test_get_locations_marker_styles_supports_multiple_uuids():
 
     assert response.status_code == 200
     assert response.json == {
-        "11111111-1111-1111-1111-111111111111": {"point_type": "parcel_locker"},
-        "22222222-2222-2222-2222-222222222222": {"point_type": "container"},
+        "11111111-1111-1111-1111-111111111111": {
+            "has_remark": False,
+            "point_type": "parcel_locker",
+        },
+        "22222222-2222-2222-2222-222222222222": {
+            "has_remark": False,
+            "point_type": "container",
+        },
     }
 
 
@@ -448,7 +454,37 @@ def test_get_locations_marker_styles_omits_unknown_uuids():
 
     assert response.status_code == 200
     assert response.json == {
-        "11111111-1111-1111-1111-111111111111": {"point_type": "parcel_locker"},
+        "11111111-1111-1111-1111-111111111111": {
+            "has_remark": False,
+            "point_type": "parcel_locker",
+        },
+    }
+
+
+def test_get_locations_marker_styles_includes_has_remark_without_marker_styles_config():
+    """has_remark drives the asterisk badge independently of marker_styles -
+    deployments with no icon_field/color_field configured still need it fetched
+    lazily, the same as everyone else."""
+    client = create_test_app(
+        db_overrides={
+            "categories": {},
+            "location_obligatory_fields": [("name", "str")],
+            "data": [
+                {
+                    "name": "test",
+                    "position": [50, 50],
+                    "uuid": "11111111-1111-1111-1111-111111111111",
+                    "remark": "this is a remark",
+                },
+            ],
+        }
+    )
+
+    response = client.get("/api/locations/marker-styles?uuid=11111111-1111-1111-1111-111111111111")
+
+    assert response.status_code == 200
+    assert response.json == {
+        "11111111-1111-1111-1111-111111111111": {"has_remark": True},
     }
 
 
