@@ -107,11 +107,13 @@ def test_frontend_lib_url_uses_bundled_static_when_present():
     assert 'src="/static/frontend/index.min.js"' in response.data.decode("utf-8")
 
 
-def test_map_route_includes_marker_styles():
+def test_map_route_marker_styles():
     """The frontend picks pin icon/color per marker_styles.config's iconField/colorField
     at runtime from window.MARKER_STYLES - a deployment-specific lookup table that lives
-    in the database (like categories/visible_data), not hardcoded in the frontend build."""
-    config = GoodmapConfig(
+    in the database (like categories/visible_data), not hardcoded in the frontend build.
+    Deployments that don't configure it get an empty object instead, so the frontend
+    falls back to Leaflet's default marker - no behavior change."""
+    configured_config = GoodmapConfig(
         APP_NAME="test_app",
         SECRET_KEY="test_secret",
         USE_WWW=False,
@@ -131,11 +133,10 @@ def test_map_route_includes_marker_styles():
             TYPE="json",
         ),
     )
-    app = goodmap.create_app_from_config(config)
-    app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
-    client = app.test_client()
+    configured_app = goodmap.create_app_from_config(configured_config)
+    configured_app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
 
-    response = client.get("/map")
+    response = configured_app.test_client().get("/map")
     assert response.status_code == 200
 
     response_text = response.data.decode("utf-8")
@@ -143,25 +144,10 @@ def test_map_route_includes_marker_styles():
     assert "icon_field" in response_text
     assert "parcel_locker" in response_text
 
+    unconfigured_app = goodmap.create_app_from_config(_minimal_config())
+    unconfigured_app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
 
-def test_map_route_marker_styles_defaults_to_empty():
-    """Deployments that don't configure marker_styles get an empty object, so the
-    frontend falls back to Leaflet's default marker - no behavior change."""
-    config = GoodmapConfig(
-        APP_NAME="test_app",
-        SECRET_KEY="test_secret",
-        USE_WWW=False,
-        BLOG_PREFIX="/blog",
-        DB=JsonDbConfig(
-            DATA={"site_content": {"pages": []}, "categories": {}},
-            TYPE="json",
-        ),
-    )
-    app = goodmap.create_app_from_config(config)
-    app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
-    client = app.test_client()
-
-    response = client.get("/map")
+    response = unconfigured_app.test_client().get("/map")
     assert response.status_code == 200
     assert "window.MARKER_STYLES={};" in response.data.decode("utf-8")
 
