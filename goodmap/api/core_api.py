@@ -25,12 +25,15 @@ from goodmap.api.api_models import (
     LanguagesResponse,
     LocationDetail,
     LocationList,
+    LocationMarkerStyles,
     LocationQueryParams,
     LocationReportRequest,
     LocationReportResponse,
     LocationSchemaResponse,
+    MarkerStylesQueryParams,
     SuccessResponse,
     VersionResponse,
+    marker_style_values,
 )
 from goodmap.clustering import (
     MAX_ZOOM,
@@ -417,6 +420,32 @@ def core_pages(
         meta_data = database.get_meta_data()
         formatted_data = prepare_pin(location.model_dump(), visible_data, meta_data, shortcodes)
         return jsonify(formatted_data)
+
+    @core_api_blueprint.route("/locations/marker-styles", methods=["GET"])
+    @spec.validate(
+        tags=[TAG_MAP_DATA],
+        query=MarkerStylesQueryParams,
+        resp=Response(HTTP_200=LocationMarkerStyles),
+    )
+    def get_locations_marker_styles():
+        """Get pin styling field values for specific locations, by uuid.
+
+        For lazily fetching marker_styles-relevant field values only once a
+        client-side-clustered marker becomes individually visible, instead of
+        the frontend getting them upfront for every location (see
+        lazy-load-marker-styling-plan.md). Unknown or missing uuids are
+        silently omitted from the response rather than erroring the whole
+        request - a marker that's re-clustered mid-flight isn't a client bug.
+        """
+        result: dict[str, dict[str, Any]] = {}
+        for location_uuid in request.args.getlist("uuid"):
+            location = database.get_location(location_uuid)
+            if location is None:
+                continue
+            styling = marker_style_values(location, location_model.pin_marker_fields)
+            if styling:
+                result[location_uuid] = styling
+        return jsonify(result)
 
     @core_api_blueprint.route("/version", methods=["GET"])
     @spec.validate(tags=[TAG_META], resp=Response(HTTP_200=VersionResponse))

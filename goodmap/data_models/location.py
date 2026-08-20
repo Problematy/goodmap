@@ -91,18 +91,16 @@ class LocationBase(BaseModel, extra="allow"):
         return super().model_dump(**kwargs)
 
     def basic_info(self) -> dict[str, Any]:
-        """Get basic location information summary.
+        """Get basic location information summary: identity and position only.
 
-        Includes the uuid/position/remark flag always shown on the map, plus the
-        value of any category field named in ``pin_marker_fields`` - enough for the
-        frontend to choose a pin icon/color without fetching full location detail.
+        Includes the uuid/position/remark flag always shown on the map. Marker
+        styling field values are deliberately not here - see
+        ``goodmap.api.api_models.marker_style_values``, read separately and only
+        once a point is individually visible (not folded into a cluster), so
+        points that aren't don't pay for it.
         """
         data = self.model_dump(include={"uuid", "position"})
         data["has_remark"] = bool(self.remark)
-        for field in sorted(self.pin_marker_fields):
-            value = getattr(self, field, None)
-            if value is not None:
-                data[field] = value
         return data
 
 

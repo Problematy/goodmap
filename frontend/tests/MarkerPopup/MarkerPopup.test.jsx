@@ -4,6 +4,7 @@ import { render, screen, fireEvent, act, waitFor } from '@testing-library/react'
 import { MapContainer } from 'react-leaflet';
 import MarkerPopup from '../../src/components/MarkerPopup/MarkerPopup';
 import httpService from '../../src/services/http/httpService';
+import useMarkerStylesStore from '../../src/components/Map/store/markerStyles.store';
 
 jest.mock('../../src/services/http/httpService');
 
@@ -151,5 +152,73 @@ describe('MarkerPopup with remark', () => {
         const style = window.getComputedStyle(marker);
         expect(style.width).toBe('45px');
         expect(style.height).toBe('50px');
+    });
+});
+
+describe('MarkerPopup lazy marker styling', () => {
+    beforeEach(() => {
+        jest.useFakeTimers();
+        useMarkerStylesStore.setState({ stylesByUuid: {} });
+        globalThis.MARKER_STYLES = {
+            icon_field: 'pointType', // eslint-disable-line camelcase -- matches backend API schema property name
+            icons: { parcelLocker: 'https://cdn.example.com/parcel-locker.svg' },
+        };
+        httpService.getMarkerStyles.mockResolvedValue({
+            [location.uuid]: { pointType: 'parcelLocker' },
+        });
+    });
+
+    afterEach(() => {
+        jest.useRealTimers();
+        delete globalThis.MARKER_STYLES;
+    });
+
+    it('fetches marker styling once the marker becomes individually visible', async () => {
+        await act(async () => {
+            render(
+                <MapContainer
+                    center={location.position}
+                    zoom={10}
+                    style={{ height: '100vh', width: '100%' }}
+                >
+                    <MarkerPopup place={location} key={location.uuid} />
+                </MapContainer>,
+            );
+        });
+
+        expect(httpService.getMarkerStyles).not.toHaveBeenCalled();
+
+        await act(async () => {
+            jest.advanceTimersByTime(200);
+            await Promise.resolve();
+        });
+
+        expect(httpService.getMarkerStyles).toHaveBeenCalledWith([location.uuid]);
+    });
+
+    it('re-renders the marker with the lazily-fetched icon once it arrives', async () => {
+        await act(async () => {
+            render(
+                <MapContainer
+                    center={location.position}
+                    zoom={10}
+                    style={{ height: '100vh', width: '100%' }}
+                >
+                    <MarkerPopup place={location} key={location.uuid} />
+                </MapContainer>,
+            );
+        });
+
+        // Nothing matched yet - default Leaflet icon, no custom pin
+        expect(document.querySelector('.custom-typed-marker-icon')).not.toBeInTheDocument();
+
+        await act(async () => {
+            jest.advanceTimersByTime(200);
+            await Promise.resolve();
+        });
+
+        const marker = document.querySelector('.custom-typed-marker-icon');
+        expect(marker).toBeInTheDocument();
+        expect(marker.innerHTML).toContain('https://cdn.example.com/parcel-locker.svg');
     });
 });

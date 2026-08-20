@@ -82,6 +82,33 @@ class LocationList(RootModel[list[LocationBasicInfo]]):
     """List of points, each with identity and position only."""
 
 
+class LocationMarkerStyles(RootModel[dict[str, dict[str, Any]]]):
+    """Map of uuid -> pin styling field values (whatever marker_styles.icon_field/
+    color_field point at), for lazily fetching styling once a marker becomes
+    individually visible instead of getting it upfront for every location.
+    Unknown/missing uuids are simply absent from the response, not an error."""
+
+
+class MarkerStylesQueryParams(BaseModel):
+    """Query parameters of the marker styles lazy-loading endpoint."""
+
+    uuid: list[str] = Field(default_factory=list, description="Location UUIDs to fetch styling for")
+
+
+def marker_style_values(location: BaseModel, style_fields: frozenset[str]) -> dict[str, Any]:
+    """Pin styling field values for `location`, as /api/locations/marker-styles returns them.
+
+    This is API response shaping, not something the location domain model needs to
+    know how to do itself - it belongs alongside the models it fills, not on
+    LocationBase.
+    """
+    return {
+        field: value
+        for field in sorted(style_fields)
+        if (value := getattr(location, field, None)) is not None
+    }
+
+
 class ClusterInfo(BaseModel):
     """One entry of the clustered list: either a single point or a cluster of them."""
 

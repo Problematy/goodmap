@@ -5,11 +5,13 @@ import { isMobile } from 'react-device-detect';
 import { useTranslation } from 'react-i18next';
 import httpService from '../../services/http/httpService';
 import useMapStore from '../Map/store/map.store';
+import useMarkerStylesStore from '../Map/store/markerStyles.store';
 
 import LocationDetailsBox from './LocationDetails';
 import MobilePopup from './MobilePopup';
 import DesktopPopup from './DesktopPopup';
 import getTypedMarkerIcon from './getTypedMarkerIcon';
+import requestMarkerStyle from './requestMarkerStyle';
 
 /**
  * Wrapper component that fetches full location details and renders them in a popup.
@@ -81,6 +83,7 @@ LocationDetailsBoxWrapper.propTypes = {
 const MarkerPopup = ({ place }) => {
     const selectedLocationId = useMapStore(state => state.selectedLocationId);
     const setSelectedLocationId = useMapStore(state => state.setSelectedLocationId);
+    const lazyMarkerStyle = useMarkerStylesStore(state => state.stylesByUuid[place.uuid]);
     const [isClicked, setIsClicked] = useState(false);
 
     // TODO: this only opens the popup if `place`'s Marker is actually attached to
@@ -102,14 +105,20 @@ const MarkerPopup = ({ place }) => {
         setIsClicked(true);
     };
 
+    const handleMarkerVisible = () => {
+        requestMarkerStyle(place.uuid);
+    };
+
     const markerProps = {
         position: place.position,
         eventHandlers: {
             click: handleMarkerClick,
+            add: handleMarkerVisible,
         },
     };
 
-    const typedIcon = getTypedMarkerIcon(place);
+    const styledPlace = lazyMarkerStyle ? { ...place, ...lazyMarkerStyle } : place;
+    const typedIcon = getTypedMarkerIcon(styledPlace);
     if (typedIcon) {
         markerProps.icon = typedIcon;
     }
