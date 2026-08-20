@@ -2,10 +2,6 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { DivIcon } from 'leaflet';
 import ReactDOMServer from 'react-dom/server';
-// Custom balloon pin (sharp point, solid head, no third-party asset/CDN) - see
-// the .svg file. Its point sits exactly on the viewBox's bottom edge, so the
-// anchor below doesn't need any empirical correction the way a borrowed icon
-// with its own padding would.
 import PIN_SHAPE_URL from '../../res/svg/marker-pin.svg';
 
 const PIN_WIDTH = 45;
