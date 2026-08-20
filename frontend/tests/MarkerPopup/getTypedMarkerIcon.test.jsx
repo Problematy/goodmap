@@ -49,7 +49,7 @@ describe('getTypedMarkerIcon', () => {
         expect(icon).not.toBeNull();
         expect(icon.options.html).toContain('https://cdn.example.com/parcel-locker.svg');
         expect(icon.options.html).toContain('background-color:black'); // fallback color, no color_field set
-        expect(icon.options.iconSize).toEqual([36, 40]);
+        expect(icon.options.iconSize).toEqual([45, 50]);
     });
 
     it('masks the icon URL through CSS so it picks up the matched color, instead of embedding SVG path data', () => {
@@ -153,7 +153,7 @@ describe('getTypedMarkerIcon', () => {
         expect(getTypedMarkerIcon({ uuid: '1', position: [50, 50] })).toBeNull();
     });
 
-    it('uses default_color from MARKER_STYLES when the matched value has no color entry', () => {
+    it('ignores a configured default_color and uses the page fallback color instead', () => {
         setMarkerStyles(`{
             "icon_field": "pointType",
             "icons": { "parcelLocker": "https://cdn.example.com/parcel-locker.svg" },
@@ -166,6 +166,7 @@ describe('getTypedMarkerIcon', () => {
             pointType: 'parcelLocker',
         });
 
-        expect(icon.options.html).toContain('#123456');
+        expect(icon.options.html).not.toContain('#123456');
+        expect(icon.options.html).toContain('background-color:black');
     });
 });

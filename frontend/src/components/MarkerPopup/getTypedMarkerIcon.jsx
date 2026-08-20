@@ -8,13 +8,15 @@ import ReactDOMServer from 'react-dom/server';
 // with its own padding would.
 import PIN_SHAPE_URL from '../../res/svg/marker-pin.svg';
 
-const PIN_WIDTH = 36;
-const PIN_HEIGHT = 40;
+const PIN_WIDTH = 45;
+const PIN_HEIGHT = 50;
+// The marker's default color (used whenever color_field doesn't match) is
+// always the page's own secondary color, not a separately configurable value.
 const FALLBACK_COLOR = globalThis.SECONDARY_COLOR || 'black';
 
-const TYPE_ICON_SIZE = 16;
-const TYPE_ICON_OFFSET_TOP = 6.5;
-const TYPE_ICON_OFFSET_LEFT = 10;
+const TYPE_ICON_SIZE = 20;
+const TYPE_ICON_OFFSET_TOP = 8;
+const TYPE_ICON_OFFSET_LEFT = 12;
 
 const maskStyle = (url, color) => ({
     backgroundColor: color,
@@ -61,8 +63,8 @@ const PinIcon = ({ color, typeIconUrl, hasRemark }) => (
                 style={{
                     position: 'absolute',
                     top: 1,
-                    left: 19,
-                    fontSize: 17,
+                    left: 24,
+                    fontSize: 21,
                     fontWeight: 'bold',
                     lineHeight: 1,
                     color: '#ffffff',
@@ -96,13 +98,7 @@ PinIcon.propTypes = {
  */
 const getTypedMarkerIcon = place => {
     const markerStyles = globalThis.MARKER_STYLES || {};
-    const {
-        icon_field: iconField,
-        color_field: colorField,
-        icons,
-        colors,
-        default_color: defaultColor,
-    } = markerStyles;
+    const { icon_field: iconField, color_field: colorField, icons, colors } = markerStyles;
 
     const typeIconUrl = icons?.[place[iconField]] || '';
     const matchedColor = colors?.[place[colorField]] || '';
@@ -115,7 +111,7 @@ const getTypedMarkerIcon = place => {
     return new DivIcon({
         html: ReactDOMServer.renderToString(
             <PinIcon
-                color={matchedColor || defaultColor || FALLBACK_COLOR}
+                color={matchedColor || FALLBACK_COLOR}
                 typeIconUrl={typeIconUrl}
                 hasRemark={hasRemark}
             />,

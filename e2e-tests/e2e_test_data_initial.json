@@ -283,8 +283,7 @@
         "10": "#2e7d32",
         "30": "#ef6c00",
         "50": "#c62828"
-      },
-      "default_color": "#2a81cb"
+      }
     },
     "visible_data": [
       "remark",
