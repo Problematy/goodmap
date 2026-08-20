@@ -109,11 +109,6 @@ const MarkerPopup = ({ place }) => {
         },
     };
 
-    // getTypedMarkerIcon returns our own pin whenever there's a marker_styles
-    // match or a remark to badge, null only for a plain, unremarked location -
-    // which then falls back to Leaflet's default marker. Only add an icon prop
-    // when we actually have a custom icon: passing icon={undefined} causes
-    // errors in MarkerClusterGroup during cluster zoom animations.
     const typedIcon = getTypedMarkerIcon(place);
     if (typedIcon) {
         markerProps.icon = typedIcon;
