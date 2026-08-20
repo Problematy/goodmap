@@ -5,30 +5,21 @@ import ReactDOMServer from 'react-dom/server';
 
 const PIN_WIDTH = 72;
 const PIN_HEIGHT = 80;
-const FALLBACK_COLOR = '#2a81cb'; // leaflet default marker blue
+// Matches the accent color used elsewhere on the page (buttons, left panel).
+const FALLBACK_COLOR = globalThis.SECONDARY_COLOR || '#2a81cb';
 
-// Phosphor Icons (MIT, https://phosphoricons.com/) "map-pin-simple" glyph -
-// a solid ball on a thin stem, not a balloon-style teardrop - reused as the
-// pin body itself via CSS mask-image so we don't hand-draw/maintain our own
-// pin shape - see PinIcon below. Its head is a solid circle (no cutout)
-// centered at (50%, ~28%) of the box, so the glyph below sits inside that
-// circle rather than fighting a hole like the balloon-pin design did. PIN_WIDTH
-// is deliberately wider than the icon's native aspect ratio (mask-size 100%
-// 100% stretches non-uniformly to fit) so the ball has real room for the
-// glyph - the icon's own head is quite narrow relative to its height.
+// Phosphor Icons "map-pin-simple" glyph (MIT, phosphoricons.com), masked as
+// the pin body - see PinIcon below. PIN_WIDTH is wider than the icon's own
+// aspect ratio so its ball has room for the glyph.
 const PIN_SHAPE_URL =
     'https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/fill/map-pin-simple-fill.svg';
 
-// The icon's own artwork doesn't reach the bottom of its 256x256 viewBox -
-// there's blank margin below the stem's rounded tip (part of Phosphor's
-// standard icon padding). Since the mask is stretched to fill the box
-// exactly, that margin becomes real empty space at the bottom of our div - so
-// the anchor Leaflet pins to the map coordinate has to target the actual
-// rendered tip position, not the box's bottom edge, or the marker floats
-// above its true location. Measured empirically (screenshot pixel-row of the
-// last visible fill pixel) rather than computed from the path's raw
-// coordinates, since drop-shadow/antialiasing shift the rendered edge a
-// little from the raw path's numbers.
+// The icon's artwork leaves blank margin below the stem tip, which becomes
+// real empty space once stretched to fill the box - so the anchor has to
+// target the actual rendered tip, not the box edge, or the marker floats
+// above its true location. Measured empirically from a screenshot rather
+// than the raw path coordinates, since drop-shadow/antialiasing shift the
+// rendered edge slightly.
 const STEM_TIP_FRACTION = 0.8875;
 
 const GLYPH_SIZE = 24;
@@ -46,11 +37,10 @@ const maskStyle = (url, color) => ({
 });
 
 /**
- * Pin shape (Phosphor's map-pin-simple glyph, masked to `color`), optionally
- * holding a glyph (`glyphUrl`, masked to white) inside its head, and an
- * asterisk badge in the pin's own color scheme when `hasRemark` is set - so a
- * remarked location keeps its type/color styling instead of being replaced by
- * a plain, uncolored asterisk marker.
+ * Pin shape masked to `color`, optionally holding a glyph (`glyphUrl`) inside
+ * its head, and an asterisk badge when `hasRemark` is set - so a remarked
+ * location keeps its type/color styling instead of losing it to a plain
+ * asterisk marker.
  */
 const PinIcon = ({ color, glyphUrl, hasRemark }) => (
     <div style={{ position: 'relative', width: PIN_WIDTH, height: PIN_HEIGHT }}>
@@ -104,24 +94,19 @@ PinIcon.propTypes = {
 };
 
 /**
- * Builds a Leaflet icon for `place` based on the deployment's marker styling
- * lookup table (window.MARKER_STYLES, set server-side from the map's
- * `marker_styles` config - see goodmap's db.get_marker_styles), or returns
- * `null` when neither `icon_field` nor `color_field` produced a configured
- * lookup match - callers should omit the `icon` prop in that case and fall
- * back to Leaflet's default marker (or the plain asterisk icon for a remarked
- * location with no marker_styles match) so unconfigured/legacy deployments
- * are unchanged. When `place.has_remark` is set and a match *was* found, the
- * returned icon carries an asterisk badge instead of losing its type/color
- * styling to the plain asterisk marker.
+ * Builds a Leaflet icon for `place` from the deployment's marker styling
+ * lookup table (window.MARKER_STYLES, see goodmap's db.get_marker_styles), or
+ * `null` when neither `icon_field` nor `color_field` matched - callers should
+ * omit the `icon` prop then and fall back to Leaflet's default marker (or the
+ * plain asterisk icon for a remarked location).
  *
  * Expected shape of window.MARKER_STYLES:
  *   {
- *     icon_field: 'type_of_place',   // which location field selects the glyph
- *     color_field: 'status',         // which location field selects the fill color
- *     icons: { parcel_locker: 'https://cdn.example.com/parcel-locker.svg' },  // field value -> icon URL, masked+tinted via CSS (see PinIcon)
- *     colors: { open: '#2e7d32' },                  // field value -> fill color
- *     default_color: '#2a81cb',                     // fallback fill color
+ *     icon_field: 'type_of_place',
+ *     color_field: 'status',
+ *     icons: { parcel_locker: 'https://cdn.example.com/parcel-locker.svg' },
+ *     colors: { open: '#2e7d32' },
+ *     default_color: '#2a81cb',
  *   }
  *
  * @param {Object} place - Location data, as returned by GET /api/locations
