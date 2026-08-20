@@ -86,13 +86,6 @@ class LocationBase(BaseModel, extra="allow"):
 
     def basic_info(self) -> dict[str, Any]:
         """Get basic location information summary: identity and position only.
-
-        Everything about how this point's marker should look - whether it has a
-        remark (drives the asterisk badge), any marker_styles field values (drive
-        icon/color) - is deliberately not here; see
-        ``goodmap.api.api_models.marker_style_values``, read separately and only
-        once a point is individually visible (not folded into a cluster), so
-        points that aren't don't pay for it.
         """
         return self.model_dump(include={"uuid", "position"})
 
