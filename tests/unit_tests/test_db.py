@@ -308,7 +308,9 @@ def test_json_file_db_get_meta_data_empty():
                     "marker_styles": {
                         "icon_field": "type_of_place",
                         "color_field": "status",
-                        "icons": {"parcel_locker": "M0 0h16v16H0z"},
+                        "icons": {
+                            "parcel_locker": "https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/fill/package-fill.svg"
+                        },
                         "colors": {"open": "#2e7d32"},
                     }
                 }
@@ -322,7 +324,9 @@ def test_json_file_db_get_marker_styles():
     assert result == {
         "icon_field": "type_of_place",
         "color_field": "status",
-        "icons": {"parcel_locker": "M0 0h16v16H0z"},
+        "icons": {
+            "parcel_locker": "https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/fill/package-fill.svg"
+        },
         "colors": {"open": "#2e7d32"},
     }
 
@@ -377,23 +381,26 @@ def test_google_json_db_get_meta_data_empty(mock_cli):
 
 @mock.patch("platzky.db.google_json_db.Client")
 def test_google_json_db_get_marker_styles(mock_cli):
-    mock_cli.return_value.bucket.return_value.blob.return_value.download_as_text.return_value = (
-        json.dumps(
-            {
-                "map": {
-                    "marker_styles": {
-                        "icon_field": "type_of_place",
-                        "icons": {"parcel_locker": "M0 0h16v16H0z"},
-                    }
+    blob = mock_cli.return_value.bucket.return_value.blob.return_value
+    blob.download_as_text.return_value = json.dumps(
+        {
+            "map": {
+                "marker_styles": {
+                    "icon_field": "type_of_place",
+                    "icons": {
+                        "parcel_locker": "https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/fill/package-fill.svg"
+                    },
                 }
             }
-        )
+        }
     )
     db = GoogleJsonDb("bucket", "blob")
     result = google_json_db_get_marker_styles(db)
     assert result == {
         "icon_field": "type_of_place",
-        "icons": {"parcel_locker": "M0 0h16v16H0z"},
+        "icons": {
+            "parcel_locker": "https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/fill/package-fill.svg"
+        },
     }
 
 
@@ -1170,7 +1177,9 @@ def test_mongodb_db_get_marker_styles(mock_client):
         "_id": "map_config",
         "marker_styles": {
             "icon_field": "type_of_place",
-            "icons": {"parcel_locker": "M0 0h16v16H0z"},
+            "icons": {
+                "parcel_locker": "https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/fill/package-fill.svg"
+            },
         },
     }
 
@@ -1178,7 +1187,9 @@ def test_mongodb_db_get_marker_styles(mock_client):
     result = mongodb_db_get_marker_styles(db)
     assert result == {
         "icon_field": "type_of_place",
-        "icons": {"parcel_locker": "M0 0h16v16H0z"},
+        "icons": {
+            "parcel_locker": "https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/fill/package-fill.svg"
+        },
     }
 
 

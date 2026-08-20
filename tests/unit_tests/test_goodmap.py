@@ -122,7 +122,9 @@ def test_map_route_includes_marker_styles():
                 "categories": {"type_of_place": ["parcel_locker", "container"]},
                 "marker_styles": {
                     "icon_field": "type_of_place",
-                    "icons": {"parcel_locker": "M0 0h16v16H0z"},
+                    "icons": {
+                        "parcel_locker": "https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/fill/package-fill.svg"
+                    },
                     "colors": {},
                 },
             },
