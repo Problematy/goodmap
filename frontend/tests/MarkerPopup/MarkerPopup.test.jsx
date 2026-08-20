@@ -201,18 +201,22 @@ describe('MarkerPopup lazy marker styling', () => {
         delete globalThis.MARKER_STYLES;
     });
 
+    // render() already wraps itself in act(), so there's nothing left for a caller
+    // to flush - wrapping it again is redundant (and duplicated across the two
+    // tests below, which is what this helper avoids).
+    const renderLazyLocationMarker = () =>
+        render(
+            <MapContainer
+                center={lazyLocation.position}
+                zoom={10}
+                style={{ height: '100vh', width: '100%' }}
+            >
+                <MarkerPopup place={lazyLocation} key={lazyLocation.uuid} />
+            </MapContainer>,
+        );
+
     it('fetches marker styling once the marker becomes individually visible', async () => {
-        await act(async () => {
-            render(
-                <MapContainer
-                    center={lazyLocation.position}
-                    zoom={10}
-                    style={{ height: '100vh', width: '100%' }}
-                >
-                    <MarkerPopup place={lazyLocation} key={lazyLocation.uuid} />
-                </MapContainer>,
-            );
-        });
+        renderLazyLocationMarker();
 
         expect(httpService.getMarkerStyles).not.toHaveBeenCalledWith([lazyLocation.uuid]);
 
@@ -225,17 +229,7 @@ describe('MarkerPopup lazy marker styling', () => {
     });
 
     it('re-renders the marker with the lazily-fetched icon once it arrives', async () => {
-        await act(async () => {
-            render(
-                <MapContainer
-                    center={lazyLocation.position}
-                    zoom={10}
-                    style={{ height: '100vh', width: '100%' }}
-                >
-                    <MarkerPopup place={lazyLocation} key={lazyLocation.uuid} />
-                </MapContainer>,
-            );
-        });
+        renderLazyLocationMarker();
 
         // Nothing matched yet - default Leaflet icon, no custom pin
         expect(document.querySelector('.custom-typed-marker-icon')).not.toBeInTheDocument();
