@@ -49,7 +49,7 @@ describe('getTypedMarkerIcon', () => {
         expect(icon).not.toBeNull();
         expect(icon.options.html).toContain('https://cdn.example.com/parcel-locker.svg');
         expect(icon.options.html).toContain('background-color:black'); // fallback color, no color_field set
-        expect(icon.options.iconSize).toEqual([72, 80]);
+        expect(icon.options.iconSize).toEqual([36, 40]);
     });
 
     it('masks the icon URL through CSS so it picks up the matched color, instead of embedding SVG path data', () => {
@@ -136,10 +136,21 @@ describe('getTypedMarkerIcon', () => {
         expect(icon.options.html).not.toContain('>*</span>');
     });
 
-    it('returns null (falls back to the plain asterisk icon) when has_remark is set but nothing matches', () => {
+    it('returns our own pin in the fallback color with just the badge when has_remark is set but nothing matches', () => {
         setMarkerStyles('{}');
 
-        expect(getTypedMarkerIcon({ uuid: '1', position: [50, 50], has_remark: true })).toBeNull();
+        const icon = getTypedMarkerIcon({ uuid: '1', position: [50, 50], has_remark: true });
+
+        expect(icon).not.toBeNull();
+        expect(icon.options.html).toContain('background-color:black'); // fallback color
+        expect(icon.options.html).toContain('>*</span>');
+        expect(icon.options.html).not.toContain('custom-typed-marker-type-icon');
+    });
+
+    it('still returns null when there is neither a match nor a remark to show', () => {
+        setMarkerStyles('{}');
+
+        expect(getTypedMarkerIcon({ uuid: '1', position: [50, 50] })).toBeNull();
     });
 
     it('uses default_color from MARKER_STYLES when the matched value has no color entry', () => {

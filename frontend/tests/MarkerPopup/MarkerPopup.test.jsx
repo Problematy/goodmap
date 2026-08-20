@@ -105,7 +105,7 @@ describe('MarkerPopup with remark', () => {
         globalThis.fetch.mockRestore();
     });
 
-    it('should render marker popup with asterisks when remark is true', () => {
+    it('should render our own pin with an asterisk badge when remark is true', () => {
         // eslint-disable-next-line camelcase -- matches backend API schema property name
         const locationWhenRemarkIsTrue = { ...location, has_remark: true };
         act(() => {
@@ -122,7 +122,9 @@ describe('MarkerPopup with remark', () => {
                 </MapContainer>,
             );
         });
-        expect(screen.getByAltText(/Marker-Asterisk/i)).toBeInTheDocument();
+        const marker = document.querySelector('.custom-typed-marker-icon');
+        expect(marker).toBeInTheDocument();
+        expect(marker.querySelector('span')).toHaveTextContent('*');
     });
 
     it('should pass custom icon prop when remark is true', () => {
@@ -140,15 +142,14 @@ describe('MarkerPopup with remark', () => {
             );
         });
 
-        const marker = screen.getByAltText(/Marker-Asterisk/i);
-        const leafletMarker = marker.closest('.leaflet-marker-icon');
+        const marker = document.querySelector('.custom-typed-marker-icon');
 
-        // When remark is true, marker should have custom asterisk icon
-        expect(leafletMarker).toBeInTheDocument();
+        // When remark is true, marker should have our own pin, not Leaflet's default icon
+        expect(marker).toBeInTheDocument();
 
-        // Verify custom asterisk icon dimensions (40x48) are applied
-        const style = window.getComputedStyle(leafletMarker);
-        expect(style.width).toBe('40px'); // asteriskIcon width
-        expect(style.height).toBe('48px'); // asteriskIcon height
+        // Verify our pin's dimensions (36x40) are applied, not Leaflet's default (25x41)
+        const style = window.getComputedStyle(marker);
+        expect(style.width).toBe('36px');
+        expect(style.height).toBe('40px');
     });
 });

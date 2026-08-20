@@ -4,8 +4,8 @@ Marker Styles Tests
 Tests that the map picks pin icon/color per marker_styles (icon_field:
 type_of_place, color_field: speed_limit - see e2e_test_data_initial.json), and
 that a location with both a remark and a marker_styles match keeps its
-type/color styling with an asterisk badge overlay, rather than losing it to
-the plain asterisk icon (see getTypedMarkerIcon.jsx/MarkerPopup.jsx).
+type/color styling with an asterisk badge overlay, rather than losing it to a
+plain, unstyled asterisk badge (see getTypedMarkerIcon.jsx/MarkerPopup.jsx).
 """
 
 from playwright.sync_api import Page, expect
@@ -82,12 +82,14 @@ class TestMarkerStyles:
     def test_remarked_bridge_keeps_type_and_color_styling_with_asterisk_badge(self, page: Page):
         """Zwierzyniecka has both a remark and marker_styles-matching fields
         (small bridge, speed_limit=10) - it should render its normal typed/colored
-        pin plus an asterisk badge, not fall back to the plain asterisk icon
-        (every type_of_place/speed_limit value happens to be covered by
-        marker_styles in this seeded dataset, so that plain-icon fallback path
-        isn't exercised here - it's covered at the unit level instead, see
-        getTypedMarkerIcon.test.jsx's "falls back to the plain asterisk icon"
-        case)."""
+        pin plus an asterisk badge, not fall back to our own pin in the plain
+        fallback color with no type icon (every type_of_place/speed_limit value
+        happens to be covered by marker_styles in this seeded dataset, so that
+        fallback-color path isn't exercised here - it's covered at the unit
+        level instead, see getTypedMarkerIcon.test.jsx's "returns our own pin in
+        the fallback color with just the badge" case). Also guards against ever
+        reintroducing the old PNG-based asterisk icon this replaced.
+        """
         page.goto(BASE_URL, wait_until="domcontentloaded")
         open_test_popup(page)
 
