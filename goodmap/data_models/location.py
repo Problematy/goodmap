@@ -85,8 +85,7 @@ class LocationBase(BaseModel, extra="allow"):
         return super().model_dump(**kwargs)
 
     def basic_info(self) -> dict[str, Any]:
-        """Get basic location information summary: identity and position only.
-        """
+        """Get basic location information summary: identity and position only."""
         return self.model_dump(include={"uuid", "position"})
 
 

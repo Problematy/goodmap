@@ -313,27 +313,44 @@ def test_get_locations_accepts_valid_and_undeclared_parameters(test_app, query):
     assert response.status_code == 200
 
 
+# Fixture shared by the /api/locations and /api/locations/marker-styles tests
+# below: point_type-categorized locker locations with a matching marker_styles
+# config. Kept as data + a small factory, not one big db_overrides literal per
+# test, so each test only states what it actually varies.
+_LOCKER_LOCATIONS = [
+    {
+        "name": "locker-1",
+        "position": [50, 50],
+        "point_type": "parcel_locker",
+        "uuid": "11111111-1111-1111-1111-111111111111",
+    },
+    {
+        "name": "locker-2",
+        "position": [51, 51],
+        "point_type": "container",
+        "uuid": "22222222-2222-2222-2222-222222222222",
+    },
+]
+
+
+def _create_marker_styles_test_app(data=_LOCKER_LOCATIONS, **db_overrides):
+    overrides = {
+        "categories": {"point_type": ["parcel_locker", "container"]},
+        "location_obligatory_fields": [("point_type", "str"), ("name", "str")],
+        "marker_styles": {"icon_field": "point_type", "icons": {}, "colors": {}},
+        "data": data,
+        "visible_data": ["name", "point_type"],
+    }
+    overrides.update(db_overrides)
+    return create_test_app(db_overrides=overrides)
+
+
 def test_get_locations_omits_marker_style_field_values():
     """/api/locations should not surface the field marker_styles.icon_field
     points at (e.g. a point-type category) - that value is fetched lazily via
     /api/locations/marker-styles, only once a marker is individually visible,
     instead of upfront for every location (see lazy-load-marker-styling-plan.md)."""
-    client = create_test_app(
-        db_overrides={
-            "categories": {"point_type": ["parcel_locker", "container"]},
-            "location_obligatory_fields": [("point_type", "str"), ("name", "str")],
-            "marker_styles": {"icon_field": "point_type", "icons": {}, "colors": {}},
-            "data": [
-                {
-                    "name": "locker-1",
-                    "position": [50, 50],
-                    "point_type": "parcel_locker",
-                    "uuid": "11111111-1111-1111-1111-111111111111",
-                },
-            ],
-            "visible_data": ["name", "point_type"],
-        }
-    )
+    client = _create_marker_styles_test_app(data=_LOCKER_LOCATIONS[:1])
 
     response = client.get("/api/locations")
 
@@ -349,28 +366,7 @@ def test_get_locations_omits_marker_style_field_values():
 def test_get_locations_marker_styles_returns_requested_uuids_styling():
     """The lazy marker-styles endpoint returns just the marker_styles-relevant
     field values for the requested uuids, not the full location."""
-    client = create_test_app(
-        db_overrides={
-            "categories": {"point_type": ["parcel_locker", "container"]},
-            "location_obligatory_fields": [("point_type", "str"), ("name", "str")],
-            "marker_styles": {"icon_field": "point_type", "icons": {}, "colors": {}},
-            "data": [
-                {
-                    "name": "locker-1",
-                    "position": [50, 50],
-                    "point_type": "parcel_locker",
-                    "uuid": "11111111-1111-1111-1111-111111111111",
-                },
-                {
-                    "name": "locker-2",
-                    "position": [51, 51],
-                    "point_type": "container",
-                    "uuid": "22222222-2222-2222-2222-222222222222",
-                },
-            ],
-            "visible_data": ["name", "point_type"],
-        }
-    )
+    client = _create_marker_styles_test_app()
 
     response = client.get("/api/locations/marker-styles?uuid=11111111-1111-1111-1111-111111111111")
 
@@ -384,28 +380,7 @@ def test_get_locations_marker_styles_returns_requested_uuids_styling():
 
 
 def test_get_locations_marker_styles_supports_multiple_uuids():
-    client = create_test_app(
-        db_overrides={
-            "categories": {"point_type": ["parcel_locker", "container"]},
-            "location_obligatory_fields": [("point_type", "str"), ("name", "str")],
-            "marker_styles": {"icon_field": "point_type", "icons": {}, "colors": {}},
-            "data": [
-                {
-                    "name": "locker-1",
-                    "position": [50, 50],
-                    "point_type": "parcel_locker",
-                    "uuid": "11111111-1111-1111-1111-111111111111",
-                },
-                {
-                    "name": "locker-2",
-                    "position": [51, 51],
-                    "point_type": "container",
-                    "uuid": "22222222-2222-2222-2222-222222222222",
-                },
-            ],
-            "visible_data": ["name", "point_type"],
-        }
-    )
+    client = _create_marker_styles_test_app()
 
     response = client.get(
         "/api/locations/marker-styles"
@@ -429,21 +404,8 @@ def test_get_locations_marker_styles_supports_multiple_uuids():
 def test_get_locations_marker_styles_omits_unknown_uuids():
     """An unknown/re-clustered-away uuid doesn't error the whole request - it's
     just absent from the response."""
-    client = create_test_app(
-        db_overrides={
-            "categories": {"point_type": ["parcel_locker"]},
-            "location_obligatory_fields": [("point_type", "str"), ("name", "str")],
-            "marker_styles": {"icon_field": "point_type", "icons": {}, "colors": {}},
-            "data": [
-                {
-                    "name": "locker-1",
-                    "position": [50, 50],
-                    "point_type": "parcel_locker",
-                    "uuid": "11111111-1111-1111-1111-111111111111",
-                },
-            ],
-            "visible_data": ["name", "point_type"],
-        }
+    client = _create_marker_styles_test_app(
+        data=_LOCKER_LOCATIONS[:1], categories={"point_type": ["parcel_locker"]}
     )
 
     response = client.get(
