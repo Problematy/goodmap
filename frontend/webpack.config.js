@@ -54,10 +54,25 @@ module.exports = (env, argv) => {
                 },
                 {
                     test: /\.(jpe?g|png|gif|woff|woff2|eot|ttf|svg)$/i,
+                    exclude: /@phosphor-icons\/core/,
                     loader: 'url-loader',
                     options: {
                         limit: 8192,
                         name: '[path][name].[ext]',
+                    },
+                },
+                {
+                    // @phosphor-icons/core's full icon set is pulled in via
+                    // require.context (see resolvePhosphorIconUrl.js) so any icon
+                    // can be referenced by name from deployment config, without a
+                    // frontend code change - never inline these (limit: 0), or that
+                    // whole set would bloat the main JS bundle instead of staying as
+                    // separate files fetched only for icons actually rendered.
+                    test: /@phosphor-icons\/core.*\.svg$/i,
+                    loader: 'url-loader',
+                    options: {
+                        limit: 0,
+                        name: 'phosphor-icons/[name].[ext]',
                     },
                 },
             ],

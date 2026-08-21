@@ -276,8 +276,14 @@
       "icon_field": "type_of_place",
       "color_field": "speed_limit",
       "icons": {
-        "big bridge": "https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/fill/bridge-fill.svg",
-        "small bridge": "https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/fill/footprints-fill.svg"
+        "big bridge": {
+          "provider": "phosphor",
+          "value": "bridge"
+        },
+        "small bridge": {
+          "provider": "phosphor",
+          "value": "footprints"
+        }
       },
       "colors": {
         "10": "#2e7d32",

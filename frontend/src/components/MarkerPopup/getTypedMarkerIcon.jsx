@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { DivIcon } from 'leaflet';
 import ReactDOMServer from 'react-dom/server';
 import PIN_SHAPE_URL from '../../res/svg/marker-pin.svg';
+import resolvePhosphorIconUrl from './resolvePhosphorIconUrl';
 
 const PIN_WIDTH = 45;
 const PIN_HEIGHT = 50;
@@ -13,6 +14,32 @@ const FALLBACK_COLOR = globalThis.SECONDARY_COLOR || 'black';
 const TYPE_ICON_SIZE = 20;
 const TYPE_ICON_OFFSET_TOP = 8;
 const TYPE_ICON_OFFSET_LEFT = 12;
+
+/**
+ * Resolves a configured marker_styles.icons entry to a usable URL. Supports a
+ * plain string (a direct URL, as before) and a tagged {provider, value} object:
+ * provider "phosphor" resolves value (an icon name) against the bundled
+ * @phosphor-icons/core set - no external request; provider "url" is the same
+ * as a plain string, spelled out explicitly.
+ *
+ * @param {string|{provider: string, value: string}|undefined} icon
+ * @returns {string} A usable URL, or '' if icon is unset or unresolvable
+ */
+const resolveIconUrl = icon => {
+    if (!icon) {
+        return '';
+    }
+    if (typeof icon === 'string') {
+        return icon;
+    }
+    if (icon.provider === 'phosphor') {
+        return resolvePhosphorIconUrl(icon.value);
+    }
+    if (icon.provider === 'url') {
+        return icon.value || '';
+    }
+    return '';
+};
 
 const maskStyle = (url, color) => ({
     backgroundColor: color,
@@ -89,6 +116,10 @@ PinIcon.propTypes = {
  * matched, or `null` (falls back to Leaflet's default marker) when there's
  * neither a match nor a remark to show.
  *
+ * Each entry in MARKER_STYLES.icons is either a plain URL string, or a tagged
+ * {provider: "phosphor", value: "<icon-name>"} / {provider: "url", value: "<url>"}
+ * object - see resolveIconUrl.
+ *
  * @param {Object} place - Location data from GET /api/locations, merged with any
  *   styling lazily fetched for it from GET /api/locations/marker-styles (has_remark
  *   and marker_styles field values aren't in the initial /api/locations response -
@@ -99,7 +130,7 @@ const getTypedMarkerIcon = place => {
     const markerStyles = globalThis.MARKER_STYLES || {};
     const { icon_field: iconField, color_field: colorField, icons, colors } = markerStyles;
 
-    const typeIconUrl = icons?.[place[iconField]] || '';
+    const typeIconUrl = resolveIconUrl(icons?.[place[iconField]]);
     const matchedColor = colors?.[place[colorField]] || '';
     const hasRemark = Boolean(place.has_remark);
 

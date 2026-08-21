@@ -1,4 +1,8 @@
 import getTypedMarkerIcon from '../../src/components/MarkerPopup/getTypedMarkerIcon';
+// Mocked project-wide (see jest.config.js's moduleNameMapper) since the real
+// implementation uses webpack's require.context, which plain Babel/Jest can't
+// evaluate.
+import resolvePhosphorIconUrl from '../../src/components/MarkerPopup/resolvePhosphorIconUrl';
 
 // window.MARKER_STYLES is server-rendered JSON (see goodmap's map.html/db.get_marker_styles),
 // so fixtures are parsed from JSON strings here too - keeps the snake_case backend field
@@ -168,5 +172,64 @@ describe('getTypedMarkerIcon', () => {
 
         expect(icon.options.html).not.toContain('#123456');
         expect(icon.options.html).toContain('background-color:black');
+    });
+});
+
+describe('getTypedMarkerIcon icon value shapes', () => {
+    afterEach(() => {
+        delete globalThis.MARKER_STYLES;
+        resolvePhosphorIconUrl.mockReset();
+    });
+
+    it('resolves a {provider: "phosphor", value} entry via resolvePhosphorIconUrl', () => {
+        resolvePhosphorIconUrl.mockReturnValue(
+            '/static/phosphor-icons/shipping-container-fill.svg',
+        );
+        setMarkerStyles(`{
+            "icon_field": "pointType",
+            "icons": { "container": { "provider": "phosphor", "value": "shipping-container" } }
+        }`);
+
+        const icon = getTypedMarkerIcon({ uuid: '1', position: [50, 50], pointType: 'container' });
+
+        expect(resolvePhosphorIconUrl).toHaveBeenCalledWith('shipping-container');
+        expect(icon.options.html).toContain(
+            'mask-image:url(/static/phosphor-icons/shipping-container-fill.svg)',
+        );
+    });
+
+    it('resolves a {provider: "url", value} entry as a plain URL, without touching phosphor', () => {
+        setMarkerStyles(`{
+            "icon_field": "pointType",
+            "icons": { "container": { "provider": "url", "value": "https://cdn.example.com/c.svg" } }
+        }`);
+
+        const icon = getTypedMarkerIcon({ uuid: '1', position: [50, 50], pointType: 'container' });
+
+        expect(resolvePhosphorIconUrl).not.toHaveBeenCalled();
+        expect(icon.options.html).toContain('mask-image:url(https://cdn.example.com/c.svg)');
+    });
+
+    it('still accepts a plain string entry as a direct URL, unchanged from before', () => {
+        setMarkerStyles(`{
+            "icon_field": "pointType",
+            "icons": { "container": "https://cdn.example.com/c.svg" }
+        }`);
+
+        const icon = getTypedMarkerIcon({ uuid: '1', position: [50, 50], pointType: 'container' });
+
+        expect(icon.options.html).toContain('mask-image:url(https://cdn.example.com/c.svg)');
+    });
+
+    it('treats an unresolvable phosphor icon name as no icon, not a broken URL', () => {
+        resolvePhosphorIconUrl.mockReturnValue('');
+        setMarkerStyles(`{
+            "icon_field": "pointType",
+            "icons": { "container": { "provider": "phosphor", "value": "not-a-real-icon" } }
+        }`);
+
+        const icon = getTypedMarkerIcon({ uuid: '1', position: [50, 50], pointType: 'container' });
+
+        expect(icon).toBeNull();
     });
 });

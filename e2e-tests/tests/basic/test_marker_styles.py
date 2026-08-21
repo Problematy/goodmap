@@ -13,15 +13,16 @@ from playwright.sync_api import Page, expect
 from tests.conftest import BASE_URL, MARKER_LOAD_TIMEOUT, open_test_popup
 
 # "big bridge" and "small bridge" each get their own Phosphor Icons (MIT) type
-# icon - see e2e_test_data_initial.json's marker_styles.icons and
-# getTypedMarkerIcon.jsx (icon URLs are CSS mask-image'd onto the pin, tinted
-# by the matched color, rather than embedded as inline SVG path data).
-BIG_BRIDGE_TYPE_ICON_URL = (
-    "https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/fill/bridge-fill.svg"
-)
-SMALL_BRIDGE_TYPE_ICON_URL = (
-    "https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/fill/footprints-fill.svg"
-)
+# icon - see e2e_test_data_initial.json's marker_styles.icons ({provider:
+# "phosphor", value: "..."}, resolved to a bundled, self-hosted asset -
+# see resolvePhosphorIconUrl.js) and getTypedMarkerIcon.jsx (icon URLs are CSS
+# mask-image'd onto the pin, tinted by the matched color, rather than embedded
+# as inline SVG path data).
+# Served by the frontend dev server (webpack-dev-server, see Makefile's
+# run-frontend), not the backend BASE_URL - these are static frontend assets.
+FRONTEND_URL = "http://localhost:8080"
+BIG_BRIDGE_TYPE_ICON_URL = f"{FRONTEND_URL}/phosphor-icons/bridge-fill.svg"
+SMALL_BRIDGE_TYPE_ICON_URL = f"{FRONTEND_URL}/phosphor-icons/footprints-fill.svg"
 
 
 class TestMarkerStyles:
