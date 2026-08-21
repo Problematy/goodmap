@@ -104,8 +104,9 @@ const MarkerPopup = ({ place }) => {
 
     // react-leaflet compares `icon` by identity, so a fresh DivIcon on every render
     // would tear down and rebuild the marker's DOM - and every MarkerPopup re-renders
-    // whenever anything writes selectedLocationId. Only place.marker can change it.
-    const typedIcon = useMemo(() => getTypedMarkerIcon(place), [place.marker]);
+    // whenever anything writes selectedLocationId. `place` is one entry of the fetched
+    // location list (see Markers.jsx), so its identity only changes on a refetch.
+    const typedIcon = useMemo(() => getTypedMarkerIcon(place), [place]);
 
     const markerProps = {
         position: place.position,

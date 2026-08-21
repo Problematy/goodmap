@@ -167,17 +167,16 @@ describe('MarkerPopup with remark', () => {
             </MapContainer>
         );
 
-        let rerender;
-        act(() => {
-            ({ rerender } = render(tree(10)));
-        });
+        // render/rerender already flush their own updates, so no act() wrapper here.
+        const { rerender } = render(tree(10));
         setIcon.mockClear();
 
-        act(() => {
-            rerender(tree(11));
-        });
+        rerender(tree(11));
 
-        expect(setIcon).not.toHaveBeenCalled();
-        setIcon.mockRestore();
+        try {
+            expect(setIcon).not.toHaveBeenCalled();
+        } finally {
+            setIcon.mockRestore();
+        }
     });
 });
