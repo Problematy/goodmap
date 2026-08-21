@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import { DivIcon } from 'leaflet';
 import ReactDOMServer from 'react-dom/server';
 import PIN_SHAPE_URL from '../../res/svg/marker-pin.svg';
-import resolvePhosphorIconUrl from './resolvePhosphorIconUrl';
 
 const PIN_WIDTH = 45;
 const PIN_HEIGHT = 50;
@@ -16,34 +15,17 @@ const TYPE_ICON_OFFSET_TOP = 8;
 const TYPE_ICON_OFFSET_LEFT = 12;
 
 /**
- * Resolves a configured marker_styles.icons entry to a usable URL.
+ * A configured marker_styles.icons entry, as a usable URL.
  *
- * A current backend already resolves icons to plain URL strings (see goodmap's
- * marker_styles.py), so that is the only branch this normally takes. The tagged
- * {provider, value} branches remain as a compatibility shim, so this bundle also
- * works against an older backend that still ships the unresolved form: provider
- * "phosphor" builds a jsdelivr CDN URL for value (an icon name), see
- * resolvePhosphorIconUrl; provider "url" is a plain string spelled out explicitly.
- * They can go once such backends are no longer supported.
+ * Entries arrive already resolved: the backend turns whichever icon provider the
+ * deployment configured into a finished URL at startup (see goodmap's
+ * marker_styles.py), so a provider can be added there without this bundle changing.
+ * The type guard is just belt-and-braces against a non-string reaching the CSS.
  *
- * @param {string|{provider: string, value: string}|undefined} icon
- * @returns {string} A usable URL, or '' if icon is unset
+ * @param {string|undefined} icon
+ * @returns {string} The URL, or '' if unset or not a string
  */
-const resolveIconUrl = icon => {
-    if (!icon) {
-        return '';
-    }
-    if (typeof icon === 'string') {
-        return icon;
-    }
-    if (icon.provider === 'phosphor') {
-        return resolvePhosphorIconUrl(icon.value);
-    }
-    if (icon.provider === 'url') {
-        return icon.value || '';
-    }
-    return '';
-};
+const resolveIconUrl = icon => (typeof icon === 'string' ? icon : '');
 
 /**
  * Own-property lookup in a config table. A point's field value is arbitrary data,
@@ -127,14 +109,13 @@ PinIcon.propTypes = {
 /**
  * Builds a Leaflet icon for `place`: colored/typed from the deployment's
  * marker styling lookup table (window.MARKER_STYLES, see goodmap's
- * db.get_marker_styles) when `place.marker`'s icon/color match an entry,
- * our own pin in the fallback color with just the asterisk badge when
+ * marker_styles.resolve_marker_styles) when `place.marker`'s icon/color match an
+ * entry, our own pin in the fallback color with just the asterisk badge when
  * `place.marker.badge` is set but nothing matched, or `null` (falls back to
  * Leaflet's default marker) when there's neither a match nor a badge to show.
  *
- * Each entry in MARKER_STYLES.icons is either a plain URL string, or a tagged
- * {provider: "phosphor", value: "<icon-name>"} / {provider: "url", value: "<url>"}
- * object - see resolveIconUrl.
+ * MARKER_STYLES.icons maps a value to a plain URL string; whichever icon provider
+ * the deployment configured was already resolved away server-side.
  *
  * @param {Object} place - Location data, as returned by GET /api/locations
  * @param {Object} [place.marker] - Pin styling: {icon, color, badge}

@@ -298,9 +298,10 @@ a map with no ``marker_styles`` still renders, just with plain pins.
    <https://phosphoricons.com/>`_ icon by name instead of hosting your own SVG.
    ``{"provider": "url", "value": "..."}`` is the plain string spelled out explicitly.
 
-   GoodMap turns these into plain URLs when the app starts, so the browser only ever
-   receives finished URLs. An entry it cannot make sense of — an unknown ``provider``, a
-   missing ``value`` — is logged as a warning at startup and left out, costing that one
+   ``phosphor`` and ``url`` are the providers GoodMap knows; each one's URL is built
+   server-side, so the browser only ever receives finished URLs and a new provider needs
+   no frontend release. An entry GoodMap cannot make sense of — an unknown ``provider``,
+   a missing ``value`` — is logged as a warning at startup and left out, costing that one
    pin its icon rather than breaking the map.
 
 ``colors``

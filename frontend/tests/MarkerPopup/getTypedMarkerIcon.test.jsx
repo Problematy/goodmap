@@ -194,38 +194,10 @@ describe('getTypedMarkerIcon icon value shapes', () => {
         delete globalThis.MARKER_STYLES;
     });
 
-    it('resolves a {provider: "phosphor", value} entry to the jsdelivr CDN URL for that icon', () => {
-        setMarkerStyles(`{
-            "icons": { "container": { "provider": "phosphor", "value": "shipping-container" } }
-        }`);
-
-        const icon = getTypedMarkerIcon({
-            uuid: '1',
-            position: [50, 50],
-            marker: { icon: 'container' },
-        });
-
-        expect(icon.options.html).toContain(
-            'mask-image:url(https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/fill/shipping-container-fill.svg)',
-        );
-    });
-
-    it('resolves a {provider: "url", value} entry as a plain URL, without touching phosphor', () => {
-        setMarkerStyles(`{
-            "icons": { "container": { "provider": "url", "value": "https://cdn.example.com/c.svg" } }
-        }`);
-
-        const icon = getTypedMarkerIcon({
-            uuid: '1',
-            position: [50, 50],
-            marker: { icon: 'container' },
-        });
-
-        expect(icon.options.html).toContain('mask-image:url(https://cdn.example.com/c.svg)');
-        expect(icon.options.html).not.toContain('jsdelivr');
-    });
-
-    it('still accepts a plain string entry as a direct URL, unchanged from before', () => {
+    // The backend resolves whichever icon provider the deployment configured into a
+    // finished URL before it ever reaches window.MARKER_STYLES (see goodmap's
+    // marker_styles.py), so a plain URL string is the only shape this sees.
+    it('uses an icon entry as a direct URL', () => {
         setMarkerStyles(`{
             "icons": { "container": "https://cdn.example.com/c.svg" }
         }`);
@@ -237,5 +209,19 @@ describe('getTypedMarkerIcon icon value shapes', () => {
         });
 
         expect(icon.options.html).toContain('mask-image:url(https://cdn.example.com/c.svg)');
+    });
+
+    it('ignores a non-string icon entry rather than putting it in the CSS', () => {
+        setMarkerStyles(`{
+            "icons": { "container": { "provider": "phosphor", "value": "shipping-container" } }
+        }`);
+
+        expect(
+            getTypedMarkerIcon({
+                uuid: '1',
+                position: [50, 50],
+                marker: { icon: 'container' },
+            }),
+        ).toBeNull();
     });
 });

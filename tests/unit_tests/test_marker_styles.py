@@ -3,7 +3,7 @@ from unittest import mock
 
 import pytest
 
-from goodmap.marker_styles import resolve_marker_styles
+from goodmap.marker_styles import ICON_PROVIDERS, PhosphorIconProvider, resolve_marker_styles
 
 # The literal URL the frontend's resolvePhosphorIconUrl.js builds for the same icon name
 # (see frontend/tests/MarkerPopup/getTypedMarkerIcon.test.jsx). Spelled out rather than
@@ -12,6 +12,30 @@ from goodmap.marker_styles import resolve_marker_styles
 PHOSPHOR_BRIDGE_URL = (
     "https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/fill/bridge-fill.svg"
 )
+
+
+def test_phosphor_provider_builds_the_whole_cdn_url_from_an_icon_name():
+    """Pins the provider itself, independently of the resolution plumbing around it -
+    this is the URL the frontend used to build for itself."""
+    assert PhosphorIconProvider().resolve("bridge") == PHOSPHOR_BRIDGE_URL
+
+
+def test_a_provider_added_to_the_registry_is_picked_up():
+    """The registry's whole point: a new provider is a class plus a dict entry, with no
+    edit to the resolution path."""
+
+    class SpriteProvider:
+        def resolve(self, value):
+            return f"https://sprites.example/{value}.svg"
+
+    styles = {"icons": {"big bridge": {"provider": "sprite", "value": "bridge"}}}
+
+    with mock.patch.dict(ICON_PROVIDERS, {"sprite": SpriteProvider()}):
+        resolved = resolve_marker_styles(styles)
+
+    assert resolved["icons"] == {"big bridge": "https://sprites.example/bridge.svg"}
+    # ...and it is gone again once unregistered, so the patch really was what mattered.
+    assert resolve_marker_styles(styles)["icons"] == {}
 
 
 def test_resolves_phosphor_entry_to_cdn_url():
