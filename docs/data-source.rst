@@ -301,8 +301,8 @@ a map with no ``marker_styles`` still renders, just with plain pins.
    ``phosphor`` and ``url`` are the providers GoodMap knows; each one's URL is built
    server-side, so the browser only ever receives finished URLs and a new provider needs
    no frontend release. An entry GoodMap cannot make sense of — an unknown ``provider``,
-   a missing ``value`` — is logged as a warning at startup and left out, costing that one
-   pin its icon rather than breaking the map.
+   a missing ``value`` — stops the app from starting, so the mistake surfaces on deploy
+   rather than as a silently unstyled pin.
 
 ``colors``
    Maps a value of ``color_field`` to a CSS color.

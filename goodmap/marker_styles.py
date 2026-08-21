@@ -7,10 +7,7 @@ plain lookup table, so supporting a new provider needs no frontend release - the
 separately versioned frontend bundle only ever has to understand URL strings.
 """
 
-import logging
 from typing import Any, Protocol
-
-logger = logging.getLogger(__name__)
 
 
 class IconProvider(Protocol):
@@ -59,51 +56,28 @@ ICON_PROVIDERS: dict[str, IconProvider] = {
 }
 
 
-def _resolve_icon_entry(key: Any, entry: Any) -> str | None:
-    """Resolve one marker_styles.icons entry to a usable URL.
+def _icon_url(entry: Any) -> str:
+    """The URL one marker_styles.icons entry stands for.
 
     Args:
-        key: The icons key this entry sits under, used only to name it in the warning
-            logged when the entry cannot be resolved.
-        entry: The raw entry - a plain URL string, a tagged
-            {"provider": <name in ICON_PROVIDERS>, "value": str} dict, or malformed data.
+        entry: A plain URL string - shorthand for the "url" provider - or a tagged
+            {"provider": <name in ICON_PROVIDERS>, "value": str} dict.
 
     Returns:
-        The resolved URL, or None if the entry is unresolvable (already logged).
+        The resolved URL.
+
+    Raises:
+        KeyError, TypeError: The entry is malformed. Deliberately not caught: bad
+            marker_styles config stops the app from starting, the same way a category
+            with no allowed values does (see data_models.location.create_location_model).
     """
     if isinstance(entry, str):
-        # A bare string is shorthand for the "url" provider, so both spellings resolve
-        # by the same path rather than one of them short-circuiting.
-        name, value = "url", entry
-    elif isinstance(entry, dict):
-        name, value = entry.get("provider"), entry.get("value")
-    else:
-        logger.warning(
-            "marker_styles.icons['%s'] is neither a URL string nor a {provider, value} "
-            "object; ignoring it",
-            key,
-        )
-        return None
-
-    if not isinstance(value, str) or not value:
-        logger.warning("marker_styles.icons['%s'] has no usable 'value'; ignoring it", key)
-        return None
-
-    # The isinstance check comes first because an unhashable provider - a list, say -
-    # would make .get() raise TypeError rather than miss.
-    provider = ICON_PROVIDERS.get(name) if isinstance(name, str) else None
-    if provider is None:
-        logger.warning("marker_styles.icons['%s'] has unknown provider %r; ignoring it", key, name)
-        return None
-
-    return provider.resolve(value)
+        return ICON_PROVIDERS["url"].resolve(entry)
+    return ICON_PROVIDERS[entry["provider"]].resolve(entry["value"])
 
 
 def resolve_marker_styles(marker_styles: dict[str, Any]) -> dict[str, Any]:
     """Resolve marker_styles.icons into a flat {value: url} lookup table.
-
-    An entry that cannot be resolved is dropped with a warning naming it, rather than
-    aborting startup: a typo in one icon costs that pin its icon, not the whole map.
 
     Args:
         marker_styles: Raw marker_styles config as returned by
@@ -112,25 +86,17 @@ def resolve_marker_styles(marker_styles: dict[str, Any]) -> dict[str, Any]:
             resolving in place would rewrite what the deployment has stored.
 
     Returns:
-        A new dict. "icons", if present, is replaced by a flat {value: url} map with
-        unresolvable entries omitted; every other key (icon_field, color_field, colors)
-        is carried through untouched. "colors" needs no resolving - it maps straight to
-        CSS colors and never had a tagged form.
+        A new dict. "icons", if present, is replaced by a flat {value: url} map; every
+        other key (icon_field, color_field, colors) is carried through untouched.
+        "colors" needs no resolving - it maps straight to CSS colors and never had a
+        tagged form.
+
+    Raises:
+        AttributeError, KeyError, TypeError: marker_styles.icons is malformed; see
+            _icon_url. Uncaught by design, so the app refuses to start.
     """
     icons = marker_styles.get("icons")
-
     if icons is None:
         return dict(marker_styles)
 
-    if not isinstance(icons, dict):
-        logger.warning("marker_styles.icons is not an object; ignoring it entirely")
-        return {**marker_styles, "icons": {}}
-
-    return {
-        **marker_styles,
-        "icons": {
-            key: url
-            for key, entry in icons.items()
-            if (url := _resolve_icon_entry(key, entry)) is not None
-        },
-    }
+    return {**marker_styles, "icons": {key: _icon_url(entry) for key, entry in icons.items()}}

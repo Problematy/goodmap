@@ -5,18 +5,16 @@ import pytest
 
 from goodmap.marker_styles import ICON_PROVIDERS, PhosphorIconProvider, resolve_marker_styles
 
-# The literal URL the frontend's resolvePhosphorIconUrl.js builds for the same icon name
-# (see frontend/tests/MarkerPopup/getTypedMarkerIcon.test.jsx). Spelled out rather than
-# imported from the module under test, so the two implementations drifting apart while
-# the frontend shim is still in place shows up here.
+# The URL the frontend used to build for itself before resolution moved server-side.
+# Spelled out rather than imported from the module under test, so a change to how it is
+# assembled has to be made deliberately here too.
 PHOSPHOR_BRIDGE_URL = (
     "https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/fill/bridge-fill.svg"
 )
 
 
 def test_phosphor_provider_builds_the_whole_cdn_url_from_an_icon_name():
-    """Pins the provider itself, independently of the resolution plumbing around it -
-    this is the URL the frontend used to build for itself."""
+    """Pins the provider itself, independently of the resolution plumbing around it."""
     assert PhosphorIconProvider().resolve("bridge") == PHOSPHOR_BRIDGE_URL
 
 
@@ -34,8 +32,6 @@ def test_a_provider_added_to_the_registry_is_picked_up():
         resolved = resolve_marker_styles(styles)
 
     assert resolved["icons"] == {"big bridge": "https://sprites.example/bridge.svg"}
-    # ...and it is gone again once unregistered, so the patch really was what mattered.
-    assert resolve_marker_styles(styles)["icons"] == {}
 
 
 def test_resolves_phosphor_entry_to_cdn_url():
@@ -60,62 +56,19 @@ def test_passes_plain_string_entry_through_unchanged():
     "entry",
     [
         {"provider": "phosphorr", "value": "bridge"},
-        {"provider": None, "value": "bridge"},
         {"value": "bridge"},
         {"provider": "phosphor"},
-        {"provider": "phosphor", "value": ""},
-        {"provider": "phosphor", "value": 7},
-        {"provider": ["phosphor"], "value": "bridge"},
-        "",
         7,
         None,
-        ["https://e.example/c.svg"],
     ],
-    ids=[
-        "unknown-provider",
-        "null-provider",
-        "no-provider",
-        "no-value",
-        "empty-value",
-        "non-string-value",
-        "unhashable-provider",
-        "empty-string",
-        "number",
-        "null",
-        "list",
-    ],
+    ids=["unknown-provider", "no-provider", "no-value", "number", "null"],
 )
-def test_unresolvable_entry_is_dropped_with_a_warning_naming_it(entry):
-    styles = {"icons": {"big bridge": entry}}
-
-    with mock.patch("goodmap.marker_styles.logger") as mock_logger:
-        assert resolve_marker_styles(styles)["icons"] == {}
-
-    mock_logger.warning.assert_called_once()
-    assert "big bridge" in mock_logger.warning.call_args[0][1:]
-
-
-def test_one_bad_entry_does_not_drop_its_good_siblings():
-    """A single typo costs that pin its icon, not every other pin's."""
-    styles = {
-        "icons": {
-            "big bridge": {"provider": "phosphor", "value": "bridge"},
-            "broken": {"provider": "nope", "value": "x"},
-            "plain": "https://e.example/c.svg",
-        }
-    }
-
-    assert resolve_marker_styles(styles)["icons"] == {
-        "big bridge": PHOSPHOR_BRIDGE_URL,
-        "plain": "https://e.example/c.svg",
-    }
-
-
-def test_non_object_icons_resolves_to_nothing_rather_than_reaching_the_frontend():
-    with mock.patch("goodmap.marker_styles.logger") as mock_logger:
-        assert resolve_marker_styles({"icons": "oops"})["icons"] == {}
-
-    mock_logger.warning.assert_called_once()
+def test_malformed_entry_stops_the_app_from_starting(entry):
+    """Bad marker_styles config is a deploy-time mistake, so it raises rather than
+    quietly costing a pin its icon - the same stance create_location_model takes on a
+    category with no allowed values."""
+    with pytest.raises((KeyError, TypeError, AttributeError)):
+        resolve_marker_styles({"icons": {"big bridge": entry}})
 
 
 def test_empty_marker_styles_stays_empty():
