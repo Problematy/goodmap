@@ -185,12 +185,6 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
     app.db = extend_db_with_goodmap_queries(app.db, location_model)
 
     obligatory_field_names = {name for name, _ in location_obligatory_fields}
-    # pin_marker_fields is app-wiring knowledge - which of this deployment's fields
-    # marker_styles.icon_field/color_field actually point at - not something the
-    # location model itself needs to know; threaded to core_pages() for
-    # goodmap.api.api_models.marker_style_values() to use. A configured field that
-    # isn't actually an obligatory field of this deployment's locations is dropped
-    # rather than trusted blindly.
     pin_marker_fields = PinMarkerFields(
         icon_field=(
             marker_styles.get("icon_field")
