@@ -150,15 +150,18 @@ def test_map_route_marker_styles():
 
     response_text = response.data.decode("utf-8")
     assert "MARKER_STYLES" in response_text
-    assert "icon_field" in response_text
     assert "parcel_locker" in response_text
+    # icon_field/icon_provider decide what a pin looks like server-side; the page only
+    # needs the resulting tables, so they are not shipped to every visitor.
+    assert "icon_field" not in response_text
+    assert "icon_provider" not in response_text
 
     unconfigured_app = goodmap.create_app_from_config(_minimal_config())
     unconfigured_app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
 
     response = unconfigured_app.test_client().get("/map")
     assert response.status_code == 200
-    assert "window.MARKER_STYLES={};" in response.data.decode("utf-8")
+    assert 'window.MARKER_STYLES={"colors":{},"icons":{}};' in response.data.decode("utf-8")
 
 
 def test_map_route_marker_styles_stay_in_step_with_the_api():

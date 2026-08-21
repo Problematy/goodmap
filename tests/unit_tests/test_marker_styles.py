@@ -71,8 +71,8 @@ def test_malformed_config_stops_the_app_from_starting(styles):
         resolve_marker_styles(styles)
 
 
-def test_empty_marker_styles_stays_empty():
-    assert resolve_marker_styles({}) == {}
+def test_empty_marker_styles_yields_empty_tables():
+    assert resolve_marker_styles({}) == {"icons": {}, "colors": {}}
 
 
 @pytest.mark.parametrize("icons", [{}, None], ids=["empty-table", "no-icons-key"])
@@ -83,12 +83,12 @@ def test_nothing_to_resolve_needs_no_provider(icons):
     if icons is not None:
         styles["icons"] = icons
 
-    assert resolve_marker_styles(styles) == styles
+    assert resolve_marker_styles(styles) == {"icons": {}, "colors": {"10": "#2e7d32"}}
 
 
-def test_every_other_key_is_carried_through_untouched():
-    """colors maps straight to CSS colors and has no provider, so it - like the two field
-    names - must survive resolution unchanged."""
+def test_only_the_two_tables_the_frontend_reads_are_built():
+    """icon_field/color_field/icon_provider decide what a pin looks like server-side;
+    getTypedMarkerIcon.jsx reads only icons and colors, so nothing else is shipped."""
     styles = {
         "icon_field": "type_of_place",
         "color_field": "speed_limit",
@@ -97,11 +97,10 @@ def test_every_other_key_is_carried_through_untouched():
         "icons": {"plain": "https://e.example/c.svg"},
     }
 
-    resolved = resolve_marker_styles(styles)
-
-    assert resolved["icon_field"] == "type_of_place"
-    assert resolved["color_field"] == "speed_limit"
-    assert resolved["colors"] == {"10": "#2e7d32", "50": "#c62828"}
+    assert resolve_marker_styles(styles) == {
+        "icons": {"plain": "https://e.example/c.svg"},
+        "colors": {"10": "#2e7d32", "50": "#c62828"},
+    }
 
 
 def test_does_not_mutate_the_config_it_was_given():

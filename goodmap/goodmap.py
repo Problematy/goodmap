@@ -175,11 +175,14 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
     # (see docs/data-source.rst) - every backend's get_category_data()/
     # get_marker_styles() already defaults them to {} internally.
     #
-    # marker_styles is resolved once, here, so window.MARKER_STYLES.icons is a flat
-    # {value: url} table and the frontend never has to know about icon providers.
+    # marker_styles splits two ways: the raw config says which *fields* drive a pin (app
+    # wiring, below), while resolve_marker_styles builds the icon/color lookup tables the
+    # browser gets - icons already flattened to plain URLs, so the frontend never has to
+    # know about icon providers.
     location_obligatory_fields = get_location_obligatory_fields(app.db)
     categories = get_category_data(app.db)(app.db)["categories"]
-    marker_styles = resolve_marker_styles(get_marker_styles(app.db)(app.db))
+    raw_marker_styles = get_marker_styles(app.db)(app.db)
+    marker_styles = resolve_marker_styles(raw_marker_styles)
 
     location_model = create_location_model(location_obligatory_fields, categories)
     app.db = extend_db_with_goodmap_queries(app.db, location_model)
@@ -187,13 +190,13 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
     obligatory_field_names = {name for name, _ in location_obligatory_fields}
     pin_marker_fields = PinMarkerFields(
         icon_field=(
-            marker_styles.get("icon_field")
-            if marker_styles.get("icon_field") in obligatory_field_names
+            raw_marker_styles.get("icon_field")
+            if raw_marker_styles.get("icon_field") in obligatory_field_names
             else None
         ),
         color_field=(
-            marker_styles.get("color_field")
-            if marker_styles.get("color_field") in obligatory_field_names
+            raw_marker_styles.get("color_field")
+            if raw_marker_styles.get("color_field") in obligatory_field_names
             else None
         ),
     )

@@ -7,7 +7,7 @@ plain lookup table, so supporting a new provider needs no frontend release - the
 separately versioned frontend bundle only ever has to understand URL strings.
 """
 
-from typing import Any, Protocol
+from typing import Any, Mapping, Protocol
 
 
 class IconProvider(Protocol):
@@ -56,8 +56,12 @@ ICON_PROVIDERS: dict[str, IconProvider] = {
 }
 
 
-def resolve_marker_styles(marker_styles: dict[str, Any]) -> dict[str, Any]:
-    """Resolve marker_styles.icons into a flat {value: url} lookup table.
+def resolve_marker_styles(marker_styles: Mapping[str, Any]) -> dict[str, Any]:
+    """The pin styling tables the frontend needs, with icons resolved to plain URLs.
+
+    Only "icons" and "colors" cross to the browser - getTypedMarkerIcon.jsx reads exactly
+    those two. icon_field/color_field/icon_provider are how this deployment decides what a
+    pin looks like, which the page has no use for, so they are not built into the result.
 
     One "icon_provider" serves the whole table, so every entry is a plain value that
     provider understands - a Phosphor icon name, a URL - rather than each one restating
@@ -67,12 +71,10 @@ def resolve_marker_styles(marker_styles: dict[str, Any]) -> dict[str, Any]:
         marker_styles: Raw marker_styles config as returned by
             goodmap.db.get_marker_styles(). Carries "icon_provider" (a name in
             ICON_PROVIDERS) whenever it carries "icons". May be empty or lack both.
-            Never mutated - for the json backend this is the db's live in-memory config,
-            so resolving in place would rewrite what is stored.
 
     Returns:
-        A new dict. "icons", if present, is replaced by a flat {value: url} map; every
-        other key (icon_field, color_field, colors) is carried through untouched.
+        {"icons": {value: url}, "colors": {value: css_color}}, built fresh rather than
+        copied from the config, so nothing here aliases what the deployment has stored.
         "colors" needs no resolving - it maps straight to CSS colors, with no provider.
 
     Raises:
@@ -81,8 +83,9 @@ def resolve_marker_styles(marker_styles: dict[str, Any]) -> dict[str, Any]:
             same way a category with no allowed values does (see
             data_models.location.create_location_model).
     """
-    resolved = dict(marker_styles)
+    resolved_icons: dict[str, str] = {}
     if icons := marker_styles.get("icons"):
         provider = ICON_PROVIDERS[marker_styles["icon_provider"]]
-        resolved["icons"] = {key: provider.resolve(value) for key, value in icons.items()}
-    return resolved
+        resolved_icons = {key: provider.resolve(value) for key, value in icons.items()}
+
+    return {"icons": resolved_icons, "colors": marker_styles.get("colors", {})}
