@@ -5,7 +5,6 @@ import {
     LOCATIONS,
     SEARCH_ADDRESS,
     LOCATIONS_CLUSTERED,
-    LOCATIONS_MARKER_STYLES,
 } from './endpoints';
 import useMapStore from '../../components/Map/store/map.store';
 
@@ -206,32 +205,6 @@ const httpService = {
             console.error('Failed to fetch location data:', error);
             throw error;
         }
-    },
-
-    /**
-     * Fetches marker styling field values for specific locations, by uuid.
-     * Used to lazily fetch pin icon/color data once a marker becomes individually
-     * visible, instead of upfront for every location.
-     *
-     * @param {string[]} uuids - Location UUIDs to fetch styling for
-     * @returns {Promise<Object<string, Object>>} Promise resolving to a map of
-     *   uuid -> styling field values; uuids with no styling are simply absent
-     */
-    getMarkerStyles: async uuids => {
-        if (!uuids.length) {
-            return {};
-        }
-        const params = new URLSearchParams();
-        for (const uuid of uuids) {
-            params.append('uuid', uuid);
-        }
-        const response = await fetch(`${LOCATIONS_MARKER_STYLES}?${params.toString()}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
-        return jsonOrThrow(response, 'marker styles');
     },
 
     /**

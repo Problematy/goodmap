@@ -7,6 +7,7 @@ import os
 from typing import Any
 
 from flask import Blueprint, jsonify, redirect, render_template, session
+from flask_compress import Compress
 from flask_wtf.csrf import CSRFError
 from platzky import platzky
 from platzky.config import languages_dict
@@ -15,6 +16,7 @@ from platzky.plugin.content_transformer import ContentTransformerPluginBase
 from platzky.shortcodes import Shortcode
 
 from goodmap.api.admin_api import admin_pages
+from goodmap.api.api_models import PinMarkerFields
 from goodmap.api.core_api import core_pages
 from goodmap.config import GoodmapConfig
 from goodmap.data_models.location import create_location_model
@@ -150,6 +152,12 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         extra_plugins_entrypoints=[_PLUGIN_ENTRY_POINT_GROUP],
     )
 
+    # Compress JSON/text responses (gzip, or brotli/zstd if the client offers them).
+    # Not every deployment sits behind a proxy that already does this, and it's a
+    # sizeable win for /api/locations, whose repeated marker-styling field values
+    # compress especially well.
+    Compress(app)
+
     frontend_static_dir = os.path.join(directory, "static", "frontend")
     app.register_blueprint(
         Blueprint(
@@ -175,11 +183,6 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
     location_obligatory_fields = get_location_obligatory_fields(app.db)
     categories = get_category_data(app.db)(app.db)["categories"]
     marker_styles = get_marker_styles(app.db)(app.db)
-    marker_style_fields = {
-        field
-        for field in (marker_styles.get("icon_field"), marker_styles.get("color_field"))
-        if field is not None
-    }
 
     location_model = create_location_model(location_obligatory_fields, categories)
     app.db = extend_db_with_goodmap_queries(app.db, location_model)
@@ -188,8 +191,21 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
     # pin_marker_fields is app-wiring knowledge - which of this deployment's fields
     # marker_styles.icon_field/color_field actually point at - not something the
     # location model itself needs to know; threaded to core_pages() for
-    # goodmap.api.api_models.marker_style_values() to use.
-    pin_marker_fields = frozenset(marker_style_fields) & obligatory_field_names
+    # goodmap.api.api_models.marker_style_values() to use. A configured field that
+    # isn't actually an obligatory field of this deployment's locations is dropped
+    # rather than trusted blindly.
+    pin_marker_fields = PinMarkerFields(
+        icon_field=(
+            marker_styles.get("icon_field")
+            if marker_styles.get("icon_field") in obligatory_field_names
+            else None
+        ),
+        color_field=(
+            marker_styles.get("color_field")
+            if marker_styles.get("color_field") in obligatory_field_names
+            else None
+        ),
+    )
 
     app.extensions["goodmap"] = {"location_obligatory_fields": location_obligatory_fields}
 

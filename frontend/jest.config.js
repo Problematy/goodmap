@@ -22,6 +22,5 @@ module.exports = {
     moduleNameMapper: {
         '\\.(css|less)$': '<rootDir>/__mocks__/styleMock.js',
         '\\.(png|jpg|jpeg|gif|svg)$': '<rootDir>/__mocks__/fileMock.js',
-        'resolvePhosphorIconUrl$': '<rootDir>/__mocks__/resolvePhosphorIconUrlMock.js',
     },
 };

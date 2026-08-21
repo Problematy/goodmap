@@ -7,7 +7,7 @@ import resolvePhosphorIconUrl from './resolvePhosphorIconUrl';
 
 const PIN_WIDTH = 45;
 const PIN_HEIGHT = 50;
-// The marker's default color (used whenever color_field doesn't match) is
+// The marker's default color (used whenever marker.color doesn't match) is
 // always the page's own secondary color, not a separately configurable value.
 const FALLBACK_COLOR = globalThis.SECONDARY_COLOR || 'black';
 
@@ -18,12 +18,12 @@ const TYPE_ICON_OFFSET_LEFT = 12;
 /**
  * Resolves a configured marker_styles.icons entry to a usable URL. Supports a
  * plain string (a direct URL, as before) and a tagged {provider, value} object:
- * provider "phosphor" resolves value (an icon name) against the bundled
- * @phosphor-icons/core set - no external request; provider "url" is the same
- * as a plain string, spelled out explicitly.
+ * provider "phosphor" builds a jsdelivr CDN URL for value (an icon name), see
+ * resolvePhosphorIconUrl; provider "url" is the same as a plain string, spelled
+ * out explicitly.
  *
  * @param {string|{provider: string, value: string}|undefined} icon
- * @returns {string} A usable URL, or '' if icon is unset or unresolvable
+ * @returns {string} A usable URL, or '' if icon is unset
  */
 const resolveIconUrl = icon => {
     if (!icon) {
@@ -111,28 +111,26 @@ PinIcon.propTypes = {
 /**
  * Builds a Leaflet icon for `place`: colored/typed from the deployment's
  * marker styling lookup table (window.MARKER_STYLES, see goodmap's
- * db.get_marker_styles) when it matches, our own pin in the fallback color
- * with just the asterisk badge when `place.has_remark` is set but nothing
- * matched, or `null` (falls back to Leaflet's default marker) when there's
- * neither a match nor a remark to show.
+ * db.get_marker_styles) when `place.marker`'s icon/color match an entry,
+ * our own pin in the fallback color with just the asterisk badge when
+ * `place.marker.badge` is set but nothing matched, or `null` (falls back to
+ * Leaflet's default marker) when there's neither a match nor a badge to show.
  *
  * Each entry in MARKER_STYLES.icons is either a plain URL string, or a tagged
  * {provider: "phosphor", value: "<icon-name>"} / {provider: "url", value: "<url>"}
  * object - see resolveIconUrl.
  *
- * @param {Object} place - Location data from GET /api/locations, merged with any
- *   styling lazily fetched for it from GET /api/locations/marker-styles (has_remark
- *   and marker_styles field values aren't in the initial /api/locations response -
- *   see lazy-load-marker-styling-plan.md)
+ * @param {Object} place - Location data, as returned by GET /api/locations
+ * @param {Object} [place.marker] - Pin styling: {icon, color, badge}
  * @returns {import('leaflet').DivIcon|null}
  */
 const getTypedMarkerIcon = place => {
-    const markerStyles = globalThis.MARKER_STYLES || {};
-    const { icon_field: iconField, color_field: colorField, icons, colors } = markerStyles;
+    const { icons, colors } = globalThis.MARKER_STYLES || {};
+    const marker = place.marker || {};
 
-    const typeIconUrl = resolveIconUrl(icons?.[place[iconField]]);
-    const matchedColor = colors?.[place[colorField]] || '';
-    const hasRemark = Boolean(place.has_remark);
+    const typeIconUrl = resolveIconUrl(icons?.[marker.icon]);
+    const matchedColor = colors?.[marker.color] || '';
+    const hasRemark = Boolean(marker.badge);
 
     if (!typeIconUrl && !matchedColor && !hasRemark) {
         return null;

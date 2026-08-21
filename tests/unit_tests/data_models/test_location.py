@@ -133,9 +133,9 @@ def test_category_validation_rejects_invalid_list_item():
 def test_basic_info_is_identity_and_position_only():
     """basic_info() carries uuid/position only, even for a category field a
     deployment's marker_styles config might reference and even when the location
-    has a remark - both has_remark and marker styling values are fetched
-    separately (see goodmap.api.api_models.marker_style_values and
-    lazy-load-marker-styling-plan.md), only once a marker is actually visible."""
+    has a remark - the marker object (icon/color/badge) is shaped separately
+    (see goodmap.api.api_models.marker_style_values), merged in alongside
+    basic_info() by the API layer rather than known to the domain model itself."""
     location_model = create_location_model(
         obligatory_fields=[("type_of_place", "str"), ("name", "str")],
         categories={"type_of_place": ["parcel_locker", "container"]},

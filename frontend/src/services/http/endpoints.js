@@ -29,14 +29,6 @@ export const LOCATIONS = '/api/locations';
 export const LOCATIONS_CLUSTERED = '/api/locations-clustered';
 
 /**
- * API endpoint for lazily fetching marker styling field values (whatever
- * marker_styles.icon_field/color_field point at) for specific locations, by uuid.
- * Used once a location's marker becomes individually visible, instead of upfront
- * for every location - see lazy-load-marker-styling-plan.md.
- */
-export const LOCATIONS_MARKER_STYLES = '/api/locations/marker-styles';
-
-/**
  * External API endpoint for address search (forward geocoding) using OpenStreetMap Nominatim.
  * Converts addresses/place names to geographic coordinates.
  */

@@ -64,9 +64,9 @@ ordinary field of your own:
    Used as the marker popup's **subtitle**.
 
 ``remark`` (optional)
-   Free text. Its presence — not its content — is exposed by ``/api/locations`` as a
-   boolean, so the frontend can flag points that have something noteworthy without
-   fetching them all.
+   Free text. Its presence — not its content — is exposed by ``/api/locations`` as
+   ``marker.badge: true`` (see :ref:`data-source-marker-styles`), so the frontend can
+   flag points that have something noteworthy without fetching them all.
 
 Everything else is yours. Custom fields are only *shown* if you list them in
 ``visible_data``, and only *filterable* if you list them in ``categories``.
@@ -254,6 +254,49 @@ Putting it together
 Each category's active mode is exposed as ``filter_mode`` in the
 ``/api/categories-full`` response, so a custom frontend can render the right control —
 checkbox or radio — without hardcoding category names.
+
+.. _data-source-marker-styles:
+
+Marker styles
+-------------
+
+``marker_styles`` picks which of your fields drive each point's pin icon and color, and
+supplies the lookup tables the frontend resolves them through. It is entirely optional —
+a map with no ``marker_styles`` still renders, just with plain pins.
+
+.. code-block:: json
+
+   {
+     "marker_styles": {
+       "icon_field": "type_of_place",
+       "color_field": "transparency",
+       "icons": {
+         "big bridge": "https://cdn.example.com/bridge.svg",
+         "container": {"provider": "phosphor", "value": "shipping-container"}
+       },
+       "colors": {
+         "lacking": "#c62828",
+         "full": "#2e7d32"
+       }
+     }
+   }
+
+``icon_field``, ``color_field``
+   Names of fields on your points (typically ones already listed in ``categories``)
+   whose *value* selects the icon/color for that point. Either or both may be omitted.
+
+``icons``
+   Maps a value of ``icon_field`` to either a plain URL string, or
+   ``{"provider": "phosphor", "value": "<icon-name>"}`` to use a `Phosphor
+   <https://phosphoricons.com/>`_ icon by name instead of hosting your own SVG.
+
+``colors``
+   Maps a value of ``color_field`` to a CSS color.
+
+A point whose ``icon_field``/``color_field`` value has no entry in ``icons``/``colors``
+simply renders without that part of the styling — this is not an error. A point with a
+``remark`` (see above) always gets the asterisk badge regardless of whether its icon/color
+matched anything.
 
 User submissions
 ----------------

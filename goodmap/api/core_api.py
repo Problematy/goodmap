@@ -25,12 +25,11 @@ from goodmap.api.api_models import (
     LanguagesResponse,
     LocationDetail,
     LocationList,
-    LocationMarkerStyles,
     LocationQueryParams,
     LocationReportRequest,
     LocationReportResponse,
     LocationSchemaResponse,
-    MarkerStylesQueryParams,
+    PinMarkerFields,
     SuccessResponse,
     VersionResponse,
     marker_style_values,
@@ -121,20 +120,27 @@ def make_tuple_translation(keys_to_translate):
     return [(x, gettext(x)) for x in keys_to_translate]
 
 
-def get_locations_from_request(database, request_args):
+def get_locations_from_request(database, request_args, pin_marker_fields):
     """
     Shared helper to fetch locations from database based on request arguments.
 
     Args:
         database: Database instance
         request_args: Request arguments (flask.request.args)
+        pin_marker_fields: This deployment's marker_styles icon_field/color_field
+            names - merged into each location's basic_info as a nested `marker`
+            object so the frontend can style pins without a further per-location
+            request.
 
     Returns:
-        List of locations as basic_info dicts
+        List of locations as basic_info dicts, each merged with marker_style_values.
     """
     query_params = request_args.to_dict(flat=False)
     all_locations = database.get_locations(query_params)
-    return [x.basic_info() for x in all_locations]
+    return [
+        {**location.basic_info(), **marker_style_values(location, pin_marker_fields)}
+        for location in all_locations
+    ]
 
 
 def photo_attachment_from_request(photo_attachment_config: AttachmentConfig):
@@ -198,7 +204,7 @@ def core_pages(
     photo_attachment_config: AttachmentConfig,
     feature_flags: FeatureFlagSet,
     shortcodes: dict[str, Shortcode],
-    pin_marker_fields: frozenset[str] = frozenset(),
+    pin_marker_fields: PinMarkerFields = PinMarkerFields(),
 ) -> Blueprint:
     core_api_blueprint = Blueprint("api", __name__, url_prefix="/api")
 
@@ -345,11 +351,11 @@ def core_pages(
     def get_locations():
         """Get list of locations with basic info.
 
-        Returns locations filtered by query parameters, showing only uuid and
-        position. Pin styling (has_remark, marker_styles field values) is fetched
-        separately, per-uuid, via /api/locations/marker-styles.
+        Returns locations filtered by query parameters: uuid, position, and a
+        `marker` object (icon/color/badge) with everything needed to render a
+        styled pin.
         """
-        locations = get_locations_from_request(database, request.args)
+        locations = get_locations_from_request(database, request.args, pin_marker_fields)
         return jsonify(locations)
 
     @core_api_blueprint.route("/locations-clustered", methods=["GET"])
@@ -368,7 +374,7 @@ def core_pages(
             query_params = request.args.to_dict(flat=False)
             zoom = int(query_params.get("zoom", [7])[0])
 
-            points = get_locations_from_request(database, request.args)
+            points = get_locations_from_request(database, request.args, pin_marker_fields)
             if not points:
                 return jsonify([])
 
@@ -422,30 +428,6 @@ def core_pages(
         meta_data = database.get_meta_data()
         formatted_data = prepare_pin(location.model_dump(), visible_data, meta_data, shortcodes)
         return jsonify(formatted_data)
-
-    @core_api_blueprint.route("/locations/marker-styles", methods=["GET"])
-    @spec.validate(
-        tags=[TAG_MAP_DATA],
-        query=MarkerStylesQueryParams,
-        resp=Response(HTTP_200=LocationMarkerStyles),
-    )
-    def get_locations_marker_styles():
-        """Get pin styling data for specific locations, by uuid.
-
-        For lazily fetching has_remark and marker_styles-relevant field values
-        only once a client-side-clustered marker becomes individually visible,
-        instead of the frontend getting them upfront for every location (see
-        lazy-load-marker-styling-plan.md). Unknown or missing uuids are
-        silently omitted from the response rather than erroring the whole
-        request - a marker that's re-clustered mid-flight isn't a client bug.
-        """
-        result: dict[str, dict[str, Any]] = {}
-        for location_uuid in request.args.getlist("uuid"):
-            location = database.get_location(location_uuid)
-            if location is None:
-                continue
-            result[location_uuid] = marker_style_values(location, pin_marker_fields)
-        return jsonify(result)
 
     @core_api_blueprint.route("/version", methods=["GET"])
     @spec.validate(tags=[TAG_META], resp=Response(HTTP_200=VersionResponse))

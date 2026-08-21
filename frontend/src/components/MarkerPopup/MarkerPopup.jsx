@@ -5,13 +5,11 @@ import { isMobile } from 'react-device-detect';
 import { useTranslation } from 'react-i18next';
 import httpService from '../../services/http/httpService';
 import useMapStore from '../Map/store/map.store';
-import useMarkerStylesStore from '../Map/store/markerStyles.store';
 
 import LocationDetailsBox from './LocationDetails';
 import MobilePopup from './MobilePopup';
 import DesktopPopup from './DesktopPopup';
 import getTypedMarkerIcon from './getTypedMarkerIcon';
-import requestMarkerStyle from './requestMarkerStyle';
 
 /**
  * Wrapper component that fetches full location details and renders them in a popup.
@@ -77,13 +75,12 @@ LocationDetailsBoxWrapper.propTypes = {
  * @param {Object} props - Component props
  * @param {Object} props.place - Location data object
  * @param {number[]} props.place.position - Coordinates [latitude, longitude]
- * @param {boolean} [props.place.has_remark] - Whether this location has a remark (adds an asterisk badge if true)
+ * @param {Object} [props.place.marker] - Pin styling; marker.badge true adds an asterisk badge
  * @returns {React.ReactElement} Leaflet Marker component with click-to-show-details functionality
  */
 const MarkerPopup = ({ place }) => {
     const selectedLocationId = useMapStore(state => state.selectedLocationId);
     const setSelectedLocationId = useMapStore(state => state.setSelectedLocationId);
-    const lazyMarkerStyle = useMarkerStylesStore(state => state.stylesByUuid[place.uuid]);
     const [isClicked, setIsClicked] = useState(false);
 
     // TODO: this only opens the popup if `place`'s Marker is actually attached to
@@ -105,20 +102,14 @@ const MarkerPopup = ({ place }) => {
         setIsClicked(true);
     };
 
-    const handleMarkerVisible = () => {
-        requestMarkerStyle(place.uuid);
-    };
-
     const markerProps = {
         position: place.position,
         eventHandlers: {
             click: handleMarkerClick,
-            add: handleMarkerVisible,
         },
     };
 
-    const styledPlace = lazyMarkerStyle ? { ...place, ...lazyMarkerStyle } : place;
-    const typedIcon = getTypedMarkerIcon(styledPlace);
+    const typedIcon = getTypedMarkerIcon(place);
     if (typedIcon) {
         markerProps.icon = typedIcon;
     }
@@ -134,7 +125,11 @@ const MarkerPopup = ({ place }) => {
 MarkerPopup.propTypes = {
     place: PropTypes.shape({
         position: PropTypes.arrayOf(PropTypes.number).isRequired,
-        has_remark: PropTypes.bool, // eslint-disable-line camelcase -- matches backend API schema property name
+        marker: PropTypes.shape({
+            icon: PropTypes.oneOfType([PropTypes.string, PropTypes.number, PropTypes.bool]),
+            color: PropTypes.oneOfType([PropTypes.string, PropTypes.number, PropTypes.bool]),
+            badge: PropTypes.bool,
+        }),
         uuid: PropTypes.string.isRequired,
     }).isRequired,
 };

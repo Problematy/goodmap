@@ -21,6 +21,14 @@ module.exports = (env, argv) => {
         ],
         cache: {
             type: 'filesystem',
+            // webpack-dev-server (serve:local/serve:prod/serve:network, all pass
+            // --env serve=...) injects HMR machinery into its build even under
+            // --mode production - sharing a cache namespace with the plain `build`
+            // script (same mode, no --env) corrupts it: a later plain build can hit
+            // dev-server-only constructs (e.g. HarmonyAcceptDependency) it doesn't
+            // know how to handle, crashing with "Invalid value used as weak map
+            // key". Keying the cache name off env.serve keeps the two fully apart.
+            name: env && env.serve ? 'dev-server' : 'build',
             cacheDirectory: path.resolve(__dirname, '.webpack-cache'),
             buildDependencies: {
                 config: [__filename],
@@ -54,25 +62,10 @@ module.exports = (env, argv) => {
                 },
                 {
                     test: /\.(jpe?g|png|gif|woff|woff2|eot|ttf|svg)$/i,
-                    exclude: /@phosphor-icons\/core/,
                     loader: 'url-loader',
                     options: {
                         limit: 8192,
                         name: '[path][name].[ext]',
-                    },
-                },
-                {
-                    // @phosphor-icons/core's full icon set is pulled in via
-                    // require.context (see resolvePhosphorIconUrl.js) so any icon
-                    // can be referenced by name from deployment config, without a
-                    // frontend code change - never inline these (limit: 0), or that
-                    // whole set would bloat the main JS bundle instead of staying as
-                    // separate files fetched only for icons actually rendered.
-                    test: /@phosphor-icons\/core.*\.svg$/i,
-                    loader: 'url-loader',
-                    options: {
-                        limit: 0,
-                        name: 'phosphor-icons/[name].[ext]',
                     },
                 },
             ],

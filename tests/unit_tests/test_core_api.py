@@ -272,6 +272,7 @@ def test_get_locations(test_app):
         {
             "uuid": "11111111-1111-1111-1111-111111111111",
             "position": [50, 50],
+            "marker": {"badge": True},
         },
         {
             "uuid": "22222222-2222-2222-2222-222222222222",
@@ -313,44 +314,26 @@ def test_get_locations_accepts_valid_and_undeclared_parameters(test_app, query):
     assert response.status_code == 200
 
 
-# Fixture shared by the /api/locations and /api/locations/marker-styles tests
-# below: point_type-categorized locker locations with a matching marker_styles
-# config. Kept as data + a small factory, not one big db_overrides literal per
-# test, so each test only states what it actually varies.
-_LOCKER_LOCATIONS = [
-    {
-        "name": "locker-1",
-        "position": [50, 50],
-        "point_type": "parcel_locker",
-        "uuid": "11111111-1111-1111-1111-111111111111",
-    },
-    {
-        "name": "locker-2",
-        "position": [51, 51],
-        "point_type": "container",
-        "uuid": "22222222-2222-2222-2222-222222222222",
-    },
-]
-
-
-def _create_marker_styles_test_app(data=_LOCKER_LOCATIONS, **db_overrides):
-    overrides = {
-        "categories": {"point_type": ["parcel_locker", "container"]},
-        "location_obligatory_fields": [("point_type", "str"), ("name", "str")],
-        "marker_styles": {"icon_field": "point_type", "icons": {}, "colors": {}},
-        "data": data,
-        "visible_data": ["name", "point_type"],
-    }
-    overrides.update(db_overrides)
-    return create_test_app(db_overrides=overrides)
-
-
-def test_get_locations_omits_marker_style_field_values():
-    """/api/locations should not surface the field marker_styles.icon_field
-    points at (e.g. a point-type category) - that value is fetched lazily via
-    /api/locations/marker-styles, only once a marker is individually visible,
-    instead of upfront for every location (see lazy-load-marker-styling-plan.md)."""
-    client = _create_marker_styles_test_app(data=_LOCKER_LOCATIONS[:1])
+def test_get_locations_includes_category_field_for_pin_styling():
+    """/api/locations should surface the field marker_styles.icon_field points at
+    (e.g. a point-type category), so the frontend can pick a marker icon/color
+    without a full per-location detail fetch."""
+    client = create_test_app(
+        db_overrides={
+            "categories": {"point_type": ["parcel_locker", "container"]},
+            "location_obligatory_fields": [("point_type", "str"), ("name", "str")],
+            "marker_styles": {"icon_field": "point_type", "icons": {}, "colors": {}},
+            "data": [
+                {
+                    "name": "locker-1",
+                    "position": [50, 50],
+                    "point_type": "parcel_locker",
+                    "uuid": "11111111-1111-1111-1111-111111111111",
+                },
+            ],
+            "visible_data": ["name", "point_type"],
+        }
+    )
 
     response = client.get("/api/locations")
 
@@ -359,104 +342,9 @@ def test_get_locations_omits_marker_style_field_values():
         {
             "uuid": "11111111-1111-1111-1111-111111111111",
             "position": [50, 50],
+            "marker": {"icon": "parcel_locker"},
         },
     ]
-
-
-def test_get_locations_marker_styles_returns_requested_uuids_styling():
-    """The lazy marker-styles endpoint returns just the marker_styles-relevant
-    field values for the requested uuids, not the full location."""
-    client = _create_marker_styles_test_app()
-
-    response = client.get("/api/locations/marker-styles?uuid=11111111-1111-1111-1111-111111111111")
-
-    assert response.status_code == 200
-    assert response.json == {
-        "11111111-1111-1111-1111-111111111111": {
-            "has_remark": False,
-            "point_type": "parcel_locker",
-        },
-    }
-
-
-def test_get_locations_marker_styles_supports_multiple_uuids():
-    client = _create_marker_styles_test_app()
-
-    response = client.get(
-        "/api/locations/marker-styles"
-        "?uuid=11111111-1111-1111-1111-111111111111"
-        "&uuid=22222222-2222-2222-2222-222222222222"
-    )
-
-    assert response.status_code == 200
-    assert response.json == {
-        "11111111-1111-1111-1111-111111111111": {
-            "has_remark": False,
-            "point_type": "parcel_locker",
-        },
-        "22222222-2222-2222-2222-222222222222": {
-            "has_remark": False,
-            "point_type": "container",
-        },
-    }
-
-
-def test_get_locations_marker_styles_omits_unknown_uuids():
-    """An unknown/re-clustered-away uuid doesn't error the whole request - it's
-    just absent from the response."""
-    client = _create_marker_styles_test_app(
-        data=_LOCKER_LOCATIONS[:1], categories={"point_type": ["parcel_locker"]}
-    )
-
-    response = client.get(
-        "/api/locations/marker-styles"
-        "?uuid=11111111-1111-1111-1111-111111111111"
-        "&uuid=99999999-9999-9999-9999-999999999999"
-    )
-
-    assert response.status_code == 200
-    assert response.json == {
-        "11111111-1111-1111-1111-111111111111": {
-            "has_remark": False,
-            "point_type": "parcel_locker",
-        },
-    }
-
-
-def test_get_locations_marker_styles_includes_has_remark_without_marker_styles_config():
-    """has_remark drives the asterisk badge independently of marker_styles -
-    deployments with no icon_field/color_field configured still need it fetched
-    lazily, the same as everyone else."""
-    client = create_test_app(
-        db_overrides={
-            "categories": {},
-            "location_obligatory_fields": [("name", "str")],
-            "data": [
-                {
-                    "name": "test",
-                    "position": [50, 50],
-                    "uuid": "11111111-1111-1111-1111-111111111111",
-                    "remark": "this is a remark",
-                },
-            ],
-        }
-    )
-
-    response = client.get("/api/locations/marker-styles?uuid=11111111-1111-1111-1111-111111111111")
-
-    assert response.status_code == 200
-    assert response.json == {
-        "11111111-1111-1111-1111-111111111111": {"has_remark": True},
-    }
-
-
-def test_get_locations_marker_styles_empty_query_returns_empty_object():
-    client = create_test_app(db_overrides={"categories": {}})
-
-    response = client.get("/api/locations/marker-styles")
-
-    assert response.status_code == 200
-    assert response.json == {}
 
 
 def test_get_locations_multi_value_same_category_uses_or_semantics():
@@ -1082,12 +970,24 @@ def test_location_clustering_high_zoom_no_clusters(test_app):
     assert data[1]["type"] == "point"
 
 
+def test_location_clustering_point_entries_carry_marker(test_app):
+    """The clustered endpoint's point entries carry the same `marker` object as
+    /api/locations - the clustering pass must not drop it (goodmap/clustering.py)."""
+    response = test_app.get("/api/locations-clustered?zoom=16")
+    assert response.status_code == 200
+    data = response.json
+    by_uuid = {entry["uuid"]: entry for entry in data}
+    assert by_uuid["11111111-1111-1111-1111-111111111111"]["marker"] == {"badge": True}
+    assert by_uuid["22222222-2222-2222-2222-222222222222"]["marker"] is None
+
+
 def test_location_clustering_low_zoom_creates_clusters(test_app):
     response = test_app.get("/api/locations-clustered?zoom=1")
     assert response.status_code == 200
     data = response.json
     assert len(data) == 1
     assert data[0]["type"] == "cluster"
+    assert "marker" not in data[0]
 
 
 @pytest.mark.parametrize(
@@ -1183,6 +1083,7 @@ def test_issue_options_defaults_to_empty_when_missing():
 
 
 def test_get_locations_from_request_helper(test_app):
+    from goodmap.api.api_models import PinMarkerFields
     from goodmap.api.core_api import get_locations_from_request
 
     class MockArgs:
@@ -1192,7 +1093,9 @@ def test_get_locations_from_request_helper(test_app):
     mock_request_args = MockArgs()
 
     with test_app.application.app_context():
-        locations = get_locations_from_request(test_app.application.db, mock_request_args)
+        locations = get_locations_from_request(
+            test_app.application.db, mock_request_args, PinMarkerFields()
+        )
         assert isinstance(locations, list)
         if locations:
             assert isinstance(locations[0], dict)
