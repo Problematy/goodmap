@@ -126,8 +126,11 @@ Query parameters:
 
    curl 'http://localhost:5000/api/locations?accessible_by=bikes&lat=51.10&lon=17.05&limit=5'
 
-Each point comes back as ``uuid``, ``position`` and ``has_remark`` — a **boolean**, whether
-the point has a remark, not its text.
+Each point comes back as ``uuid`` and ``position``, plus a ``marker`` object with the pin
+styling: ``icon``/``color`` (the raw values of whichever fields this deployment's
+``marker_styles`` config names, see :ref:`data-source-marker-styles`) and ``badge: true``
+when the point has a remark. ``marker`` is left out entirely when none of that applies to
+a point, and inside it each key is left out rather than sent as ``null``/``false``.
 
 A ``lat``, ``lon`` or ``limit`` that cannot mean anything — not a number, or outside the
 range above — is a ``400 {"message": "Invalid request data"}`` rather than a silently
@@ -147,10 +150,11 @@ Takes every parameter of :ref:`api-locations`, plus ``zoom`` (integer, **0–16*
 bad ``lat``, is a ``400``.
 
 Points and clusters come back in one list, told apart by ``type``. A ``"point"`` carries
-a real ``uuid`` you can pass to :ref:`api-location-detail`; a ``"cluster"`` carries a
-freshly-generated ``cluster_uuid`` (not stable across requests — it is a render key, not
-an identifier) and the number of points it stands for. ``position`` is
-``[latitude, longitude]``, as everywhere else.
+a real ``uuid`` you can pass to :ref:`api-location-detail`, plus the same ``marker`` object
+as ``/api/locations``; a ``"cluster"`` carries a freshly-generated ``cluster_uuid`` (not
+stable across requests — it is a render key, not an identifier) and the number of points
+it stands for, but no ``marker``. ``position`` is ``[latitude, longitude]``, as everywhere
+else.
 
 .. _api-location-detail:
 

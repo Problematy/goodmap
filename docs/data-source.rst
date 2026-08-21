@@ -27,8 +27,9 @@ and their schema, alongside platzky's ``site_content`` section:
 
 Note that ``plugins`` is a **sibling** of ``map``, not a key inside it.
 
-Only ``data`` and ``categories`` are structurally required; ``suggestions`` and
-``reports`` are created by the app as users submit things.
+Only ``data`` is structurally required. ``categories`` defaults to no categories
+if omitted (a map with only plain, unfiltered points is a valid setup); ``suggestions``
+and ``reports`` are created by the app as users submit things.
 
 Points
 ------
@@ -63,9 +64,9 @@ ordinary field of your own:
    Used as the marker popup's **subtitle**.
 
 ``remark`` (optional)
-   Free text. Its presence — not its content — is exposed by ``/api/locations`` as a
-   boolean, so the frontend can flag points that have something noteworthy without
-   fetching them all.
+   Free text. Its presence — not its content — is exposed by ``/api/locations`` as
+   ``marker.badge: true`` (see :ref:`data-source-marker-styles`), so the frontend can
+   flag points that have something noteworthy without fetching them all.
 
 Everything else is yours. Custom fields are only *shown* if you list them in
 ``visible_data``, and only *filterable* if you list them in ``categories``.
@@ -78,6 +79,8 @@ Everything else is yours. Custom fields are only *shown* if you list them in
 
 Field schema
 ------------
+
+.. _data-model-location_obligatory_fields:
 
 ``location_obligatory_fields``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -107,12 +110,6 @@ This drives three things at once:
 - **The suggest-a-point form.** The frontend generates its fields from this schema.
 - **Length limits.** String fields are capped at 200 characters, lists at 20 items of at
   most 100 characters each.
-
-.. important::
-
-   This key is only read when the ``USE_LAZY_LOADING`` feature flag is on. With it off,
-   nothing beyond ``uuid``/``position``/``remark`` is validated and the suggest form comes
-   up empty. See :ref:`config-feature-flags`.
 
 .. _data-model-visible_data:
 
@@ -259,6 +256,69 @@ Putting it together
 Each category's active mode is exposed as ``filter_mode`` in the
 ``/api/categories-full`` response, so a custom frontend can render the right control —
 checkbox or radio — without hardcoding category names.
+
+.. _data-source-marker-styles:
+
+Marker styles
+-------------
+
+``marker_styles`` picks which of your fields drive each point's pin icon and color, and
+supplies the lookup tables those values are resolved through. It is entirely optional —
+a map with no ``marker_styles`` still renders, just with plain pins.
+
+.. code-block:: json
+
+   {
+     "marker_styles": {
+       "icon_field": "type_of_place",
+       "color_field": "transparency",
+       "icon_provider": "phosphor",
+       "icons": {
+         "big bridge": "bridge",
+         "container": "shipping-container"
+       },
+       "colors": {
+         "lacking": "#c62828",
+         "full": "#2e7d32"
+       }
+     }
+   }
+
+``icon_field``, ``color_field``
+   Names of fields on your points whose *value* selects the icon/color for that point.
+   Either or both may be omitted.
+
+   Each must be declared in :ref:`data-model-location_obligatory_fields` — a field
+   every point is guaranteed to have, so that styling is never driven by something
+   only some of your points carry. A name that isn't declared there is ignored, and
+   pins get no icon/color from it.
+
+``icon_provider``
+   Where your icons come from. One provider serves the whole ``icons`` table:
+
+   ``phosphor``
+      Entries are `Phosphor <https://phosphoricons.com/>`_ icon names in kebab-case
+      (e.g. ``"shipping-container"``), so you need not host SVGs yourself.
+   ``url``
+      Entries are URLs of SVGs you host.
+
+   Required whenever ``icons`` has anything in it. Naming a provider GoodMap does not
+   know stops the app from starting, so the mistake surfaces on deploy rather than as a
+   silently unstyled pin.
+
+``icons``
+   Maps a value of ``icon_field`` to whatever ``icon_provider`` takes — an icon name for
+   ``phosphor``, a URL for ``url``. GoodMap turns these into finished URLs when the app
+   starts, so the browser never sees the provider and adding a new one needs no frontend
+   release.
+
+``colors``
+   Maps a value of ``color_field`` to a CSS color.
+
+A point whose ``icon_field``/``color_field`` value has no entry in ``icons``/``colors``
+simply renders without that part of the styling — this is not an error. A point with a
+``remark`` (see above) always gets the asterisk badge regardless of whether its icon/color
+matched anything.
 
 User submissions
 ----------------

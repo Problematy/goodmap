@@ -29,8 +29,10 @@ from goodmap.api.api_models import (
     LocationReportRequest,
     LocationReportResponse,
     LocationSchemaResponse,
+    PinMarkerFields,
     SuccessResponse,
     VersionResponse,
+    marker_style_values,
 )
 from goodmap.clustering import (
     MAX_ZOOM,
@@ -118,20 +120,27 @@ def make_tuple_translation(keys_to_translate):
     return [(x, gettext(x)) for x in keys_to_translate]
 
 
-def get_locations_from_request(database, request_args):
+def get_locations_from_request(database, request_args, pin_marker_fields):
     """
     Shared helper to fetch locations from database based on request arguments.
 
     Args:
         database: Database instance
         request_args: Request arguments (flask.request.args)
+        pin_marker_fields: This deployment's marker_styles icon_field/color_field
+            names - merged into each location's basic_info as a nested `marker`
+            object so the frontend can style pins without a further per-location
+            request.
 
     Returns:
-        List of locations as basic_info dicts
+        List of locations as basic_info dicts, each merged with marker_style_values.
     """
     query_params = request_args.to_dict(flat=False)
     all_locations = database.get_locations(query_params)
-    return [x.basic_info() for x in all_locations]
+    return [
+        {**location.basic_info(), **marker_style_values(location, pin_marker_fields)}
+        for location in all_locations
+    ]
 
 
 def photo_attachment_from_request(photo_attachment_config: AttachmentConfig):
@@ -195,6 +204,7 @@ def core_pages(
     photo_attachment_config: AttachmentConfig,
     feature_flags: FeatureFlagSet,
     shortcodes: dict[str, Shortcode],
+    pin_marker_fields: PinMarkerFields,
 ) -> Blueprint:
     core_api_blueprint = Blueprint("api", __name__, url_prefix="/api")
 
@@ -341,10 +351,11 @@ def core_pages(
     def get_locations():
         """Get list of locations with basic info.
 
-        Returns locations filtered by query parameters,
-        showing only uuid, position, and whether each has a remark.
+        Returns locations filtered by query parameters: uuid, position, and a
+        `marker` object (icon/color/badge) with everything needed to render a
+        styled pin.
         """
-        locations = get_locations_from_request(database, request.args)
+        locations = get_locations_from_request(database, request.args, pin_marker_fields)
         return jsonify(locations)
 
     @core_api_blueprint.route("/locations-clustered", methods=["GET"])
@@ -363,7 +374,7 @@ def core_pages(
             query_params = request.args.to_dict(flat=False)
             zoom = int(query_params.get("zoom", [7])[0])
 
-            points = get_locations_from_request(database, request.args)
+            points = get_locations_from_request(database, request.args, pin_marker_fields)
             if not points:
                 return jsonify([])
 

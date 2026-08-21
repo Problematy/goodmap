@@ -85,10 +85,8 @@ class LocationBase(BaseModel, extra="allow"):
         return super().model_dump(**kwargs)
 
     def basic_info(self) -> dict[str, Any]:
-        """Get basic location information summary."""
-        data = self.model_dump(include={"uuid", "position"})
-        data["has_remark"] = bool(self.remark)
-        return data
+        """Get basic location information summary: identity and position only."""
+        return self.model_dump(include={"uuid", "position"})
 
 
 _TYPE_MAPPING: dict[str, type] = {

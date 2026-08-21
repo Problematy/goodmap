@@ -6,7 +6,7 @@ const deps = require('./package.json').dependencies;
 
 module.exports = (env, argv) => {
     const IS_PROD = argv.mode === 'production';
-    const runOnAllInterfaces = env && env.serve === 'network';
+    const runOnAllInterfaces = env?.serve === 'network';
 
     return {
         plugins: [
@@ -21,6 +21,7 @@ module.exports = (env, argv) => {
         ],
         cache: {
             type: 'filesystem',
+            name: env?.serve ? 'dev-server' : 'build',
             cacheDirectory: path.resolve(__dirname, '.webpack-cache'),
             buildDependencies: {
                 config: [__filename],

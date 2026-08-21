@@ -5,7 +5,7 @@ import pytest
 from platzky import FeatureFlag, FeatureFlagSet
 
 from goodmap.config import GoodmapConfig
-from goodmap.feature_flags import CategoriesHelp, EnableAdminPanel, UseLazyLoading
+from goodmap.feature_flags import CategoriesHelp, EnableAdminPanel
 from goodmap.goodmap import create_app_from_config
 
 
@@ -101,7 +101,7 @@ def multipart_suggest_post(client, location, photo=None):
 
 
 def create_test_app(
-    feature_flags=make_flag_set(CategoriesHelp, UseLazyLoading, EnableAdminPanel),
+    feature_flags=make_flag_set(CategoriesHelp, EnableAdminPanel),
     db_overrides=None,
 ):
     """Create a test app with optional feature flags and db overrides."""

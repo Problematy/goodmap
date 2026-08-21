@@ -112,7 +112,8 @@
         "is_free": "true",
         "speed_limit": "10",
         "amenities": [
-          "benches"
+          "benches",
+          "toilets"
         ],
         "uuid": "5986e755-1eaa-4121-a01c-4fef1d5d1da1"
       },
@@ -271,6 +272,20 @@
       "accessible_by": [
         "cars"
       ]
+    },
+    "marker_styles": {
+      "icon_field": "type_of_place",
+      "color_field": "speed_limit",
+      "icon_provider": "phosphor",
+      "icons": {
+        "big bridge": "bridge",
+        "small bridge": "footprints"
+      },
+      "colors": {
+        "10": "#2e7d32",
+        "30": "#ef6c00",
+        "50": "#c62828"
+      }
     },
     "visible_data": [
       "remark",

@@ -10,7 +10,15 @@ from goodmap.clustering import (
 
 def test_map_clustering_data_single_point():
     """Test mapping clustering data for a single point"""
-    input_data = [{"longitude": 50.0, "latitude": 60.0, "count": 1, "uuid": "test-uuid"}]
+    input_data = [
+        {
+            "longitude": 50.0,
+            "latitude": 60.0,
+            "count": 1,
+            "uuid": "test-uuid",
+            "marker": {"icon": "container"},
+        }
+    ]
 
     result = map_clustering_data_to_proper_lazy_loading_object(input_data)
 
@@ -20,6 +28,17 @@ def test_map_clustering_data_single_point():
     assert result[0]["cluster_uuid"] is None
     assert result[0]["cluster_count"] is None
     assert result[0]["position"] == [50.0, 60.0]
+    assert result[0]["marker"] == {"icon": "container"}
+
+
+def test_map_clustering_data_single_point_without_marker():
+    """A point with no marker styling has no `marker` key at all, exactly as the
+    same point comes back from /api/locations."""
+    input_data = [{"longitude": 50.0, "latitude": 60.0, "count": 1, "uuid": "test-uuid"}]
+
+    result = map_clustering_data_to_proper_lazy_loading_object(input_data)
+
+    assert "marker" not in result[0]
 
 
 def test_map_clustering_data_cluster():
@@ -39,7 +58,7 @@ def test_map_clustering_data_cluster():
 def test_match_clusters_uuids_exact_match():
     """Test matching cluster UUIDs with exact coordinate match"""
     points = [
-        {"position": [50.0, 60.0], "uuid": "uuid-1"},
+        {"position": [50.0, 60.0], "uuid": "uuid-1", "marker": {"icon": "container"}},
         {"position": [51.0, 61.0], "uuid": "uuid-2"},
     ]
 
@@ -51,7 +70,9 @@ def test_match_clusters_uuids_exact_match():
     result = match_clusters_uuids(points, clusters)
 
     assert result[0]["uuid"] == "uuid-1"
+    assert result[0]["marker"] == {"icon": "container"}
     assert result[1]["uuid"] == "uuid-2"
+    assert result[1]["marker"] is None
 
 
 def test_match_clusters_uuids_multi_point_cluster():
@@ -67,8 +88,9 @@ def test_match_clusters_uuids_multi_point_cluster():
 
     result = match_clusters_uuids(points, clusters)
 
-    # Multi-point cluster should not get a uuid assigned
+    # Multi-point cluster should not get a uuid/marker assigned
     assert "uuid" not in result[0]
+    assert "marker" not in result[0]
 
 
 def test_match_clusters_uuids_no_match_warning():
@@ -90,6 +112,7 @@ def test_match_clusters_uuids_no_match_warning():
         warning_call = mock_logger.warning.call_args[0][0]
         assert "No matching UUID found" in warning_call
         assert result[0]["uuid"] is None
+        assert result[0]["marker"] is None
 
 
 def test_match_clusters_uuids_floating_point_precision():

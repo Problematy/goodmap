@@ -272,12 +272,11 @@ def test_get_locations(test_app):
         {
             "uuid": "11111111-1111-1111-1111-111111111111",
             "position": [50, 50],
-            "has_remark": True,
+            "marker": {"badge": True},
         },
         {
             "uuid": "22222222-2222-2222-2222-222222222222",
             "position": [60, 60],
-            "has_remark": False,
         },
     ]
 
@@ -313,6 +312,39 @@ def test_get_locations_accepts_valid_and_undeclared_parameters(test_app, query):
     """Declared params are checked; anything else passes through to the filters."""
     response = test_app.get(f"/api/locations?{query}")
     assert response.status_code == 200
+
+
+def test_get_locations_includes_category_field_for_pin_styling():
+    """/api/locations should surface the field marker_styles.icon_field points at
+    (e.g. a point-type category), so the frontend can pick a marker icon/color
+    without a full per-location detail fetch."""
+    client = create_test_app(
+        db_overrides={
+            "categories": {"point_type": ["parcel_locker", "container"]},
+            "location_obligatory_fields": [("point_type", "str"), ("name", "str")],
+            "marker_styles": {"icon_field": "point_type", "icons": {}, "colors": {}},
+            "data": [
+                {
+                    "name": "locker-1",
+                    "position": [50, 50],
+                    "point_type": "parcel_locker",
+                    "uuid": "11111111-1111-1111-1111-111111111111",
+                },
+            ],
+            "visible_data": ["name", "point_type"],
+        }
+    )
+
+    response = client.get("/api/locations")
+
+    assert response.status_code == 200
+    assert response.json == [
+        {
+            "uuid": "11111111-1111-1111-1111-111111111111",
+            "position": [50, 50],
+            "marker": {"icon": "parcel_locker"},
+        },
+    ]
 
 
 def test_get_locations_multi_value_same_category_uses_or_semantics():
@@ -938,12 +970,24 @@ def test_location_clustering_high_zoom_no_clusters(test_app):
     assert data[1]["type"] == "point"
 
 
+def test_location_clustering_point_entries_carry_marker(test_app):
+    """The clustered endpoint's point entries carry the same `marker` object as
+    /api/locations - the clustering pass must not drop it (goodmap/clustering.py)."""
+    response = test_app.get("/api/locations-clustered?zoom=16")
+    assert response.status_code == 200
+    data = response.json
+    by_uuid = {entry["uuid"]: entry for entry in data}
+    assert by_uuid["11111111-1111-1111-1111-111111111111"]["marker"] == {"badge": True}
+    assert "marker" not in by_uuid["22222222-2222-2222-2222-222222222222"]
+
+
 def test_location_clustering_low_zoom_creates_clusters(test_app):
     response = test_app.get("/api/locations-clustered?zoom=1")
     assert response.status_code == 200
     data = response.json
     assert len(data) == 1
     assert data[0]["type"] == "cluster"
+    assert "marker" not in data[0]
 
 
 @pytest.mark.parametrize(
@@ -1029,7 +1073,6 @@ def test_issue_options_defaults_to_empty_when_missing():
     config_data = get_test_config_data()
     config_data["FEATURE_FLAGS"] = {
         "CATEGORIES_HELP": True,
-        "USE_LAZY_LOADING": True,
         "ENABLE_ADMIN_PANEL": True,
     }
     config_data["DB"]["DATA"].pop("reported_issue_types", None)
@@ -1040,6 +1083,7 @@ def test_issue_options_defaults_to_empty_when_missing():
 
 
 def test_get_locations_from_request_helper(test_app):
+    from goodmap.api.api_models import PinMarkerFields
     from goodmap.api.core_api import get_locations_from_request
 
     class MockArgs:
@@ -1049,7 +1093,9 @@ def test_get_locations_from_request_helper(test_app):
     mock_request_args = MockArgs()
 
     with test_app.application.app_context():
-        locations = get_locations_from_request(test_app.application.db, mock_request_args)
+        locations = get_locations_from_request(
+            test_app.application.db, mock_request_args, PinMarkerFields()
+        )
         assert isinstance(locations, list)
         if locations:
             assert isinstance(locations[0], dict)

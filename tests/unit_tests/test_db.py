@@ -26,6 +26,7 @@ from goodmap.db import (
     google_json_db_get_data,
     google_json_db_get_location_obligatory_fields,
     google_json_db_get_locations_paginated,
+    google_json_db_get_marker_styles,
     google_json_db_get_meta_data,
     google_json_db_get_visible_data,
     json_db_add_location,
@@ -38,6 +39,7 @@ from goodmap.db import (
     json_db_get_category_data,
     json_db_get_data,
     json_db_get_location_obligatory_fields,
+    json_db_get_locations,
     json_db_get_report,
     json_db_get_reports,
     json_db_get_suggestion,
@@ -56,7 +58,9 @@ from goodmap.db import (
     json_file_db_get_category_data,
     json_file_db_get_data,
     json_file_db_get_location_obligatory_fields,
+    json_file_db_get_locations,
     json_file_db_get_locations_paginated,
+    json_file_db_get_marker_styles,
     json_file_db_get_meta_data,
     json_file_db_get_report,
     json_file_db_get_reports,
@@ -81,6 +85,7 @@ from goodmap.db import (
     mongodb_db_get_location_obligatory_fields,
     mongodb_db_get_locations,
     mongodb_db_get_locations_paginated,
+    mongodb_db_get_marker_styles,
     mongodb_db_get_meta_data,
     mongodb_db_get_report,
     mongodb_db_get_reports,
@@ -296,6 +301,45 @@ def test_json_file_db_get_meta_data_empty():
     assert result == {}
 
 
+@mock.patch(
+    "builtins.open",
+    mock.mock_open(
+        read_data=json.dumps(
+            {
+                "map": {
+                    "marker_styles": {
+                        "icon_field": "type_of_place",
+                        "color_field": "status",
+                        "icons": {
+                            "parcel_locker": "https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/fill/package-fill.svg"
+                        },
+                        "colors": {"open": "#2e7d32"},
+                    }
+                }
+            }
+        )
+    ),
+)
+def test_json_file_db_get_marker_styles():
+    db = JsonFile("/fake/path/data.json")
+    result = json_file_db_get_marker_styles(db)
+    assert result == {
+        "icon_field": "type_of_place",
+        "color_field": "status",
+        "icons": {
+            "parcel_locker": "https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/fill/package-fill.svg"
+        },
+        "colors": {"open": "#2e7d32"},
+    }
+
+
+@mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {}})))
+def test_json_file_db_get_marker_styles_empty():
+    db = JsonFile("/fake/path/data.json")
+    result = json_file_db_get_marker_styles(db)
+    assert result == {}
+
+
 # Test get_visible_data and get_meta_data for google_json_db
 @mock.patch("platzky.db.google_json_db.Client")
 def test_google_json_db_get_visible_data(mock_cli):
@@ -334,6 +378,41 @@ def test_google_json_db_get_meta_data_empty(mock_cli):
     )
     db = GoogleJsonDb("bucket", "blob")
     result = google_json_db_get_meta_data(db)
+    assert result == {}
+
+
+@mock.patch("platzky.db.google_json_db.Client")
+def test_google_json_db_get_marker_styles(mock_cli):
+    blob = mock_cli.return_value.bucket.return_value.blob.return_value
+    blob.download_as_text.return_value = json.dumps(
+        {
+            "map": {
+                "marker_styles": {
+                    "icon_field": "type_of_place",
+                    "icons": {
+                        "parcel_locker": "https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/fill/package-fill.svg"
+                    },
+                }
+            }
+        }
+    )
+    db = GoogleJsonDb("bucket", "blob")
+    result = google_json_db_get_marker_styles(db)
+    assert result == {
+        "icon_field": "type_of_place",
+        "icons": {
+            "parcel_locker": "https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/fill/package-fill.svg"
+        },
+    }
+
+
+@mock.patch("platzky.db.google_json_db.Client")
+def test_google_json_db_get_marker_styles_empty(mock_cli):
+    mock_cli.return_value.bucket.return_value.blob.return_value.download_as_text.return_value = (
+        json.dumps({"map": {}})
+    )
+    db = GoogleJsonDb("bucket", "blob")
+    result = google_json_db_get_marker_styles(db)
     assert result == {}
 
 
@@ -1093,6 +1172,54 @@ def test_mongodb_db_get_meta_data_no_config(mock_client):
 
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_marker_styles(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.config.find_one.return_value = {
+        "_id": "map_config",
+        "marker_styles": {
+            "icon_field": "type_of_place",
+            "icons": {
+                "parcel_locker": "https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/fill/package-fill.svg"
+            },
+        },
+    }
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    result = mongodb_db_get_marker_styles(db)
+    assert result == {
+        "icon_field": "type_of_place",
+        "icons": {
+            "parcel_locker": "https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/fill/package-fill.svg"
+        },
+    }
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_marker_styles_empty(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.config.find_one.return_value = {
+        "_id": "map_config",
+    }
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    result = mongodb_db_get_marker_styles(db)
+    assert result == {}
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_marker_styles_no_config(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.config.find_one.return_value = None
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    result = mongodb_db_get_marker_styles(db)
+    assert result == {}
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_location(mock_client):
     mock_db = mock.Mock()
     mock_client.return_value.__getitem__.return_value = mock_db
@@ -1369,6 +1496,28 @@ def test_json_file_db_get_categories(tmp_path):
     extend_db_with_goodmap_queries(db, LocationBase)
     categories = json_file_db_get_categories(db)
     assert list(categories) == ["test-category"]
+
+
+def test_json_db_without_categories_serves_locations():
+    """A data source with no `categories` at all is a valid setup - a map of plain,
+    unfilterable points - so neither listing categories nor querying locations may
+    depend on the key being there."""
+    uncategorized = {key: value for key, value in data.items() if key != "categories"}
+    db = in_memory_json_db(uncategorized)
+
+    assert list(json_db_get_categories(db)) == []
+    assert len(json_db_get_locations(db, {}, LocationBase)) == 2
+
+
+def test_json_file_db_without_categories_serves_locations(tmp_path):
+    uncategorized = {key: value for key, value in data.items() if key != "categories"}
+    test_file = tmp_path / "test.json"
+    test_file.write_text(json.dumps({"map": uncategorized}))
+
+    db = JsonFile(str(test_file))
+
+    assert list(json_file_db_get_categories(db)) == []
+    assert len(json_file_db_get_locations(db, {}, LocationBase)) == 2
 
 
 @mock.patch("platzky.db.google_json_db.Client")

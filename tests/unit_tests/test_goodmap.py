@@ -1,6 +1,8 @@
 import importlib.metadata
 import io
+import json
 import os
+import re
 import sys
 import tempfile
 import types
@@ -14,7 +16,7 @@ from platzky.db.json_db import JsonDbConfig
 
 from goodmap import goodmap
 from goodmap.config import GoodmapConfig
-from goodmap.feature_flags import EnableAdminPanel, UseLazyLoading
+from goodmap.feature_flags import EnableAdminPanel
 from goodmap.plugin import (
     CAPABILITY_BASES,
     MapOverlayPluginBase,
@@ -37,7 +39,14 @@ def test_create_app():
 def test_create_app_from_config():
     with patch("platzky.platzky.create_app_from_config", MagicMock()) as mock_platzky_app_creation:
         mock_platzky_app_creation.return_value.is_enabled.return_value = False
-        with patch("goodmap.goodmap.extend_db_with_goodmap_queries", MagicMock()) as mock_extend_db:
+        with (
+            patch("goodmap.goodmap.extend_db_with_goodmap_queries", MagicMock()) as mock_extend_db,
+            patch("goodmap.goodmap.get_location_obligatory_fields", return_value=[]),
+            patch("goodmap.goodmap.get_category_data") as mock_get_category_data,
+            patch("goodmap.goodmap.get_marker_styles") as mock_get_marker_styles,
+        ):
+            mock_get_category_data.return_value.return_value = {"categories": {}}
+            mock_get_marker_styles.return_value.return_value = {}
             goodmap.create_app_from_config(config)
             mock_platzky_app_creation.assert_called_once_with(
                 config,
@@ -56,12 +65,13 @@ def test_create_app_delegation(mock_parse_yaml, mock_create_app_from_config):
 
 
 @mock.patch("goodmap.goodmap.get_location_obligatory_fields")
-def test_use_lazy_loading_branch(mock_get_location_obligatory_fields):
+def test_location_model_is_always_built_from_the_data_source(mock_get_location_obligatory_fields):
+    """Building the location model from location_obligatory_fields/categories is
+    unconditional - there's no flag that skips it (see feature_flags.py)."""
     config = GoodmapConfig(
         APP_NAME="test_lazy",
         SECRET_KEY="secret",
         DB=JsonDbConfig(DATA={"site_content": {}, "location_obligatory_fields": []}, TYPE="json"),
-        FEATURE_FLAGS=make_flag_set(UseLazyLoading),
     )
 
     app = goodmap.create_app_from_config(config)
@@ -105,6 +115,121 @@ def test_frontend_lib_url_uses_bundled_static_when_present():
     response = client.get("/map")
 
     assert 'src="/static/frontend/index.min.js"' in response.data.decode("utf-8")
+
+
+def test_map_route_marker_styles():
+    """The frontend picks pin icon/color per marker_styles.config's iconField/colorField
+    at runtime from window.MARKER_STYLES - a deployment-specific lookup table that lives
+    in the database (like categories/visible_data), not hardcoded in the frontend build.
+    Deployments that don't configure it get an empty object instead, so the frontend
+    falls back to Leaflet's default marker - no behavior change."""
+    configured_config = GoodmapConfig(
+        APP_NAME="test_app",
+        SECRET_KEY="test_secret",
+        USE_WWW=False,
+        BLOG_PREFIX="/blog",
+        DB=JsonDbConfig(
+            DATA={
+                "site_content": {"pages": []},
+                "categories": {"type_of_place": ["parcel_locker", "container"]},
+                "marker_styles": {
+                    "icon_field": "type_of_place",
+                    "icon_provider": "phosphor",
+                    "icons": {"parcel_locker": "package"},
+                    "colors": {},
+                },
+            },
+            TYPE="json",
+        ),
+    )
+    configured_app = goodmap.create_app_from_config(configured_config)
+    configured_app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
+
+    response = configured_app.test_client().get("/map")
+    assert response.status_code == 200
+
+    response_text = response.data.decode("utf-8")
+    assert "MARKER_STYLES" in response_text
+    assert "parcel_locker" in response_text
+    # icon_field/icon_provider decide what a pin looks like server-side; the page only
+    # needs the resulting tables, so they are not shipped to every visitor.
+    assert "icon_field" not in response_text
+    assert "icon_provider" not in response_text
+
+    unconfigured_app = goodmap.create_app_from_config(_minimal_config())
+    unconfigured_app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
+
+    response = unconfigured_app.test_client().get("/map")
+    assert response.status_code == 200
+    assert 'window.MARKER_STYLES={"colors":{},"icons":{}};' in response.data.decode("utf-8")
+
+
+def test_map_route_marker_styles_stay_in_step_with_the_api():
+    """window.MARKER_STYLES comes from the startup-time config, not a fresh read per
+    request. The field /api/locations reads marker.icon from is fixed at startup, so a
+    /map that served newer lookup tables would key them on values the API isn't
+    sending."""
+    data = {
+        "site_content": {"pages": []},
+        "location_obligatory_fields": [["type_of_place", "str"]],
+        "marker_styles": {
+            "icon_field": "type_of_place",
+            "icon_provider": "url",
+            "icons": {"parcel_locker": "https://cdn.example.com/package.svg"},
+            "colors": {},
+        },
+    }
+    app = goodmap.create_app_from_config(
+        GoodmapConfig(
+            APP_NAME="test_app",
+            SECRET_KEY="test_secret",
+            USE_WWW=False,
+            BLOG_PREFIX="/blog",
+            DB=JsonDbConfig(DATA=data, TYPE="json"),
+        )
+    )
+    app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
+
+    with mock.patch.object(app.db, "get_marker_styles") as fresh_read:
+        response_text = app.test_client().get("/map").data.decode("utf-8")
+
+    fresh_read.assert_not_called()
+    assert "parcel_locker" in response_text
+
+
+def test_map_route_serves_icons_already_resolved_to_urls():
+    """window.MARKER_STYLES.icons is a flat {value: url} table: the provider-specific
+    values a data source configures are resolved at startup, so supporting a new provider
+    never needs a frontend release."""
+    data = {
+        "site_content": {"pages": []},
+        "location_obligatory_fields": [["type_of_place", "str"]],
+        "marker_styles": {
+            "icon_field": "type_of_place",
+            "icon_provider": "phosphor",
+            "icons": {"big bridge": "bridge"},
+            "colors": {},
+        },
+    }
+    app = goodmap.create_app_from_config(
+        GoodmapConfig(
+            APP_NAME="test_app",
+            SECRET_KEY="test_secret",
+            USE_WWW=False,
+            BLOG_PREFIX="/blog",
+            DB=JsonDbConfig(DATA=data, TYPE="json"),
+        )
+    )
+    app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
+
+    response_text = app.test_client().get("/map").data.decode("utf-8")
+
+    match = re.search(r"window\.MARKER_STYLES\s*=\s*(.*?);", response_text)
+    assert match is not None
+    served = json.loads(match.group(1))
+    assert served["icons"] == {
+        "big bridge": "https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/fill/bridge-fill.svg"
+    }
 
 
 def test_map_route_includes_photo_constraints():
@@ -239,8 +364,9 @@ def test_map_route_overrides_photo_constraints():
     assert photo["allowed_extensions"] == ["jpeg", "jpg", "png"]
 
 
-def test_location_schema_endpoint_with_lazy_loading():
-    """The schema includes obligatory_fields when USE_LAZY_LOADING is enabled."""
+def test_location_schema_endpoint_includes_obligatory_fields():
+    """The schema includes this deployment's obligatory_fields - unconditional,
+    there's no flag that skips building the location model from them."""
     config = GoodmapConfig(
         APP_NAME="test_app",
         SECRET_KEY="test_secret",
@@ -258,7 +384,6 @@ def test_location_schema_endpoint_with_lazy_loading():
             },
             TYPE="json",
         ),
-        FEATURE_FLAGS=make_flag_set(UseLazyLoading),
     )
     app = goodmap.create_app_from_config(config)
     # CSRF protection must be disabled in test environment to allow API testing

@@ -131,7 +131,6 @@ Create ``config.yml`` next to it:
      PATH: data.json
 
    FEATURE_FLAGS:
-     USE_LAZY_LOADING: true
      SHOW_SEARCH_BAR: true
      SHOW_SUGGEST_NEW_POINT_BUTTON: true
 

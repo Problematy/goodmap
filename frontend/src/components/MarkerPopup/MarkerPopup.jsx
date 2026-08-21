@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { Marker } from 'react-leaflet';
 import { isMobile } from 'react-device-detect';
-import { Icon } from 'leaflet';
 import { useTranslation } from 'react-i18next';
 import httpService from '../../services/http/httpService';
 import useMapStore from '../Map/store/map.store';
@@ -10,7 +9,7 @@ import useMapStore from '../Map/store/map.store';
 import LocationDetailsBox from './LocationDetails';
 import MobilePopup from './MobilePopup';
 import DesktopPopup from './DesktopPopup';
-import iconAsterisk from '../../res/img/marker-icon-asterisk.png';
+import getTypedMarkerIcon from './getTypedMarkerIcon';
 
 /**
  * Wrapper component that fetches full location details and renders them in a popup.
@@ -70,24 +69,13 @@ LocationDetailsBoxWrapper.propTypes = {
 };
 
 /**
- * Custom Leaflet icon for markers with remarks/special annotations.
- * Displays an asterisk icon to visually distinguish remarked locations from standard markers.
- */
-const asteriskIcon = new Icon({
-    iconUrl: iconAsterisk,
-    iconSize: [40, 48], // size of the icon
-    iconAnchor: [19, 46], // point of the icon which will correspond to marker's location
-    popupAnchor: [0, -40], // point from which the popup should open relative to the iconAnchor
-});
-
-/**
  * Interactive map marker component that displays location details in a popup when clicked.
  * Supports special visual indication for locations with remarks using an asterisk icon.
  *
  * @param {Object} props - Component props
  * @param {Object} props.place - Location data object
  * @param {number[]} props.place.position - Coordinates [latitude, longitude]
- * @param {boolean} [props.place.has_remark] - Whether this location has a remark (uses asterisk icon if true)
+ * @param {Object} [props.place.marker] - Pin styling; marker.badge true adds an asterisk badge
  * @returns {React.ReactElement} Leaflet Marker component with click-to-show-details functionality
  */
 const MarkerPopup = ({ place }) => {
@@ -114,18 +102,21 @@ const MarkerPopup = ({ place }) => {
         setIsClicked(true);
     };
 
+    // react-leaflet compares `icon` by identity, so a fresh DivIcon on every render
+    // would tear down and rebuild the marker's DOM - and every MarkerPopup re-renders
+    // whenever anything writes selectedLocationId. `place` is one entry of the fetched
+    // location list (see Markers.jsx), so its identity only changes on a refetch.
+    const typedIcon = useMemo(() => getTypedMarkerIcon(place), [place]);
+
     const markerProps = {
         position: place.position,
         eventHandlers: {
             click: handleMarkerClick,
         },
-        alt: place.has_remark ? 'Marker-Asterisk' : 'Marker',
     };
 
-    // Only add icon prop if we have a custom icon (for remarks)
-    // This prevents passing undefined which can cause issues with MarkerClusterGroup
-    if (place.has_remark) {
-        markerProps.icon = asteriskIcon;
+    if (typedIcon) {
+        markerProps.icon = typedIcon;
     }
 
     return (
@@ -139,7 +130,11 @@ const MarkerPopup = ({ place }) => {
 MarkerPopup.propTypes = {
     place: PropTypes.shape({
         position: PropTypes.arrayOf(PropTypes.number).isRequired,
-        has_remark: PropTypes.bool, // eslint-disable-line camelcase -- matches backend API schema property name
+        marker: PropTypes.shape({
+            icon: PropTypes.oneOfType([PropTypes.string, PropTypes.number, PropTypes.bool]),
+            color: PropTypes.oneOfType([PropTypes.string, PropTypes.number, PropTypes.bool]),
+            badge: PropTypes.bool,
+        }),
         uuid: PropTypes.string.isRequired,
     }).isRequired,
 };

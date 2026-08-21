@@ -13,17 +13,20 @@ from platzky.config import languages_dict
 from platzky.models import CmsModule
 from platzky.plugin.content_transformer import ContentTransformerPluginBase
 from platzky.shortcodes import Shortcode
-from pydantic import BaseModel
 
 from goodmap.api.admin_api import admin_pages
+from goodmap.api.api_models import PinMarkerFields
 from goodmap.api.core_api import core_pages
 from goodmap.config import GoodmapConfig
 from goodmap.data_models.location import create_location_model
 from goodmap.db import (
     extend_db_with_goodmap_queries,
+    get_category_data,
     get_location_obligatory_fields,
+    get_marker_styles,
 )
-from goodmap.feature_flags import EnableAdminPanel, UseLazyLoading
+from goodmap.feature_flags import EnableAdminPanel
+from goodmap.marker_styles import resolve_marker_styles
 from goodmap.plugin import CAPABILITY_BASES, GoodmapPluginBase
 
 logger = logging.getLogger(__name__)
@@ -110,34 +113,6 @@ def _register_plugin_static_resources(
         return None, []
 
 
-def _setup_location_model(
-    db: Any,
-) -> tuple[list[Any], dict[str, Any], type[BaseModel], Any]:
-    """Configure location model and db with lazy-loading and categories support.
-
-    Args:
-        db: The database instance to extend with location queries.
-
-    Returns:
-        Tuple of (obligatory_fields, categories, location_model, db).
-    """
-    obligatory_fields = get_location_obligatory_fields(db)
-    location_model = create_location_model(obligatory_fields, {})
-    extended_db = extend_db_with_goodmap_queries(db, location_model)
-
-    try:
-        category_data = extended_db.get_category_data()
-        categories = category_data.get("categories", {})
-    except (KeyError, AttributeError):
-        categories = {}
-
-    if categories:
-        location_model = create_location_model(obligatory_fields, categories)
-        extended_db = extend_db_with_goodmap_queries(extended_db, location_model)
-
-    return obligatory_fields, categories, location_model, extended_db
-
-
 def create_app(config_path: str) -> platzky.Engine:
     """Create Goodmap application from YAML configuration file.
 
@@ -195,12 +170,36 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
     if app.config.get("MAX_CONTENT_LENGTH") is None:
         app.config["MAX_CONTENT_LENGTH"] = config.attachment.max_size + MULTIPART_OVERHEAD_ALLOWANCE
 
-    if app.is_enabled(UseLazyLoading):
-        location_obligatory_fields, _, location_model, app.db = _setup_location_model(app.db)
-    else:
-        location_obligatory_fields = []
-        location_model = create_location_model([], {})
-        app.db = extend_db_with_goodmap_queries(app.db, location_model)
+    # Build this deployment's location model from its data source and extend app.db
+    # with the query functions it needs. categories/marker_styles are both optional
+    # (see docs/data-source.rst) - every backend's get_category_data()/
+    # get_marker_styles() already defaults them to {} internally.
+    #
+    # marker_styles splits two ways: the raw config says which *fields* drive a pin (app
+    # wiring, below), while resolve_marker_styles builds the icon/color lookup tables the
+    # browser gets - icons already flattened to plain URLs, so the frontend never has to
+    # know about icon providers.
+    location_obligatory_fields = get_location_obligatory_fields(app.db)
+    categories = get_category_data(app.db)(app.db)["categories"]
+    raw_marker_styles = get_marker_styles(app.db)(app.db)
+    marker_styles = resolve_marker_styles(raw_marker_styles)
+
+    location_model = create_location_model(location_obligatory_fields, categories)
+    app.db = extend_db_with_goodmap_queries(app.db, location_model)
+
+    obligatory_field_names = {name for name, _ in location_obligatory_fields}
+    pin_marker_fields = PinMarkerFields(
+        icon_field=(
+            raw_marker_styles.get("icon_field")
+            if raw_marker_styles.get("icon_field") in obligatory_field_names
+            else None
+        ),
+        color_field=(
+            raw_marker_styles.get("color_field")
+            if raw_marker_styles.get("color_field") in obligatory_field_names
+            else None
+        ),
+    )
 
     app.extensions["goodmap"] = {"location_obligatory_fields": location_obligatory_fields}
 
@@ -268,6 +267,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         photo_attachment_config=photo_attachment_config,
         feature_flags=config.feature_flags,
         shortcodes=shortcodes,
+        pin_marker_fields=pin_marker_fields,
     )
     app.register_blueprint(cp)
 
@@ -290,6 +290,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
             feature_flags=config.feature_flags,
             goodmap_frontend_lib_url=config.goodmap_frontend_lib_url,
             plugin_manifest=plugin_manifest,
+            marker_styles=marker_styles,
         )
 
     @goodmap.route("/goodmap-admin")

@@ -5,7 +5,7 @@ These models are used by Spectree for automatic OpenAPI schema generation
 and request/response validation.
 """
 
-from typing import Any, Literal
+from typing import Any, Literal, NamedTuple
 
 from pydantic import BaseModel, Field, RootModel
 
@@ -68,18 +68,67 @@ class SuccessResponse(BaseModel):
     message: str = Field(..., description="Success message")
 
 
+class PinMarkerFields(NamedTuple):
+    """Which of this deployment's fields drive pin icon/color, threaded through to
+    marker_style_values() by name, keeping the two roles distinct (a frozenset of
+    both would lose which is which)."""
+
+    icon_field: str | None = None
+    color_field: str | None = None
+
+
+class MarkerInfo(BaseModel):
+    """Pin styling for one point: keys into the deployment's MARKER_STYLES lookup
+    tables, not resolved server-side to a URL/hex value."""
+
+    icon: str | int | float | bool | None = Field(
+        None, description="Raw icon_field value; key into MARKER_STYLES.icons"
+    )
+    color: str | int | float | bool | None = Field(
+        None, description="Raw color_field value; key into MARKER_STYLES.colors"
+    )
+    badge: bool | None = Field(
+        None, description="Present and true only when the point has a remark"
+    )
+
+
 class LocationBasicInfo(BaseModel):
-    """One point as returned by the list endpoint: identity and position only."""
+    """One point as returned by the list endpoint: identity, position, and pin styling."""
 
     uuid: str = Field(..., description="Location UUID")
     position: tuple[Latitude, Longitude] = Field(..., description=_POSITION_DESCRIPTION)
-    has_remark: bool = Field(
-        ..., description="Whether the point has a remark, not the remark itself"
+    marker: MarkerInfo | None = Field(
+        None,
+        description="Pin styling for this point; absent when nothing applies "
+        "(no icon/color match and no remark)",
     )
 
 
 class LocationList(RootModel[list[LocationBasicInfo]]):
-    """List of points, each with identity and position only."""
+    """List of points, each with identity, position, and pin styling."""
+
+
+def marker_style_values(location: BaseModel, pin_marker_fields: PinMarkerFields) -> dict[str, Any]:
+    """Pin styling data for `location`, as /api/locations includes it for every point.
+
+    Returns {"marker": {...}} with icon/color (this location's value of the field
+    pin_marker_fields names, if it has one) and badge (present and true only when the
+    point has a remark), or {} when none of those apply. This is API response shaping,
+    not something the location domain model needs to know how to do itself - it
+    belongs alongside the models it fills, not on LocationBase.
+    """
+    marker: dict[str, Any] = {}
+    if pin_marker_fields.icon_field is not None:
+        value = getattr(location, pin_marker_fields.icon_field, None)
+        if value is not None:
+            marker["icon"] = value
+    if pin_marker_fields.color_field is not None:
+        value = getattr(location, pin_marker_fields.color_field, None)
+        if value is not None:
+            marker["color"] = value
+    if getattr(location, "remark", None):
+        marker["badge"] = True
+    return {"marker": marker} if marker else {}
 
 
 class ClusterInfo(BaseModel):
@@ -94,6 +143,9 @@ class ClusterInfo(BaseModel):
     )
     cluster_count: int | None = Field(
         None, description="Number of points the cluster stands for; null for a point"
+    )
+    marker: MarkerInfo | None = Field(
+        None, description="Pin styling for a point; null for a cluster or unstyled point"
     )
 
 

@@ -563,18 +563,82 @@ def get_meta_data(db):
 
 
 # ------------------------------------------------
+# get_marker_styles
+
+
+def google_json_db_get_marker_styles(self) -> dict[str, Any]:
+    """
+    Retrieve marker icon/color styling configuration from Google Cloud Storage JSON blob.
+
+    Returns:
+        dict: Pin styling lookup table (icon_field, color_field, icons, colors).
+              Returns empty dict if not found.
+    """
+    return self.data.get("map", {}).get("marker_styles", {})
+
+
+def json_file_db_get_marker_styles(self) -> dict[str, Any]:
+    """
+    Retrieve marker icon/color styling configuration from JSON file database.
+
+    Returns:
+        dict: Pin styling lookup table (icon_field, color_field, icons, colors).
+              Returns empty dict if not found.
+    """
+    return self.data.get("map", {}).get("marker_styles", {})
+
+
+def json_db_get_marker_styles(self) -> dict[str, Any]:
+    """
+    Retrieve marker icon/color styling configuration from in-memory JSON database.
+
+    Returns:
+        dict: Pin styling lookup table (icon_field, color_field, icons, colors).
+              Returns empty dict if not found.
+    """
+    return self.data.get("marker_styles", {})
+
+
+def mongodb_db_get_marker_styles(self) -> dict[str, Any]:
+    """
+    Retrieve marker icon/color styling configuration from MongoDB.
+
+    Returns:
+        dict: Pin styling lookup table (icon_field, color_field, icons, colors).
+              Returns empty dict if config document not found or field missing.
+    """
+    config_doc = self.db.config.find_one({"_id": "map_config"})
+    if config_doc:
+        return config_doc.get("marker_styles", {})
+    return {}
+
+
+def get_marker_styles(db):
+    """
+    Get the appropriate get_marker_styles function for the given database backend.
+
+    Args:
+        db: Database instance (must have module_name attribute).
+
+    Returns:
+        callable: Backend-specific get_marker_styles function.
+    """
+    return globals()[f"{db.module_name}_get_marker_styles"]
+
+
+# ------------------------------------------------
 # get_categories
 
 
 def json_db_get_categories(self):
     """Return category keys from in-memory JSON database."""
-    return self.data["categories"].keys()
+    return self.data.get("categories", {}).keys()
 
 
 def json_file_db_get_categories(self):
     """Return category keys from JSON file database."""
     with open(self.data_file_path, "r") as file:
-        return json.load(file)["map"]["categories"].keys()
+        return json.load(file)["map"].get("categories", {}).keys()
 
 
 def google_json_db_get_categories(self):
@@ -603,7 +667,7 @@ def json_db_get_category_data(self, category_type=None):
     """Return category data from in-memory JSON database, optionally filtered by type."""
     if category_type:
         return {
-            "categories": {category_type: self.data["categories"].get(category_type, [])},
+            "categories": {category_type: self.data.get("categories", {}).get(category_type, [])},
             "categories_help": self.data.get("categories_help", []),
             "categories_options_help": {
                 category_type: self.data.get("categories_options_help", {}).get(category_type, [])
@@ -618,7 +682,7 @@ def json_db_get_category_data(self, category_type=None):
             },
         }
     return {
-        "categories": self.data["categories"],
+        "categories": self.data.get("categories", {}),
         "categories_help": self.data.get("categories_help", []),
         "categories_options_help": self.data.get("categories_options_help", {}),
         "categories_default_checked": self.data.get("categories_default_checked", {}),
@@ -632,7 +696,7 @@ def json_file_db_get_category_data(self, category_type=None):
         data = json.load(file)["map"]
         if category_type:
             return {
-                "categories": {category_type: data["categories"].get(category_type, [])},
+                "categories": {category_type: data.get("categories", {}).get(category_type, [])},
                 "categories_help": data.get("categories_help", []),
                 "categories_options_help": {
                     category_type: data.get("categories_options_help", {}).get(category_type, [])
@@ -645,7 +709,7 @@ def json_file_db_get_category_data(self, category_type=None):
                 },
             }
         return {
-            "categories": data["categories"],
+            "categories": data.get("categories", {}),
             "categories_help": data.get("categories_help", []),
             "categories_options_help": data.get("categories_options_help", {}),
             "categories_default_checked": data.get("categories_default_checked", {}),
@@ -781,7 +845,7 @@ def get_locations_list_from_raw_data(map_data, query, location_model):
     """Filter and validate locations from raw map data based on query parameters.
 
     Args:
-        map_data: Dict containing 'data' and 'categories' keys.
+        map_data: Dict containing a 'data' key, and optionally 'categories'.
         query: Dict of query parameters for filtering.
         location_model: Pydantic model class to validate each location.
 
@@ -790,7 +854,7 @@ def get_locations_list_from_raw_data(map_data, query, location_model):
     """
     filtered_locations = get_queried_data(
         map_data["data"],
-        map_data["categories"],
+        map_data.get("categories", {}),
         query,
         map_data.get("categories_filter_mode", {}),
     )
@@ -1777,6 +1841,7 @@ def extend_db_with_goodmap_queries(db, location_model):
     db.extend("get_data", get_data(db))
     db.extend("get_visible_data", get_visible_data(db))
     db.extend("get_meta_data", get_meta_data(db))
+    db.extend("get_marker_styles", get_marker_styles(db))
     db.extend("get_locations", get_locations(db, location_model))
     db.extend("get_locations_paginated", get_locations_paginated(db, location_model))
     db.extend("get_location", get_location(db, location_model))

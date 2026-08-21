@@ -60,7 +60,6 @@ Everything below in one file — copy it and delete what you do not need:
      max_size: 5242880  # 5 MiB
 
    FEATURE_FLAGS:
-     USE_LAZY_LOADING: true
      CATEGORIES_HELP: true
      SHOW_SEARCH_BAR: true
      SHOW_SUGGEST_NEW_POINT_BUTTON: true
@@ -165,8 +164,7 @@ Basic keys
 Feature flags
 -------------
 
-``FEATURE_FLAGS`` is a flat mapping of flag name to boolean. Unset flags are off, with one
-exception: ``USE_LAZY_LOADING`` defaults to on.
+``FEATURE_FLAGS`` is a flat mapping of flag name to boolean. Unset flags are off.
 
 Flags fall into two groups: some change what the backend does, others are handed to the
 frontend to decide what to render. Both are set the same way.
@@ -178,13 +176,6 @@ frontend to decide what to render. Both are set the same way.
    * - Flag
      - Acts on
      - Effect
-   * - ``USE_LAZY_LOADING``
-     - backend
-     - **On by default.** Builds the location model from ``location_obligatory_fields``
-       and ``categories`` in your data source, so submitted points are validated against
-       them, and the "suggest a new point" form is generated from them. Set it to
-       ``false`` and only ``uuid``, ``position`` and ``remark`` are validated, and the
-       suggest form has no fields — see the note below.
    * - ``CATEGORIES_HELP``
      - both
      - Enables the help-tooltip data in ``/api/categories-full``, and makes the frontend
@@ -218,13 +209,6 @@ frontend to decide what to render. Both are set the same way.
 
    Never enable ``FAKE_LOGIN`` in production. It hands a logged-in session to anyone who
    asks for one.
-
-.. note::
-
-   ``USE_LAZY_LOADING`` is named for behaviour that is now unconditional: point details
-   have their own endpoint (``/api/location/<uuid>``) whether the flag is set or not.
-   What the flag still controls is schema validation, as described above. Leave it on
-   unless you have a reason not to.
 
 The frontend receives the whole ``FEATURE_FLAGS`` mapping, so a plugin or a custom build
 can read flags Goodmap itself does not know about.
