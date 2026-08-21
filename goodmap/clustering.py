@@ -29,7 +29,8 @@ def map_clustering_data_to_proper_lazy_loading_object(input_array):
 
     Returns:
         List of response dicts with 'position', 'uuid', 'cluster_uuid',
-        'cluster_count', 'type' and 'marker' keys.
+        'cluster_count' and 'type' keys, plus 'marker' for points that have
+        any pin styling.
     """
     response_array = []
     for item in input_array:
@@ -40,8 +41,11 @@ def map_clustering_data_to_proper_lazy_loading_object(input_array):
                 "cluster_uuid": None,
                 "cluster_count": None,
                 "type": "point",
-                "marker": item.get("marker"),
             }
+            # Left out entirely rather than sent as null for an unstyled point, so a
+            # point here looks exactly like the same point from /api/locations.
+            if item.get("marker") is not None:
+                response_object["marker"] = item["marker"]
             response_array.append(response_object)
             continue
         response_object = {

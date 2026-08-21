@@ -41,6 +41,18 @@ const resolveIconUrl = icon => {
     return '';
 };
 
+/**
+ * Own-property lookup in a config table. A point's field value is arbitrary data,
+ * so a plain `table[key]` would resolve "toString"/"constructor" to an inherited
+ * function - truthy, and interpolated straight into the pin's CSS.
+ *
+ * @param {Object|undefined} table - icons/colors from MARKER_STYLES
+ * @param {*} key - this point's raw icon_field/color_field value
+ * @returns {*} The matching entry, or undefined
+ */
+const lookup = (table, key) =>
+    table != null && Object.hasOwn(table, key) ? table[key] : undefined;
+
 const maskStyle = (url, color) => ({
     backgroundColor: color,
     WebkitMaskImage: `url(${url})`,
@@ -128,8 +140,8 @@ const getTypedMarkerIcon = place => {
     const { icons, colors } = globalThis.MARKER_STYLES || {};
     const marker = place.marker || {};
 
-    const typeIconUrl = resolveIconUrl(icons?.[marker.icon]);
-    const matchedColor = colors?.[marker.color] || '';
+    const typeIconUrl = resolveIconUrl(lookup(icons, marker.icon));
+    const matchedColor = lookup(colors, marker.color) || '';
     const hasRemark = Boolean(marker.badge);
 
     if (!typeIconUrl && !matchedColor && !hasRemark) {

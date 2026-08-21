@@ -1496,6 +1496,30 @@ def test_json_file_db_get_categories(tmp_path):
     assert list(categories) == ["test-category"]
 
 
+def test_json_db_without_categories_serves_locations():
+    """A data source with no `categories` at all is a valid setup - a map of plain,
+    unfilterable points - so neither listing categories nor querying locations may
+    depend on the key being there."""
+    uncategorized = {key: value for key, value in data.items() if key != "categories"}
+    db = in_memory_json_db(uncategorized)
+    extend_db_with_goodmap_queries(db, LocationBase)
+
+    assert list(json_db_get_categories(db)) == []
+    assert len(db.get_locations({})) == 2
+
+
+def test_json_file_db_without_categories_serves_locations(tmp_path):
+    uncategorized = {key: value for key, value in data.items() if key != "categories"}
+    test_file = tmp_path / "test.json"
+    test_file.write_text(json.dumps({"map": uncategorized}))
+
+    db = JsonFile(str(test_file))
+    extend_db_with_goodmap_queries(db, LocationBase)
+
+    assert list(json_file_db_get_categories(db)) == []
+    assert len(db.get_locations({})) == 2
+
+
 @mock.patch("platzky.db.google_json_db.Client")
 def test_google_json_db_get_categories(mock_cli):
     mock_cli.return_value.bucket.return_value.blob.return_value.download_as_text.return_value = (

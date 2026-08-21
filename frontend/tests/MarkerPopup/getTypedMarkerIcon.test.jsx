@@ -36,6 +36,24 @@ describe('getTypedMarkerIcon', () => {
         ).toBeNull();
     });
 
+    it.each(['toString', 'constructor', 'valueOf', 'hasOwnProperty'])(
+        'returns null for the inherited Object.prototype member %s',
+        member => {
+            setMarkerStyles(`{
+            "icons": { "parcelLocker": "https://cdn.example.com/parcel-locker.svg" },
+            "colors": { "open": "#2e7d32" }
+        }`);
+
+            expect(
+                getTypedMarkerIcon({
+                    uuid: '1',
+                    position: [50, 50],
+                    marker: { icon: member, color: member },
+                }),
+            ).toBeNull();
+        },
+    );
+
     it('builds a DivIcon when marker.icon matches a configured type icon', () => {
         setMarkerStyles(`{
             "icons": { "parcelLocker": "https://cdn.example.com/parcel-locker.svg" }

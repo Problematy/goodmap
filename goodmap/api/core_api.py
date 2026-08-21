@@ -204,7 +204,7 @@ def core_pages(
     photo_attachment_config: AttachmentConfig,
     feature_flags: FeatureFlagSet,
     shortcodes: dict[str, Shortcode],
-    pin_marker_fields: PinMarkerFields = PinMarkerFields(),
+    pin_marker_fields: PinMarkerFields,
 ) -> Blueprint:
     core_api_blueprint = Blueprint("api", __name__, url_prefix="/api")
 

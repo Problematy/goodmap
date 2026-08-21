@@ -632,13 +632,13 @@ def get_marker_styles(db):
 
 def json_db_get_categories(self):
     """Return category keys from in-memory JSON database."""
-    return self.data["categories"].keys()
+    return self.data.get("categories", {}).keys()
 
 
 def json_file_db_get_categories(self):
     """Return category keys from JSON file database."""
     with open(self.data_file_path, "r") as file:
-        return json.load(file)["map"]["categories"].keys()
+        return json.load(file)["map"].get("categories", {}).keys()
 
 
 def google_json_db_get_categories(self):
@@ -845,7 +845,7 @@ def get_locations_list_from_raw_data(map_data, query, location_model):
     """Filter and validate locations from raw map data based on query parameters.
 
     Args:
-        map_data: Dict containing 'data' and 'categories' keys.
+        map_data: Dict containing a 'data' key, and optionally 'categories'.
         query: Dict of query parameters for filtering.
         location_model: Pydantic model class to validate each location.
 
@@ -854,7 +854,7 @@ def get_locations_list_from_raw_data(map_data, query, location_model):
     """
     filtered_locations = get_queried_data(
         map_data["data"],
-        map_data["categories"],
+        map_data.get("categories", {}),
         query,
         map_data.get("categories_filter_mode", {}),
     )

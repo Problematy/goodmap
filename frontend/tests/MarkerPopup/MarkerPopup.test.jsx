@@ -2,6 +2,7 @@ import React from 'react';
 import '@testing-library/jest-dom';
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import { MapContainer } from 'react-leaflet';
+import { Marker as LeafletMarker } from 'leaflet';
 import MarkerPopup from '../../src/components/MarkerPopup/MarkerPopup';
 import httpService from '../../src/services/http/httpService';
 
@@ -148,5 +149,35 @@ describe('MarkerPopup with remark', () => {
         const style = window.getComputedStyle(marker);
         expect(style.width).toBe('45px');
         expect(style.height).toBe('50px');
+    });
+
+    it('does not rebuild the icon on a re-render that leaves place.marker alone', () => {
+        // react-leaflet compares icon by identity (updateMarker in react-leaflet/lib/Marker.js),
+        // so a fresh DivIcon per render re-runs setIcon - and with it renderToString and a
+        // full rewrite of the pin - on every store write, for every marker on the map.
+        const setIcon = jest.spyOn(LeafletMarker.prototype, 'setIcon');
+        const locationWithRemark = { ...location, marker: { badge: true } };
+        const tree = zoom => (
+            <MapContainer
+                center={locationWithRemark.position}
+                zoom={zoom}
+                style={{ height: '100vh', width: '100%' }}
+            >
+                <MarkerPopup place={locationWithRemark} key={locationWithRemark.uuid} />
+            </MapContainer>
+        );
+
+        let rerender;
+        act(() => {
+            ({ rerender } = render(tree(10)));
+        });
+        setIcon.mockClear();
+
+        act(() => {
+            rerender(tree(11));
+        });
+
+        expect(setIcon).not.toHaveBeenCalled();
+        setIcon.mockRestore();
     });
 });

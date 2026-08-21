@@ -978,7 +978,7 @@ def test_location_clustering_point_entries_carry_marker(test_app):
     data = response.json
     by_uuid = {entry["uuid"]: entry for entry in data}
     assert by_uuid["11111111-1111-1111-1111-111111111111"]["marker"] == {"badge": True}
-    assert by_uuid["22222222-2222-2222-2222-222222222222"]["marker"] is None
+    assert "marker" not in by_uuid["22222222-2222-2222-2222-222222222222"]
 
 
 def test_location_clustering_low_zoom_creates_clusters(test_app):

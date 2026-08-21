@@ -32,12 +32,13 @@ def test_map_clustering_data_single_point():
 
 
 def test_map_clustering_data_single_point_without_marker():
-    """A point with no marker styling carries an explicit null, not a missing key."""
+    """A point with no marker styling has no `marker` key at all, exactly as the
+    same point comes back from /api/locations."""
     input_data = [{"longitude": 50.0, "latitude": 60.0, "count": 1, "uuid": "test-uuid"}]
 
     result = map_clustering_data_to_proper_lazy_loading_object(input_data)
 
-    assert result[0]["marker"] is None
+    assert "marker" not in result[0]
 
 
 def test_map_clustering_data_cluster():

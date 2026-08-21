@@ -160,6 +160,38 @@ def test_map_route_marker_styles():
     assert "window.MARKER_STYLES={};" in response.data.decode("utf-8")
 
 
+def test_map_route_marker_styles_stay_in_step_with_the_api():
+    """window.MARKER_STYLES comes from the startup-time config, not a fresh read per
+    request. The field /api/locations reads marker.icon from is fixed at startup, so a
+    /map that served newer lookup tables would key them on values the API isn't
+    sending."""
+    data = {
+        "site_content": {"pages": []},
+        "location_obligatory_fields": [["type_of_place", "str"]],
+        "marker_styles": {
+            "icon_field": "type_of_place",
+            "icons": {"parcel_locker": "https://cdn.example.com/package.svg"},
+            "colors": {},
+        },
+    }
+    app = goodmap.create_app_from_config(
+        GoodmapConfig(
+            APP_NAME="test_app",
+            SECRET_KEY="test_secret",
+            USE_WWW=False,
+            BLOG_PREFIX="/blog",
+            DB=JsonDbConfig(DATA=data, TYPE="json"),
+        )
+    )
+    app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
+
+    app.db.data["marker_styles"] = {"icon_field": "something_else", "icons": {}, "colors": {}}
+
+    response_text = app.test_client().get("/map").data.decode("utf-8")
+    assert "parcel_locker" in response_text
+    assert "something_else" not in response_text
+
+
 def test_map_route_includes_photo_constraints():
     """The frontend sources photo upload limits (max size, allowed types) live from
     the backend's AttachmentConfig rather than hardcoding its own copy - this test

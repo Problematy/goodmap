@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { Marker } from 'react-leaflet';
 import { isMobile } from 'react-device-detect';
@@ -102,6 +102,11 @@ const MarkerPopup = ({ place }) => {
         setIsClicked(true);
     };
 
+    // react-leaflet compares `icon` by identity, so a fresh DivIcon on every render
+    // would tear down and rebuild the marker's DOM - and every MarkerPopup re-renders
+    // whenever anything writes selectedLocationId. Only place.marker can change it.
+    const typedIcon = useMemo(() => getTypedMarkerIcon(place), [place.marker]);
+
     const markerProps = {
         position: place.position,
         eventHandlers: {
@@ -109,7 +114,6 @@ const MarkerPopup = ({ place }) => {
         },
     };
 
-    const typedIcon = getTypedMarkerIcon(place);
     if (typedIcon) {
         markerProps.icon = typedIcon;
     }

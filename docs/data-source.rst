@@ -80,6 +80,8 @@ Everything else is yours. Custom fields are only *shown* if you list them in
 Field schema
 ------------
 
+.. _data-model-location_obligatory_fields:
+
 ``location_obligatory_fields``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -282,8 +284,13 @@ a map with no ``marker_styles`` still renders, just with plain pins.
    }
 
 ``icon_field``, ``color_field``
-   Names of fields on your points (typically ones already listed in ``categories``)
-   whose *value* selects the icon/color for that point. Either or both may be omitted.
+   Names of fields on your points whose *value* selects the icon/color for that point.
+   Either or both may be omitted.
+
+   Each must be declared in :ref:`data-model-location_obligatory_fields` — a field
+   every point is guaranteed to have, so that styling is never driven by something
+   only some of your points carry. A name that isn't declared there is ignored, and
+   pins get no icon/color from it.
 
 ``icons``
    Maps a value of ``icon_field`` to either a plain URL string, or

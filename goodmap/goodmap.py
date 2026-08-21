@@ -284,11 +284,10 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         Returns:
             Rendered map.html template with feature flags and the plugin manifest
         """
-        try:
-            marker_styles = app.db.get_marker_styles()  # type: ignore[attr-defined]
-        except (KeyError, AttributeError):
-            marker_styles = {}
-
+        # The startup-time marker_styles, not a fresh read: pin_marker_fields (which
+        # decides what /api/locations puts in marker.icon/color) is frozen at startup
+        # too, so re-reading here would hand the frontend lookup tables keyed on a
+        # field the API is no longer sending values from.
         return render_template(
             "map.html",
             feature_flags=config.feature_flags,
