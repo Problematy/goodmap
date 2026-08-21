@@ -6,7 +6,7 @@ const deps = require('./package.json').dependencies;
 
 module.exports = (env, argv) => {
     const IS_PROD = argv.mode === 'production';
-    const runOnAllInterfaces = env && env.serve === 'network';
+    const runOnAllInterfaces = env?.serve === 'network';
 
     return {
         plugins: [
@@ -28,7 +28,7 @@ module.exports = (env, argv) => {
             // dev-server-only constructs (e.g. HarmonyAcceptDependency) it doesn't
             // know how to handle, crashing with "Invalid value used as weak map
             // key". Keying the cache name off env.serve keeps the two fully apart.
-            name: env && env.serve ? 'dev-server' : 'build',
+            name: env?.serve ? 'dev-server' : 'build',
             cacheDirectory: path.resolve(__dirname, '.webpack-cache'),
             buildDependencies: {
                 config: [__filename],
