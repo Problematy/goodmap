@@ -1,6 +1,8 @@
 import importlib.metadata
 import io
+import json
 import os
+import re
 import sys
 import tempfile
 import types
@@ -132,9 +134,8 @@ def test_map_route_marker_styles():
                 "categories": {"type_of_place": ["parcel_locker", "container"]},
                 "marker_styles": {
                     "icon_field": "type_of_place",
-                    "icons": {
-                        "parcel_locker": "https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/fill/package-fill.svg"
-                    },
+                    "icon_provider": "phosphor",
+                    "icons": {"parcel_locker": "package"},
                     "colors": {},
                 },
             },
@@ -170,6 +171,7 @@ def test_map_route_marker_styles_stay_in_step_with_the_api():
         "location_obligatory_fields": [["type_of_place", "str"]],
         "marker_styles": {
             "icon_field": "type_of_place",
+            "icon_provider": "url",
             "icons": {"parcel_locker": "https://cdn.example.com/package.svg"},
             "colors": {},
         },
@@ -193,15 +195,16 @@ def test_map_route_marker_styles_stay_in_step_with_the_api():
 
 
 def test_map_route_serves_icons_already_resolved_to_urls():
-    """window.MARKER_STYLES.icons is a flat {value: url} table: the tagged
-    {provider, value} form a data source may use is resolved at startup, so supporting a
-    new provider never needs a frontend release."""
+    """window.MARKER_STYLES.icons is a flat {value: url} table: the provider-specific
+    values a data source configures are resolved at startup, so supporting a new provider
+    never needs a frontend release."""
     data = {
         "site_content": {"pages": []},
         "location_obligatory_fields": [["type_of_place", "str"]],
         "marker_styles": {
             "icon_field": "type_of_place",
-            "icons": {"big bridge": {"provider": "phosphor", "value": "bridge"}},
+            "icon_provider": "phosphor",
+            "icons": {"big bridge": "bridge"},
             "colors": {},
         },
     }
@@ -218,11 +221,12 @@ def test_map_route_serves_icons_already_resolved_to_urls():
 
     response_text = app.test_client().get("/map").data.decode("utf-8")
 
-    assert (
-        "https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/fill/bridge-fill.svg"
-        in response_text
-    )
-    assert "provider" not in response_text
+    match = re.search(r"window\.MARKER_STYLES\s*=\s*(.*?);", response_text)
+    assert match is not None
+    served = json.loads(match.group(1))
+    assert served["icons"] == {
+        "big bridge": "https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/fill/bridge-fill.svg"
+    }
 
 
 def test_map_route_includes_photo_constraints():

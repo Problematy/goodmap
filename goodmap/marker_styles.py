@@ -56,47 +56,33 @@ ICON_PROVIDERS: dict[str, IconProvider] = {
 }
 
 
-def _icon_url(entry: Any) -> str:
-    """The URL one marker_styles.icons entry stands for.
-
-    Args:
-        entry: A plain URL string - shorthand for the "url" provider - or a tagged
-            {"provider": <name in ICON_PROVIDERS>, "value": str} dict.
-
-    Returns:
-        The resolved URL.
-
-    Raises:
-        KeyError, TypeError: The entry is malformed. Deliberately not caught: bad
-            marker_styles config stops the app from starting, the same way a category
-            with no allowed values does (see data_models.location.create_location_model).
-    """
-    if isinstance(entry, str):
-        return ICON_PROVIDERS["url"].resolve(entry)
-    return ICON_PROVIDERS[entry["provider"]].resolve(entry["value"])
-
-
 def resolve_marker_styles(marker_styles: dict[str, Any]) -> dict[str, Any]:
     """Resolve marker_styles.icons into a flat {value: url} lookup table.
 
+    One "icon_provider" serves the whole table, so every entry is a plain value that
+    provider understands - a Phosphor icon name, a URL - rather than each one restating
+    which provider it came from.
+
     Args:
         marker_styles: Raw marker_styles config as returned by
-            goodmap.db.get_marker_styles(). May be empty or lack an "icons" key. Never
-            mutated - for the json backend this is the db's live in-memory config, so
-            resolving in place would rewrite what the deployment has stored.
+            goodmap.db.get_marker_styles(). Carries "icon_provider" (a name in
+            ICON_PROVIDERS) whenever it carries "icons". May be empty or lack both.
+            Never mutated - for the json backend this is the db's live in-memory config,
+            so resolving in place would rewrite what is stored.
 
     Returns:
         A new dict. "icons", if present, is replaced by a flat {value: url} map; every
         other key (icon_field, color_field, colors) is carried through untouched.
-        "colors" needs no resolving - it maps straight to CSS colors and never had a
-        tagged form.
+        "colors" needs no resolving - it maps straight to CSS colors, with no provider.
 
     Raises:
-        AttributeError, KeyError, TypeError: marker_styles.icons is malformed; see
-            _icon_url. Uncaught by design, so the app refuses to start.
+        KeyError, TypeError: "icon_provider" is missing or names a provider that does
+            not exist. Uncaught by design: bad config stops the app from starting, the
+            same way a category with no allowed values does (see
+            data_models.location.create_location_model).
     """
-    icons = marker_styles.get("icons")
-    if icons is None:
-        return dict(marker_styles)
-
-    return {**marker_styles, "icons": {key: _icon_url(entry) for key, entry in icons.items()}}
+    resolved = dict(marker_styles)
+    if icons := marker_styles.get("icons"):
+        provider = ICON_PROVIDERS[marker_styles["icon_provider"]]
+        resolved["icons"] = {key: provider.resolve(value) for key, value in icons.items()}
+    return resolved

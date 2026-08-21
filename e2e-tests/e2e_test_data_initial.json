@@ -276,15 +276,10 @@
     "marker_styles": {
       "icon_field": "type_of_place",
       "color_field": "speed_limit",
+      "icon_provider": "phosphor",
       "icons": {
-        "big bridge": {
-          "provider": "phosphor",
-          "value": "bridge"
-        },
-        "small bridge": {
-          "provider": "phosphor",
-          "value": "footprints"
-        }
+        "big bridge": "bridge",
+        "small bridge": "footprints"
       },
       "colors": {
         "10": "#2e7d32",

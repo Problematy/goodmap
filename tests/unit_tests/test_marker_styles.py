@@ -26,7 +26,7 @@ def test_a_provider_added_to_the_registry_is_picked_up():
         def resolve(self, value):
             return f"https://sprites.example/{value}.svg"
 
-    styles = {"icons": {"big bridge": {"provider": "sprite", "value": "bridge"}}}
+    styles = {"icon_provider": "sprite", "icons": {"big bridge": "bridge"}}
 
     with mock.patch.dict(ICON_PROVIDERS, {"sprite": SpriteProvider()}):
         resolved = resolve_marker_styles(styles)
@@ -34,58 +34,66 @@ def test_a_provider_added_to_the_registry_is_picked_up():
     assert resolved["icons"] == {"big bridge": "https://sprites.example/bridge.svg"}
 
 
-def test_resolves_phosphor_entry_to_cdn_url():
-    styles = {"icons": {"big bridge": {"provider": "phosphor", "value": "bridge"}}}
+def test_phosphor_provider_resolves_every_entry_in_the_table():
+    styles = {
+        "icon_provider": "phosphor",
+        "icons": {"big bridge": "bridge", "small bridge": "footprints"},
+    }
 
-    assert resolve_marker_styles(styles)["icons"] == {"big bridge": PHOSPHOR_BRIDGE_URL}
+    assert resolve_marker_styles(styles)["icons"] == {
+        "big bridge": PHOSPHOR_BRIDGE_URL,
+        "small bridge": (
+            "https://cdn.jsdelivr.net/npm/@phosphor-icons/core@2/assets/fill/footprints-fill.svg"
+        ),
+    }
 
 
-def test_resolves_url_provider_entry_to_its_value():
-    styles = {"icons": {"container": {"provider": "url", "value": "https://e.example/c.svg"}}}
-
-    assert resolve_marker_styles(styles)["icons"] == {"container": "https://e.example/c.svg"}
-
-
-def test_passes_plain_string_entry_through_unchanged():
-    styles = {"icons": {"container": "https://e.example/c.svg"}}
+def test_url_provider_serves_entries_the_deployment_hosts_itself():
+    styles = {"icon_provider": "url", "icons": {"container": "https://e.example/c.svg"}}
 
     assert resolve_marker_styles(styles)["icons"] == {"container": "https://e.example/c.svg"}
 
 
 @pytest.mark.parametrize(
-    "entry",
+    "styles",
     [
-        {"provider": "phosphorr", "value": "bridge"},
-        {"value": "bridge"},
-        {"provider": "phosphor"},
-        7,
-        None,
+        {"icon_provider": "phosphorr", "icons": {"big bridge": "bridge"}},
+        {"icons": {"big bridge": "bridge"}},
+        {"icon_provider": None, "icons": {"big bridge": "bridge"}},
     ],
-    ids=["unknown-provider", "no-provider", "no-value", "number", "null"],
+    ids=["unknown-provider", "no-provider", "null-provider"],
 )
-def test_malformed_entry_stops_the_app_from_starting(entry):
+def test_malformed_config_stops_the_app_from_starting(styles):
     """Bad marker_styles config is a deploy-time mistake, so it raises rather than
     quietly costing a pin its icon - the same stance create_location_model takes on a
     category with no allowed values."""
-    with pytest.raises((KeyError, TypeError, AttributeError)):
-        resolve_marker_styles({"icons": {"big bridge": entry}})
+    with pytest.raises((KeyError, TypeError)):
+        resolve_marker_styles(styles)
 
 
 def test_empty_marker_styles_stays_empty():
     assert resolve_marker_styles({}) == {}
 
 
-def test_missing_icons_key_is_not_invented():
-    assert resolve_marker_styles({"icon_field": "type_of_place"}) == {"icon_field": "type_of_place"}
+@pytest.mark.parametrize("icons", [{}, None], ids=["empty-table", "no-icons-key"])
+def test_nothing_to_resolve_needs_no_provider(icons):
+    """A deployment that styles pins by color alone never names an icon provider, so an
+    absent or empty table must not demand one."""
+    styles = {"icon_field": "type_of_place", "colors": {"10": "#2e7d32"}}
+    if icons is not None:
+        styles["icons"] = icons
+
+    assert resolve_marker_styles(styles) == styles
 
 
 def test_every_other_key_is_carried_through_untouched():
-    """colors maps straight to CSS colors and never had a tagged form, so it - like the
-    two field names - must survive resolution unchanged."""
+    """colors maps straight to CSS colors and has no provider, so it - like the two field
+    names - must survive resolution unchanged."""
     styles = {
         "icon_field": "type_of_place",
         "color_field": "speed_limit",
         "colors": {"10": "#2e7d32", "50": "#c62828"},
+        "icon_provider": "url",
         "icons": {"plain": "https://e.example/c.svg"},
     }
 
@@ -99,10 +107,7 @@ def test_every_other_key_is_carried_through_untouched():
 def test_does_not_mutate_the_config_it_was_given():
     """For the json backend this dict is the db's live in-memory config, so resolving in
     place would rewrite what the deployment has stored."""
-    styles = {
-        "icon_field": "type_of_place",
-        "icons": {"big bridge": {"provider": "phosphor", "value": "bridge"}},
-    }
+    styles = {"icon_provider": "phosphor", "icons": {"big bridge": "bridge"}}
     before = copy.deepcopy(styles)
     icons_before = styles["icons"]
 

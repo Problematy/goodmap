@@ -272,9 +272,10 @@ a map with no ``marker_styles`` still renders, just with plain pins.
      "marker_styles": {
        "icon_field": "type_of_place",
        "color_field": "transparency",
+       "icon_provider": "phosphor",
        "icons": {
-         "big bridge": "https://cdn.example.com/bridge.svg",
-         "container": {"provider": "phosphor", "value": "shipping-container"}
+         "big bridge": "bridge",
+         "container": "shipping-container"
        },
        "colors": {
          "lacking": "#c62828",
@@ -292,17 +293,24 @@ a map with no ``marker_styles`` still renders, just with plain pins.
    only some of your points carry. A name that isn't declared there is ignored, and
    pins get no icon/color from it.
 
-``icons``
-   Maps a value of ``icon_field`` to either a plain URL string, or
-   ``{"provider": "phosphor", "value": "<icon-name>"}`` to use a `Phosphor
-   <https://phosphoricons.com/>`_ icon by name instead of hosting your own SVG.
-   ``{"provider": "url", "value": "..."}`` is the plain string spelled out explicitly.
+``icon_provider``
+   Where your icons come from. One provider serves the whole ``icons`` table:
 
-   ``phosphor`` and ``url`` are the providers GoodMap knows; each one's URL is built
-   server-side, so the browser only ever receives finished URLs and a new provider needs
-   no frontend release. An entry GoodMap cannot make sense of — an unknown ``provider``,
-   a missing ``value`` — stops the app from starting, so the mistake surfaces on deploy
-   rather than as a silently unstyled pin.
+   ``phosphor``
+      Entries are `Phosphor <https://phosphoricons.com/>`_ icon names in kebab-case
+      (e.g. ``"shipping-container"``), so you need not host SVGs yourself.
+   ``url``
+      Entries are URLs of SVGs you host.
+
+   Required whenever ``icons`` has anything in it. Naming a provider GoodMap does not
+   know stops the app from starting, so the mistake surfaces on deploy rather than as a
+   silently unstyled pin.
+
+``icons``
+   Maps a value of ``icon_field`` to whatever ``icon_provider`` takes — an icon name for
+   ``phosphor``, a URL for ``url``. GoodMap turns these into finished URLs when the app
+   starts, so the browser never sees the provider and adding a new one needs no frontend
+   release.
 
 ``colors``
    Maps a value of ``color_field`` to a CSS color.
