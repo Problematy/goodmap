@@ -2,6 +2,13 @@
 
 <!-- version list -->
 
+## [2.0.0-alpha.7](https://github.com/Problematy/goodmap/compare/2.0.0-alpha.6...2.0.0-alpha.7) (2026-08-21)
+
+
+### Features
+
+* added markers styling ([#393](https://github.com/Problematy/goodmap/issues/393)) ([dae009b](https://github.com/Problematy/goodmap/commit/dae009b551400eb9d5554f655795cc92ff1a8216))
+
 ## [2.0.0-alpha.6](https://github.com/Problematy/goodmap/compare/2.0.0-alpha.5...2.0.0-alpha.6) (2026-08-19)
 
 
