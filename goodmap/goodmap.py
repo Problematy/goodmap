@@ -7,7 +7,6 @@ import os
 from typing import Any
 
 from flask import Blueprint, jsonify, redirect, render_template, session
-from flask_compress import Compress
 from flask_wtf.csrf import CSRFError
 from platzky import platzky
 from platzky.config import languages_dict
@@ -151,12 +150,6 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         extra_plugin_bases=list(CAPABILITY_BASES),
         extra_plugins_entrypoints=[_PLUGIN_ENTRY_POINT_GROUP],
     )
-
-    # Compress JSON/text responses (gzip, or brotli/zstd if the client offers them).
-    # Not every deployment sits behind a proxy that already does this, and it's a
-    # sizeable win for /api/locations, whose repeated marker-styling field values
-    # compress especially well.
-    Compress(app)
 
     frontend_static_dir = os.path.join(directory, "static", "frontend")
     app.register_blueprint(
