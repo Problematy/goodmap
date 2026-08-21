@@ -58,10 +58,6 @@ ICON_PROVIDERS: dict[str, IconProvider] = {
     "url": DirectUrlProvider(),
 }
 
-# A bare string entry is shorthand for this provider, so both spellings resolve by the
-# same path rather than one of them short-circuiting.
-_SHORTHAND_PROVIDER = "url"
-
 
 def _resolve_icon_entry(key: Any, entry: Any) -> str | None:
     """Resolve one marker_styles.icons entry to a usable URL.
@@ -76,7 +72,9 @@ def _resolve_icon_entry(key: Any, entry: Any) -> str | None:
         The resolved URL, or None if the entry is unresolvable (already logged).
     """
     if isinstance(entry, str):
-        name, value = _SHORTHAND_PROVIDER, entry
+        # A bare string is shorthand for the "url" provider, so both spellings resolve
+        # by the same path rather than one of them short-circuiting.
+        name, value = "url", entry
     elif isinstance(entry, dict):
         name, value = entry.get("provider"), entry.get("value")
     else:
@@ -91,6 +89,8 @@ def _resolve_icon_entry(key: Any, entry: Any) -> str | None:
         logger.warning("marker_styles.icons['%s'] has no usable 'value'; ignoring it", key)
         return None
 
+    # The isinstance check comes first because an unhashable provider - a list, say -
+    # would make .get() raise TypeError rather than miss.
     provider = ICON_PROVIDERS.get(name) if isinstance(name, str) else None
     if provider is None:
         logger.warning("marker_styles.icons['%s'] has unknown provider %r; ignoring it", key, name)
@@ -117,21 +117,20 @@ def resolve_marker_styles(marker_styles: dict[str, Any]) -> dict[str, Any]:
         is carried through untouched. "colors" needs no resolving - it maps straight to
         CSS colors and never had a tagged form.
     """
-    resolved = dict(marker_styles)
     icons = marker_styles.get("icons")
 
     if icons is None:
-        return resolved
+        return dict(marker_styles)
 
     if not isinstance(icons, dict):
         logger.warning("marker_styles.icons is not an object; ignoring it entirely")
-        resolved["icons"] = {}
-        return resolved
+        return {**marker_styles, "icons": {}}
 
-    resolved_icons: dict[Any, str] = {}
-    for key, entry in icons.items():
-        url = _resolve_icon_entry(key, entry)
-        if url is not None:
-            resolved_icons[key] = url
-    resolved["icons"] = resolved_icons
-    return resolved
+    return {
+        **marker_styles,
+        "icons": {
+            key: url
+            for key, entry in icons.items()
+            if (url := _resolve_icon_entry(key, entry)) is not None
+        },
+    }
