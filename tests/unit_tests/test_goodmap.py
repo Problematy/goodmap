@@ -185,11 +185,11 @@ def test_map_route_marker_styles_stay_in_step_with_the_api():
     )
     app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
 
-    app.db.data["marker_styles"] = {"icon_field": "something_else", "icons": {}, "colors": {}}
+    with mock.patch.object(app.db, "get_marker_styles") as fresh_read:
+        response_text = app.test_client().get("/map").data.decode("utf-8")
 
-    response_text = app.test_client().get("/map").data.decode("utf-8")
+    fresh_read.assert_not_called()
     assert "parcel_locker" in response_text
-    assert "something_else" not in response_text
 
 
 def test_map_route_includes_photo_constraints():

@@ -39,6 +39,7 @@ from goodmap.db import (
     json_db_get_category_data,
     json_db_get_data,
     json_db_get_location_obligatory_fields,
+    json_db_get_locations,
     json_db_get_report,
     json_db_get_reports,
     json_db_get_suggestion,
@@ -57,6 +58,7 @@ from goodmap.db import (
     json_file_db_get_category_data,
     json_file_db_get_data,
     json_file_db_get_location_obligatory_fields,
+    json_file_db_get_locations,
     json_file_db_get_locations_paginated,
     json_file_db_get_marker_styles,
     json_file_db_get_meta_data,
@@ -1502,10 +1504,9 @@ def test_json_db_without_categories_serves_locations():
     depend on the key being there."""
     uncategorized = {key: value for key, value in data.items() if key != "categories"}
     db = in_memory_json_db(uncategorized)
-    extend_db_with_goodmap_queries(db, LocationBase)
 
     assert list(json_db_get_categories(db)) == []
-    assert len(db.get_locations({})) == 2
+    assert len(json_db_get_locations(db, {}, LocationBase)) == 2
 
 
 def test_json_file_db_without_categories_serves_locations(tmp_path):
@@ -1514,10 +1515,9 @@ def test_json_file_db_without_categories_serves_locations(tmp_path):
     test_file.write_text(json.dumps({"map": uncategorized}))
 
     db = JsonFile(str(test_file))
-    extend_db_with_goodmap_queries(db, LocationBase)
 
     assert list(json_file_db_get_categories(db)) == []
-    assert len(db.get_locations({})) == 2
+    assert len(json_file_db_get_locations(db, {}, LocationBase)) == 2
 
 
 @mock.patch("platzky.db.google_json_db.Client")
