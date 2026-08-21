@@ -16,11 +16,15 @@ const TYPE_ICON_OFFSET_TOP = 8;
 const TYPE_ICON_OFFSET_LEFT = 12;
 
 /**
- * Resolves a configured marker_styles.icons entry to a usable URL. Supports a
- * plain string (a direct URL, as before) and a tagged {provider, value} object:
- * provider "phosphor" builds a jsdelivr CDN URL for value (an icon name), see
- * resolvePhosphorIconUrl; provider "url" is the same as a plain string, spelled
- * out explicitly.
+ * Resolves a configured marker_styles.icons entry to a usable URL.
+ *
+ * A current backend already resolves icons to plain URL strings (see goodmap's
+ * marker_styles.py), so that is the only branch this normally takes. The tagged
+ * {provider, value} branches remain as a compatibility shim, so this bundle also
+ * works against an older backend that still ships the unresolved form: provider
+ * "phosphor" builds a jsdelivr CDN URL for value (an icon name), see
+ * resolvePhosphorIconUrl; provider "url" is a plain string spelled out explicitly.
+ * They can go once such backends are no longer supported.
  *
  * @param {string|{provider: string, value: string}|undefined} icon
  * @returns {string} A usable URL, or '' if icon is unset

@@ -21,13 +21,6 @@ module.exports = (env, argv) => {
         ],
         cache: {
             type: 'filesystem',
-            // webpack-dev-server (serve:local/serve:prod/serve:network, all pass
-            // --env serve=...) injects HMR machinery into its build even under
-            // --mode production - sharing a cache namespace with the plain `build`
-            // script (same mode, no --env) corrupts it: a later plain build can hit
-            // dev-server-only constructs (e.g. HarmonyAcceptDependency) it doesn't
-            // know how to handle, crashing with "Invalid value used as weak map
-            // key". Keying the cache name off env.serve keeps the two fully apart.
             name: env?.serve ? 'dev-server' : 'build',
             cacheDirectory: path.resolve(__dirname, '.webpack-cache'),
             buildDependencies: {

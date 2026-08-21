@@ -26,6 +26,7 @@ from goodmap.db import (
     get_marker_styles,
 )
 from goodmap.feature_flags import EnableAdminPanel
+from goodmap.marker_styles import resolve_marker_styles
 from goodmap.plugin import CAPABILITY_BASES, GoodmapPluginBase
 
 logger = logging.getLogger(__name__)
@@ -173,9 +174,12 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
     # with the query functions it needs. categories/marker_styles are both optional
     # (see docs/data-source.rst) - every backend's get_category_data()/
     # get_marker_styles() already defaults them to {} internally.
+    #
+    # marker_styles is resolved once, here, so window.MARKER_STYLES.icons is a flat
+    # {value: url} table and the frontend never has to know about icon providers.
     location_obligatory_fields = get_location_obligatory_fields(app.db)
     categories = get_category_data(app.db)(app.db)["categories"]
-    marker_styles = get_marker_styles(app.db)(app.db)
+    marker_styles = resolve_marker_styles(get_marker_styles(app.db)(app.db))
 
     location_model = create_location_model(location_obligatory_fields, categories)
     app.db = extend_db_with_goodmap_queries(app.db, location_model)

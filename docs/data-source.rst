@@ -263,7 +263,7 @@ Marker styles
 -------------
 
 ``marker_styles`` picks which of your fields drive each point's pin icon and color, and
-supplies the lookup tables the frontend resolves them through. It is entirely optional —
+supplies the lookup tables those values are resolved through. It is entirely optional —
 a map with no ``marker_styles`` still renders, just with plain pins.
 
 .. code-block:: json
@@ -296,6 +296,12 @@ a map with no ``marker_styles`` still renders, just with plain pins.
    Maps a value of ``icon_field`` to either a plain URL string, or
    ``{"provider": "phosphor", "value": "<icon-name>"}`` to use a `Phosphor
    <https://phosphoricons.com/>`_ icon by name instead of hosting your own SVG.
+   ``{"provider": "url", "value": "..."}`` is the plain string spelled out explicitly.
+
+   GoodMap turns these into plain URLs when the app starts, so the browser only ever
+   receives finished URLs. An entry it cannot make sense of — an unknown ``provider``, a
+   missing ``value`` — is logged as a warning at startup and left out, costing that one
+   pin its icon rather than breaking the map.
 
 ``colors``
    Maps a value of ``color_field`` to a CSS color.
