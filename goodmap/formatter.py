@@ -1,6 +1,7 @@
 """Formatters for translating and preparing location data for display."""
 
 import logging
+from typing import Any
 
 from flask_babel import gettext, lazy_gettext
 
@@ -75,7 +76,7 @@ def _first_party_field(value):
     return {**value, "html": render_html(value)}
 
 
-def prepare_pin(place, visible_fields, meta_data, shortcodes=None):
+def prepare_pin(place, visible_fields, meta_data, shortcodes=None) -> dict[str, Any]:
     """Prepare location data for map pin display with translations.
 
     Args:

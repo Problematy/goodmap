@@ -88,8 +88,7 @@ TEST_LOCATIONS = {
         "lat": 51.1102,
         "lon": 17.0326,
         "tile_pattern": (
-            r"https://[abc]\.tile\.openstreetmap\.org/13/"
-            r"(4482|4483|4484)/(2737|2738|2739)\.png"
+            r"https://[abc]\.tile\.openstreetmap\.org/13/" r"(4482|4483|4484)/(2737|2738|2739)\.png"
         ),
     },
 }
