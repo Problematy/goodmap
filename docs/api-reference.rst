@@ -93,22 +93,25 @@ sorting and limiting, then optional server-side clustering.
 Formatting
 ----------
 
-Translation of category keys, option values and field names on the way out
-(:ref:`config-translations`).
+Turning a point into what its popup shows: translation of category keys, option values and
+field names on the way out (:ref:`config-translations`), and the rendering of a field's value
+into HTML — by a plugin's shortcode, or by one of the field types goodmap builds in
+(:ref:`plugins-builtin-field-types`).
 
 .. automodule:: goodmap.formatter
    :members:
 
-Marker presentation
--------------------
-
-What a point looks like before the browser gets it: the built-in field types goodmap renders
-itself, the pin icon/color lookup tables, and the view the map opens on
-(:ref:`data-source-initial_view`, :ref:`data-source-marker-styles`).
-
 .. automodule:: goodmap.field_types
    :members:
    :show-inheritance:
+
+Map presentation
+----------------
+
+What the page is told about the map itself. Both are resolved once at startup from the data
+source and handed to the template, rather than fetched per request, so a value that could not
+be honoured fails the boot instead of every page load. Configured in
+:ref:`data-source-marker-styles` and :ref:`data-source-initial_view`.
 
 .. automodule:: goodmap.marker_styles
    :members:

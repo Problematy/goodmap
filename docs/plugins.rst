@@ -118,7 +118,27 @@ with — so there is no Module Federation build, no bundle to serve, and no ``co
 to keep in sync. The field plugins described below remain the way to add behaviour goodmap's
 own React tree must take part in.
 
-The match is by name. A plugin contributing this shortcode
+A shortcode reaches a marker field only if it is permitted to render one. Goodmap registers
+``"marker_field"`` as a platzky content type, and ``prepare_pin`` is handed just the
+shortcodes that pass both gates: the plugin must *accept* the type and the operator must
+*grant* it. Both default to deny, so a shortcode that declares neither renders posts and
+never touches a popup.
+
+.. code-block:: python
+
+    class DiscountCodePlugin(ContentTransformerPluginBase):
+        accepted_content_types = ("marker_field",)   # the plugin is willing
+
+.. code-block:: json
+
+    {"plugins": {"discount_code": {"allowed_content_types": ["marker_field"]}}}
+
+The operator's half lives in the data source beside the rest of the plugin's config (see
+:ref:`data-source-plugins`). Marker fields are gated separately from post content because
+``render_value`` does not pass through ``transform_content``: without the second gate a
+plugin allowed to render posts would silently gain the popup as well.
+
+The match is then by name. A plugin contributing this shortcode
 
 .. code-block:: python
 

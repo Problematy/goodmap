@@ -235,9 +235,12 @@ NavigateMeButton.propTypes = {
  * @returns {React.ReactElement} Div containing formatted location details
  */
 const LocationDetails = ({ place }) => {
-    const categoriesWithSubcategories = place.data.filter(([category]) => !(category === 'CTA'));
-    // TODO CTA should be handled like website is
-    const CTACategories = place.data.filter(([category]) => category === 'CTA');
+    // Selected by the value's `type`, not by the field's label: the label is `gettext(field)`,
+    // so matching on it would drop the button in any locale that translates "CTA", and would
+    // miss a field that declares `type: "CTA"` under a name of its own.
+    const isCTA = ([, value]) => value?.type === 'CTA';
+    const categoriesWithSubcategories = place.data.filter(entry => !isCTA(entry));
+    const CTACategories = place.data.filter(isCTA);
 
     return (
         <PopupContainer>

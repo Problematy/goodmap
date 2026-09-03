@@ -46,4 +46,30 @@ describe('CTA', () => {
         expect(cta).toHaveAttribute('target', '_blank');
         expect(cta).toHaveAttribute('rel', 'noopener noreferrer');
     });
+
+    // The label is `gettext(field)`, so selecting on it would drop the button in any locale
+    // that translates "CTA", and would miss a field declaring the type under its own name.
+    it('renders the button from the value type, whatever the field is labelled', () => {
+        const translatedLabel = {
+            ...correctMarkerData,
+            data: [
+                [
+                    'wezwanie do dzialania',
+                    {
+                        type: 'CTA',
+                        value: 'https://www.example.com',
+                        displayValue: 'Visit example.org!',
+                        html: '<a href="https://www.example.com" target="_blank" rel="noopener noreferrer">Visit example.org!</a>',
+                    },
+                ],
+            ],
+        };
+
+        const { getByRole } = render(<LocationDetailsBox place={translatedLabel} />);
+
+        expect(getByRole('link', { name: 'Visit example.org!' })).toHaveAttribute(
+            'href',
+            'https://www.example.com',
+        );
+    });
 });

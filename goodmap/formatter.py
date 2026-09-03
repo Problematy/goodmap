@@ -97,6 +97,12 @@ def prepare_pin(place, visible_fields, meta_data, shortcodes=None) -> dict[str, 
         shortcode = plugins.get(field) or _builtin_shortcode(value)
         if shortcode is not None:
             value = _rendered_field(shortcode, value)
+        elif isinstance(value, dict) and "html" in value:
+            # ``html`` is this payload's word for "the server rendered this", and the popup
+            # injects it as markup. Nothing rendered this field, so an ``html`` here came
+            # from the data - a suggested point, an imported dataset - and must not be
+            # mistaken for goodmap's own output.
+            value = {key: item for key, item in value.items() if key != "html"}
         data.append([gettext(field), value])
     pin_data = {
         "title": place["name"],

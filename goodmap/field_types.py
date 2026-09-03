@@ -14,6 +14,7 @@ else, and so can never point itself at a plugin's renderer.
 
 from urllib.parse import urlparse
 
+from markupsafe import escape
 from platzky.shortcodes import Shortcode, ShortcodeAttr, ShortcodeAttrs, UrlNotPermitted
 from platzky.shortcodes.link import LinkShortcode
 
@@ -60,6 +61,9 @@ class HyperlinkFieldShortcode(LinkShortcode):
             An anchor, or just the link text when the URL is not one we may emit.
         """
         url = str(attrs.value or "")
+        # ``render_value`` falls back to ``value`` only when ``displayValue`` is absent; a
+        # present-but-empty one would otherwise render an anchor with nothing to click.
+        content = content or escape(url)
         link_attrs = ShortcodeAttrs(list(LinkShortcode.attributes))
         link_attrs.values = {"url": url}
         # A new tab is for leaving the site; handing a mailto: or tel: to the mail client or

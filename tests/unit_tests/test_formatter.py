@@ -1,3 +1,4 @@
+import pytest
 from platzky.shortcodes.shortcode import Shortcode, ShortcodeAttr, ShortcodeAttrs
 
 from goodmap.formatter import prepare_pin
@@ -191,3 +192,37 @@ def test_formatting_when_missing_visible_field():
         "metadata": {},
     }
     assert prepare_pin(test_place, visible_fields, []) == expected_data
+
+
+def test_html_in_the_data_is_dropped_rather_than_rendered_as_markup():
+    """``html`` means "the server rendered this", and the popup injects it as markup.
+
+    A location entry can carry any key - LocationBase allows extras, and a suggested or
+    imported point is not goodmap's own output - so an ``html`` nothing rendered has to be
+    stripped rather than passed on to be injected.
+    """
+    place = {**test_place, "evil": {"html": "<img src=x onerror=alert(1)>", "value": "hi"}}
+    result = prepare_pin(place, ["evil"], [])
+    assert result["data"] == [["evil", {"value": "hi"}]]
+
+
+def test_a_rendered_field_still_gets_its_html():
+    """The guard above must not disturb a field something actually rendered."""
+    place = {**test_place, "website": {"type": "hyperlink", "value": "https://example.com"}}
+    assert "html" in prepare_pin(place, ["website"], [])["data"][0][1]
+
+
+@pytest.mark.parametrize("display_value", ["", None], ids=["empty", "null"])
+def test_a_blank_display_value_falls_back_to_the_url(display_value):
+    """An anchor with no text is invisible and unclickable, and leaves the field's label
+    sitting above nothing - so a blank displayValue reads as absent, not as empty text."""
+    place = {
+        **test_place,
+        "website": {
+            "type": "hyperlink",
+            "value": "https://example.com",
+            "displayValue": display_value,
+        },
+    }
+    result = prepare_pin(place, ["website"], [])
+    assert ">https://example.com</a>" in result["data"][0][1]["html"]
