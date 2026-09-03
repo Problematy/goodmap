@@ -24,6 +24,28 @@ def safe_gettext(text):
         return gettext(text)
 
 
+def _shortcode_field(shortcode, value):
+    """Build the marker-popup payload for a field backed by a platzky shortcode.
+
+    The shortcode renders the value itself, so a plugin needs no frontend code here to
+    be displayable — ``FieldRenderer`` seeds the field's fold with ``html`` when no
+    first-party renderer claims the ``type``. The entry's own keys travel alongside for
+    a React field plugin rendering from the data instead; a bare value is placed under
+    the shortcode's ``content_key`` so such a plugin finds it under the name the
+    shortcode uses. ``type`` is stamped last, so an entry cannot redirect its own field
+    at another renderer.
+
+    Args:
+        shortcode: The platzky Shortcode registered for this field name.
+        value: The field's value from the location data.
+
+    Returns:
+        dict: The field payload, carrying at least ``type`` and ``html``.
+    """
+    entry = value if isinstance(value, dict) else {shortcode.content_key: value}
+    return {**entry, "type": shortcode.name, "html": shortcode.render_value(value)}
+
+
 def prepare_pin(place, visible_fields, meta_data, shortcodes=None):
     """Prepare location data for map pin display with translations.
 
@@ -32,8 +54,9 @@ def prepare_pin(place, visible_fields, meta_data, shortcodes=None):
         visible_fields: List of field names to display in pin
         meta_data: List of metadata field names
         shortcodes: Optional mapping of field name → Shortcode instance.
-            When a field name matches a shortcode, its value is transformed via
-            ``shortcode.transform_field_value()`` before display.
+            When a field name matches a shortcode, the value is replaced by this
+            popup's field payload: the entry's own keys, the ``type`` the frontend
+            routes on, and ``html`` — the shortcode's own rendering of the value.
 
     Returns:
         dict: Formatted pin data with title, subtitle, position, metadata, and translated fields
@@ -45,7 +68,7 @@ def prepare_pin(place, visible_fields, meta_data, shortcodes=None):
             continue
         value = safe_gettext(place[field])
         if field in plugins:
-            value = plugins[field].transform_field_value(value)
+            value = _shortcode_field(plugins[field], value)
         data.append([gettext(field), value])
     pin_data = {
         "title": place["name"],

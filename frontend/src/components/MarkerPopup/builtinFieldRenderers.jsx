@@ -70,6 +70,26 @@ export const CTAButtonField = ({ input }) => {
 
 CTAButtonField.propTypes = { input: fieldInputShape.isRequired };
 
+/**
+ * Renders the HTML a platzky shortcode produced for its own field value.
+ *
+ * The markup is not sanitized, and deliberately so: it comes from an installed plugin
+ * package, which already runs arbitrary code in the server process — the same trust
+ * platzky extends to shortcode output in post content. Sanitizing would filter nothing a
+ * plugin could not do more directly, while breaking legitimate markup. The plugin's
+ * obligation in return is to escape the *data* it interpolates, which is untrusted.
+ *
+ * Never reached for a `type` that has a first-party renderer, so a plugin cannot use it
+ * to take over `hyperlink` or `CTA`.
+ */
+export const PluginHtmlField = ({ input }) => (
+    <span dangerouslySetInnerHTML={{ __html: input.html }} />
+);
+
+PluginHtmlField.propTypes = {
+    input: PropTypes.shape({ html: PropTypes.string.isRequired }).isRequired,
+};
+
 // Built-in field renderers, keyed by field `type`. Resolved before plugins so a
 // plugin cannot shadow a first-party renderer (e.g. the URL-sanitizing link/button).
 export const builtinFieldRenderers = {

@@ -2,7 +2,7 @@ import React, { useReducer, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { getFieldPlugins, subscribe } from '../../plugins/pluginRegistry';
 import getContentAsString from './fieldContent';
-import { builtinFieldRenderers } from './builtinFieldRenderers';
+import { builtinFieldRenderers, PluginHtmlField } from './builtinFieldRenderers';
 
 /**
  * Renders a marker field value as a pipe.
@@ -27,11 +27,17 @@ const FieldRenderer = ({ value }) => {
     useEffect(() => subscribe(forceRender), []);
 
     const type = value?.type;
-    const Builtin = type ? builtinFieldRenderers[type] : undefined;
     const plugins = type ? getFieldPlugins(type) : [];
 
+    // The innermost stage renders the raw value. A first-party renderer for the type wins,
+    // so a plugin cannot shadow one; failing that, a shortcode that rendered the field
+    // itself seeds the fold with its own HTML, which is what lets a platzky plugin display
+    // without shipping any frontend code. Wrappers still wrap either one.
+    const Builtin = type ? builtinFieldRenderers[type] : undefined;
+    const Seed = Builtin ?? (value?.html ? PluginHtmlField : undefined);
+
     const stages = [
-        ...(Builtin ? [{ Stage: Builtin, config: undefined }] : []),
+        ...(Seed ? [{ Stage: Seed, config: undefined }] : []),
         ...plugins.map(({ Plugin, config }) => ({ Stage: Plugin, config })),
     ];
 

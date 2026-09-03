@@ -10,8 +10,8 @@ from flask import Blueprint, jsonify, redirect, render_template, session
 from flask_wtf.csrf import CSRFError
 from platzky import platzky
 from platzky.config import languages_dict
+from platzky.content_types import ContentType
 from platzky.models import CmsModule
-from platzky.plugin.content_transformer import ContentTransformerPluginBase
 from platzky.shortcodes import Shortcode
 
 from goodmap.api.admin_api import admin_pages
@@ -32,6 +32,14 @@ from goodmap.plugin import CAPABILITY_BASES, GoodmapPluginBase
 logger = logging.getLogger(__name__)
 
 _PLUGIN_ENTRY_POINT_GROUP = "goodmap.plugins"
+
+
+# A value stored against a map marker and shown in its popup: a kind of content platzky
+# does not have, so goodmap names it and registers it. A plugin opts in through
+# ``accepted_content_types`` and an operator grants it through ``allowed_content_types``,
+# exactly as for a post — and by name, so neither has to import goodmap to handle one.
+MARKER_FIELD_CONTENT_TYPE: ContentType = "marker_field"
+
 
 # Room above the attachment limit for a suggestion's text fields and multipart framing.
 MULTIPART_OVERHEAD_ALLOWANCE = 100 * 1024
@@ -150,6 +158,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         config,
         extra_plugin_bases=list(CAPABILITY_BASES),
         extra_plugins_entrypoints=[_PLUGIN_ENTRY_POINT_GROUP],
+        extra_content_types=[MARKER_FIELD_CONTENT_TYPE],
     )
 
     frontend_static_dir = os.path.join(directory, "static", "frontend")
@@ -245,19 +254,11 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
 
     photo_attachment_config = config.attachment
 
-    shortcodes: dict[str, Shortcode] = {}
-    for plugin in app.loaded_plugins:
-        if isinstance(plugin, ContentTransformerPluginBase):
-            for name, sc in plugin.shortcodes.items():
-                if name in shortcodes:
-                    logger.warning(
-                        "Shortcode '%s' from plugin '%s' conflicts with "
-                        "an already-registered shortcode; skipping",
-                        name,
-                        type(plugin).__name__,
-                    )
-                else:
-                    shortcodes[name] = sc
+    # Only shortcodes whose plugin is both willing to handle marker fields and granted
+    # them by the operator. prepare_pin renders these through render_value, which does
+    # not pass through Engine.transform_content — collecting them off loaded_plugins
+    # instead would leave allowed_content_types governing posts but not popups.
+    shortcodes: dict[str, Shortcode] = app.shortcodes_for(MARKER_FIELD_CONTENT_TYPE)
 
     cp = core_pages(
         app.db,

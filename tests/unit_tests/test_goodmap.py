@@ -6,7 +6,8 @@ import re
 import sys
 import tempfile
 import types
-from typing import Any
+from collections.abc import Mapping
+from typing import Any, ClassVar
 from unittest import mock
 from unittest.mock import MagicMock, patch
 
@@ -52,6 +53,7 @@ def test_create_app_from_config():
                 config,
                 extra_plugin_bases=list(CAPABILITY_BASES),
                 extra_plugins_entrypoints=["goodmap.plugins"],
+                extra_content_types=[goodmap.MARKER_FIELD_CONTENT_TYPE],
             )
             mock_extend_db.assert_called_once()
 
@@ -756,11 +758,19 @@ def test_admin_route_logged_in():
     assert "Test User" in response_text
 
 
-def test_field_renderer_shortcodes_collected_from_content_transformer_plugins() -> None:
-    """Shortcodes from all ContentTransformerPluginBase plugins are passed to core_pages."""
-    from typing import ClassVar
+def test_shortcodes_for_marker_fields_honours_both_keys() -> None:
+    """Only plugins that accept marker fields *and* were granted them reach prepare_pin.
 
-    from platzky.content_types import ALL_CONTENT_TYPES
+    render_value does not pass through transform_content, so collecting shortcodes off
+    loaded_plugins instead would leave allowed_content_types governing posts but not
+    popups. A plugin that never declared marker fields stays out even when the operator
+    grants them.
+    """
+    from platzky.content_types import (
+        ALL_CONTENT_TYPES,
+        BUILTIN_CONTENT_TYPES,
+        ContentType,
+    )
     from platzky.plugin.content_transformer import ContentTransformerPluginBase
     from platzky.shortcodes import Shortcode, ShortcodeAttrs
 
@@ -779,24 +789,31 @@ def test_field_renderer_shortcodes_collected_from_content_transformer_plugins() 
             return content
 
     class _PluginA(ContentTransformerPluginBase):
+        accepted_content_types: Mapping[ContentType, str] = {
+            ALL_CONTENT_TYPES: "Wraps whatever it is given; no constraint on where."
+        }
         shortcodes: ClassVar[dict[str, Shortcode]] = {"testfieldsc": _FieldSC()}
 
     class _PluginB(ContentTransformerPluginBase):
+        accepted_content_types: Mapping[ContentType, str] = {
+            "post": "Only meaningful in long-form prose."
+        }
         shortcodes: ClassVar[dict[str, Shortcode]] = {"testpostsc": _PostSC()}
 
+    granted = [*BUILTIN_CONTENT_TYPES, goodmap.MARKER_FIELD_CONTENT_TYPE]
     config = _make_test_app_config(
         extra_data={
             "plugins": {
                 "field_plugin": {
                     "is_active": True,
                     "config": {},
-                    "allowed_content_types": list(ALL_CONTENT_TYPES),
+                    "allowed_content_types": granted,
                     "allowed_topics": ["general", "content", "security"],
                 },
                 "post_plugin": {
                     "is_active": True,
                     "config": {},
-                    "allowed_content_types": list(ALL_CONTENT_TYPES),
+                    "allowed_content_types": granted,
                     "allowed_topics": ["general", "content", "security"],
                 },
             }
@@ -823,7 +840,8 @@ def test_field_renderer_shortcodes_collected_from_content_transformer_plugins() 
             goodmap.create_app_from_config(config)
 
     assert "testfieldsc" in captured["shortcodes"]
-    assert "testpostsc" in captured["shortcodes"]
+    # Granted marker_field by the operator, but never declared it: still blocked.
+    assert "testpostsc" not in captured["shortcodes"]
 
 
 def test_plugin_blueprint_sets_cors_header():

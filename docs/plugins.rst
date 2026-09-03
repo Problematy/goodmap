@@ -108,6 +108,24 @@ Field plugins
 value flows through the built-in for the field ``type`` (if any) and then each field plugin
 attached to that ``type`` via ``config.field``, innermost-first by ``config.order``.
 
+.. _plugins-shortcode-rendered-fields:
+
+**A platzky plugin needs no goodmap frontend at all.** When a field name matches a shortcode
+contributed by a loaded platzky plugin, ``prepare_pin`` also calls that shortcode's
+``render_value`` and carries the result as ``html`` on the field value. If no first-party
+renderer claims the ``type``, ``FieldRenderer`` seeds the fold with that HTML — so a plugin
+displays correctly by shipping a Python shortcode alone: no Module Federation build, no
+bundle to serve, no ``config.field`` to keep in sync. Field plugins below remain the way to
+add behaviour goodmap's own React tree must participate in, and to wrap what a shortcode
+rendered.
+
+That HTML is rendered, not sanitized. It comes from an installed plugin package, which
+already executes in the server process — the same trust platzky extends to shortcode output
+in post content, and filtering it would block nothing such a package could not do more
+directly. The plugin's side of that bargain is to escape the *data* it interpolates. A
+first-party renderer always wins over ``html``, so a plugin cannot take over ``hyperlink``
+or ``CTA``.
+
 A field plugin is a ``MarkerFieldPluginBase`` whose component is a stage
 ``({ input, config }) => element`` — it receives the previous stage's output as ``input``.
 There's one kind of field plugin; what it does with ``input`` is what makes it read as a

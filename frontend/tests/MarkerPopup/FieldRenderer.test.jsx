@@ -27,6 +27,40 @@ describe('FieldRenderer', () => {
         expect(screen.getByText('SAVE20')).toBeInTheDocument();
     });
 
+    it('renders shortcode-provided html when no first-party renderer exists', () => {
+        render(
+            <FieldRenderer
+                value={{ type: 'promocode', html: '<details><summary>Reveal</summary>SAVE20</details>' }}
+            />,
+        );
+        expect(screen.getByText('Reveal')).toBeInTheDocument();
+        expect(screen.getByText('SAVE20')).toBeInTheDocument();
+    });
+
+    it('prefers a first-party renderer over shortcode-provided html', () => {
+        render(
+            <FieldRenderer
+                value={{
+                    type: 'hyperlink',
+                    value: 'https://example.com',
+                    displayValue: 'Example',
+                    html: '<b>hijacked</b>',
+                }}
+            />,
+        );
+        expect(screen.getByRole('link', { name: 'Example' })).toBeInTheDocument();
+        expect(screen.queryByText('hijacked')).not.toBeInTheDocument();
+    });
+
+    it('lets a wrapper plugin wrap shortcode-provided html', () => {
+        const Wrapper = ({ input }) => <div data-testid="wrapper">{input}</div>;
+        Wrapper.propTypes = { input: PropTypes.node.isRequired };
+        act(() => registerPlugin('wrap', Wrapper, { field: 'wrapped', order: 1 }, 'MarkerField'));
+
+        render(<FieldRenderer value={{ type: 'wrapped', html: '<i>inner</i>' }} />);
+        expect(within(screen.getByTestId('wrapper')).getByText('inner')).toBeInTheDocument();
+    });
+
     it('falls back to the field value when nothing renders the type', () => {
         render(<FieldRenderer value={{ type: 'unknown', value: 'plain text' }} />);
         expect(screen.getByText('plain text')).toBeInTheDocument();
