@@ -2,6 +2,13 @@
 
 <!-- version list -->
 
+## [2.0.0-alpha.8](https://github.com/Problematy/goodmap/compare/2.0.0-alpha.7...2.0.0-alpha.8) (2026-09-03)
+
+
+### Features
+
+* added initial view nad rendering field content ([#402](https://github.com/Problematy/goodmap/issues/402)) ([20e4fb5](https://github.com/Problematy/goodmap/commit/20e4fb5868c97ec56740f5141f89bb6968ac2c2c))
+
 ## [2.0.0-alpha.7](https://github.com/Problematy/goodmap/compare/2.0.0-alpha.6...2.0.0-alpha.7) (2026-08-21)
 
 
