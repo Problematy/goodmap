@@ -56,13 +56,18 @@ class InitialView(BaseModel):
 def resolve_initial_view(initial_view: Mapping[str, Any] | None) -> dict[str, Any]:
     """The opening view the frontend needs, with every field filled in.
 
-    Takes the raw config, which may be empty or None since declaring a view is optional,
-    and returns ``{"center": [lat, lng], "zoom": int, "max_zoom": int}`` — always complete,
-    so the frontend carries no defaults of its own. ``center`` is a list rather than a tuple
-    because it is headed for JSON either way.
+    Args:
+        initial_view: The raw ``initial_view`` config. May be empty or None — declaring one
+            is optional.
 
-    Raises ``pydantic.ValidationError`` for a view that is out of range, internally
-    inconsistent, or carries an unknown key; uncaught by design, see the module docstring.
+    Returns:
+        ``{"center": [lat, lng], "zoom": int, "max_zoom": int}``, always complete, so the
+        frontend carries no defaults of its own. ``center`` is a list rather than a tuple
+        because it is headed for JSON either way.
+
+    Raises:
+        pydantic.ValidationError: The view is out of range, internally inconsistent, or
+            carries an unknown key. Uncaught by design — see the module docstring.
     """
     view = InitialView.model_validate(dict(initial_view or {}))
     return {"center": list(view.center), "zoom": view.zoom, "max_zoom": view.max_zoom}

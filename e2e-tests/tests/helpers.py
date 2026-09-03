@@ -69,14 +69,16 @@ def verify_popup_content(page: Page, expected_content: dict[str, Any]) -> None:
     elements on the page cannot satisfy them, and title/subtitle are found by their
     semantic elements (h3, p).
 
-    ``expected_content`` looks like::
+    Args:
+        page: Playwright page object.
+        expected_content: What the popup should show, e.g.::
 
-        {
-            "title": "Bridge Name",
-            "subtitle": "small bridge",
-            "categories": [["type of place", "small bridge"]],
-            "CTA": {"displayValue": "View on Map", "value": "https://..."},  # optional
-        }
+            {
+                "title": "Bridge Name",
+                "subtitle": "small bridge",
+                "categories": [["type of place", "small bridge"]],
+                "CTA": {"displayValue": "View on Map", "value": "https://..."},  # optional
+            }
     """
     # Scope to popup container
     popup = page.locator(".leaflet-popup-content, .MuiDialogContent-root")

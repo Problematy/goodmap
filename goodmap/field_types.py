@@ -30,6 +30,12 @@ def _link_html(entry: dict[str, Any]) -> str:
 
     A refused URL still renders its text, escaped and unlinked: the label would otherwise
     sit above a blank, and a wrapper plugin on ``hyperlink`` would get nothing to wrap.
+
+    Args:
+        entry: The field value as stored, carrying ``value`` and optionally ``displayValue``.
+
+    Returns:
+        An anchor, or just the escaped link text when the URL is not one we may emit.
     """
     url = str(entry.get("value") or "")
     text = str(entry.get("displayValue") or url)

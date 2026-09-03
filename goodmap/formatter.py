@@ -11,7 +11,14 @@ logger = logging.getLogger(__name__)
 
 
 def safe_gettext(text):
-    """Translate ``text``, mapping over a list and leaving a dict alone."""
+    """Translate ``text``, mapping over a list and leaving a dict alone.
+
+    Args:
+        text: A str, a list of str, or a dict.
+
+    Returns:
+        The translation, in the same shape as the input.
+    """
     if isinstance(text, list):
         return list(map(gettext, text))
     elif isinstance(text, dict):
@@ -28,6 +35,13 @@ def _shortcode_field(shortcode, value):
     React field plugin rendering from the data instead — a bare value under the shortcode's
     ``content_key``, the name that plugin would look for. ``type`` is stamped last, so an
     entry cannot redirect its own field at another renderer.
+
+    Args:
+        shortcode: The platzky Shortcode registered for this field name.
+        value: The field's value from the location data.
+
+    Returns:
+        The field payload, carrying at least ``type`` and ``html``.
     """
     entry = value if isinstance(value, dict) else {shortcode.content_key: value}
     return {**entry, "type": shortcode.name, "html": shortcode.render_value(value)}
@@ -38,7 +52,14 @@ def _first_party_field(value):
 
     Reached only where no plugin shortcode claimed the field, and only the closed catalogue
     in :mod:`goodmap.field_types` is on offer — so an entry can never name its way to a
-    plugin's renderer. Any other ``type`` is returned untouched.
+    plugin's renderer.
+
+    Args:
+        value: The field's value from the location data.
+
+    Returns:
+        The payload with ``html`` added, or ``value`` unchanged when its ``type`` is not
+        one goodmap renders.
     """
     if not isinstance(value, dict):
         return value
@@ -54,10 +75,15 @@ def _first_party_field(value):
 def prepare_pin(place, visible_fields, meta_data, shortcodes=None) -> dict[str, Any]:
     """Format one location into the translated payload its map popup renders.
 
-    ``shortcodes`` maps a field name to the platzky Shortcode bound to it; a match is
-    rendered by :func:`_shortcode_field`, anything else by :func:`_first_party_field`.
+    Args:
+        place: The location's data.
+        visible_fields: Field names to show in the popup.
+        meta_data: Field names to carry as metadata.
+        shortcodes: Field name → the platzky Shortcode bound to it. A match is rendered by
+            :func:`_shortcode_field`, anything else by :func:`_first_party_field`.
 
-    Returns title, subtitle, position, metadata, and ``data`` as ``[label, value]`` pairs.
+    Returns:
+        Title, subtitle, position, metadata, and ``data`` as ``[label, value]`` pairs.
     """
     plugins = shortcodes or {}
     data = []
