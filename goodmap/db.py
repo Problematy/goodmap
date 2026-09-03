@@ -635,7 +635,7 @@ def google_json_db_get_initial_view(self) -> dict[str, Any]:
     Retrieve the map's opening view from Google Cloud Storage JSON blob.
 
     Returns:
-        dict: Raw ``initial_view`` config (center, zoom, max_zoom). Returns empty dict if
+        dict: Raw ``initial_view`` config (center, zoom). Returns empty dict if
               not found - declaring a view is optional.
     """
     return self.data.get("map", {}).get("initial_view", {})
@@ -646,7 +646,7 @@ def json_file_db_get_initial_view(self) -> dict[str, Any]:
     Retrieve the map's opening view from JSON file database.
 
     Returns:
-        dict: Raw ``initial_view`` config (center, zoom, max_zoom). Returns empty dict if
+        dict: Raw ``initial_view`` config (center, zoom). Returns empty dict if
               not found - declaring a view is optional.
     """
     return self.data.get("map", {}).get("initial_view", {})
@@ -657,7 +657,7 @@ def json_db_get_initial_view(self) -> dict[str, Any]:
     Retrieve the map's opening view from in-memory JSON database.
 
     Returns:
-        dict: Raw ``initial_view`` config (center, zoom, max_zoom). Returns empty dict if
+        dict: Raw ``initial_view`` config (center, zoom). Returns empty dict if
               not found - declaring a view is optional.
     """
     return self.data.get("initial_view", {})
@@ -668,7 +668,7 @@ def mongodb_db_get_initial_view(self) -> dict[str, Any]:
     Retrieve the map's opening view from MongoDB.
 
     Returns:
-        dict: Raw ``initial_view`` config (center, zoom, max_zoom). Returns empty dict if
+        dict: Raw ``initial_view`` config (center, zoom). Returns empty dict if
               the config document is missing or does not declare one.
     """
     config_doc = self.db.config.find_one({"_id": "map_config"})

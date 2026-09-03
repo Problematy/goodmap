@@ -298,7 +298,14 @@
     ],
     "meta_data": [
       "uuid"
-    ]
+    ],
+    "initial_view": {
+      "center": [
+        51.1079,
+        17.0385
+      ],
+      "zoom": 12
+    }
   },
   "site_content": {
     "home_page_path": "/map",

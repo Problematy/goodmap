@@ -369,8 +369,8 @@ def test_json_file_db_get_initial_view_empty():
 
 
 def test_json_db_get_initial_view():
-    db = in_memory_json_db({"initial_view": {"center": [10.0, 20.0], "zoom": 3, "max_zoom": 12}})
-    assert json_db_get_initial_view(db) == {"center": [10.0, 20.0], "zoom": 3, "max_zoom": 12}
+    db = in_memory_json_db({"initial_view": {"center": [10.0, 20.0], "zoom": 3}})
+    assert json_db_get_initial_view(db) == {"center": [10.0, 20.0], "zoom": 3}
 
 
 def test_json_db_get_initial_view_empty():
@@ -381,10 +381,10 @@ def test_json_db_get_initial_view_empty():
 def test_google_json_db_get_initial_view(mock_cli):
     blob = mock_cli.return_value.bucket.return_value.blob.return_value
     blob.download_as_text.return_value = json.dumps(
-        {"map": {"initial_view": {"center": [53.37, 22.89], "max_zoom": 17}}}
+        {"map": {"initial_view": {"center": [53.37, 22.89], "zoom": 8}}}
     )
     db = GoogleJsonDb("bucket", "blob")
-    assert google_json_db_get_initial_view(db) == {"center": [53.37, 22.89], "max_zoom": 17}
+    assert google_json_db_get_initial_view(db) == {"center": [53.37, 22.89], "zoom": 8}
 
 
 @mock.patch("platzky.db.google_json_db.Client")

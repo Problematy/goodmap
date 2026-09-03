@@ -110,12 +110,13 @@ each field plugin attached to that ``type`` via ``config.field``, innermost-firs
 
 .. _plugins-shortcode-rendered-fields:
 
-**A platzky plugin needs no goodmap frontend at all.** ``prepare_pin`` matches each field
-name against the shortcodes loaded plugins contribute, and renders a match with that
-shortcode's ``render_value``, carrying the result as ``html`` for ``FieldRenderer`` to seed
-the fold with. A plugin can therefore display a field by shipping a Python shortcode alone:
-no Module Federation build, no bundle to serve, no ``config.field`` to keep in sync. Field
-plugins below remain the way to add behaviour goodmap's own React tree must take part in.
+**A marker field can be rendered with no frontend code at all**, by a platzky plugin that
+contributes a shortcode named after it. ``prepare_pin`` matches each field name against the
+shortcodes loaded plugins contribute and renders a match with that shortcode's
+``render_value``, carrying the result as ``html`` for ``FieldRenderer`` to seed the fold
+with — so there is no Module Federation build, no bundle to serve, and no ``config.field``
+to keep in sync. The field plugins described below remain the way to add behaviour goodmap's
+own React tree must take part in.
 
 The match is by name. A plugin contributing this shortcode
 
