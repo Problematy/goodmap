@@ -57,8 +57,59 @@ const DetailValue = styled.span`
     word-break: break-word;
 `;
 
+// The CTA is a link the server rendered (goodmap/field_types.py), so its button look is
+// styling rather than markup, and belongs here where the CTA fields are already selected.
+// An anchor also gets middle-click, "copy link address" and a screen reader announcing
+// where it goes, which the old onClick button did not.
 const CTAContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
     margin: 8px;
+
+    /* FieldRenderer wraps each value in an inline span; blockifying only the wrapper leaves
+       markup a plugin renders inside the CTA in its own flow. */
+    > span {
+        display: block;
+    }
+
+    a {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 40px;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 8px;
+        background-color: ${() => globalThis.SECONDARY_COLOR || 'black'};
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+        color: white;
+        font-size: 16px;
+        font-weight: 600;
+        line-height: 1.25;
+        text-align: center;
+        text-decoration: none;
+        cursor: pointer;
+        transition: filter 0.2s ease-in-out, box-shadow 0.2s ease-in-out, transform 0.1s ease-in-out;
+    }
+
+    /* Darkening by filter rather than a second colour keeps the hover correct for whatever
+       SECONDARY_COLOR the deployment sets. */
+    a:hover {
+        filter: brightness(0.9);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    a:active {
+        filter: brightness(0.85);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        transform: translateY(1px);
+    }
+
+    a:focus-visible {
+        outline: 2px solid ${() => globalThis.SECONDARY_COLOR || 'black'};
+        outline-offset: 2px;
+    }
 `;
 
 const ActionButton = styled.button`
@@ -184,9 +235,12 @@ NavigateMeButton.propTypes = {
  * @returns {React.ReactElement} Div containing formatted location details
  */
 const LocationDetails = ({ place }) => {
-    const categoriesWithSubcategories = place.data.filter(([category]) => !(category === 'CTA'));
-    // TODO CTA should be handled like website is
-    const CTACategories = place.data.filter(([category]) => category === 'CTA');
+    // Selected by the value's `type`, not by the field's label: the label is `gettext(field)`,
+    // so matching on it would drop the button in any locale that translates "CTA", and would
+    // miss a field that declares `type: "CTA"` under a name of its own.
+    const isCTA = ([, value]) => value?.type === 'CTA';
+    const categoriesWithSubcategories = place.data.filter(entry => !isCTA(entry));
+    const CTACategories = place.data.filter(isCTA);
 
     return (
         <PopupContainer>

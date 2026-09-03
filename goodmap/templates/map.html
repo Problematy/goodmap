@@ -121,6 +121,7 @@ window.SHOW_ACCESSIBILITY_TABLE = {{ feature_flags.SHOW_ACCESSIBILITY_TABLE | de
 window.FEATURE_FLAGS = {{ feature_flags | tojson }};
 window.PLUGIN_MANIFEST = {{ plugin_manifest | tojson }};
 window.MARKER_STYLES = {{ marker_styles | tojson }};
+window.INITIAL_VIEW = {{ initial_view | tojson }};
 </script>
 <script src="{{ goodmap_frontend_lib_url }}" crossorigin="anonymous"></script>
 {% endblock %}

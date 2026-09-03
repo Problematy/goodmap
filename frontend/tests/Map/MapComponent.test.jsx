@@ -35,6 +35,10 @@ httpService.getCategoriesData.mockResolvedValue({ categories, defaultChecked: {}
 // Fetched by the provider alongside the categories; no component here reads it.
 httpService.getLocationSchema.mockResolvedValue({});
 
+// map.html sets this on every served page, and map.config complains loudly when it is
+// absent - so every suite here that renders the real map has to supply it too.
+globalThis.INITIAL_VIEW = { center: [51.917, 19.013], zoom: 7 };
+
 describe('MapComponent', () => {
     beforeAll(() => {
         globalThis.FEATURE_FLAGS = {

@@ -23,9 +23,8 @@ The capability a plugin provides determines *how* its frontend renders:
 **Marker fields** (``MarkerFieldPluginBase``)
     Render a single location field inside a marker popup (capability ``"MarkerField"``,
     mounted by ``FieldRenderer``). ``FieldRenderer`` renders a field as a **pipe**: the raw
-    value flows through a chain of stages — the built-in for the field ``type`` (e.g.
-    ``hyperlink``/``CTA``) renders it, then each field plugin attached to that ``type``
-    transforms the result. A plugin's ``config`` declares which field it attaches to and
+    value flows through a chain of stages — the server-rendered ``html`` for the field seeds
+    it, then each field plugin attached to that ``type`` transforms the result. A plugin's ``config`` declares which field it attaches to and
     where it sits:
 
     - ``field``: the field ``type`` it applies to. For a custom type, the plugin's platzky
@@ -105,8 +104,118 @@ Field plugins
 
 ``visible_data`` is a list of field names displayed in location markers (see
 :ref:`data-model-visible_data`). ``FieldRenderer`` renders each such field as a pipe: the raw
-value flows through the built-in for the field ``type`` (if any) and then each field plugin
-attached to that ``type`` via ``config.field``, innermost-first by ``config.order``.
+value flows through the server-rendered ``html`` for the field (if there is any) and then
+each field plugin attached to that ``type`` via ``config.field``, innermost-first by
+``config.order``.
+
+.. _plugins-shortcode-rendered-fields:
+
+**A marker field can be rendered with no frontend code at all**, by a platzky plugin that
+contributes a shortcode named after it. ``prepare_pin`` matches each field name against the
+shortcodes loaded plugins contribute and renders a match with that shortcode's
+``render_value``, carrying the result as ``html`` for ``FieldRenderer`` to seed the fold
+with — so there is no Module Federation build, no bundle to serve, and no ``config.field``
+to keep in sync. The field plugins described below remain the way to add behaviour goodmap's
+own React tree must take part in.
+
+A shortcode reaches a marker field only if it is permitted to render one. Goodmap registers
+``"marker_field"`` as a platzky content type, and ``prepare_pin`` is handed just the
+shortcodes that pass both gates: the plugin must *accept* the type and the operator must
+*grant* it. Both default to deny, so a shortcode that declares neither renders posts and
+never touches a popup.
+
+.. code-block:: python
+
+    class DiscountCodePlugin(ContentTransformerPluginBase):
+        accepted_content_types = ("marker_field",)   # the plugin is willing
+
+.. code-block:: json
+
+    {"plugins": {"discount_code": {"allowed_content_types": ["marker_field"]}}}
+
+The operator's half lives in the data source beside the rest of the plugin's config (see
+:ref:`data-source-plugins`). Marker fields are gated separately from post content because
+``render_value`` does not pass through ``transform_content``: without the second gate a
+plugin allowed to render posts would silently gain the popup as well.
+
+The match is then by name. A plugin contributing this shortcode
+
+.. code-block:: python
+
+    class DiscountCodeShortcode(Shortcode):
+        name = "discount_code"
+        #: A bare field value becomes the inner content, stored under this key.
+        content_key = "code"
+
+        def render(self, attrs, content):
+            # `content` is Markup — already escaped, so embed it as it is.
+            return f'<span class="discount-code">{content}</span>'
+
+claims the field of the same name in a location entry
+
+.. code-block:: json
+
+    {"name": "Bike repair point", "discount_code": "SUMMER24"}
+
+and, with ``discount_code`` in ``visible_data``, the popup receives
+
+.. code-block:: json
+
+    ["discount_code", {
+        "code": "SUMMER24",
+        "type": "discount_code",
+        "html": "<span class=\"discount-code\">SUMMER24</span>"
+    }]
+
+``html`` is what the popup displays. ``type`` is the shortcode's name, so a field plugin can
+still attach to it by ``config.field`` and wrap what the shortcode rendered, and ``code`` is
+the bare value under the shortcode's ``content_key``, for a plugin that would rather render
+from the data itself.
+
+.. warning::
+
+   A shortcode's rendering is presentation, not concealment. The bare value travels in the
+   payload beside the HTML, so a shortcode that masks or omits part of what it displays still
+   ships the original to the browser, where anyone reading the response can see it. Render a
+   field only from data its viewers may have; leave anything else out of ``visible_data``.
+
+Of the three, only ``html`` and ``type`` are read by goodmap itself - the bare value is
+carried purely for that render-from-data plugin, and may be dropped in a future version if
+none turns out to want it.
+
+That HTML is rendered, not sanitized. It comes from an installed plugin package, which
+already executes in the server process, so filtering it would block nothing such a package
+could not do more directly. The plugin's side of that bargain is to escape the *data* it
+interpolates.
+
+.. _plugins-builtin-field-types:
+
+Goodmap's own field types are shortcodes too. ``hyperlink`` and ``CTA``, in
+``goodmap/field_types.py``, are ordinary platzky ``Shortcode`` subclasses rendered through
+the same ``render_value`` — so there is one renderer interface rather than two, no built-in
+React field renderers at all, and one URL policy (platzky's, which admits ``http``,
+``https``, ``mailto`` and ``tel``) rather than one in Python and another in JavaScript.
+
+What differs is only how the shortcode is found. A plugin's is bound to a field by **name**,
+which is what makes that field its own. Goodmap's own are looked up by the **type** the entry
+declares, so any field can ask to be a ``hyperlink`` whatever it is called:
+
+.. code-block:: json
+
+    {"website": {"type": "hyperlink", "value": "https://example.com"}}
+
+That lookup is safe only because the catalogue is closed: an entry may name a type in there
+and nothing else, so it can never point its own field at a plugin's renderer. ``prepare_pin``
+consults it only where no plugin shortcode claimed the field by name.
+
+A plugin cannot take over ``hyperlink`` or ``CTA`` either. The server always emits ``html``
+for a type it renders, so that HTML is always the innermost stage — a field plugin attached
+to one of these types wraps it and cannot replace it.
+
+The two share a rendering, because they only ever differed in presentation: both are a URL
+and the text to show for it. Which one a field is decides where the popup puts it — a line
+among the details, or a button below them — which ``LocationDetails`` decides from the field
+name.
 
 A field plugin is a ``MarkerFieldPluginBase`` whose component is a stage
 ``({ input, config }) => element`` — it receives the previous stage's output as ``input``.
@@ -134,7 +243,7 @@ rendering. Its platzky shortcode turns the raw value into ``{"type": "<field>", 
     }
 
 **Wrap the input** — a later stage receives the current element and composes around it (e.g.
-to customize a built-in ``hyperlink``/``CTA``). Needs no shortcode:
+to customize a ``hyperlink`` or a ``CTA``). Needs no shortcode:
 
 .. code-block:: jsx
 
@@ -150,7 +259,8 @@ to customize a built-in ``hyperlink``/``CTA``). Needs no shortcode:
 
 Both are the same plugin kind. Each sets ``config.field`` to the type it attaches to and,
 optionally, ``config.order``; lower order is more innermost, higher order wraps further out.
-A wrapper must have a renderer beneath it (a built-in, or one it depends on).
+A wrapper must have a renderer beneath it (a type rendered server-side — one of goodmap's
+own, or a plugin's shortcode — or a renderer plugin it depends on).
 
 .. _plugins-configuration:
 

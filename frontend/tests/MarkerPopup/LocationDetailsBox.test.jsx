@@ -4,6 +4,8 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import LocationDetailsBox from '../../src/components/MarkerPopup/LocationDetails';
 import toast from '../../src/utils/toast';
 
+// Field values as `prepare_pin` sends them: a `hyperlink` carries the server-rendered
+// `html` (goodmap/field_types.py), which is what FieldRenderer seeds the fold with.
 const correctMarkerData = {
     title: 'Most Grunwaldzki',
     position: [51.1095, 17.0525],
@@ -11,13 +13,21 @@ const correctMarkerData = {
     data: [
         ['length', 112.5],
         ['accessible_by', ['pedestrians', 'cars']],
-        ['website', { type: 'hyperlink', value: 'https://www.google.com' }],
+        [
+            'website',
+            {
+                type: 'hyperlink',
+                value: 'https://www.google.com',
+                html: `<a href="https://www.google.com" target="_blank" rel="noopener noreferrer">https://www.google.com</a>`,
+            },
+        ],
         [
             'websiteWithDisplayValue',
             {
                 type: 'hyperlink',
                 value: 'https://www.google.com',
                 displayValue: 'testWebsite',
+                html: `<a href="https://www.google.com" target="_blank" rel="noopener noreferrer">testWebsite</a>`,
             },
         ],
         ['unknownDataType', { type: 'unknown', value: 'example value for unknown data type' }],

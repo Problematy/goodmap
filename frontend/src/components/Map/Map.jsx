@@ -8,20 +8,22 @@ import { FiltersProvider } from '../../context/FiltersContext';
 import AppToaster from '../common/AppToaster';
 
 /**
- * Wrapper component that renders the map and filters form into their respective DOM placeholders.
- * Uses React portals to render components into pre-existing DOM elements outside the React tree.
- * Wraps both components with DeploymentDataProvider, which fetches this deployment's
- * fixed data (category definitions and the new-point schema) once for every consumer,
- * and with FiltersProvider, which owns the one thing that changes as the app runs.
+ * Portals the map and filters form into DOM placeholders outside the React tree, under
+ * DeploymentDataProvider (this deployment's fixed data, fetched once for every consumer) and
+ * FiltersProvider (the one thing that changes as the app runs).
  *
- * @returns {React.ReactElement|null} Portals for FiltersForm and MapComponent, or null if placeholders not found
+ * Only #map is required: a deployment with no categories renders no left panel, so
+ * #filter-form is legitimately absent and the filters portal is rendered only when there is
+ * somewhere to put it.
+ *
+ * @returns {React.ReactElement|null} The portals, or null when #map is missing
  */
 const MapWrap = () => {
     const mapPlaceholder = document.getElementById('map');
     const filtersPlaceholder = document.getElementById('filter-form');
 
-    if (!filtersPlaceholder || !mapPlaceholder) {
-        console.error('Did not find any DOM elements to render the map or filters form');
+    if (!mapPlaceholder) {
+        console.error('Did not find a #map element to render the map into');
         return null;
     }
 
@@ -29,7 +31,7 @@ const MapWrap = () => {
         <DeploymentDataProvider>
             <FiltersProvider>
                 <AppToaster />
-                {createPortal(<FiltersForm />, filtersPlaceholder)}
+                {filtersPlaceholder && createPortal(<FiltersForm />, filtersPlaceholder)}
                 {createPortal(<MapComponent />, mapPlaceholder)}
             </FiltersProvider>
         </DeploymentDataProvider>
