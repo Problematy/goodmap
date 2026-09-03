@@ -104,24 +104,57 @@ Field plugins
 
 ``visible_data`` is a list of field names displayed in location markers (see
 :ref:`data-model-visible_data`). ``FieldRenderer`` renders each such field as a pipe: the raw
-value flows through the built-in for the field ``type`` (if any) and then each field plugin
-attached to that ``type`` via ``config.field``, innermost-first by ``config.order``.
+value flows through the server-rendered ``html`` for the field (if there is any) and then
+each field plugin attached to that ``type`` via ``config.field``, innermost-first by
+``config.order``.
 
 .. _plugins-shortcode-rendered-fields:
 
-**A platzky plugin needs no goodmap frontend at all.** When a field name matches a shortcode
-contributed by a loaded platzky plugin, ``prepare_pin`` also calls that shortcode's
-``render_value`` and carries the result as ``html`` on the field value. If no first-party
-renderer claims the ``type``, ``FieldRenderer`` seeds the fold with that HTML — so a plugin
-displays correctly by shipping a Python shortcode alone: no Module Federation build, no
-bundle to serve, no ``config.field`` to keep in sync. Field plugins below remain the way to
-add behaviour goodmap's own React tree must participate in, and to wrap what a shortcode
-rendered.
+**A platzky plugin needs no goodmap frontend at all.** ``prepare_pin`` matches each field
+name against the shortcodes loaded plugins contribute, and renders a match with that
+shortcode's ``render_value``, carrying the result as ``html`` for ``FieldRenderer`` to seed
+the fold with. A plugin can therefore display a field by shipping a Python shortcode alone:
+no Module Federation build, no bundle to serve, no ``config.field`` to keep in sync. Field
+plugins below remain the way to add behaviour goodmap's own React tree must take part in.
+
+The match is by name. A plugin contributing this shortcode
+
+.. code-block:: python
+
+    class DiscountCodeShortcode(Shortcode):
+        name = "discount_code"
+        #: A bare field value becomes the inner content, stored under this key.
+        content_key = "code"
+
+        def render(self, attrs, content):
+            # `content` is Markup — already escaped, so embed it as it is.
+            return f'<span class="discount-code">{content}</span>'
+
+claims the field of the same name in a location entry
+
+.. code-block:: json
+
+    {"name": "Bike repair point", "discount_code": "SUMMER24"}
+
+and, with ``discount_code`` in ``visible_data``, the popup receives
+
+.. code-block:: json
+
+    ["discount_code", {
+        "code": "SUMMER24",
+        "type": "discount_code",
+        "html": "<span class=\"discount-code\">SUMMER24</span>"
+    }]
+
+``html`` is what the popup displays. ``type`` is the shortcode's name, so a field plugin can
+still attach to it by ``config.field`` and wrap what the shortcode rendered, and ``code`` is
+the bare value under the shortcode's ``content_key``, for a plugin that would rather render
+from the data itself.
 
 That HTML is rendered, not sanitized. It comes from an installed plugin package, which
-already executes in the server process — the same trust platzky extends to shortcode output
-in post content, and filtering it would block nothing such a package could not do more
-directly. The plugin's side of that bargain is to escape the *data* it interpolates.
+already executes in the server process, so filtering it would block nothing such a package
+could not do more directly. The plugin's side of that bargain is to escape the *data* it
+interpolates.
 
 .. _plugins-first-party-field-types:
 

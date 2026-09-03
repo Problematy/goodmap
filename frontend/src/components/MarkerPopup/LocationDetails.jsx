@@ -62,27 +62,53 @@ const DetailValue = styled.span`
 // the CTA fields. An anchor rather than a button also gets middle-click, "copy link
 // address" and a screen reader announcing where it goes, which the old onClick did not.
 const CTAContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
     margin: 8px;
+
+    /* FieldRenderer hands each value back wrapped in an inline span; only the wrapper is
+       blockified, so markup a plugin renders inside the CTA keeps its own flow. */
+    > span {
+        display: block;
+    }
 
     a {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 100%;
-        height: 40px;
-        min-width: 50px;
-        padding: 0;
+        min-height: 40px;
+        padding: 8px 16px;
         border: none;
         border-radius: 8px;
         background-color: ${() => globalThis.SECONDARY_COLOR || 'black'};
-        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
         color: white;
-        font-size: 18px;
-        line-height: 1;
+        font-size: 16px;
+        font-weight: 600;
+        line-height: 1.25;
         text-align: center;
         text-decoration: none;
         cursor: pointer;
-        transition: background-color 0.2s ease-in-out;
+        transition: filter 0.2s ease-in-out, box-shadow 0.2s ease-in-out, transform 0.1s ease-in-out;
+    }
+
+    /* Darkening by filter rather than a second colour keeps the hover correct for whatever
+       SECONDARY_COLOR the deployment sets, which no hardcoded shade could. */
+    a:hover {
+        filter: brightness(0.9);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    a:active {
+        filter: brightness(0.85);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        transform: translateY(1px);
+    }
+
+    a:focus-visible {
+        outline: 2px solid ${() => globalThis.SECONDARY_COLOR || 'black'};
+        outline-offset: 2px;
     }
 `;
 
