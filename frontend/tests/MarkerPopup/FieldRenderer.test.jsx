@@ -54,6 +54,22 @@ describe('FieldRenderer', () => {
         expect(within(screen.getByTestId('wrapper')).getByText('inner')).toBeInTheDocument();
     });
 
+    // An empty rendering is still a rendering: the wrapper's contract is that `input` is the
+    // previous stage's element, and dropping the seed for '' would hand it the raw value.
+    it('keeps a wrapper wrapping when the server rendered the field to an empty string', () => {
+        const Wrapper = ({ input }) => <div data-testid="empty-wrapper">{input}</div>;
+        Wrapper.propTypes = { input: PropTypes.node.isRequired };
+        act(() =>
+            registerPlugin('wrapEmpty', Wrapper, { field: 'empty', order: 1 }, 'MarkerField'),
+        );
+
+        render(<FieldRenderer value={{ type: 'empty', value: 'not the rendering', html: '' }} />);
+        // The empty span is the seed stage having run, rather than the wrapper being handed
+        // the raw value object and rendering nothing of it.
+        expect(screen.getByTestId('empty-wrapper').innerHTML).toBe('<span></span>');
+        expect(screen.queryByText('not the rendering')).toBeNull();
+    });
+
     it('falls back to the field value when nothing renders the type', () => {
         render(<FieldRenderer value={{ type: 'unknown', value: 'plain text' }} />);
         expect(screen.getByText('plain text')).toBeInTheDocument();

@@ -33,7 +33,11 @@ const FieldRenderer = ({ value }) => {
     // seeds the fold with its own HTML, which is what lets both goodmap's first-party types
     // and a platzky plugin display without shipping any frontend code. Wrappers wrap it, and
     // because the seed is always there for a rendered type, they cannot replace it.
-    const Seed = value?.html ? ServerHtmlField : undefined;
+    //
+    // Presence, not truthiness: a shortcode that renders an empty string for an empty value
+    // still rendered the field, and dropping the seed there would hand a wrapper the raw
+    // value object where its contract promises the previous stage's element.
+    const Seed = typeof value?.html === 'string' ? ServerHtmlField : undefined;
 
     const stages = [
         ...(Seed ? [{ Stage: Seed, config: undefined }] : []),
