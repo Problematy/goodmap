@@ -99,6 +99,24 @@ Translation of category keys, option values and field names on the way out
 .. automodule:: goodmap.formatter
    :members:
 
+Marker presentation
+-------------------
+
+What a point looks like before the browser gets it: the built-in field types goodmap renders
+itself, the pin icon/color lookup tables, and the view the map opens on
+(:ref:`data-source-initial_view`, :ref:`data-source-marker-styles`).
+
+.. automodule:: goodmap.field_types
+   :members:
+   :show-inheritance:
+
+.. automodule:: goodmap.marker_styles
+   :members:
+
+.. automodule:: goodmap.initial_view
+   :members:
+   :show-inheritance:
+
 Errors
 ------
 

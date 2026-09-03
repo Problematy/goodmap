@@ -17,6 +17,8 @@ and their schema, alongside platzky's ``site_content`` section:
        "categories": { ... },
        "visible_data": [ ... ],
        "meta_data": [ ... ],
+       "initial_view": { ... },
+       "marker_styles": { ... },
        "reported_issue_types": [ ... ],
        "suggestions": [ ... ],
        "reports": [ ... ]
@@ -256,6 +258,40 @@ Putting it together
 Each category's active mode is exposed as ``filter_mode`` in the
 ``/api/categories-full`` response, so a custom frontend can render the right control —
 checkbox or radio — without hardcoding category names.
+
+.. _data-source-initial_view:
+
+Initial view
+------------
+
+``initial_view`` is where the map opens — the position a visitor sees before panning
+anywhere. It is optional: a map that declares none opens on the whole of Poland, which is
+what the frontend hardcoded before this was configurable.
+
+.. code-block:: json
+
+   {
+     "initial_view": {
+       "center": [51.1079, 17.0385],
+       "zoom": 12
+     }
+   }
+
+``center``
+   ``[latitude, longitude]`` the map is centred on.
+
+``zoom``
+   Leaflet zoom level — roughly 6 a country, 10 a province, 13 a town, 16 a street. It may
+   not exceed 19, the furthest the OpenStreetMap tile layer serves, and how far in a visitor
+   can zoom is that same fixed ceiling rather than anything you configure.
+
+Either key may be omitted and keeps its default, so moving only the centre is usually
+enough.
+
+A view GoodMap cannot honour — a latitude past the pole, a zoom no tile layer serves, a
+misspelled key — stops the app from starting, the same way an unknown icon provider does.
+Leaflet would otherwise clamp or ignore the value and open somewhere other than you asked
+for, which is far harder to notice than a failed deploy.
 
 .. _data-source-marker-styles:
 

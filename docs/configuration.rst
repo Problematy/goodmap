@@ -200,6 +200,11 @@ frontend to decide what to render. Both are set the same way.
      - frontend
      - Shows an alternative table view of the map data, for users who cannot use the map
        itself.
+   * - ``ENABLE_ADMIN_PANEL``
+     - backend
+     - Serves the admin interface at ``/goodmap-admin`` for managing points, suggestions and
+       reports. Without it that route redirects to ``/``. It requires a logged-in user
+       either way.
    * - ``FAKE_LOGIN``
      - backend
      - platzky flag: lets anyone log in by picking a role, with no authentication. For

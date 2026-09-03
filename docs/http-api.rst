@@ -183,6 +183,23 @@ list of ``[label, value]`` pairs — the fields listed in ``visible_data``, in t
 with both label and value translated. ``metadata`` holds the ``meta_data`` fields. Fields
 in neither list are not returned at all.
 
+A field GoodMap renders — one naming a built-in ``type`` such as ``hyperlink`` or ``CTA``,
+or one a plugin's shortcode is bound to — comes back as an object rather than a bare value:
+
+.. code-block:: json
+
+   ["website", {
+     "type": "hyperlink",
+     "value": "https://example.com",
+     "displayValue": "Example",
+     "html": "<a href=\"https://example.com\" target=\"_blank\" rel=\"noopener noreferrer\">Example</a>"
+   }]
+
+``html`` is the rendering to display and ``type`` says what produced it; the entry's own
+keys travel alongside for a client that would rather render from the data. See
+:ref:`plugins-builtin-field-types` for which types GoodMap ships and
+:ref:`plugins-shortcode-rendered-fields` for how a plugin adds one.
+
 The path segment must be a valid UUID; anything else fails routing with ``404``. A
 well-formed UUID that does not exist also gives ``404 {"message": "Location not found"}``.
 
