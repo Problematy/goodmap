@@ -4,6 +4,8 @@ import logging
 
 from flask_babel import gettext, lazy_gettext
 
+from goodmap.field_types import FIRST_PARTY_FIELD_TYPES
+
 logger = logging.getLogger(__name__)
 
 
@@ -46,6 +48,33 @@ def _shortcode_field(shortcode, value):
     return {**entry, "type": shortcode.name, "html": shortcode.render_value(value)}
 
 
+def _first_party_field(value):
+    """Render a field whose stored ``type`` names one of goodmap's own field types.
+
+    Consulted only for a field no plugin shortcode is bound to, so the data decides the
+    renderer just where nothing else has claimed the field. What it may decide is the
+    closed first-party set in :mod:`goodmap.field_types` — a location entry cannot reach a
+    plugin's renderer this way, which is the same guarantee ``_shortcode_field`` gets by
+    stamping ``type`` last.
+
+    Args:
+        value: The field's value from the location data.
+
+    Returns:
+        dict: The field payload with ``html`` added, or ``value`` unchanged when its
+        ``type`` is not one goodmap renders.
+    """
+    if not isinstance(value, dict):
+        return value
+    field_type = value.get("type")
+    if not isinstance(field_type, str):
+        return value
+    render_html = FIRST_PARTY_FIELD_TYPES.get(field_type)
+    if render_html is None:
+        return value
+    return {**value, "html": render_html(value)}
+
+
 def prepare_pin(place, visible_fields, meta_data, shortcodes=None):
     """Prepare location data for map pin display with translations.
 
@@ -57,6 +86,9 @@ def prepare_pin(place, visible_fields, meta_data, shortcodes=None):
             When a field name matches a shortcode, the value is replaced by this
             popup's field payload: the entry's own keys, the ``type`` the frontend
             routes on, and ``html`` — the shortcode's own rendering of the value.
+            A field no shortcode is bound to may still name a first-party ``type``
+            in its own data, which goodmap renders the same way (see
+            :mod:`goodmap.field_types`).
 
     Returns:
         dict: Formatted pin data with title, subtitle, position, metadata, and translated fields
@@ -69,6 +101,8 @@ def prepare_pin(place, visible_fields, meta_data, shortcodes=None):
         value = safe_gettext(place[field])
         if field in plugins:
             value = _shortcode_field(plugins[field], value)
+        else:
+            value = _first_party_field(value)
         data.append([gettext(field), value])
     pin_data = {
         "title": place["name"],

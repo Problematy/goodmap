@@ -64,7 +64,7 @@ def get_rightmost_marker(page: Page) -> ElementHandle | None:
 
 def verify_popup_content(page: Page, expected_content: dict[str, Any]) -> None:
     """
-    Verifies popup content including title, subtitle, categories, and CTA button.
+    Verifies popup content including title, subtitle, categories, and CTA link.
 
     Scopes assertions to .leaflet-popup-content or .MuiDialogContent-root
     to avoid false positives from other elements on the page.
@@ -107,12 +107,14 @@ def verify_popup_content(page: Page, expected_content: dict[str, Any]) -> None:
         # Check that the value appears at least once in the popup
         expect(popup.get_by_text(value).first).to_be_visible()
 
-    # Verify and click CTA button if provided
+    # Verify the CTA if provided. It is a link the server rendered, styled as a button, so
+    # this checks where it points rather than clicking it — a target="_blank" click opens a
+    # second page and leaves the popup behind, which is not what the caller is asserting.
     if "CTA" in expected_content:
         cta = expected_content["CTA"]
-        cta_button = popup.locator("button", has_text=cta["displayValue"])
-        expect(cta_button).to_be_visible()
-        cta_button.click()
+        cta_link = popup.locator("a", has_text=cta["displayValue"])
+        expect(cta_link).to_be_visible()
+        expect(cta_link).to_have_attribute("href", cta["value"])
 
 
 def verify_problem_form(page: Page) -> None:

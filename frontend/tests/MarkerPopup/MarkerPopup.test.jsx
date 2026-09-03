@@ -26,6 +26,7 @@ const locationData = {
                 type: 'CTA',
                 value: 'https://www.example.com',
                 displayValue: 'Visit example.org!',
+                html: '<a href="https://www.example.com" target="_blank" rel="noopener noreferrer">Visit example.org!</a>',
             },
         ],
     ],

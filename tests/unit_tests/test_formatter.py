@@ -70,6 +70,103 @@ class _DefaultShortcode(Shortcode):
         return content
 
 
+def test_hyperlink_field_is_rendered_server_side():
+    """A first-party type named in the data is rendered here, so the frontend needs no component."""
+    place = {**test_place, "website": {"type": "hyperlink", "value": "https://example.com"}}
+    result = prepare_pin(place, ["website"], [])
+    assert result["data"] == [
+        [
+            "website",
+            {
+                "type": "hyperlink",
+                "value": "https://example.com",
+                "html": (
+                    '<a href="https://example.com" target="_blank" '
+                    'rel="noopener noreferrer">https://example.com</a>'
+                ),
+            },
+        ]
+    ]
+
+
+def test_hyperlink_uses_display_value_as_the_link_text():
+    place = {
+        **test_place,
+        "website": {
+            "type": "hyperlink",
+            "value": "https://example.com",
+            "displayValue": "Example",
+        },
+    }
+    result = prepare_pin(place, ["website"], [])
+    assert ">Example</a>" in result["data"][0][1]["html"]
+
+
+def test_hyperlink_accepts_contact_schemes():
+    """mailto:/tel: are how a place's contact details are written, and they navigate nowhere."""
+    place = {**test_place, "email": {"type": "hyperlink", "value": "mailto:hi@example.com"}}
+    result = prepare_pin(place, ["email"], [])
+    assert result["data"][0][1]["html"] == (
+        '<a href="mailto:hi@example.com">mailto:hi@example.com</a>'
+    )
+
+
+def test_hyperlink_with_a_refused_url_keeps_its_text_unlinked():
+    """The label would otherwise sit above a blank, and the text is the part a reader wanted."""
+    place = {
+        **test_place,
+        "website": {
+            "type": "hyperlink",
+            "value": "javascript:alert(1)",
+            "displayValue": "<b>x</b>",
+        },
+    }
+    result = prepare_pin(place, ["website"], [])
+    assert result["data"][0][1]["html"] == "&lt;b&gt;x&lt;/b&gt;"
+
+
+def test_cta_is_rendered_as_a_link_too():
+    """CTA and hyperlink differ in presentation, not in what they are, so they share a renderer."""
+    place = {
+        **test_place,
+        "CTA": {"type": "CTA", "value": "https://example.com", "displayValue": "Go"},
+    }
+    result = prepare_pin(place, ["CTA"], [])
+    assert result["data"][0][1]["html"] == (
+        '<a href="https://example.com" target="_blank" rel="noopener noreferrer">Go</a>'
+    )
+
+
+def test_cta_with_a_refused_url_keeps_its_text_unlinked():
+    place = {
+        **test_place,
+        "CTA": {"type": "CTA", "value": "data:text/html,x", "displayValue": "Go"},
+    }
+    result = prepare_pin(place, ["CTA"], [])
+    assert result["data"][0][1]["html"] == "Go"
+
+
+def test_a_plugin_bound_field_is_not_reached_by_a_first_party_type():
+    """The plugin owns its field outright; the data cannot redirect it at a built-in."""
+    place = {**test_place, "promo_code": {"code": "X", "type": "hyperlink", "value": "https://e.x"}}
+    result = prepare_pin(place, ["promo_code"], [], shortcodes={"promo_code": _FakeShortcode()})
+    assert result["data"][0][1]["type"] == "promo_code"
+    assert result["data"][0][1]["html"] == "<b>:X</b>"
+
+
+def test_an_unknown_type_is_left_alone():
+    place = {**test_place, "thing": {"type": "not_a_field_type", "value": "x"}}
+    result = prepare_pin(place, ["thing"], [])
+    assert result["data"] == [["thing", {"type": "not_a_field_type", "value": "x"}]]
+
+
+def test_a_non_string_type_is_not_looked_up():
+    """A stored ``type`` is data, and an unhashable one must not reach the registry lookup."""
+    place = {**test_place, "thing": {"type": ["hyperlink"], "value": "x"}}
+    result = prepare_pin(place, ["thing"], [])
+    assert result["data"] == [["thing", {"type": ["hyperlink"], "value": "x"}]]
+
+
 def test_bare_value_lands_under_the_default_content_key():
     """Without a declared ``content_key`` a bare value is stored under ``content``."""
     place = {**test_place, "promo_code": "SAVE20"}

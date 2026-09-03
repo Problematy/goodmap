@@ -23,9 +23,8 @@ The capability a plugin provides determines *how* its frontend renders:
 **Marker fields** (``MarkerFieldPluginBase``)
     Render a single location field inside a marker popup (capability ``"MarkerField"``,
     mounted by ``FieldRenderer``). ``FieldRenderer`` renders a field as a **pipe**: the raw
-    value flows through a chain of stages — the built-in for the field ``type`` (e.g.
-    ``hyperlink``/``CTA``) renders it, then each field plugin attached to that ``type``
-    transforms the result. A plugin's ``config`` declares which field it attaches to and
+    value flows through a chain of stages — the server-rendered ``html`` for the field seeds
+    it, then each field plugin attached to that ``type`` transforms the result. A plugin's ``config`` declares which field it attaches to and
     where it sits:
 
     - ``field``: the field ``type`` it applies to. For a custom type, the plugin's platzky
@@ -122,9 +121,26 @@ rendered.
 That HTML is rendered, not sanitized. It comes from an installed plugin package, which
 already executes in the server process — the same trust platzky extends to shortcode output
 in post content, and filtering it would block nothing such a package could not do more
-directly. The plugin's side of that bargain is to escape the *data* it interpolates. A
-first-party renderer always wins over ``html``, so a plugin cannot take over ``hyperlink``
-or ``CTA``.
+directly. The plugin's side of that bargain is to escape the *data* it interpolates.
+
+.. _plugins-first-party-field-types:
+
+Goodmap renders its own field types the same way. A value naming one of the types in
+``goodmap/field_types.py`` — ``hyperlink`` and ``CTA`` — is rendered to ``html`` by goodmap
+itself, so there are no built-in React field renderers left at all, and one URL policy
+(platzky's, which admits ``http``, ``https``, ``mailto`` and ``tel``) rather than one in
+Python and another in JavaScript. ``prepare_pin`` consults these only for a field no plugin
+shortcode is bound to: a plugin still owns a field it is bound to by name, and a location
+entry cannot name a type to redirect its own field at some other renderer.
+
+A plugin cannot take over ``hyperlink`` or ``CTA`` either. The server always emits ``html``
+for a type it renders, so that HTML is always the innermost stage — a field plugin attached
+to one of these types wraps it and cannot replace it.
+
+``hyperlink`` and ``CTA`` share a renderer, because they only ever differed in presentation:
+both are a URL and the text to show for it. Which one a field is decides where the popup puts
+it — a line among the details, or a button below them — which ``LocationDetails`` decides
+from the field name.
 
 A field plugin is a ``MarkerFieldPluginBase`` whose component is a stage
 ``({ input, config }) => element`` — it receives the previous stage's output as ``input``.
@@ -152,7 +168,7 @@ rendering. Its platzky shortcode turns the raw value into ``{"type": "<field>", 
     }
 
 **Wrap the input** — a later stage receives the current element and composes around it (e.g.
-to customize a built-in ``hyperlink``/``CTA``). Needs no shortcode:
+to customize a ``hyperlink`` or a ``CTA``). Needs no shortcode:
 
 .. code-block:: jsx
 
@@ -168,7 +184,8 @@ to customize a built-in ``hyperlink``/``CTA``). Needs no shortcode:
 
 Both are the same plugin kind. Each sets ``config.field`` to the type it attaches to and,
 optionally, ``config.order``; lower order is more innermost, higher order wraps further out.
-A wrapper must have a renderer beneath it (a built-in, or one it depends on).
+A wrapper must have a renderer beneath it (a type rendered server-side — one of goodmap's
+own, or a plugin's shortcode — or a renderer plugin it depends on).
 
 .. _plugins-configuration:
 

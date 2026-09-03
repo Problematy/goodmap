@@ -57,8 +57,33 @@ const DetailValue = styled.span`
     word-break: break-word;
 `;
 
+// The CTA is a link the server rendered (goodmap/field_types.py), so its button look is
+// styling rather than markup, and it belongs here — this container already selects exactly
+// the CTA fields. An anchor rather than a button also gets middle-click, "copy link
+// address" and a screen reader announcing where it goes, which the old onClick did not.
 const CTAContainer = styled.div`
     margin: 8px;
+
+    a {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 40px;
+        min-width: 50px;
+        padding: 0;
+        border: none;
+        border-radius: 8px;
+        background-color: ${() => globalThis.SECONDARY_COLOR || 'black'};
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        color: white;
+        font-size: 18px;
+        line-height: 1;
+        text-align: center;
+        text-decoration: none;
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out;
+    }
 `;
 
 const ActionButton = styled.button`
