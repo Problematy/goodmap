@@ -152,29 +152,50 @@ still attach to it by ``config.field`` and wrap what the shortcode rendered, and
 the bare value under the shortcode's ``content_key``, for a plugin that would rather render
 from the data itself.
 
+.. warning::
+
+   A shortcode's rendering is presentation, not concealment. The bare value travels in the
+   payload beside the HTML, so a shortcode that masks or omits part of what it displays still
+   ships the original to the browser, where anyone reading the response can see it. Render a
+   field only from data its viewers may have; leave anything else out of ``visible_data``.
+
+Of the three, only ``html`` and ``type`` are read by goodmap itself - the bare value is
+carried purely for that render-from-data plugin, and may be dropped in a future version if
+none turns out to want it.
+
 That HTML is rendered, not sanitized. It comes from an installed plugin package, which
 already executes in the server process, so filtering it would block nothing such a package
 could not do more directly. The plugin's side of that bargain is to escape the *data* it
 interpolates.
 
-.. _plugins-first-party-field-types:
+.. _plugins-builtin-field-types:
 
-Goodmap renders its own field types the same way. A value naming one of the types in
-``goodmap/field_types.py`` — ``hyperlink`` and ``CTA`` — is rendered to ``html`` by goodmap
-itself, so there are no built-in React field renderers left at all, and one URL policy
-(platzky's, which admits ``http``, ``https``, ``mailto`` and ``tel``) rather than one in
-Python and another in JavaScript. ``prepare_pin`` consults these only for a field no plugin
-shortcode is bound to: a plugin still owns a field it is bound to by name, and a location
-entry cannot name a type to redirect its own field at some other renderer.
+Goodmap's own field types are shortcodes too. ``hyperlink`` and ``CTA``, in
+``goodmap/field_types.py``, are ordinary platzky ``Shortcode`` subclasses rendered through
+the same ``render_value`` — so there is one renderer interface rather than two, no built-in
+React field renderers at all, and one URL policy (platzky's, which admits ``http``,
+``https``, ``mailto`` and ``tel``) rather than one in Python and another in JavaScript.
+
+What differs is only how the shortcode is found. A plugin's is bound to a field by **name**,
+which is what makes that field its own. Goodmap's own are looked up by the **type** the entry
+declares, so any field can ask to be a ``hyperlink`` whatever it is called:
+
+.. code-block:: json
+
+    {"website": {"type": "hyperlink", "value": "https://example.com"}}
+
+That lookup is safe only because the catalogue is closed: an entry may name a type in there
+and nothing else, so it can never point its own field at a plugin's renderer. ``prepare_pin``
+consults it only where no plugin shortcode claimed the field by name.
 
 A plugin cannot take over ``hyperlink`` or ``CTA`` either. The server always emits ``html``
 for a type it renders, so that HTML is always the innermost stage — a field plugin attached
 to one of these types wraps it and cannot replace it.
 
-``hyperlink`` and ``CTA`` share a renderer, because they only ever differed in presentation:
-both are a URL and the text to show for it. Which one a field is decides where the popup puts
-it — a line among the details, or a button below them — which ``LocationDetails`` decides
-from the field name.
+The two share a rendering, because they only ever differed in presentation: both are a URL
+and the text to show for it. Which one a field is decides where the popup puts it — a line
+among the details, or a button below them — which ``LocationDetails`` decides from the field
+name.
 
 A field plugin is a ``MarkerFieldPluginBase`` whose component is a stage
 ``({ input, config }) => element`` — it receives the previous stage's output as ``input``.

@@ -71,7 +71,7 @@ class _DefaultShortcode(Shortcode):
 
 
 def test_hyperlink_field_is_rendered_server_side():
-    """A first-party type named in the data is rendered here, so the frontend needs no component."""
+    """A built-in type named in the data is rendered here, so the frontend needs no component."""
     place = {**test_place, "website": {"type": "hyperlink", "value": "https://example.com"}}
     result = prepare_pin(place, ["website"], [])
     assert result["data"] == [
@@ -146,7 +146,7 @@ def test_cta_with_a_refused_url_keeps_its_text_unlinked():
     assert result["data"][0][1]["html"] == "Go"
 
 
-def test_a_plugin_bound_field_is_not_reached_by_a_first_party_type():
+def test_a_plugin_bound_field_is_not_reached_by_a_builtin_type():
     """The plugin owns its field outright; the data cannot redirect it at a built-in."""
     place = {**test_place, "promo_code": {"code": "X", "type": "hyperlink", "value": "https://e.x"}}
     result = prepare_pin(place, ["promo_code"], [], shortcodes={"promo_code": _FakeShortcode()})

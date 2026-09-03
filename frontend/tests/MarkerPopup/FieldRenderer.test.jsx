@@ -32,7 +32,7 @@ describe('FieldRenderer', () => {
         expect(screen.getByText('SAVE20')).toBeInTheDocument();
     });
 
-    it('renders shortcode-provided html when no first-party renderer exists', () => {
+    it('renders shortcode-provided html for a type goodmap does not ship', () => {
         render(
             <FieldRenderer
                 value={{
