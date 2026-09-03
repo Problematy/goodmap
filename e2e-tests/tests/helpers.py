@@ -63,29 +63,20 @@ def get_rightmost_marker(page: Page) -> ElementHandle | None:
 
 
 def verify_popup_content(page: Page, expected_content: dict[str, Any]) -> None:
-    """
-    Verifies popup content including title, subtitle, categories, and CTA link.
+    """Verifies popup title, subtitle, categories, and CTA link.
 
-    Scopes assertions to .leaflet-popup-content or .MuiDialogContent-root
-    to avoid false positives from other elements on the page.
+    Assertions are scoped to .leaflet-popup-content / .MuiDialogContent-root so other
+    elements on the page cannot satisfy them, and title/subtitle are found by their
+    semantic elements (h3, p).
 
-    Uses semantic element selectors (h3 for title, p for subtitle) for the new frontend.
+    ``expected_content`` looks like::
 
-    Args:
-        page: Playwright page object
-        expected_content: Expected content dictionary with keys:
-            - title: Expected title text
-            - subtitle: Expected subtitle text
-            - categories: List of [category, value] tuples
-            - CTA (optional): Dict with displayValue and value (URL)
-
-    Example:
-        verify_popup_content(page, {
+        {
             "title": "Bridge Name",
             "subtitle": "small bridge",
             "categories": [["type of place", "small bridge"]],
-            "CTA": {"displayValue": "View on Map", "value": "https://..."}
-        })
+            "CTA": {"displayValue": "View on Map", "value": "https://..."},  # optional
+        }
     """
     # Scope to popup container
     popup = page.locator(".leaflet-popup-content, .MuiDialogContent-root")

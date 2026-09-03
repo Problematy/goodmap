@@ -1,14 +1,13 @@
-"""Validates the configured ``initial_view`` into the view the browser opens on.
+"""Validates a data source's ``initial_view`` into the view the browser opens on.
 
-Runs once at app startup (see goodmap.create_app_from_config), turning the optional
-``initial_view`` section of a data source into the complete ``{center, zoom, max_zoom}``
-window.INITIAL_VIEW is always given. A data source that says nothing gets the whole of
-Poland, which is what the frontend hardcoded before this was configurable.
+Runs once at startup (see goodmap.create_app_from_config), filling the optional
+``initial_view`` config out into the complete ``{center, zoom, max_zoom}`` the frontend is
+always handed. A data source that says nothing gets the whole of Poland, which is what the
+frontend hardcoded before this was configurable.
 
-Validation is deliberately strict and uncaught: a nonsensical view (a latitude of 953, a
-``zoom`` past ``max_zoom``) stops the app from starting, the same way an unknown icon
-provider does, so the mistake surfaces on deploy rather than as a map that silently opens
-on the wrong continent.
+Validation is strict and uncaught by design: a nonsensical view — a latitude of 953, a
+``zoom`` past ``max_zoom`` — stops the app from starting, so the mistake surfaces on deploy
+rather than as a map that silently opens on the wrong continent.
 """
 
 from typing import Any, Mapping
@@ -30,11 +29,8 @@ DEFAULT_MAX_ZOOM = 19
 class InitialView(BaseModel):
     """The map's opening position, as declared by a data source.
 
-    Attributes:
-        center: (latitude, longitude) the map is centred on when it loads.
-        zoom: Leaflet zoom level the map opens at - roughly, 6 a country, 10 a province,
-            13 a town, 16 a street.
-        max_zoom: Furthest the tile layer will let a visitor zoom in.
+    ``zoom`` is a Leaflet level — roughly 6 a country, 10 a province, 13 a town, 16 a
+    street — and ``max_zoom`` is as far in as the tile layer lets a visitor go.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
@@ -60,20 +56,13 @@ class InitialView(BaseModel):
 def resolve_initial_view(initial_view: Mapping[str, Any] | None) -> dict[str, Any]:
     """The opening view the frontend needs, with every field filled in.
 
-    Args:
-        initial_view: Raw ``initial_view`` config as returned by
-            goodmap.db.get_initial_view(). May be empty or None - a data source is not
-            required to declare one.
+    Takes the raw config, which may be empty or None since declaring a view is optional,
+    and returns ``{"center": [lat, lng], "zoom": int, "max_zoom": int}`` — always complete,
+    so the frontend carries no defaults of its own. ``center`` is a list rather than a tuple
+    because it is headed for JSON either way.
 
-    Returns:
-        ``{"center": [lat, lng], "zoom": int, "max_zoom": int}``, always complete, so the
-        frontend never has to carry defaults of its own. ``center`` is a list rather than
-        a tuple because it is headed for JSON either way.
-
-    Raises:
-        pydantic.ValidationError: The declared view is out of range, internally
-            inconsistent, or carries an unknown key. Uncaught by design - see the module
-            docstring.
+    Raises ``pydantic.ValidationError`` for a view that is out of range, internally
+    inconsistent, or carries an unknown key; uncaught by design, see the module docstring.
     """
     view = InitialView.model_validate(dict(initial_view or {}))
     return {"center": list(view.center), "zoom": view.zoom, "max_zoom": view.max_zoom}

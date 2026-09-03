@@ -11,14 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 def safe_gettext(text):
-    """Safely apply gettext translation to various data types.
-
-    Args:
-        text: Text to translate (str, list, or dict)
-
-    Returns:
-        Translated text in same format as input
-    """
+    """Translate ``text``, mapping over a list and leaving a dict alone."""
     if isinstance(text, list):
         return list(map(gettext, text))
     elif isinstance(text, dict):
@@ -28,42 +21,24 @@ def safe_gettext(text):
 
 
 def _shortcode_field(shortcode, value):
-    """Build the marker-popup payload for a field backed by a platzky shortcode.
+    """Build the popup payload for a field a platzky shortcode is bound to.
 
-    The shortcode renders the value itself, so a plugin needs no frontend code here to
-    be displayable — ``FieldRenderer`` seeds the field's fold with ``html`` when no
-    first-party renderer claims the ``type``. The entry's own keys travel alongside for
-    a React field plugin rendering from the data instead; a bare value is placed under
-    the shortcode's ``content_key`` so such a plugin finds it under the name the
-    shortcode uses. ``type`` is stamped last, so an entry cannot redirect its own field
-    at another renderer.
-
-    Args:
-        shortcode: The platzky Shortcode registered for this field name.
-        value: The field's value from the location data.
-
-    Returns:
-        dict: The field payload, carrying at least ``type`` and ``html``.
+    The shortcode renders the value into ``html``, which is what lets a plugin display a
+    field without shipping any frontend code. The entry's own keys travel alongside for a
+    React field plugin rendering from the data instead — a bare value under the shortcode's
+    ``content_key``, the name that plugin would look for. ``type`` is stamped last, so an
+    entry cannot redirect its own field at another renderer.
     """
     entry = value if isinstance(value, dict) else {shortcode.content_key: value}
     return {**entry, "type": shortcode.name, "html": shortcode.render_value(value)}
 
 
 def _first_party_field(value):
-    """Render a field whose stored ``type`` names one of goodmap's own field types.
+    """Add ``html`` for a field whose stored ``type`` is one goodmap builds in.
 
-    Consulted only for a field no plugin shortcode is bound to, so the data decides the
-    renderer just where nothing else has claimed the field. What it may decide is the
-    closed first-party set in :mod:`goodmap.field_types` — a location entry cannot reach a
-    plugin's renderer this way, which is the same guarantee ``_shortcode_field`` gets by
-    stamping ``type`` last.
-
-    Args:
-        value: The field's value from the location data.
-
-    Returns:
-        dict: The field payload with ``html`` added, or ``value`` unchanged when its
-        ``type`` is not one goodmap renders.
+    Reached only where no plugin shortcode claimed the field, and only the closed catalogue
+    in :mod:`goodmap.field_types` is on offer — so an entry can never name its way to a
+    plugin's renderer. Any other ``type`` is returned untouched.
     """
     if not isinstance(value, dict):
         return value
@@ -77,22 +52,12 @@ def _first_party_field(value):
 
 
 def prepare_pin(place, visible_fields, meta_data, shortcodes=None) -> dict[str, Any]:
-    """Prepare location data for map pin display with translations.
+    """Format one location into the translated payload its map popup renders.
 
-    Args:
-        place: Location data dictionary
-        visible_fields: List of field names to display in pin
-        meta_data: List of metadata field names
-        shortcodes: Optional mapping of field name → Shortcode instance.
-            When a field name matches a shortcode, the value is replaced by this
-            popup's field payload: the entry's own keys, the ``type`` the frontend
-            routes on, and ``html`` — the shortcode's own rendering of the value.
-            A field no shortcode is bound to may still name a first-party ``type``
-            in its own data, which goodmap renders the same way (see
-            :mod:`goodmap.field_types`).
+    ``shortcodes`` maps a field name to the platzky Shortcode bound to it; a match is
+    rendered by :func:`_shortcode_field`, anything else by :func:`_first_party_field`.
 
-    Returns:
-        dict: Formatted pin data with title, subtitle, position, metadata, and translated fields
+    Returns title, subtitle, position, metadata, and ``data`` as ``[label, value]`` pairs.
     """
     plugins = shortcodes or {}
     data = []

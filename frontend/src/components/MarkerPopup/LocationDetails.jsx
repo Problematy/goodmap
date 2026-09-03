@@ -58,17 +58,17 @@ const DetailValue = styled.span`
 `;
 
 // The CTA is a link the server rendered (goodmap/field_types.py), so its button look is
-// styling rather than markup, and it belongs here — this container already selects exactly
-// the CTA fields. An anchor rather than a button also gets middle-click, "copy link
-// address" and a screen reader announcing where it goes, which the old onClick did not.
+// styling rather than markup, and belongs here where the CTA fields are already selected.
+// An anchor also gets middle-click, "copy link address" and a screen reader announcing
+// where it goes, which the old onClick button did not.
 const CTAContainer = styled.div`
     display: flex;
     flex-direction: column;
     gap: 8px;
     margin: 8px;
 
-    /* FieldRenderer hands each value back wrapped in an inline span; only the wrapper is
-       blockified, so markup a plugin renders inside the CTA keeps its own flow. */
+    /* FieldRenderer wraps each value in an inline span; blockifying only the wrapper leaves
+       markup a plugin renders inside the CTA in its own flow. */
     > span {
         display: block;
     }
@@ -94,7 +94,7 @@ const CTAContainer = styled.div`
     }
 
     /* Darkening by filter rather than a second colour keeps the hover correct for whatever
-       SECONDARY_COLOR the deployment sets, which no hardcoded shade could. */
+       SECONDARY_COLOR the deployment sets. */
     a:hover {
         filter: brightness(0.9);
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);

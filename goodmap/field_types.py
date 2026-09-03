@@ -1,15 +1,12 @@
-"""Marker-field types goodmap renders itself, rather than leaving to a plugin.
+"""Goodmap's built-in marker field types.
 
-A field's value may name a ``type`` in the data — ``{"type": "hyperlink", "value": …}`` —
-and the types named here are the ones goodmap answers for. They are rendered on the server
-into the ``html`` the popup displays, the same way a plugin's shortcode field is, so the
-frontend needs no component per type and there is no second copy of the rules below living
-in JavaScript.
+A location entry names a field's ``type`` in the data — ``{"type": "hyperlink", "value": …}``
+— and this module is the catalogue of the types goodmap ships. Each renders on the server
+into the ``html`` the popup shows, so none needs a React component or a second copy of the
+rules below in JavaScript.
 
-The set is closed and first-party, which is what makes it safe to resolve a renderer from
-the data at all: a location entry can ask for a type in here and nothing else, so it can
-never point itself at a plugin's renderer. ``prepare_pin`` consults it only for a field no
-plugin shortcode is bound to, so a plugin still owns its own field outright.
+The catalogue is closed, which is what makes it safe to pick a renderer from the data at
+all: an entry may name a type in here and nothing else.
 """
 
 from collections.abc import Callable
@@ -27,21 +24,12 @@ _NEW_TAB_SCHEMES = frozenset({"http", "https"})
 def _link_html(entry: dict[str, Any]) -> str:
     """Render a link field: ``value`` is where it goes, ``displayValue`` what it reads.
 
-    The URL policy is platzky's, not a second one written here — the whole point of
-    rendering this server-side is that ``[link]`` in a post and a ``hyperlink`` field on a
-    marker agree about what may be linked to, including ``mailto:`` and ``tel:``, which a
-    place's contact details are routinely written as.
+    The URL policy is platzky's rather than a second one written here, so ``[link]`` in a
+    post and a ``hyperlink`` on a marker agree on what may be linked to — ``mailto:`` and
+    ``tel:`` included, which is how a place's contact details are routinely written.
 
-    A URL that policy refuses still renders its text, escaped and unlinked. Dropping the
-    field entirely would leave its label sitting above a blank, and the text is usually the
-    part a reader wanted; it is also what keeps a wrapper plugin attached to ``hyperlink``
-    from receiving nothing to wrap.
-
-    Args:
-        entry: The field value as stored, carrying ``value`` and optionally ``displayValue``.
-
-    Returns:
-        An anchor, or just the escaped link text when the URL is not one we may emit.
+    A refused URL still renders its text, escaped and unlinked: the label would otherwise
+    sit above a blank, and a wrapper plugin on ``hyperlink`` would get nothing to wrap.
     """
     url = str(entry.get("value") or "")
     text = str(entry.get("displayValue") or url)
