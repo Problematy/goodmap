@@ -1,7 +1,8 @@
-// The view the frontend opened on before it became configurable: the centre of Poland,
-// zoomed out far enough to hold the country. A deliberate second copy of
-// goodmap/initial_view.py's defaults - this module cannot reach Python, and editing both is
-// the price of that.
+// Where the map opens when the page set no window.INITIAL_VIEW: the centre of Poland,
+// zoomed out far enough to hold the country. goodmap/initial_view.py resolves these same
+// defaults server-side and normally sends a complete view, so these values are reached only
+// by a bundle running outside map.html. Nothing checks that the two agree - keep them in
+// step by hand.
 const DEFAULT_VIEW = {
     center: [51.917, 19.013],
     zoom: 7,

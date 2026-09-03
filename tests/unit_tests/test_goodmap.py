@@ -18,6 +18,7 @@ from platzky.db.json_db import JsonDbConfig
 from goodmap import goodmap
 from goodmap.config import GoodmapConfig
 from goodmap.feature_flags import EnableAdminPanel
+from goodmap.initial_view import DEFAULT_CENTER, DEFAULT_MAX_ZOOM, DEFAULT_ZOOM
 from goodmap.plugin import (
     CAPABILITY_BASES,
     MapOverlayPluginBase,
@@ -45,9 +46,11 @@ def test_create_app_from_config():
             patch("goodmap.goodmap.get_location_obligatory_fields", return_value=[]),
             patch("goodmap.goodmap.get_category_data") as mock_get_category_data,
             patch("goodmap.goodmap.get_marker_styles") as mock_get_marker_styles,
+            patch("goodmap.goodmap.get_initial_view") as mock_get_initial_view,
         ):
             mock_get_category_data.return_value.return_value = {"categories": {}}
             mock_get_marker_styles.return_value.return_value = {}
+            mock_get_initial_view.return_value.return_value = {}
             goodmap.create_app_from_config(config)
             mock_platzky_app_creation.assert_called_once_with(
                 config,
@@ -164,6 +167,69 @@ def test_map_route_marker_styles():
     response = unconfigured_app.test_client().get("/map")
     assert response.status_code == 200
     assert 'window.MARKER_STYLES={"colors":{},"icons":{}};' in response.data.decode("utf-8")
+
+
+def test_map_route_initial_view():
+    """The map opens where the data source says, via window.INITIAL_VIEW.
+
+    The view is resolved server-side into a complete {center, zoom, max_zoom}, so the
+    frontend never has to merge a partial declaration against defaults of its own.
+    """
+    app = goodmap.create_app_from_config(
+        GoodmapConfig(
+            APP_NAME="test_app",
+            SECRET_KEY="test_secret",
+            USE_WWW=False,
+            BLOG_PREFIX="/blog",
+            DB=JsonDbConfig(
+                DATA={
+                    "site_content": {"pages": []},
+                    "initial_view": {"center": [53.37, 22.89], "zoom": 8, "max_zoom": 17},
+                },
+                TYPE="json",
+            ),
+        )
+    )
+    app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
+
+    response_text = app.test_client().get("/map").data.decode("utf-8")
+    match = re.search(r"window\.INITIAL_VIEW\s*=\s*(.*?);", response_text)
+    assert match is not None
+    assert json.loads(match.group(1)) == {
+        "center": [53.37, 22.89],
+        "zoom": 8,
+        "max_zoom": 17,
+    }
+
+
+def test_map_route_initial_view_defaults_when_the_data_source_declares_none():
+    """Declaring a view is optional, and the page still gets a complete one - which is what
+    lets the frontend treat a missing window.INITIAL_VIEW as an error case rather than a
+    routine one."""
+    app = goodmap.create_app_from_config(_minimal_config())
+    app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
+
+    response_text = app.test_client().get("/map").data.decode("utf-8")
+    match = re.search(r"window\.INITIAL_VIEW\s*=\s*(.*?);", response_text)
+    assert match is not None
+    assert json.loads(match.group(1)) == {
+        "center": list(DEFAULT_CENTER),
+        "zoom": DEFAULT_ZOOM,
+        "max_zoom": DEFAULT_MAX_ZOOM,
+    }
+
+
+def test_map_route_initial_view_stays_in_step_with_startup():
+    """Resolved once at startup, like marker_styles: a view cannot change without a
+    restart, and a per-request read would only add a chance of the two disagreeing."""
+    app = goodmap.create_app_from_config(_minimal_config())
+    app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
+
+    with mock.patch.object(app.db, "get_initial_view") as fresh_read:
+        response_text = app.test_client().get("/map").data.decode("utf-8")
+
+    fresh_read.assert_not_called()
+    assert "INITIAL_VIEW" in response_text
 
 
 def test_map_route_marker_styles_stay_in_step_with_the_api():

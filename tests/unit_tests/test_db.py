@@ -24,6 +24,7 @@ from goodmap.db import (
     google_json_db_get_categories,
     google_json_db_get_category_data,
     google_json_db_get_data,
+    google_json_db_get_initial_view,
     google_json_db_get_location_obligatory_fields,
     google_json_db_get_locations_paginated,
     google_json_db_get_marker_styles,
@@ -38,6 +39,7 @@ from goodmap.db import (
     json_db_get_categories,
     json_db_get_category_data,
     json_db_get_data,
+    json_db_get_initial_view,
     json_db_get_location_obligatory_fields,
     json_db_get_locations,
     json_db_get_report,
@@ -57,6 +59,7 @@ from goodmap.db import (
     json_file_db_get_categories,
     json_file_db_get_category_data,
     json_file_db_get_data,
+    json_file_db_get_initial_view,
     json_file_db_get_location_obligatory_fields,
     json_file_db_get_locations,
     json_file_db_get_locations_paginated,
@@ -81,6 +84,7 @@ from goodmap.db import (
     mongodb_db_get_categories,
     mongodb_db_get_category_data,
     mongodb_db_get_data,
+    mongodb_db_get_initial_view,
     mongodb_db_get_location,
     mongodb_db_get_location_obligatory_fields,
     mongodb_db_get_locations,
@@ -338,6 +342,91 @@ def test_json_file_db_get_marker_styles_empty():
     db = JsonFile("/fake/path/data.json")
     result = json_file_db_get_marker_styles(db)
     assert result == {}
+
+
+# ------------------------------------------------
+# get_initial_view
+#
+# Every backend returns the raw config untouched; resolve_initial_view fills the blanks in,
+# so "declared nothing" has to reach it as {} rather than as a backend's own guess at a view.
+
+
+@mock.patch(
+    "builtins.open",
+    mock.mock_open(
+        read_data=json.dumps({"map": {"initial_view": {"center": [53.37, 22.89], "zoom": 8}}})
+    ),
+)
+def test_json_file_db_get_initial_view():
+    db = JsonFile("/fake/path/data.json")
+    assert json_file_db_get_initial_view(db) == {"center": [53.37, 22.89], "zoom": 8}
+
+
+@mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {}})))
+def test_json_file_db_get_initial_view_empty():
+    db = JsonFile("/fake/path/data.json")
+    assert json_file_db_get_initial_view(db) == {}
+
+
+def test_json_db_get_initial_view():
+    db = in_memory_json_db({"initial_view": {"center": [10.0, 20.0], "zoom": 3, "max_zoom": 12}})
+    assert json_db_get_initial_view(db) == {"center": [10.0, 20.0], "zoom": 3, "max_zoom": 12}
+
+
+def test_json_db_get_initial_view_empty():
+    assert json_db_get_initial_view(in_memory_json_db({})) == {}
+
+
+@mock.patch("platzky.db.google_json_db.Client")
+def test_google_json_db_get_initial_view(mock_cli):
+    blob = mock_cli.return_value.bucket.return_value.blob.return_value
+    blob.download_as_text.return_value = json.dumps(
+        {"map": {"initial_view": {"center": [53.37, 22.89], "max_zoom": 17}}}
+    )
+    db = GoogleJsonDb("bucket", "blob")
+    assert google_json_db_get_initial_view(db) == {"center": [53.37, 22.89], "max_zoom": 17}
+
+
+@mock.patch("platzky.db.google_json_db.Client")
+def test_google_json_db_get_initial_view_empty(mock_cli):
+    mock_cli.return_value.bucket.return_value.blob.return_value.download_as_text.return_value = (
+        json.dumps({"map": {}})
+    )
+    db = GoogleJsonDb("bucket", "blob")
+    assert google_json_db_get_initial_view(db) == {}
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_initial_view(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.config.find_one.return_value = {
+        "_id": "map_config",
+        "initial_view": {"center": [53.37, 22.89], "zoom": 8},
+    }
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    assert mongodb_db_get_initial_view(db) == {"center": [53.37, 22.89], "zoom": 8}
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_initial_view_empty(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.config.find_one.return_value = {"_id": "map_config"}
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    assert mongodb_db_get_initial_view(db) == {}
+
+
+@mock.patch("platzky.db.mongodb_db.MongoClient")
+def test_mongodb_db_get_initial_view_no_config(mock_client):
+    mock_db = mock.Mock()
+    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db.config.find_one.return_value = None
+
+    db = MongoDB("mongodb://localhost:27017", "test_db")
+    assert mongodb_db_get_initial_view(db) == {}
 
 
 # Test get_visible_data and get_meta_data for google_json_db

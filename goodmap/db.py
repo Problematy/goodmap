@@ -627,6 +627,70 @@ def get_marker_styles(db):
 
 
 # ------------------------------------------------
+# get_initial_view
+
+
+def google_json_db_get_initial_view(self) -> dict[str, Any]:
+    """
+    Retrieve the map's opening view from Google Cloud Storage JSON blob.
+
+    Returns:
+        dict: Raw ``initial_view`` config (center, zoom, max_zoom). Returns empty dict if
+              not found - declaring a view is optional.
+    """
+    return self.data.get("map", {}).get("initial_view", {})
+
+
+def json_file_db_get_initial_view(self) -> dict[str, Any]:
+    """
+    Retrieve the map's opening view from JSON file database.
+
+    Returns:
+        dict: Raw ``initial_view`` config (center, zoom, max_zoom). Returns empty dict if
+              not found - declaring a view is optional.
+    """
+    return self.data.get("map", {}).get("initial_view", {})
+
+
+def json_db_get_initial_view(self) -> dict[str, Any]:
+    """
+    Retrieve the map's opening view from in-memory JSON database.
+
+    Returns:
+        dict: Raw ``initial_view`` config (center, zoom, max_zoom). Returns empty dict if
+              not found - declaring a view is optional.
+    """
+    return self.data.get("initial_view", {})
+
+
+def mongodb_db_get_initial_view(self) -> dict[str, Any]:
+    """
+    Retrieve the map's opening view from MongoDB.
+
+    Returns:
+        dict: Raw ``initial_view`` config (center, zoom, max_zoom). Returns empty dict if
+              the config document is missing or does not declare one.
+    """
+    config_doc = self.db.config.find_one({"_id": "map_config"})
+    if config_doc:
+        return config_doc.get("initial_view", {})
+    return {}
+
+
+def get_initial_view(db):
+    """
+    Get the appropriate get_initial_view function for the given database backend.
+
+    Args:
+        db: Database instance (must have module_name attribute).
+
+    Returns:
+        callable: Backend-specific get_initial_view function.
+    """
+    return globals()[f"{db.module_name}_get_initial_view"]
+
+
+# ------------------------------------------------
 # get_categories
 
 
@@ -1842,6 +1906,7 @@ def extend_db_with_goodmap_queries(db, location_model):
     db.extend("get_visible_data", get_visible_data(db))
     db.extend("get_meta_data", get_meta_data(db))
     db.extend("get_marker_styles", get_marker_styles(db))
+    db.extend("get_initial_view", get_initial_view(db))
     db.extend("get_locations", get_locations(db, location_model))
     db.extend("get_locations_paginated", get_locations_paginated(db, location_model))
     db.extend("get_location", get_location(db, location_model))
