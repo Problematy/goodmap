@@ -1,4 +1,7 @@
+from collections.abc import Sequence
+
 import pytest
+from markupsafe import Markup
 from platzky.shortcodes.shortcode import Shortcode, ShortcodeAttr, ShortcodeAttrs
 
 from goodmap.formatter import prepare_pin
@@ -23,7 +26,7 @@ class _FakeShortcode(Shortcode):
     content_key = "code"
     attributes = ShortcodeAttrs([ShortcodeAttr("color", "test")])
 
-    def render(self, attrs: ShortcodeAttrs, content: str) -> str:
+    def render(self, attrs: ShortcodeAttrs, content: str, children: Sequence[Markup]) -> str:
         return f"<b>{attrs.color}:{content}</b>"
 
 
@@ -67,7 +70,7 @@ class _DefaultShortcode(Shortcode):
     name = "promo_code"
     description = "test"
 
-    def render(self, attrs: ShortcodeAttrs, content: str) -> str:
+    def render(self, attrs: ShortcodeAttrs, content: str, children: Sequence[Markup]) -> str:
         return content
 
 

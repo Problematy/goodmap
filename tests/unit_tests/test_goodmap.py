@@ -6,12 +6,13 @@ import re
 import sys
 import tempfile
 import types
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from typing import Any, ClassVar
 from unittest import mock
 from unittest.mock import MagicMock, patch
 
 import pytest
+from markupsafe import Markup
 from platzky.config import AttachmentConfig
 from platzky.db.json_db import JsonDbConfig
 
@@ -839,14 +840,14 @@ def test_shortcodes_for_marker_fields_honours_both_keys() -> None:
         name = "testfieldsc"
         description = "Field-capable shortcode"
 
-        def render(self, attrs: ShortcodeAttrs, content: str) -> str:
+        def render(self, attrs: ShortcodeAttrs, content: str, children: Sequence[Markup]) -> str:
             return content
 
     class _PostSC(Shortcode):
         name = "testpostsc"
         description = "Post-only shortcode"
 
-        def render(self, attrs: ShortcodeAttrs, content: str) -> str:
+        def render(self, attrs: ShortcodeAttrs, content: str, children: Sequence[Markup]) -> str:
             return content
 
     class _PluginA(ContentTransformerPluginBase):
