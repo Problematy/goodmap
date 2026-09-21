@@ -12,9 +12,10 @@ safe only because this catalogue is closed: an entry may name a type in here and
 else, and so can never point itself at a plugin's renderer.
 """
 
+from collections.abc import Sequence
 from urllib.parse import urlparse
 
-from markupsafe import escape
+from markupsafe import Markup, escape
 from platzky.shortcodes import Shortcode, ShortcodeAttr, ShortcodeAttrs, UrlNotPermitted
 from platzky.shortcodes.link import LinkShortcode
 
@@ -44,7 +45,7 @@ class HyperlinkFieldShortcode(LinkShortcode):
         ]
     )
 
-    def render(self, attrs: ShortcodeAttrs, content: str) -> str:
+    def render(self, attrs: ShortcodeAttrs, content: str, children: Sequence[Markup]) -> str:
         """Render the anchor, keeping the text when the URL is refused.
 
         A refusal reaches ``render_value`` as a dropped element, which suits a link written
@@ -56,6 +57,7 @@ class HyperlinkFieldShortcode(LinkShortcode):
         Args:
             attrs: The field's stored keys, ``value`` among them.
             content: The link text, already escaped.
+            children: Element children, passed through to ``[link]``.
 
         Returns:
             An anchor, or just the link text when the URL is not one we may emit.
@@ -71,7 +73,7 @@ class HyperlinkFieldShortcode(LinkShortcode):
         if urlparse(url).scheme in _NEW_TAB_SCHEMES:
             link_attrs.values["target"] = "_blank"
         try:
-            return super().render(link_attrs, content)
+            return super().render(link_attrs, content, children)
         except UrlNotPermitted:
             return str(content)
 

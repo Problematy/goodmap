@@ -37,11 +37,22 @@ jobs:
             MPL-2.0,
             0BSD,
             Artistic-1.0-Perl,
-            MIT-CMU
-          # TODO: migrate away from react-leaflet (Hippocratic-2.1) to vanilla Leaflet (BSD-2-Clause)
-          # to make the frontend fully MIT-compatible. Tracked here until migration is done.
+            MIT-CMU,
+            MIT-0,
+            Zlib,
+            ZPL-2.1,
+            BSD-2-Clause-Views
+          # Per-package exemptions (comments can't go inside the folded list below):
+          # - typing-extensions: PSF-2.0; ships CPython's LICENSE, whose GPL-compatibility notes get misread as GPL.
+          # - protobuf: BSD-3-Clause, but declared as a free-text "3-Clause BSD License" the scanner can't match.
+          # - aiohappyeyeballs: PSF-2.0; ships CPython's LICENSE, whose GPL-compatibility notes get misread as GPL.
+          # - pygithub: LGPL-3.0 via platzky; only imported, not modified or vendored, which LGPL permits.
+          # - react-leaflet, @react-leaflet/core: Hippocratic-2.1, not OSI-approved.
+          #   TODO: migrate to vanilla Leaflet (BSD-2-Clause) to make the frontend fully MIT-compatible.
           allow-dependencies-licenses: >-
             pkg:pypi/typing-extensions,
             pkg:pypi/protobuf,
+            pkg:pypi/aiohappyeyeballs,
+            pkg:pypi/pygithub,
             pkg:npm/react-leaflet,
             pkg:npm/@react-leaflet/core
