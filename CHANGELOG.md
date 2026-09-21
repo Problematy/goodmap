@@ -2,6 +2,13 @@
 
 <!-- version list -->
 
+## [2.0.0-alpha.9](https://github.com/Problematy/goodmap/compare/2.0.0-alpha.8...2.0.0-alpha.9) (2026-09-21)
+
+
+### Bug Fixes
+
+* updated platzky dependency ([#404](https://github.com/Problematy/goodmap/issues/404)) ([16d1921](https://github.com/Problematy/goodmap/commit/16d192167192e7ebb54e60487a92d3272dc73f75))
+
 ## [2.0.0-alpha.8](https://github.com/Problematy/goodmap/compare/2.0.0-alpha.7...2.0.0-alpha.8) (2026-09-03)
 
 
