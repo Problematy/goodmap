@@ -51,7 +51,7 @@ class TestLanguageSwitching:
         get_language_button(page).click()
 
         # Select Polish
-        page.get_by_role("link", name="polski").click()
+        page.get_by_role("link", name="polski", exact=True).click()
 
         # Wait for page to reload
         page.wait_for_load_state("domcontentloaded")
@@ -68,7 +68,7 @@ class TestLanguageSwitching:
         """Verify switching to Polish changes popup UI text"""
         # Switch to Polish first
         get_language_button(page).click()
-        page.get_by_role("link", name="polski").click()
+        page.get_by_role("link", name="polski", exact=True).click()
         page.wait_for_load_state("domcontentloaded")
 
         open_test_popup(page)
@@ -88,7 +88,7 @@ class TestLanguageSwitching:
 
         # Switch to Polish
         get_language_button(page).click()
-        page.get_by_role("link", name="polski").click()
+        page.get_by_role("link", name="polski", exact=True).click()
         page.wait_for_load_state("domcontentloaded")
 
         # Polish About link should point to /blog/page/o-nas
@@ -99,7 +99,7 @@ class TestLanguageSwitching:
         """Verify switching back to English restores original menu items"""
         # Switch to Polish
         get_language_button(page).click()
-        page.get_by_role("link", name="polski").click()
+        page.get_by_role("link", name="polski", exact=True).click()
         page.wait_for_load_state("domcontentloaded")
 
         # Verify Polish
@@ -107,7 +107,7 @@ class TestLanguageSwitching:
 
         # Switch back to English (re-locate button after navigation)
         get_language_button(page).click()
-        page.get_by_role("link", name="English").click()
+        page.get_by_role("link", name="English", exact=True).click()
         page.wait_for_load_state("domcontentloaded")
 
         # Verify English restored (re-locate button after navigation)
