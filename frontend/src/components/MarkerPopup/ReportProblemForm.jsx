@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import getCsrfToken from '../../utils/csrf';
+import { REPORT_LOCATION, withLang } from '../../services/http/endpoints';
 import { useDeploymentData } from '../../context/DeploymentDataContext';
 
 /**
@@ -185,7 +186,7 @@ const ReportProblemForm = ({ placeId }) => {
         const csrfToken = await getCsrfToken();
 
         const response = await axios.post(
-            '/api/report-location',
+            withLang(REPORT_LOCATION),
             {
                 id: placeId,
                 description: problemType === 'other' ? problem : problemType,

@@ -5,7 +5,7 @@ import pytest
 
 from goodmap.api.core_api import get_default_issue_options, make_tuple_translation
 from goodmap.config import GoodmapConfig
-from goodmap.feature_flags import CategoriesHelp
+from goodmap.feature_flags import CategoriesHelp, EnableAdminPanel
 from goodmap.goodmap import create_app_from_config
 from tests.unit_tests.conftest import (
     api_post,
@@ -260,6 +260,79 @@ def test_categories_full_endpoint_without_categories_help():
     assert "categories_help" not in data
     category = data["categories"][0]
     assert "options_help" not in category
+
+
+def _bilingual_test_app():
+    """An app serving English at the root and Polish under /pl/, with real translations."""
+    config_data = get_test_config_data()
+    config_data["LANGUAGES"]["pl"] = {"name": "polski", "flag": "pl", "country": "PL"}
+    # "Loading" is one of goodmap's own msgids, so its Polish translation is known.
+    config_data["DB"]["DATA"]["categories"] = {"Loading": ["test"]}
+    config_data["FEATURE_FLAGS"] = make_flag_set(EnableAdminPanel)
+    app = create_app_from_config(GoodmapConfig.model_validate(config_data))
+    app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
+    return app.test_client()
+
+
+def test_categories_full_endpoint_is_translated_into_lang_argument():
+    test_app = _bilingual_test_app()
+
+    polish = test_app.get("/api/categories-full?lang=pl")
+    english = test_app.get("/api/categories-full?lang=en")
+
+    assert polish.status_code == 200
+    assert polish.json["categories"][0]["name"] == "Ładowanie"
+    assert english.json["categories"][0]["name"] == "Loading"
+
+
+def test_lang_argument_overrides_the_default_language():
+    """/api is unprefixed, so without ``lang`` platzky answers in the default language."""
+    config_data = get_test_config_data()
+    config_data["LANGUAGES"] = {
+        "pl": {"name": "polski", "flag": "pl", "country": "PL"},
+        "en": {"name": "English", "flag": "gb", "country": "GB"},
+    }
+    config_data["DB"]["DATA"]["categories"] = {"Loading": ["test"]}
+    test_app = create_app_from_config(GoodmapConfig.model_validate(config_data)).test_client()
+
+    assert test_app.get("/api/categories-full").json["categories"][0]["name"] == "Ładowanie"
+    english = test_app.get("/api/categories-full?lang=en")
+    assert english.json["categories"][0]["name"] == "Loading"
+
+
+def test_unknown_lang_argument_is_ignored():
+    response = _bilingual_test_app().get("/api/categories-full?lang=xx")
+    assert response.status_code == 200
+    assert response.json["categories"][0]["name"] == "Loading"
+
+
+def test_report_location_is_translated_into_lang_argument():
+    response = api_post(
+        _bilingual_test_app(),
+        "/api/report-location?lang=pl",
+        {"id": "location-id", "description": "test issue 1"},
+    )
+    assert response.status_code == 200
+    assert response.json["message"] == "Lokalizacja zgłoszona"
+
+
+def test_map_page_is_served_under_language_prefix():
+    test_app = _bilingual_test_app()
+
+    assert 'APP_LANG="pl";' in test_app.get("/pl/map").get_data(as_text=True)
+    assert 'APP_LANG="en";' in test_app.get("/map").get_data(as_text=True)
+
+
+def test_admin_page_is_served_under_language_prefix():
+    test_app = _bilingual_test_app()
+    with test_app.session_transaction() as sess:
+        sess["user"] = {"username": "Test User"}
+
+    polish = test_app.get("/pl/goodmap-admin").get_data(as_text=True)
+    english = test_app.get("/goodmap-admin").get_data(as_text=True)
+
+    assert "Lokalizacje" in polish
+    assert "Lokalizacje" not in english
 
 
 # --- Locations endpoint tests ---
