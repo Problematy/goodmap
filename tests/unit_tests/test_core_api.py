@@ -274,15 +274,17 @@ def _bilingual_test_app():
     return app.test_client()
 
 
+def _first_category_name(response) -> str:
+    assert response.status_code == 200
+    assert response.json is not None
+    return response.json["categories"][0]["name"]
+
+
 def test_categories_full_endpoint_is_translated_into_lang_argument():
     test_app = _bilingual_test_app()
 
-    polish = test_app.get("/api/categories-full?lang=pl")
-    english = test_app.get("/api/categories-full?lang=en")
-
-    assert polish.status_code == 200
-    assert polish.json["categories"][0]["name"] == "Ładowanie"
-    assert english.json["categories"][0]["name"] == "Loading"
+    assert _first_category_name(test_app.get("/api/categories-full?lang=pl")) == "Ładowanie"
+    assert _first_category_name(test_app.get("/api/categories-full?lang=en")) == "Loading"
 
 
 def test_lang_argument_overrides_the_default_language():
@@ -295,15 +297,13 @@ def test_lang_argument_overrides_the_default_language():
     config_data["DB"]["DATA"]["categories"] = {"Loading": ["test"]}
     test_app = create_app_from_config(GoodmapConfig.model_validate(config_data)).test_client()
 
-    assert test_app.get("/api/categories-full").json["categories"][0]["name"] == "Ładowanie"
-    english = test_app.get("/api/categories-full?lang=en")
-    assert english.json["categories"][0]["name"] == "Loading"
+    assert _first_category_name(test_app.get("/api/categories-full")) == "Ładowanie"
+    assert _first_category_name(test_app.get("/api/categories-full?lang=en")) == "Loading"
 
 
 def test_unknown_lang_argument_is_ignored():
     response = _bilingual_test_app().get("/api/categories-full?lang=xx")
-    assert response.status_code == 200
-    assert response.json["categories"][0]["name"] == "Loading"
+    assert _first_category_name(response) == "Loading"
 
 
 def test_report_location_is_translated_into_lang_argument():
@@ -313,6 +313,7 @@ def test_report_location_is_translated_into_lang_argument():
         {"id": "location-id", "description": "test issue 1"},
     )
     assert response.status_code == 200
+    assert response.json is not None
     assert response.json["message"] == "Lokalizacja zgłoszona"
 
 

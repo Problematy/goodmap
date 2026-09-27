@@ -227,6 +227,7 @@ def core_pages(
 
     @core_api_blueprint.teardown_request
     def restore_language(_exc: BaseException | None) -> None:
+        """Undo the language ``use_requested_language`` switched to, if it did."""
         if (requested_language := g.pop("requested_language", None)) is not None:
             requested_language.close()
 
