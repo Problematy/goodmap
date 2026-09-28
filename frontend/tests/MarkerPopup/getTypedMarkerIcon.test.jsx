@@ -224,4 +224,73 @@ describe('getTypedMarkerIcon icon value shapes', () => {
             }),
         ).toBeNull();
     });
+
+    it.each([
+        ['#ffffff', 'dark', '#333333'],
+        ['#FF0', 'dark', '#333333'],
+        ['#2e7d32', 'light', '#ffffff'],
+        ['#ef6c00', 'light', '#ffffff'],
+        ['#245466', 'light', '#ffffff'],
+        ['unparseable', 'light (fallback)', '#ffffff'],
+    ])('on a %s pin, draws the icon and frame %s', (pinColor, _, iconColor) => {
+        setMarkerStyles(`{
+            "icons": { "parcelLocker": "https://cdn.example.com/parcel-locker.svg" },
+            "colors": { "open": "${pinColor}" }
+        }`);
+
+        const { html } = getTypedMarkerIcon({
+            uuid: '1',
+            position: [50, 50],
+            marker: { icon: 'parcelLocker', color: 'open' },
+        }).options;
+
+        // type icon and frame layers: each a mask tinted via background-color
+        expect(html).toContain(
+            `background-color:${iconColor};-webkit-mask-image:url(https://cdn.example.com/parcel-locker.svg)`,
+        );
+        expect(html).toContain(
+            `background-color:${iconColor};-webkit-mask-image:url(data:image/svg+xml`,
+        );
+    });
+
+    describe('with a canvas to parse named CSS colors', () => {
+        const PAINTED = { white: [255, 255, 255, 255], orangered: [255, 69, 0, 255] };
+
+        beforeEach(() => {
+            // jsdom has no canvas; stand in for the browser painting fillStyle
+            globalThis.OffscreenCanvas = function OffscreenCanvas() {
+                this.getContext = () => ({
+                    fillStyle: '',
+                    fillRect() {},
+                    getImageData() {
+                        return { data: PAINTED[this.fillStyle] || [0, 0, 0, 0] };
+                    },
+                });
+            };
+        });
+
+        afterEach(() => {
+            delete globalThis.OffscreenCanvas;
+        });
+
+        it.each([
+            ['white', '#333333'],
+            ['orangered', '#ffffff'],
+        ])('on a %s pin, draws the icon %s', (pinColor, iconColor) => {
+            setMarkerStyles(`{
+                "icons": { "parcelLocker": "https://cdn.example.com/parcel-locker.svg" },
+                "colors": { "open": "${pinColor}" }
+            }`);
+
+            const { html } = getTypedMarkerIcon({
+                uuid: '1',
+                position: [50, 50],
+                marker: { icon: 'parcelLocker', color: 'open' },
+            }).options;
+
+            expect(html).toContain(
+                `background-color:${iconColor};-webkit-mask-image:url(https://cdn.example.com/parcel-locker.svg)`,
+            );
+        });
+    });
 });
