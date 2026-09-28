@@ -2,7 +2,6 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { DivIcon } from 'leaflet';
 import ReactDOMServer from 'react-dom/server';
-import PIN_SHAPE_URL from '../../res/svg/marker-pin.svg';
 
 const PIN_WIDTH = 45;
 const PIN_HEIGHT = 50;
@@ -19,9 +18,9 @@ const LIGHT_ICON_COLOR = '#ffffff';
 const DARK_ICON_COLOR = '#333333';
 const FRAME_WIDTH = 6;
 
-// The frame is marker-pin.svg's outline stroked FRAME_WIDTH wide, so it's equally
-// thick all the way round - scaling the pin shape up instead leaves it thin along
-// the slanted sides. Keep PIN_PATH in sync with marker-pin.svg.
+// The pin shape, masked to the pin's color. The frame is the same outline stroked
+// FRAME_WIDTH wide, so it's equally thick all the way round - scaling the pin shape
+// up instead leaves it thin along the slanted sides.
 const PIN_PATH = 'M45,100 L16.19,54.06 A34,34 0 1 1 73.81,54.06 Z';
 const PIN_VIEWBOX_WIDTH = 90;
 const PIN_VIEWBOX_HEIGHT = 100;
@@ -29,22 +28,25 @@ const VIEWBOX_UNITS_PER_PX = PIN_VIEWBOX_WIDTH / PIN_WIDTH;
 // The pin's sides meet at ~64deg, so the stroke's mitered tip reaches
 // 1/sin(32deg) ~ 1.9x further below the tip than the stroke reaches elsewhere.
 const FRAME_TIP_EXTENT = 2 * FRAME_WIDTH;
+const FRAME_PAD = FRAME_WIDTH * VIEWBOX_UNITS_PER_PX;
+const FRAME_PAD_BOTTOM = FRAME_TIP_EXTENT * VIEWBOX_UNITS_PER_PX;
 
-const frameMaskUrl = () => {
-    const pad = FRAME_WIDTH * VIEWBOX_UNITS_PER_PX;
-    const padBottom = FRAME_TIP_EXTENT * VIEWBOX_UNITS_PER_PX;
-    const viewBox = [
-        -pad,
-        -pad,
-        PIN_VIEWBOX_WIDTH + 2 * pad,
-        PIN_VIEWBOX_HEIGHT + pad + padBottom,
-    ].join(' ');
-    const svg =
-        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}">` +
-        `<path d="${PIN_PATH}" stroke="black" stroke-width="${2 * pad}"/></svg>`;
-    return `data:image/svg+xml,${encodeURIComponent(svg)}`;
-};
-const FRAME_MASK_URL = frameMaskUrl();
+const pinSvgUrl = (viewBox, pathAttrs) =>
+    `data:image/svg+xml,${encodeURIComponent(
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox.join(' ')}">` +
+            `<path d="${PIN_PATH}"${pathAttrs}/></svg>`,
+    )}`;
+
+const PIN_SHAPE_URL = pinSvgUrl([0, 0, PIN_VIEWBOX_WIDTH, PIN_VIEWBOX_HEIGHT], '');
+const FRAME_MASK_URL = pinSvgUrl(
+    [
+        -FRAME_PAD,
+        -FRAME_PAD,
+        PIN_VIEWBOX_WIDTH + 2 * FRAME_PAD,
+        PIN_VIEWBOX_HEIGHT + FRAME_PAD + FRAME_PAD_BOTTOM,
+    ],
+    ` stroke="black" stroke-width="${2 * FRAME_PAD}"`,
+);
 
 /**
  * A configured marker_styles.icons entry, as a usable URL.
@@ -87,28 +89,25 @@ const parseHex = color => {
 };
 
 /**
- * Any CSS color (named, rgb(), hsl(), ...) as [r, g, b] (0-255), by letting the
- * browser paint it onto a 1x1 canvas and reading the pixel back.
+ * Any CSS color (named, rgb(), hsl(), ...) as [r, g, b] (0-255), by letting a
+ * canvas normalize it: reading fillStyle back gives `#rrggbb` for an opaque color
+ * and `rgba(...)` otherwise.
  *
  * @param {string} color
  * @returns {number[]|null} null where there's no canvas (e.g. jsdom) or `color`
  *   isn't a valid, opaque CSS color
  */
 const parseCssColor = color => {
-    if (typeof OffscreenCanvas === 'undefined') {
-        return null;
-    }
-    const context = new OffscreenCanvas(1, 1).getContext('2d');
+    const context =
+        typeof OffscreenCanvas !== 'undefined' && new OffscreenCanvas(1, 1).getContext('2d');
     if (!context) {
         return null;
     }
-    // An invalid color leaves fillStyle unchanged, so paint over a transparent
-    // default and treat a non-opaque pixel as "couldn't parse".
+    // An invalid color leaves fillStyle unchanged - at 'transparent', which reads
+    // back as rgba(...) and so fails parseHex.
     context.fillStyle = 'transparent';
     context.fillStyle = color;
-    context.fillRect(0, 0, 1, 1);
-    const [r, g, b, a] = context.getImageData(0, 0, 1, 1).data;
-    return a === 255 ? [r, g, b] : null;
+    return parseHex(context.fillStyle);
 };
 
 /**
@@ -125,36 +124,36 @@ const relativeLuminance = rgb => {
     return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 };
 
-const contrastRatio = (a, b) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
-
-const LIGHT_ICON_LUMINANCE = relativeLuminance(parseHex(LIGHT_ICON_COLOR));
-// WCAG's minimum contrast for graphical objects (1.4.11).
-const MIN_ICON_CONTRAST = 3;
+// Above this luminance a pin's contrast with the (white) light icon,
+// (1 + 0.05) / (L + 0.05), drops below WCAG's 3:1 minimum for graphical
+// objects (1.4.11).
+const DARK_ICON_LUMINANCE_THRESHOLD = 1.05 / 3 - 0.05;
 
 // Pins share a handful of configured colors, so parse each only once.
 const iconColorCache = new Map();
 
 /**
  * The light icon color, unless it's too faint against `pinColor` to read (below
- * MIN_ICON_CONTRAST) - then the dark one, so e.g. a white or yellow pin gets a
- * dark icon and frame. Mid-tones like orangered keep the light icon even where
- * dark would contrast marginally more. A color that can't be parsed keeps the
- * light icon too.
+ * 3:1 contrast) - then the dark one, so e.g. a white or yellow pin gets a dark
+ * icon and frame. Mid-tones like orangered keep the light icon even where dark
+ * would contrast marginally more. A color that can't be parsed keeps the light
+ * icon too.
  *
  * @param {string} pinColor - any CSS color
  * @returns {string}
  */
 const iconColorFor = pinColor => {
-    if (!iconColorCache.has(pinColor)) {
-        const rgb = parseHex(pinColor) || parseCssColor(pinColor);
-        let iconColor = LIGHT_ICON_COLOR;
-        if (rgb) {
-            const contrast = contrastRatio(relativeLuminance(rgb), LIGHT_ICON_LUMINANCE);
-            iconColor = contrast < MIN_ICON_CONTRAST ? DARK_ICON_COLOR : LIGHT_ICON_COLOR;
-        }
-        iconColorCache.set(pinColor, iconColor);
+    const cached = iconColorCache.get(pinColor);
+    if (cached) {
+        return cached;
     }
-    return iconColorCache.get(pinColor);
+    const rgb = parseHex(pinColor) || parseCssColor(pinColor);
+    const iconColor =
+        rgb && relativeLuminance(rgb) > DARK_ICON_LUMINANCE_THRESHOLD
+            ? DARK_ICON_COLOR
+            : LIGHT_ICON_COLOR;
+    iconColorCache.set(pinColor, iconColor);
+    return iconColor;
 };
 
 const maskStyle = (url, color) => ({
