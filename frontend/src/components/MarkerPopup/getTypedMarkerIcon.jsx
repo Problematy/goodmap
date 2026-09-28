@@ -13,6 +13,37 @@ const FALLBACK_COLOR = globalThis.SECONDARY_COLOR || 'black';
 const TYPE_ICON_SIZE = 20;
 const TYPE_ICON_OFFSET_TOP = 8;
 const TYPE_ICON_OFFSET_LEFT = 12;
+// The type icon's color, also used for the frame around the pin so the two read
+// as one piece.
+const ICON_COLOR = '#ffffff';
+const FRAME_WIDTH = 6;
+
+// The frame is marker-pin.svg's outline stroked FRAME_WIDTH wide, so it's equally
+// thick all the way round - scaling the pin shape up instead leaves it thin along
+// the slanted sides. Keep PIN_PATH in sync with marker-pin.svg.
+const PIN_PATH = 'M45,100 L16.19,54.06 A34,34 0 1 1 73.81,54.06 Z';
+const PIN_VIEWBOX_WIDTH = 90;
+const PIN_VIEWBOX_HEIGHT = 100;
+const VIEWBOX_UNITS_PER_PX = PIN_VIEWBOX_WIDTH / PIN_WIDTH;
+// The pin's sides meet at ~64deg, so the stroke's mitered tip reaches
+// 1/sin(32deg) ~ 1.9x further below the tip than the stroke reaches elsewhere.
+const FRAME_TIP_EXTENT = 2 * FRAME_WIDTH;
+
+const frameMaskUrl = () => {
+    const pad = FRAME_WIDTH * VIEWBOX_UNITS_PER_PX;
+    const padBottom = FRAME_TIP_EXTENT * VIEWBOX_UNITS_PER_PX;
+    const viewBox = [
+        -pad,
+        -pad,
+        PIN_VIEWBOX_WIDTH + 2 * pad,
+        PIN_VIEWBOX_HEIGHT + pad + padBottom,
+    ].join(' ');
+    const svg =
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}">` +
+        `<path d="${PIN_PATH}" stroke="black" stroke-width="${2 * pad}"/></svg>`;
+    return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+};
+const FRAME_MASK_URL = frameMaskUrl();
 
 /**
  * A configured marker_styles.icons entry, as a usable URL.
@@ -57,14 +88,22 @@ const maskStyle = (url, color) => ({
  */
 const PinIcon = ({ color, typeIconUrl, hasRemark }) => (
     <div style={{ position: 'relative', width: PIN_WIDTH, height: PIN_HEIGHT }}>
+        {/* Drawn behind the pin with the same mask technique as the pin itself, so
+            it renders wherever the pin does (a drop-shadow filter didn't reliably). */}
         <div
-            className="custom-typed-marker-pin"
+            className="custom-typed-marker-frame"
             style={{
                 position: 'absolute',
-                inset: 0,
-                filter: 'drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff)',
-                ...maskStyle(PIN_SHAPE_URL, color),
+                top: -FRAME_WIDTH,
+                left: -FRAME_WIDTH,
+                right: -FRAME_WIDTH,
+                bottom: -FRAME_TIP_EXTENT,
+                ...maskStyle(FRAME_MASK_URL, ICON_COLOR),
             }}
+        />
+        <div
+            className="custom-typed-marker-pin"
+            style={{ position: 'absolute', inset: 0, ...maskStyle(PIN_SHAPE_URL, color) }}
         />
         {typeIconUrl !== '' && (
             <div
@@ -75,7 +114,7 @@ const PinIcon = ({ color, typeIconUrl, hasRemark }) => (
                     left: TYPE_ICON_OFFSET_LEFT,
                     width: TYPE_ICON_SIZE,
                     height: TYPE_ICON_SIZE,
-                    ...maskStyle(typeIconUrl, '#ffffff'),
+                    ...maskStyle(typeIconUrl, ICON_COLOR),
                 }}
             />
         )}
@@ -88,7 +127,7 @@ const PinIcon = ({ color, typeIconUrl, hasRemark }) => (
                     fontSize: 21,
                     fontWeight: 'bold',
                     lineHeight: 1,
-                    color: '#ffffff',
+                    color: ICON_COLOR,
                     textShadow: [-1, 1]
                         .flatMap(x => [-1, 1].map(y => `${x}px ${y}px 0 ${color}`))
                         .join(', '),
