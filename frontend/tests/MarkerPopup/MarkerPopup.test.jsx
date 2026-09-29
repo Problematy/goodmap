@@ -146,10 +146,10 @@ describe('MarkerPopup with remark', () => {
         // When remark is true, marker should have our own pin, not Leaflet's default icon
         expect(marker).toBeInTheDocument();
 
-        // Verify our pin's dimensions (45x50) are applied, not Leaflet's default (25x41)
+        // Verify our pin's dimensions (44x56) are applied, not Leaflet's default (25x41)
         const style = window.getComputedStyle(marker);
-        expect(style.width).toBe('45px');
-        expect(style.height).toBe('50px');
+        expect(style.width).toBe('44px');
+        expect(style.height).toBe('56px');
     });
 
     it('does not rebuild the icon on a re-render that leaves place.marker alone', () => {

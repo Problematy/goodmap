@@ -68,7 +68,7 @@ describe('getTypedMarkerIcon', () => {
         expect(icon).not.toBeNull();
         expect(icon.options.html).toContain('https://cdn.example.com/parcel-locker.svg');
         expect(icon.options.html).toContain('background-color:black'); // fallback color, no marker.color set
-        expect(icon.options.iconSize).toEqual([45, 50]);
+        expect(icon.options.iconSize).toEqual([44, 56]);
     });
 
     it('masks the icon URL through CSS so it picks up the matched color, instead of embedding SVG path data', () => {

@@ -3,33 +3,34 @@ import PropTypes from 'prop-types';
 import { DivIcon } from 'leaflet';
 import ReactDOMServer from 'react-dom/server';
 
-const PIN_WIDTH = 45;
-const PIN_HEIGHT = 50;
+// The pin shape: Phosphor Icons' map-pin-fill (MIT, https://phosphoricons.com)
+// without the hole it cuts in the head, since the type icon sits there. Its
+// bounding box is PIN_VIEWBOX (a 11:14 box), with the head a circle of radius 88
+// centered at (128, 104) and the rounded tail's bottom at y=240.
+const PIN_PATH =
+    'M128,16a88.1,88.1,0,0,0-88,88c0,75.3,80,132.17,83.41,134.55a8,8,0,0,0,9.18,0' +
+    'C136,236.17,216,179.3,216,104A88.1,88.1,0,0,0,128,16Z';
+const PIN_VIEWBOX = [40, 16, 176, 224];
+const VIEWBOX_UNITS_PER_PX = 4;
+const PIN_WIDTH = PIN_VIEWBOX[2] / VIEWBOX_UNITS_PER_PX;
+const PIN_HEIGHT = PIN_VIEWBOX[3] / VIEWBOX_UNITS_PER_PX;
+const HEAD_CENTER = (104 - PIN_VIEWBOX[1]) / VIEWBOX_UNITS_PER_PX;
 // The marker's default color (used whenever marker.color doesn't match) is
 // always the page's own secondary color, not a separately configurable value.
 const FALLBACK_COLOR = globalThis.SECONDARY_COLOR || 'black';
 
-const TYPE_ICON_SIZE = 20;
-const TYPE_ICON_OFFSET_TOP = 8;
-const TYPE_ICON_OFFSET_LEFT = 12;
+const TYPE_ICON_SIZE = 26;
+const TYPE_ICON_OFFSET = HEAD_CENTER - TYPE_ICON_SIZE / 2;
 // The type icon's colors, also used for the frame around the pin so the two read
 // as one piece: light on a dark pin, dark on a light one (see iconColorFor).
 const LIGHT_ICON_COLOR = '#ffffff';
 const DARK_ICON_COLOR = '#333333';
-const FRAME_WIDTH = 6;
 
-// The pin shape, masked to the pin's color. The frame is the same outline stroked
-// FRAME_WIDTH wide, so it's equally thick all the way round - scaling the pin shape
-// up instead leaves it thin along the slanted sides.
-const PIN_PATH = 'M45,100 L16.19,54.06 A34,34 0 1 1 73.81,54.06 Z';
-const PIN_VIEWBOX_WIDTH = 90;
-const PIN_VIEWBOX_HEIGHT = 100;
-const VIEWBOX_UNITS_PER_PX = PIN_VIEWBOX_WIDTH / PIN_WIDTH;
-// The pin's sides meet at ~64deg, so the stroke's mitered tip reaches
-// 1/sin(32deg) ~ 1.9x further below the tip than the stroke reaches elsewhere.
-const FRAME_TIP_EXTENT = 2 * FRAME_WIDTH;
+// The frame is the pin's outline stroked FRAME_WIDTH wide (round joins, so it
+// sticks out exactly that far everywhere, tail included) - scaling the pin shape
+// up instead leaves it thin along the tail.
+const FRAME_WIDTH = 6;
 const FRAME_PAD = FRAME_WIDTH * VIEWBOX_UNITS_PER_PX;
-const FRAME_PAD_BOTTOM = FRAME_TIP_EXTENT * VIEWBOX_UNITS_PER_PX;
 
 const pinSvgUrl = (viewBox, pathAttrs) =>
     `data:image/svg+xml,${encodeURIComponent(
@@ -37,15 +38,15 @@ const pinSvgUrl = (viewBox, pathAttrs) =>
             `<path d="${PIN_PATH}"${pathAttrs}/></svg>`,
     )}`;
 
-const PIN_SHAPE_URL = pinSvgUrl([0, 0, PIN_VIEWBOX_WIDTH, PIN_VIEWBOX_HEIGHT], '');
+const PIN_SHAPE_URL = pinSvgUrl(PIN_VIEWBOX, '');
 const FRAME_MASK_URL = pinSvgUrl(
     [
-        -FRAME_PAD,
-        -FRAME_PAD,
-        PIN_VIEWBOX_WIDTH + 2 * FRAME_PAD,
-        PIN_VIEWBOX_HEIGHT + FRAME_PAD + FRAME_PAD_BOTTOM,
+        PIN_VIEWBOX[0] - FRAME_PAD,
+        PIN_VIEWBOX[1] - FRAME_PAD,
+        PIN_VIEWBOX[2] + 2 * FRAME_PAD,
+        PIN_VIEWBOX[3] + 2 * FRAME_PAD,
     ],
-    ` stroke="black" stroke-width="${2 * FRAME_PAD}"`,
+    ` stroke="black" stroke-width="${2 * FRAME_PAD}" stroke-linejoin="round"`,
 );
 
 /**
@@ -180,10 +181,7 @@ const PinIcon = ({ color, iconColor, typeIconUrl, hasRemark }) => (
             className="custom-typed-marker-frame"
             style={{
                 position: 'absolute',
-                top: -FRAME_WIDTH,
-                left: -FRAME_WIDTH,
-                right: -FRAME_WIDTH,
-                bottom: -FRAME_TIP_EXTENT,
+                inset: -FRAME_WIDTH,
                 ...maskStyle(FRAME_MASK_URL, iconColor),
             }}
         />
@@ -196,8 +194,8 @@ const PinIcon = ({ color, iconColor, typeIconUrl, hasRemark }) => (
                 className="custom-typed-marker-type-icon"
                 style={{
                     position: 'absolute',
-                    top: TYPE_ICON_OFFSET_TOP,
-                    left: TYPE_ICON_OFFSET_LEFT,
+                    top: TYPE_ICON_OFFSET,
+                    left: TYPE_ICON_OFFSET,
                     width: TYPE_ICON_SIZE,
                     height: TYPE_ICON_SIZE,
                     ...maskStyle(typeIconUrl, iconColor),
@@ -271,8 +269,9 @@ const getTypedMarkerIcon = place => {
         ),
         className: 'custom-typed-marker-icon',
         iconSize: [PIN_WIDTH, PIN_HEIGHT],
-        iconAnchor: [PIN_WIDTH / 2, PIN_HEIGHT],
-        popupAnchor: [0, -PIN_HEIGHT],
+        // Anchored at the frame's bottom, which is what reads as the pin's point.
+        iconAnchor: [PIN_WIDTH / 2, PIN_HEIGHT + FRAME_WIDTH],
+        popupAnchor: [0, -(PIN_HEIGHT + 2 * FRAME_WIDTH)],
     });
 };
 
