@@ -3,34 +3,34 @@ import PropTypes from 'prop-types';
 import { DivIcon } from 'leaflet';
 import ReactDOMServer from 'react-dom/server';
 
-// The pin shape: Phosphor Icons' map-pin-fill (MIT, https://phosphoricons.com)
-// without the hole it cuts in the head, since the type icon sits there. Its
-// bounding box is PIN_VIEWBOX (a 11:14 box), with the head a circle of radius 88
-// centered at (128, 104) and the rounded tail's bottom at y=240.
-const PIN_PATH =
-    'M128,16a88.1,88.1,0,0,0-88,88c0,75.3,80,132.17,83.41,134.55a8,8,0,0,0,9.18,0' +
-    'C136,236.17,216,179.3,216,104A88.1,88.1,0,0,0,128,16Z';
-const PIN_VIEWBOX = [40, 16, 176, 224];
-const VIEWBOX_UNITS_PER_PX = 4;
-const PIN_WIDTH = PIN_VIEWBOX[2] / VIEWBOX_UNITS_PER_PX;
-const PIN_HEIGHT = PIN_VIEWBOX[3] / VIEWBOX_UNITS_PER_PX;
-const HEAD_CENTER = (104 - PIN_VIEWBOX[1]) / VIEWBOX_UNITS_PER_PX;
+// The marker's height in px. Every other dimension below is in PIN_VIEWBOX units
+// and scales with it (see pinLayout), so this is the one knob for marker size.
+const MARKER_SIZE = 50;
+
+// The pin shape: a round head (radius 34, centered at (45, 36)) whose sides run
+// straight down to a sharp tip at (45, 100).
+const PIN_PATH = 'M45,100 L16.19,54.06 A34,34 0 1 1 73.81,54.06 Z';
+const PIN_VIEWBOX = [0, 0, 90, 100];
+const HEAD_CENTER = [45, 36];
+const TYPE_ICON_SIZE = 40;
+// The asterisk badge, placed at the head's top right.
+const BADGE = { top: 2, left: 48, fontSize: 42, outline: 2 };
+
 // The marker's default color (used whenever marker.color doesn't match) is
 // always the page's own secondary color, not a separately configurable value.
 const FALLBACK_COLOR = globalThis.SECONDARY_COLOR || 'black';
 
-const TYPE_ICON_SIZE = 26;
-const TYPE_ICON_OFFSET = HEAD_CENTER - TYPE_ICON_SIZE / 2;
 // The type icon's colors, also used for the frame around the pin so the two read
 // as one piece: light on a dark pin, dark on a light one (see iconColorFor).
 const LIGHT_ICON_COLOR = '#ffffff';
 const DARK_ICON_COLOR = '#333333';
 
-// The frame is the pin's outline stroked FRAME_WIDTH wide (round joins, so it
-// sticks out exactly that far everywhere, tail included) - scaling the pin shape
-// up instead leaves it thin along the tail.
-const FRAME_WIDTH = 6;
-const FRAME_PAD = FRAME_WIDTH * VIEWBOX_UNITS_PER_PX;
+// The frame is the pin's outline stroked FRAME_WIDTH wide, so it's equally thick
+// all the way round - scaling the pin shape up instead leaves it thin along the
+// slanted sides. Its mitered tip stays sharp, reaching 1/sin(half the tip's
+// angle) times further below the pin's tip than the stroke reaches elsewhere.
+const FRAME_WIDTH = 12;
+const FRAME_TIP_EXTENT = (FRAME_WIDTH * Math.hypot(28.81, 45.94)) / 28.81;
 
 const pinSvgUrl = (viewBox, pathAttrs) =>
     `data:image/svg+xml,${encodeURIComponent(
@@ -41,13 +41,42 @@ const pinSvgUrl = (viewBox, pathAttrs) =>
 const PIN_SHAPE_URL = pinSvgUrl(PIN_VIEWBOX, '');
 const FRAME_MASK_URL = pinSvgUrl(
     [
-        PIN_VIEWBOX[0] - FRAME_PAD,
-        PIN_VIEWBOX[1] - FRAME_PAD,
-        PIN_VIEWBOX[2] + 2 * FRAME_PAD,
-        PIN_VIEWBOX[3] + 2 * FRAME_PAD,
+        -FRAME_WIDTH,
+        -FRAME_WIDTH,
+        PIN_VIEWBOX[2] + 2 * FRAME_WIDTH,
+        PIN_VIEWBOX[3] + FRAME_WIDTH + FRAME_TIP_EXTENT,
     ],
-    ` stroke="black" stroke-width="${2 * FRAME_PAD}" stroke-linejoin="round"`,
+    ` stroke="black" stroke-width="${2 * FRAME_WIDTH}"`,
 );
+
+/**
+ * The pin's dimensions in px for a marker `markerSize` px tall.
+ *
+ * @param {number} markerSize
+ * @returns {Object}
+ */
+const pinLayout = markerSize => {
+    const px = units => (units * markerSize) / PIN_VIEWBOX[3];
+    return {
+        width: px(PIN_VIEWBOX[2]),
+        height: px(PIN_VIEWBOX[3]),
+        frameWidth: px(FRAME_WIDTH),
+        frameTipExtent: px(FRAME_TIP_EXTENT),
+        typeIcon: {
+            top: px(HEAD_CENTER[1] - TYPE_ICON_SIZE / 2),
+            left: px(HEAD_CENTER[0] - TYPE_ICON_SIZE / 2),
+            size: px(TYPE_ICON_SIZE),
+        },
+        badge: {
+            top: px(BADGE.top),
+            left: px(BADGE.left),
+            fontSize: px(BADGE.fontSize),
+            outline: px(BADGE.outline),
+        },
+    };
+};
+
+const PIN_LAYOUT = pinLayout(MARKER_SIZE);
 
 /**
  * A configured marker_styles.icons entry, as a usable URL.
@@ -173,15 +202,18 @@ const maskStyle = (url, color) => ({
  * remarked location keeps its type/color styling (or just its fallback color,
  * if nothing else matched) instead of losing it to an unrelated asterisk icon.
  */
-const PinIcon = ({ color, iconColor, typeIconUrl, hasRemark }) => (
-    <div style={{ position: 'relative', width: PIN_WIDTH, height: PIN_HEIGHT }}>
+const PinIcon = ({ layout, color, iconColor, typeIconUrl, hasRemark }) => (
+    <div style={{ position: 'relative', width: layout.width, height: layout.height }}>
         {/* Drawn behind the pin with the same mask technique as the pin itself, so
             it renders wherever the pin does (a drop-shadow filter didn't reliably). */}
         <div
             className="custom-typed-marker-frame"
             style={{
                 position: 'absolute',
-                inset: -FRAME_WIDTH,
+                top: -layout.frameWidth,
+                left: -layout.frameWidth,
+                right: -layout.frameWidth,
+                bottom: -layout.frameTipExtent,
                 ...maskStyle(FRAME_MASK_URL, iconColor),
             }}
         />
@@ -194,10 +226,10 @@ const PinIcon = ({ color, iconColor, typeIconUrl, hasRemark }) => (
                 className="custom-typed-marker-type-icon"
                 style={{
                     position: 'absolute',
-                    top: TYPE_ICON_OFFSET,
-                    left: TYPE_ICON_OFFSET,
-                    width: TYPE_ICON_SIZE,
-                    height: TYPE_ICON_SIZE,
+                    top: layout.typeIcon.top,
+                    left: layout.typeIcon.left,
+                    width: layout.typeIcon.size,
+                    height: layout.typeIcon.size,
                     ...maskStyle(typeIconUrl, iconColor),
                 }}
             />
@@ -206,14 +238,21 @@ const PinIcon = ({ color, iconColor, typeIconUrl, hasRemark }) => (
             <span
                 style={{
                     position: 'absolute',
-                    top: 1,
-                    left: 24,
-                    fontSize: 21,
+                    top: layout.badge.top,
+                    left: layout.badge.left,
+                    fontSize: layout.badge.fontSize,
                     fontWeight: 'bold',
                     lineHeight: 1,
                     color: iconColor,
                     textShadow: [-1, 1]
-                        .flatMap(x => [-1, 1].map(y => `${x}px ${y}px 0 ${color}`))
+                        .flatMap(x =>
+                            [-1, 1].map(
+                                y =>
+                                    `${x * layout.badge.outline}px ${
+                                        y * layout.badge.outline
+                                    }px 0 ${color}`,
+                            ),
+                        )
                         .join(', '),
                 }}
             >
@@ -224,6 +263,23 @@ const PinIcon = ({ color, iconColor, typeIconUrl, hasRemark }) => (
 );
 
 PinIcon.propTypes = {
+    layout: PropTypes.shape({
+        width: PropTypes.number.isRequired,
+        height: PropTypes.number.isRequired,
+        frameWidth: PropTypes.number.isRequired,
+        frameTipExtent: PropTypes.number.isRequired,
+        typeIcon: PropTypes.shape({
+            top: PropTypes.number.isRequired,
+            left: PropTypes.number.isRequired,
+            size: PropTypes.number.isRequired,
+        }).isRequired,
+        badge: PropTypes.shape({
+            top: PropTypes.number.isRequired,
+            left: PropTypes.number.isRequired,
+            fontSize: PropTypes.number.isRequired,
+            outline: PropTypes.number.isRequired,
+        }).isRequired,
+    }).isRequired,
     color: PropTypes.string.isRequired,
     iconColor: PropTypes.string.isRequired,
     typeIconUrl: PropTypes.string.isRequired,
@@ -261,6 +317,7 @@ const getTypedMarkerIcon = place => {
     return new DivIcon({
         html: ReactDOMServer.renderToString(
             <PinIcon
+                layout={PIN_LAYOUT}
                 color={color}
                 iconColor={iconColorFor(color)}
                 typeIconUrl={typeIconUrl}
@@ -268,10 +325,10 @@ const getTypedMarkerIcon = place => {
             />,
         ),
         className: 'custom-typed-marker-icon',
-        iconSize: [PIN_WIDTH, PIN_HEIGHT],
-        // Anchored at the frame's bottom, which is what reads as the pin's point.
-        iconAnchor: [PIN_WIDTH / 2, PIN_HEIGHT + FRAME_WIDTH],
-        popupAnchor: [0, -(PIN_HEIGHT + 2 * FRAME_WIDTH)],
+        iconSize: [PIN_LAYOUT.width, PIN_LAYOUT.height],
+        // Anchored at the frame's tip, which is what reads as the pin's point.
+        iconAnchor: [PIN_LAYOUT.width / 2, PIN_LAYOUT.height + PIN_LAYOUT.frameTipExtent],
+        popupAnchor: [0, -(PIN_LAYOUT.height + PIN_LAYOUT.frameTipExtent + PIN_LAYOUT.frameWidth)],
     });
 };
 

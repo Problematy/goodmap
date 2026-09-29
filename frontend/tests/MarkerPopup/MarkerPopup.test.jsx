@@ -91,7 +91,7 @@ describe('MarkerPopup', () => {
 
         // Verify default Leaflet icon dimensions (25x41) are used, not custom asterisk icon (40x48)
         const style = window.getComputedStyle(leafletMarker);
-        expect(style.width).not.toBe('40px'); // Should NOT have asterisk icon width
+        expect(style.width).not.toBe('50px'); // Should NOT have asterisk icon width
     });
 });
 
@@ -146,10 +146,10 @@ describe('MarkerPopup with remark', () => {
         // When remark is true, marker should have our own pin, not Leaflet's default icon
         expect(marker).toBeInTheDocument();
 
-        // Verify our pin's dimensions (44x56) are applied, not Leaflet's default (25x41)
+        // Verify our pin's dimensions (45x50) are applied, not Leaflet's default (25x41)
         const style = window.getComputedStyle(marker);
-        expect(style.width).toBe('44px');
-        expect(style.height).toBe('56px');
+        expect(style.width).toBe('45px');
+        expect(style.height).toBe('50px');
     });
 
     it('does not rebuild the icon on a re-render that leaves place.marker alone', () => {
