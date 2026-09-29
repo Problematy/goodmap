@@ -244,10 +244,10 @@ describe('getTypedMarkerIcon icon value shapes', () => {
         ['#ef6c00', 'light', '#ffffff'],
         ['#245466', 'light', '#ffffff'],
         ['unparseable', 'light (fallback)', '#ffffff'],
-    ])('on a %s pin, draws the icon and frame %s', (pinColor, _, iconColor) => {
+    ])('on a %s pin, draws the icon and outline %s', (pinColor, _, iconColor) => {
         const html = renderPinHtml(pinColor);
 
-        // type icon and frame layers: each a mask tinted via background-color
+        // type icon and outline layers: each a mask tinted via background-color
         expect(html).toContain(
             `background-color:${iconColor};-webkit-mask-image:url(https://cdn.example.com/parcel-locker.svg)`,
         );

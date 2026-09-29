@@ -14,23 +14,23 @@ const PIN_VIEWBOX = [0, 0, 90, 100];
 const HEAD_CENTER = [45, 36];
 const TYPE_ICON_SIZE = 40;
 // The asterisk badge, placed at the head's top right.
-const BADGE = { top: 2, left: 48, fontSize: 42, outline: 2 };
+const BADGE = { top: 2, left: 48, fontSize: 42, edge: 2 };
 
 // The marker's default color (used whenever marker.color doesn't match) is
 // always the page's own secondary color, not a separately configurable value.
 const FALLBACK_COLOR = globalThis.SECONDARY_COLOR || 'black';
 
-// The type icon's colors, also used for the frame around the pin so the two read
+// The type icon's colors, also used for the outline around the pin so the two read
 // as one piece: light on a dark pin, dark on a light one (see iconColorFor).
 const LIGHT_ICON_COLOR = '#ffffff';
 const DARK_ICON_COLOR = '#333333';
 
-// The frame is the pin's outline stroked FRAME_WIDTH wide, so it's equally thick
+// The outline is the pin's shape stroked OUTLINE_WIDTH wide, so it's equally thick
 // all the way round - scaling the pin shape up instead leaves it thin along the
 // slanted sides. Its mitered tip stays sharp, reaching 1/sin(half the tip's
 // angle) times further below the pin's tip than the stroke reaches elsewhere.
-const FRAME_WIDTH = 12;
-const FRAME_TIP_EXTENT = (FRAME_WIDTH * Math.hypot(28.81, 45.94)) / 28.81;
+const OUTLINE_WIDTH = 12;
+const OUTLINE_TIP_EXTENT = (OUTLINE_WIDTH * Math.hypot(28.81, 45.94)) / 28.81;
 
 const pinSvgUrl = (viewBox, pathAttrs) =>
     `data:image/svg+xml,${encodeURIComponent(
@@ -39,14 +39,14 @@ const pinSvgUrl = (viewBox, pathAttrs) =>
     )}`;
 
 const PIN_SHAPE_URL = pinSvgUrl(PIN_VIEWBOX, '');
-const FRAME_MASK_URL = pinSvgUrl(
+const OUTLINE_MASK_URL = pinSvgUrl(
     [
-        -FRAME_WIDTH,
-        -FRAME_WIDTH,
-        PIN_VIEWBOX[2] + 2 * FRAME_WIDTH,
-        PIN_VIEWBOX[3] + FRAME_WIDTH + FRAME_TIP_EXTENT,
+        -OUTLINE_WIDTH,
+        -OUTLINE_WIDTH,
+        PIN_VIEWBOX[2] + 2 * OUTLINE_WIDTH,
+        PIN_VIEWBOX[3] + OUTLINE_WIDTH + OUTLINE_TIP_EXTENT,
     ],
-    ` stroke="black" stroke-width="${2 * FRAME_WIDTH}"`,
+    ` stroke="black" stroke-width="${2 * OUTLINE_WIDTH}"`,
 );
 
 /**
@@ -60,8 +60,8 @@ const pinLayout = markerSize => {
     return {
         width: px(PIN_VIEWBOX[2]),
         height: px(PIN_VIEWBOX[3]),
-        frameWidth: px(FRAME_WIDTH),
-        frameTipExtent: px(FRAME_TIP_EXTENT),
+        outlineWidth: px(OUTLINE_WIDTH),
+        outlineTipExtent: px(OUTLINE_TIP_EXTENT),
         typeIcon: {
             top: px(HEAD_CENTER[1] - TYPE_ICON_SIZE / 2),
             left: px(HEAD_CENTER[0] - TYPE_ICON_SIZE / 2),
@@ -71,7 +71,7 @@ const pinLayout = markerSize => {
             top: px(BADGE.top),
             left: px(BADGE.left),
             fontSize: px(BADGE.fontSize),
-            outline: px(BADGE.outline),
+            edge: px(BADGE.edge),
         },
     };
 };
@@ -165,7 +165,7 @@ const iconColorCache = new Map();
 /**
  * The light icon color, unless it's too faint against `pinColor` to read (below
  * 3:1 contrast) - then the dark one, so e.g. a white or yellow pin gets a dark
- * icon and frame. Mid-tones like orangered keep the light icon even where dark
+ * icon and outline. Mid-tones like orangered keep the light icon even where dark
  * would contrast marginally more. A color that can't be parsed keeps the light
  * icon too.
  *
@@ -207,14 +207,14 @@ const PinIcon = ({ layout, color, iconColor, typeIconUrl, hasRemark }) => (
         {/* Drawn behind the pin with the same mask technique as the pin itself, so
             it renders wherever the pin does (a drop-shadow filter didn't reliably). */}
         <div
-            className="custom-typed-marker-frame"
+            className="custom-typed-marker-outline"
             style={{
                 position: 'absolute',
-                top: -layout.frameWidth,
-                left: -layout.frameWidth,
-                right: -layout.frameWidth,
-                bottom: -layout.frameTipExtent,
-                ...maskStyle(FRAME_MASK_URL, iconColor),
+                top: -layout.outlineWidth,
+                left: -layout.outlineWidth,
+                right: -layout.outlineWidth,
+                bottom: -layout.outlineTipExtent,
+                ...maskStyle(OUTLINE_MASK_URL, iconColor),
             }}
         />
         <div
@@ -248,8 +248,8 @@ const PinIcon = ({ layout, color, iconColor, typeIconUrl, hasRemark }) => (
                         .flatMap(x =>
                             [-1, 1].map(
                                 y =>
-                                    `${x * layout.badge.outline}px ${
-                                        y * layout.badge.outline
+                                    `${x * layout.badge.edge}px ${
+                                        y * layout.badge.edge
                                     }px 0 ${color}`,
                             ),
                         )
@@ -266,8 +266,8 @@ PinIcon.propTypes = {
     layout: PropTypes.shape({
         width: PropTypes.number.isRequired,
         height: PropTypes.number.isRequired,
-        frameWidth: PropTypes.number.isRequired,
-        frameTipExtent: PropTypes.number.isRequired,
+        outlineWidth: PropTypes.number.isRequired,
+        outlineTipExtent: PropTypes.number.isRequired,
         typeIcon: PropTypes.shape({
             top: PropTypes.number.isRequired,
             left: PropTypes.number.isRequired,
@@ -277,7 +277,7 @@ PinIcon.propTypes = {
             top: PropTypes.number.isRequired,
             left: PropTypes.number.isRequired,
             fontSize: PropTypes.number.isRequired,
-            outline: PropTypes.number.isRequired,
+            edge: PropTypes.number.isRequired,
         }).isRequired,
     }).isRequired,
     color: PropTypes.string.isRequired,
@@ -326,9 +326,12 @@ const getTypedMarkerIcon = place => {
         ),
         className: 'custom-typed-marker-icon',
         iconSize: [PIN_LAYOUT.width, PIN_LAYOUT.height],
-        // Anchored at the frame's tip, which is what reads as the pin's point.
-        iconAnchor: [PIN_LAYOUT.width / 2, PIN_LAYOUT.height + PIN_LAYOUT.frameTipExtent],
-        popupAnchor: [0, -(PIN_LAYOUT.height + PIN_LAYOUT.frameTipExtent + PIN_LAYOUT.frameWidth)],
+        // Anchored at the outline's tip, which is what reads as the pin's point.
+        iconAnchor: [PIN_LAYOUT.width / 2, PIN_LAYOUT.height + PIN_LAYOUT.outlineTipExtent],
+        popupAnchor: [
+            0,
+            -(PIN_LAYOUT.height + PIN_LAYOUT.outlineTipExtent + PIN_LAYOUT.outlineWidth),
+        ],
     });
 };
 
