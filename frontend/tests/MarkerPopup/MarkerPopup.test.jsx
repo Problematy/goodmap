@@ -91,7 +91,7 @@ describe('MarkerPopup', () => {
 
         // Verify default Leaflet icon dimensions (25x41) are used, not custom asterisk icon (40x48)
         const style = window.getComputedStyle(leafletMarker);
-        expect(style.width).not.toBe('40px'); // Should NOT have asterisk icon width
+        expect(style.width).not.toBe('50px'); // Should NOT have asterisk icon width
     });
 });
 

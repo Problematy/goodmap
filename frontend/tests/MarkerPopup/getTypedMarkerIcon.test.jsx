@@ -83,7 +83,7 @@ describe('getTypedMarkerIcon', () => {
             marker: { icon: 'parcelLocker', color: 'open' },
         });
 
-        // both the pin body (our own marker-pin.svg) and the type icon are CSS-masked
+        // both the pin body (our own pin shape) and the type icon are CSS-masked
         // <div>s tinted via background-color, not inline SVG <path d="...">, so
         // any icon set (not just single-path ones) works for either.
         expect(icon.options.html).toContain(
@@ -223,5 +223,74 @@ describe('getTypedMarkerIcon icon value shapes', () => {
                 marker: { icon: 'container' },
             }),
         ).toBeNull();
+    });
+
+    const renderPinHtml = pinColor => {
+        setMarkerStyles(`{
+            "icons": { "parcelLocker": "https://cdn.example.com/parcel-locker.svg" },
+            "colors": { "open": "${pinColor}" }
+        }`);
+        return getTypedMarkerIcon({
+            uuid: '1',
+            position: [50, 50],
+            marker: { icon: 'parcelLocker', color: 'open' },
+        }).options.html;
+    };
+
+    it.each([
+        ['#ffffff', 'dark', '#333333'],
+        ['#FF0', 'dark', '#333333'],
+        ['#2e7d32', 'light', '#ffffff'],
+        ['#ef6c00', 'light', '#ffffff'],
+        ['#245466', 'light', '#ffffff'],
+        ['unparseable', 'light (fallback)', '#ffffff'],
+    ])('on a %s pin, draws the icon and outline %s', (pinColor, _, iconColor) => {
+        const html = renderPinHtml(pinColor);
+
+        // type icon and outline layers: each a mask tinted via background-color
+        expect(html).toContain(
+            `background-color:${iconColor};-webkit-mask-image:url(https://cdn.example.com/parcel-locker.svg)`,
+        );
+        expect(html).toContain(
+            `background-color:${iconColor};-webkit-mask-image:url(data:image/svg+xml`,
+        );
+    });
+
+    describe('with a canvas to parse named CSS colors', () => {
+        const NORMALIZED = { white: '#ffffff', orangered: '#ff4500' };
+
+        beforeEach(() => {
+            // jsdom has no canvas; stand in for the browser normalizing fillStyle
+            // (an unknown color leaves it unchanged)
+            globalThis.OffscreenCanvas = function OffscreenCanvas() {
+                let fillStyle = '#000000';
+                this.getContext = () => ({
+                    get fillStyle() {
+                        return fillStyle;
+                    },
+                    set fillStyle(value) {
+                        if (value === 'transparent') {
+                            fillStyle = 'rgba(0, 0, 0, 0)';
+                        } else if (Object.hasOwn(NORMALIZED, value)) {
+                            fillStyle = NORMALIZED[value];
+                        }
+                    },
+                });
+            };
+        });
+
+        afterEach(() => {
+            delete globalThis.OffscreenCanvas;
+        });
+
+        it.each([
+            ['white', '#333333'],
+            ['orangered', '#ffffff'],
+            ['notacolor', '#ffffff'],
+        ])('on a %s pin, draws the icon %s', (pinColor, iconColor) => {
+            expect(renderPinHtml(pinColor)).toContain(
+                `background-color:${iconColor};-webkit-mask-image:url(https://cdn.example.com/parcel-locker.svg)`,
+            );
+        });
     });
 });
