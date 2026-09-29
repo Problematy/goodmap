@@ -2,6 +2,13 @@
 
 <!-- version list -->
 
+## [2.0.0-alpha.10](https://github.com/Problematy/goodmap/compare/2.0.0-alpha.9...2.0.0-alpha.10) (2026-09-29)
+
+
+### Features
+
+* outline to markers introduced ([#407](https://github.com/Problematy/goodmap/issues/407)) ([176f6f5](https://github.com/Problematy/goodmap/commit/176f6f5892dd8e275f85beee227c47756fed246c))
+
 ## [2.0.0-alpha.9](https://github.com/Problematy/goodmap/compare/2.0.0-alpha.8...2.0.0-alpha.9) (2026-09-21)
 
 
