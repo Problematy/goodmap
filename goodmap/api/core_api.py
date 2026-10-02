@@ -2,13 +2,14 @@ import importlib.metadata
 import json as json_lib
 import logging
 import uuid
+from contextlib import ExitStack
 from typing import Any
 
 import deprecation
 import numpy
 import pysupercluster
-from flask import Blueprint, current_app, jsonify, make_response, request
-from flask_babel import gettext
+from flask import Blueprint, current_app, g, jsonify, make_response, request
+from flask_babel import force_locale, gettext
 from platzky import FeatureFlagSet
 from platzky.attachment import create_attachment
 from platzky.config import AttachmentConfig, LanguagesMapping
@@ -196,6 +197,9 @@ def _validation_error_to_api_shape(req, resp, req_validation_error, instance):
     resp.content_type = "application/json"
 
 
+LANG_QUERY_ARG = "lang"
+
+
 def core_pages(
     database,
     languages: LanguagesMapping,
@@ -207,6 +211,25 @@ def core_pages(
     pin_marker_fields: PinMarkerFields,
 ) -> Blueprint:
     core_api_blueprint = Blueprint("api", __name__, url_prefix="/api")
+
+    @core_api_blueprint.before_request
+    def use_requested_language():
+        """Translate the response into the ``lang`` query argument's language, if configured.
+
+        platzky derives the locale from the request's host and path only, so an unprefixed
+        /api request would otherwise always be answered in the default language. The page
+        calling the API passes its own language here instead; an unknown code is ignored.
+        """
+        lang = request.args.get(LANG_QUERY_ARG)
+        if lang in languages:
+            g.requested_language = ExitStack()
+            g.requested_language.enter_context(force_locale(lang))
+
+    @core_api_blueprint.teardown_request
+    def restore_language(_exc: BaseException | None) -> None:
+        """Undo the language ``use_requested_language`` switched to, if it did."""
+        if (requested_language := g.pop("requested_language", None)) is not None:
+            requested_language.close()
 
     # Build photo error message from config
     allowed_ext = ", ".join(sorted(photo_attachment_config.allowed_extensions or []))

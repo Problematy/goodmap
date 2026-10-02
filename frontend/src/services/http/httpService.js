@@ -5,6 +5,7 @@ import {
     LOCATIONS,
     SEARCH_ADDRESS,
     LOCATIONS_CLUSTERED,
+    withLang,
 } from './endpoints';
 import useMapStore from '../../components/Map/store/map.store';
 
@@ -84,7 +85,7 @@ const httpService = {
      * @returns {Promise<Object>} Promise resolving to the location schema
      */
     getLocationSchema: async () => {
-        const response = await fetch(LOCATION_SCHEMA, {
+        const response = await fetch(withLang(LOCATION_SCHEMA), {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -94,7 +95,7 @@ const httpService = {
     },
 
     getCategoriesData: async () => {
-        const response = await fetch(CATEGORIES_FULL).then(res => res.json());
+        const response = await fetch(withLang(CATEGORIES_FULL)).then(res => res.json());
         const useCategoriesHelp = Boolean(globalThis.FEATURE_FLAGS?.CATEGORIES_HELP);
 
         const categories = response.categories.map(category => ({
@@ -177,7 +178,7 @@ const httpService = {
             throw new Error('Invalid locationId: expected a UUID');
         }
 
-        const response = await fetch(`${LOCATION}/${encodeURIComponent(id)}`, {
+        const response = await fetch(withLang(`${LOCATION}/${encodeURIComponent(id)}`), {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',

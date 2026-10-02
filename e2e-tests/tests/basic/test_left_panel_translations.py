@@ -57,7 +57,8 @@ def get_language_button(page: Page):
 def switch_to_language(page: Page, lang_name: str):
     """Switch to a specific language by clicking the language menu."""
     get_language_button(page).click()
-    page.get_by_role("link", name=lang_name).click()
+    # exact: platzky's language suggestion also links "Switch to <language>".
+    page.get_by_role("link", name=lang_name, exact=True).click()
     page.wait_for_load_state("domcontentloaded")
 
 

@@ -201,7 +201,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Category fetch
   function initCategories() {
-    return fetch('/api/categories-full').then(r => {
+    return fetch('/api/categories-full?lang=' + encodeURIComponent(window.APP_LANG)).then(r => {
       // fetch() only rejects on network failure, so an error status would otherwise
       // reach the mapping below as a body with no `categories` and throw there.
       if (!r.ok) throw new Error('categories-full request failed (' + r.status + ')');
