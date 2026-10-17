@@ -183,7 +183,7 @@ list of ``[label, value]`` pairs — the fields listed in ``visible_data``, in t
 with both label and value translated. ``metadata`` holds the ``meta_data`` fields. Fields
 in neither list are not returned at all.
 
-A field GoodMap renders — one naming a built-in ``type`` such as ``hyperlink`` or ``CTA``,
+A field GoodMap renders — one naming a built-in ``type`` such as ``hyperlink``, ``CTA`` or ``image``,
 or one a plugin's shortcode is bound to — comes back as an object rather than a bare value:
 
 .. code-block:: json
@@ -193,6 +193,19 @@ or one a plugin's shortcode is bound to — comes back as an object rather than 
      "value": "https://example.com",
      "displayValue": "Example",
      "html": "<a href=\"https://example.com\" target=\"_blank\" rel=\"noopener noreferrer\">Example</a>"
+   }]
+
+A field naming a built-in type may hold several values under ``items``, each returned with
+its own ``html``. Items that render to nothing are dropped, and a built-in field left with
+nothing to show is left out of ``data``:
+
+.. code-block:: json
+
+   ["images", {
+     "type": "image",
+     "items": [{"url": "https://example.com/front.jpg", "alt": "photo of big bridge",
+                "html": "<img src=\"https://example.com/front.jpg\" alt=\"photo of big bridge\">"}],
+     "html": "<img src=\"https://example.com/front.jpg\" alt=\"photo of big bridge\">"
    }]
 
 ``html`` is the rendering to display and ``type`` says what produced it; the entry's own

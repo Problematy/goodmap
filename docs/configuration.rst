@@ -13,7 +13,8 @@ filterable fields, the popup contents — lives in the data source instead, docu
 :doc:`data-source`.
 
 Because Goodmap is built on platzky, a Goodmap config *is* a platzky config plus the keys
-Goodmap adds of its own — ``GOODMAP_FRONTEND_LIB_URL`` and ``ATTACHMENT``. Keys not listed
+Goodmap adds of its own — ``GOODMAP_FRONTEND_LIB_URL``, ``ATTACHMENT`` and
+``IMAGE_ALT_TEMPLATE``. Keys not listed
 here are passed through to platzky; see
 :doc:`platzky's configuration docs <platzky:index>` for the rest.
 
@@ -158,6 +159,30 @@ Basic keys
    change needed. A photo in an allowed format that is over the limit is compressed in the
    browser first, with a warning that quality may drop; if it is still too large it is
    rejected. An unsupported format is rejected outright.
+
+.. _config-image-alt-template:
+
+``IMAGE_ALT_TEMPLATE``
+   The ``alt`` text given to a marker image that carries none of its own (see
+   :ref:`plugins-builtin-field-types`), so a screen reader can say what the photo shows.
+   It is a `Jinja <https://jinja.palletsprojects.com/templates/>`_ template, rendered once
+   per point with that point's fields as variables:
+
+   .. code-block:: yaml
+
+      IMAGE_ALT_TEMPLATE: >-
+        {{ _('photo of') }} {{ type_of_place }},
+        {{ _('free') if is_free == 'true' else _('paid') }},
+        {{ amenities | join(', ') }}
+
+   Field values arrive already translated, and ``_()`` translates the template's own text.
+   A field the point lacks prints as nothing, and runs of whitespace are collapsed. Omit the
+   key and an image is described by the point's ``name``.
+
+   The template runs in Jinja's sandbox, so it can read the point's values and nothing
+   behind them. One that does not parse stops the app at startup; one that fails for a
+   particular point — the sandbox refusing an attribute, say — logs a warning and falls
+   back to the point's name, so its popup still opens.
 
 .. _config-feature-flags:
 

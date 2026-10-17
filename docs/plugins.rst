@@ -208,14 +208,48 @@ That lookup is safe only because the catalogue is closed: an entry may name a ty
 and nothing else, so it can never point its own field at a plugin's renderer. ``prepare_pin``
 consults it only where no plugin shortcode claimed the field by name.
 
-A plugin cannot take over ``hyperlink`` or ``CTA`` either. The server always emits ``html``
+Alongside its own, goodmap offers an **allowlist** of platzky's built-in shortcodes —
+currently ``image`` — so a point can carry photos. It is an allowlist rather than the whole
+set because the entries naming these types are data nobody vouched for: a suggested point or
+an imported dataset naming platzky's ``html`` would put raw markup into the popup. Adding
+another, ``figure`` say, is one word in ``_PLATZKY_FIELD_TYPES``.
+
+A field naming one of these types may hold several values under ``items``. Each is rendered
+on its own and returned with its own ``html`` — what a gallery field plugin on ``image`` would
+lay out — while the field's ``html`` joins them for the popup. An item the shortcode refuses
+is dropped from both, and a field left with nothing to show is left out of the popup
+altogether. ``items`` is for goodmap's own types only: a field a plugin's shortcode is bound
+to keeps exactly the rendering that shortcode gives it.
+
+An image URL must be ``http``, ``https`` or a path on the site itself (``/static/…``) —
+platzky's image policy; ``javascript:`` and ``data:`` are refused:
+
+.. code-block:: json
+
+    {"images": {"type": "image",
+                "items": [{"url": "https://example.com/front.jpg"},
+                          {"url": "https://example.com/inside.jpg", "alt": "The counter"}]}}
+
+A single photo is a one-element ``items``. An item without ``alt`` is described by
+:ref:`IMAGE_ALT_TEMPLATE <config-image-alt-template>`; one with its own wins, including an
+empty ``alt`` for a purely decorative image; an ``alt`` of ``null`` counts as not given.
+Image fields are shown full-width under the popup's title, without a label.
+
+.. note::
+
+   Unlike a link, an image is fetched as soon as its popup opens. Whoever hosts an image
+   URL in your data therefore learns the IP address of everyone who opens that point, and
+   when — which is why a suggested point's images deserve the same scrutiny as its text
+   before it is approved, and why an imported dataset's should come from hosts you trust.
+
+A plugin cannot take over ``hyperlink``, ``CTA`` or ``image`` either. The server always emits ``html``
 for a type it renders, so that HTML is always the innermost stage — a field plugin attached
 to one of these types wraps it and cannot replace it.
 
 The two share a rendering, because they only ever differed in presentation: both are a URL
 and the text to show for it. Which one a field is decides where the popup puts it — a line
-among the details, or a button below them — which ``LocationDetails`` decides from the field
-name.
+among the details, or a button below them — which ``LocationDetails`` decides from the
+value's ``type`` in its ``SECTION_BY_TYPE`` table.
 
 A field plugin is a ``MarkerFieldPluginBase`` whose component is a stage
 ``({ input, config }) => element`` — it receives the previous stage's output as ``input``.

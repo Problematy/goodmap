@@ -38,6 +38,10 @@ class GoodmapConfig(PlatzkyConfig):
         alias="ATTACHMENT",
     )
 
+    # Jinja template describing a place to any of its images that carries no ``alt`` of its
+    # own; see goodmap.alt_template. Unset, an image is described by the place's name.
+    image_alt_template: str | None = Field(default=None, alias="IMAGE_ALT_TEMPLATE")
+
     @classmethod
     def model_validate(
         cls,

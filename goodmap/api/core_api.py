@@ -9,6 +9,7 @@ import numpy
 import pysupercluster
 from flask import Blueprint, current_app, jsonify, make_response, request
 from flask_babel import gettext
+from jinja2 import Template
 from platzky import FeatureFlagSet
 from platzky.attachment import create_attachment
 from platzky.config import AttachmentConfig, LanguagesMapping
@@ -205,6 +206,7 @@ def core_pages(
     feature_flags: FeatureFlagSet,
     shortcodes: dict[str, Shortcode],
     pin_marker_fields: PinMarkerFields,
+    alt_template: Template | None = None,
 ) -> Blueprint:
     # Routes with translated responses (pin fields, schema, categories) are query_locale
     # routes: they follow the calling page's language, sent as ``?lang=``, since /api is
@@ -429,7 +431,9 @@ def core_pages(
 
         visible_data = database.get_visible_data()
         meta_data = database.get_meta_data()
-        formatted_data = prepare_pin(location.model_dump(), visible_data, meta_data, shortcodes)
+        formatted_data = prepare_pin(
+            location.model_dump(), visible_data, meta_data, shortcodes, alt_template
+        )
         return jsonify(formatted_data)
 
     @core_api_blueprint.route("/version", methods=["GET"])

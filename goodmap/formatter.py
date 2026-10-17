@@ -1,30 +1,35 @@
 """Formatters for translating and preparing location data for display."""
 
 import logging
+from functools import cache
 from typing import Any
 
 from flask_babel import gettext, lazy_gettext
 
+from goodmap.alt_template import render_alt
 from goodmap.field_types import BUILTIN_FIELD_TYPES
 
 logger = logging.getLogger(__name__)
 
 
 def safe_gettext(text):
-    """Translate ``text``, mapping over a list and leaving a dict alone.
+    """Translate ``text``, mapping over a list; anything that is not text is left alone.
+
+    A dict, a number or a position has nothing for ``gettext`` to look up, so it comes back
+    as it is - which is what lets one helper translate popup values and alt template
+    context alike.
 
     Args:
-        text: A str, a list of str, or a dict.
+        text: A str, a list, or any other field value.
 
     Returns:
         The translation, in the same shape as the input.
     """
-    if isinstance(text, list):
-        return list(map(gettext, text))
-    elif isinstance(text, dict):
-        return text
-    else:
+    if isinstance(text, str):
         return gettext(text)
+    if isinstance(text, list):
+        return [safe_gettext(item) if isinstance(item, str) else item for item in text]
+    return text
 
 
 def _builtin_shortcode(value):
@@ -74,7 +79,66 @@ def _rendered_field(shortcode, value):
     return {**entry, "type": shortcode.name, "html": shortcode.render_value(value)}
 
 
-def prepare_pin(place, visible_fields, meta_data, shortcodes=None) -> dict[str, Any]:
+def _rendered_builtin(shortcode, value, defaults):
+    """Build the payload for a field naming one of goodmap's own types.
+
+    Two things only goodmap's own types get, because goodmap knows what their rendering
+    means - a plugin's field keeps exactly the rendering its shortcode gives it:
+
+    * ``items``: a field holding several values lists them there, each rendered on its own
+      and returned with its own ``html`` - what a gallery plugin would lay out - while the
+      field's ``html`` joins them for the popup. An item the shortcode refuses renders to
+      nothing and is dropped from both.
+    * defaults derived from the place, such as an image's ``alt``. An entry's own value wins;
+      a ``null`` counts as absent, so imported data with ``"alt": null`` is still described
+      rather than marked decorative.
+
+    Args:
+        shortcode: The built-in Shortcode the field's ``type`` named.
+        value: The field's value from the location data - a dict, since it named a type.
+        defaults: ``defaults(shortcode)`` -> the place-derived attributes it declares.
+
+    Returns:
+        The field payload, carrying ``type`` and ``html``, and ``items`` when it had them.
+    """
+    fallback = defaults(shortcode)
+
+    def rendered(entry):
+        given = {key: item for key, item in entry.items() if item is not None}
+        return _rendered_field(shortcode, {**fallback, **given})
+
+    if not isinstance(value.get("items"), list):
+        return rendered(value)
+    items = [rendered(item) for item in value["items"] if isinstance(item, dict)]
+    items = [{k: v for k, v in item.items() if k != "type"} for item in items if item["html"]]
+    html = "".join(item["html"] for item in items)
+    return {**value, "items": items, "type": shortcode.name, "html": html}
+
+
+def _without_html(value):
+    """Drop any ``html`` an unrendered field brought with it, its ``items`` included.
+
+    ``html`` is this payload's word for "the server rendered this", and the popup injects it
+    as markup. Nothing rendered this field, so an ``html`` here came from the data - a
+    suggested point, an imported dataset - and must not be mistaken for goodmap's own output.
+
+    Args:
+        value: The field's value from the location data.
+
+    Returns:
+        The value without ``html``, at the top level or on any item.
+    """
+    if not isinstance(value, dict):
+        return value
+    stripped = {key: item for key, item in value.items() if key != "html"}
+    if isinstance(stripped.get("items"), list):
+        stripped["items"] = [_without_html(item) for item in stripped["items"]]
+    return stripped
+
+
+def prepare_pin(
+    place, visible_fields, meta_data, shortcodes=None, alt_template=None
+) -> dict[str, Any]:
     """Format one location into the translated payload its map popup renders.
 
     Args:
@@ -84,25 +148,38 @@ def prepare_pin(place, visible_fields, meta_data, shortcodes=None) -> dict[str, 
         shortcodes: Field name → the platzky Shortcode bound to it. A plugin claims a field
             by name; anything else may still name a built-in ``type`` in its own data (see
             :mod:`goodmap.field_types`). Either way one shortcode renders it.
+        alt_template: The compiled ``IMAGE_ALT_TEMPLATE`` (see :mod:`goodmap.alt_template`),
+            describing the place to any image that does not describe itself.
 
     Returns:
         Title, subtitle, position, metadata, and ``data`` as ``[label, value]`` pairs.
     """
     plugins = shortcodes or {}
+
+    @cache
+    def describe():
+        # Rendered once per pin, and only once an image asks for it.
+        return render_alt(alt_template, {field: safe_gettext(v) for field, v in place.items()})
+
+    def defaults(shortcode):
+        declared = {attribute.name for attribute in shortcode.attributes}
+        return {"alt": describe()} if alt_template and "alt" in declared else {}
+
     data = []
     for field in visible_fields:
         if field not in place:
             continue
         value = safe_gettext(place[field])
-        shortcode = plugins.get(field) or _builtin_shortcode(value)
-        if shortcode is not None:
-            value = _rendered_field(shortcode, value)
-        elif isinstance(value, dict) and "html" in value:
-            # ``html`` is this payload's word for "the server rendered this", and the popup
-            # injects it as markup. Nothing rendered this field, so an ``html`` here came
-            # from the data - a suggested point, an imported dataset - and must not be
-            # mistaken for goodmap's own output.
-            value = {key: item for key, item in value.items() if key != "html"}
+        if field in plugins:
+            value = _rendered_field(plugins[field], value)
+        elif builtin := _builtin_shortcode(value):
+            value = _rendered_builtin(builtin, value, defaults)
+            if not value["html"]:
+                # Goodmap's own types have nothing to show but their ``html``, so one that
+                # rendered nothing - every image refused - would leave a label over a blank.
+                continue
+        else:
+            value = _without_html(value)
         data.append([gettext(field), value])
     pin_data = {
         "title": place["name"],

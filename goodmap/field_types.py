@@ -10,6 +10,15 @@ which is what makes the field its own. Goodmap's own are looked up by the ``type
 declares, so any field can ask to be a ``hyperlink`` whatever it is called. That lookup is
 safe only because this catalogue is closed: an entry may name a type in here and nothing
 else, and so can never point itself at a plugin's renderer.
+
+The catalogue is goodmap's own types plus an allowlist of platzky's built-ins - ``image``,
+so a place can carry photos. An allowlist rather than the whole set, because the entries
+naming these types are data nobody vouched for, and platzky's ``html`` would hand them raw
+markup in the popup.
+
+A field may hold several values of its type under ``items`` -
+``{"type": "image", "items": [{"url": …}, …]}`` - each rendered on its own; see
+:func:`goodmap.formatter.prepare_pin`.
 """
 
 from collections.abc import Sequence
@@ -17,6 +26,7 @@ from urllib.parse import urlparse
 
 from markupsafe import Markup, escape
 from platzky.shortcodes import Shortcode, ShortcodeAttr, ShortcodeAttrs, UrlNotPermitted
+from platzky.shortcodes.builtins import get_builtin_shortcodes
 from platzky.shortcodes.link import LinkShortcode
 
 #: Schemes that navigate the browser somewhere, and so are worth a new tab.
@@ -91,7 +101,14 @@ class CTAFieldShortcode(HyperlinkFieldShortcode):
     description = "A marker field holding a URL, shown as a call-to-action button."
 
 
+#: platzky built-ins a marker field may name as its ``type``. An allowlist, not the whole
+#: set: ``html`` would let an entry nobody vouched for emit raw markup into the popup.
+_PLATZKY_FIELD_TYPES = ("image",)
+
+_platzky_shortcodes = get_builtin_shortcodes()
+
 #: Field ``type`` -> the shortcode rendering it, keyed by the name written in the data.
 BUILTIN_FIELD_TYPES: dict[str, Shortcode] = {
-    shortcode.name: shortcode for shortcode in (HyperlinkFieldShortcode(), CTAFieldShortcode())
+    **{name: _platzky_shortcodes[name] for name in _PLATZKY_FIELD_TYPES},
+    **{s.name: s for s in (HyperlinkFieldShortcode(), CTAFieldShortcode())},
 }

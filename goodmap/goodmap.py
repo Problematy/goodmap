@@ -14,6 +14,7 @@ from platzky.content_types import ContentType
 from platzky.models import CmsModule
 from platzky.shortcodes import Shortcode
 
+from goodmap.alt_template import compile_alt_template
 from goodmap.api.admin_api import admin_pages
 from goodmap.api.api_models import PinMarkerFields
 from goodmap.api.core_api import core_pages
@@ -200,6 +201,9 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
     # page load (see goodmap.initial_view).
     initial_view = resolve_initial_view(get_initial_view(app.db)(app.db))
 
+    # Compiled here for the same reason: a template that does not parse fails the boot.
+    alt_template = compile_alt_template(config.image_alt_template)
+
     location_model = create_location_model(location_obligatory_fields, categories)
     app.db = extend_db_with_goodmap_queries(app.db, location_model)
 
@@ -276,6 +280,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         feature_flags=config.feature_flags,
         shortcodes=shortcodes,
         pin_marker_fields=pin_marker_fields,
+        alt_template=alt_template,
     )
     app.register_blueprint(cp)
 

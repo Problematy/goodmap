@@ -3,6 +3,7 @@ from unittest import mock
 
 import flask_babel
 import pytest
+from jinja2 import TemplateSyntaxError
 
 from goodmap.api.core_api import get_default_issue_options, make_tuple_translation
 from goodmap.config import GoodmapConfig
@@ -1208,3 +1209,32 @@ def test_get_locations_from_request_helper(test_app):
             assert isinstance(locations[0], dict)
             assert "uuid" in locations[0]
             assert "position" in locations[0]
+
+
+def _app_with_images(**config):
+    config_data = {**get_test_config_data(), **config}
+    data = config_data["DB"]["DATA"]
+    data["data"][0]["images"] = {
+        "type": "image",
+        "items": [{"url": "https://example.com/1.jpg"}, {"url": "https://example.com/2.jpg"}],
+    }
+    data["visible_data"] = [*data["visible_data"], "images"]
+    return create_app_from_config(GoodmapConfig.model_validate(config_data)).test_client()
+
+
+def test_location_images_are_described_by_the_configured_alt_template():
+    client = _app_with_images(IMAGE_ALT_TEMPLATE="photo of {{ type_of_place }}")
+    response = client.get("/api/location/11111111-1111-1111-1111-111111111111")
+    images = dict(response.json["data"])["images"]
+    assert [item["alt"] for item in images["items"]] == ["photo of test-place"] * 2
+
+
+def test_location_images_default_to_the_place_name():
+    client = _app_with_images()
+    response = client.get("/api/location/11111111-1111-1111-1111-111111111111")
+    assert 'alt="test"' in dict(response.json["data"])["images"]["html"]
+
+
+def test_unparseable_alt_template_fails_the_boot():
+    with pytest.raises(TemplateSyntaxError):
+        _app_with_images(IMAGE_ALT_TEMPLATE="{{ name")

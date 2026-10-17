@@ -4,6 +4,7 @@ import pytest
 from markupsafe import Markup
 from platzky.shortcodes.shortcode import Shortcode, ShortcodeAttr, ShortcodeAttrs
 
+from goodmap.alt_template import compile_alt_template
 from goodmap.formatter import prepare_pin
 
 test_place = {
@@ -229,3 +230,130 @@ def test_a_blank_display_value_falls_back_to_the_url(display_value):
     }
     result = prepare_pin(place, ["website"], [])
     assert ">https://example.com</a>" in result["data"][0][1]["html"]
+
+
+def _images(*items):
+    return {**test_place, "images": {"type": "image", "items": list(items)}}
+
+
+def test_image_items_are_each_rendered_and_joined():
+    """Each item keeps its own ``html`` for a gallery plugin; the field's joins them."""
+    place = _images({"url": "https://example.com/1.jpg"}, {"url": "https://example.com/2.jpg"})
+    value = prepare_pin(place, ["images"], [])["data"][0][1]
+    assert value["type"] == "image"
+    assert [item["html"] for item in value["items"]] == [
+        '<img src="https://example.com/1.jpg" alt="">',
+        '<img src="https://example.com/2.jpg" alt="">',
+    ]
+    assert value["html"] == "".join(item["html"] for item in value["items"])
+
+
+def test_image_passes_width_and_height_through():
+    place = _images({"url": "https://example.com/1.jpg", "width": 400, "height": 300})
+    html = prepare_pin(place, ["images"], [])["data"][0][1]["html"]
+    assert html == '<img src="https://example.com/1.jpg" alt="" width="400" height="300">'
+
+
+@pytest.mark.parametrize(
+    "item",
+    [
+        {"url": "javascript:alert(1)"},
+        {"url": "data:image/png;base64,AAAA"},
+        {"alt": "no url"},
+        {"url": "https://example.com/1.jpg", "width": "wide"},
+    ],
+)
+def test_refused_image_item_is_dropped(item):
+    place = _images(item, {"url": "https://example.com/ok.jpg"})
+    value = prepare_pin(place, ["images"], [])["data"][0][1]
+    assert [i["url"] for i in value["items"]] == ["https://example.com/ok.jpg"]
+    assert value["html"] == '<img src="https://example.com/ok.jpg" alt="">'
+
+
+def test_image_field_with_every_item_refused_is_left_out():
+    """A label over a blank says nothing; the popup does not need to know why."""
+    place = _images({"url": "javascript:alert(1)"})
+    assert prepare_pin(place, ["images"], [])["data"] == []
+
+
+def test_image_alt_defaults_to_the_template_and_an_items_own_alt_wins():
+    place = _images(
+        {"url": "https://example.com/1.jpg"},
+        {"url": "https://example.com/2.jpg", "alt": "Own"},
+        {"url": "https://example.com/3.jpg", "alt": ""},
+    )
+    template = compile_alt_template("{{ type_of_place }} {{ name }}")
+    items = prepare_pin(place, ["images"], [], alt_template=template)["data"][0][1]["items"]
+    assert [item["alt"] for item in items] == ["container LASSO", "Own", ""]
+
+
+def test_alt_default_is_not_given_to_a_type_without_alt():
+    place = {**test_place, "website": {"type": "hyperlink", "value": "https://example.com"}}
+    value = prepare_pin(place, ["website"], [], alt_template=compile_alt_template(None))
+    assert "alt" not in value["data"][0][1]
+
+
+def test_platzky_builtins_outside_the_allowlist_are_not_rendered():
+    """``html`` would hand data nobody vouched for raw markup in the popup."""
+    place = {
+        **test_place,
+        "evil": {"type": "html", "html": "<b>x</b>", "items": [{"html": "<script>x</script>"}]},
+    }
+    value = prepare_pin(place, ["evil"], [])["data"][0][1]
+    assert value == {"type": "html", "items": [{}]}
+
+
+def test_alt_template_sees_translated_field_values(monkeypatch):
+    monkeypatch.setattr("goodmap.formatter.gettext", lambda text: f"{text}-pl")
+    template = compile_alt_template("{{ type_of_place }} {{ types | join(',') }}")
+    place = _images({"url": "https://example.com/1.jpg"})
+    items = prepare_pin(place, ["images"], [], alt_template=template)["data"][0][1]["items"]
+    assert items[0]["alt"] == "container-pl shoes-pl"
+
+
+def test_image_alt_null_counts_as_absent():
+    """Imported data writing ``"alt": null`` means "not given", not "decorative"."""
+    place = _images({"url": "https://example.com/1.jpg", "alt": None})
+    template = compile_alt_template(None)
+    items = prepare_pin(place, ["images"], [], alt_template=template)["data"][0][1]["items"]
+    assert items[0]["alt"] == "LASSO"
+
+
+def test_alt_template_is_not_rendered_for_a_pin_without_images(monkeypatch):
+    calls = []
+    monkeypatch.setattr("goodmap.formatter.render_alt", lambda *args: calls.append(args) or "")
+    place = {**test_place, "website": {"type": "hyperlink", "value": "https://example.com"}}
+    prepare_pin(place, ["website", "plain_text"], [], alt_template=compile_alt_template(None))
+    assert calls == []
+
+
+def test_alt_template_is_rendered_once_per_pin(monkeypatch):
+    calls = []
+    monkeypatch.setattr("goodmap.formatter.render_alt", lambda *args: calls.append(args) or "x")
+    place = {
+        **_images({"url": "https://example.com/1.jpg"}, {"url": "https://example.com/2.jpg"}),
+        "more": {"type": "image", "items": [{"url": "https://example.com/3.jpg"}]},
+    }
+    prepare_pin(place, ["images", "more"], [], alt_template=compile_alt_template(None))
+    assert len(calls) == 1
+
+
+class _AltShortcode(_FakeShortcode):
+    attributes = ShortcodeAttrs([ShortcodeAttr("alt", "test")])
+
+    def render(self, attrs: ShortcodeAttrs, content: str, children: Sequence[Markup]) -> str:
+        return f"<i>{attrs.alt}:{content}</i>"
+
+
+def test_plugin_field_keeps_its_own_rendering():
+    """``items`` and place-derived defaults are for goodmap's own types only."""
+    place = {**test_place, "promo_code": {"code": "X", "items": [{"code": "Y"}]}}
+    value = prepare_pin(
+        place,
+        ["promo_code"],
+        [],
+        shortcodes={"promo_code": _AltShortcode()},
+        alt_template=compile_alt_template(None),
+    )["data"][0][1]
+    assert value["html"] == "<i>:X</i>"
+    assert value["items"] == [{"code": "Y"}]

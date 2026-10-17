@@ -112,6 +112,31 @@ const CTAContainer = styled.div`
     }
 `;
 
+// Images the server rendered (`type: "image"`, platzky's [image] shortcode) arrive as plain
+// `<img>` tags, so their size is decided here: the popup's width, whatever the data asked for.
+const ImagesContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0 8px 16px 8px;
+
+    > span {
+        display: block;
+    }
+
+    img {
+        display: block;
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+    }
+
+    /* Several images in one field arrive as one span, so the flex gap does not reach them. */
+    img + img {
+        margin-top: 8px;
+    }
+`;
+
 const ActionButton = styled.button`
     cursor: pointer;
     display: flex;
@@ -140,7 +165,7 @@ const isCustomValue = value => value !== null && typeof value === 'object' && !A
 
 /**
  * Component that renders a location detail value.
- * Handles both standard values (strings, numbers, arrays) and custom typed values (hyperlinks, CTAs).
+ * Handles both standard values (strings, numbers, arrays) and typed values the server rendered.
  *
  * @param {Object} props - Component props
  * @param {string|number|Array|Object} props.valueToDisplay - Value to display, can be primitive or custom type object
@@ -222,10 +247,22 @@ NavigateMeButton.propTypes = {
     }).isRequired,
 };
 
+// Which popup section a field shows in, by its value's `type` - never by its label, which is
+// `gettext(field)` and so differs per locale. Anything not listed is a labelled detail.
+const SECTION_BY_TYPE = { image: 'images', CTA: 'actions' };
+
+// In display order. A `labelled` section pairs each value with its field name.
+const SECTIONS = [
+    { key: 'images', Container: ImagesContainer, labelled: false },
+    { key: 'details', Container: DetailsGrid, labelled: true },
+    { key: 'actions', Container: CTAContainer, labelled: false },
+];
+
+const sectionOf = ([, value]) => SECTION_BY_TYPE[value?.type] ?? 'details';
+
 /**
- * Component that renders location details including title, subtitle, and categorized data.
- * Separates data into regular categories and CTA (Call-To-Action) categories.
- * Displays data in a grid layout with category labels and values.
+ * Component that renders location details: title, subtitle, then each section of fields.
+ * Fields are placed in a section by their value's `type` (see SECTION_BY_TYPE).
  *
  * @param {Object} props - Component props
  * @param {Object} props.place - Location data object
@@ -234,42 +271,35 @@ NavigateMeButton.propTypes = {
  * @param {Array<[string, *]>} props.place.data - Array of [category, value] tuples
  * @returns {React.ReactElement} Div containing formatted location details
  */
-const LocationDetails = ({ place }) => {
-    // Selected by the value's `type`, not by the field's label: the label is `gettext(field)`,
-    // so matching on it would drop the button in any locale that translates "CTA", and would
-    // miss a field that declares `type: "CTA"` under a name of its own.
-    const isCTA = ([, value]) => value?.type === 'CTA';
-    const categoriesWithSubcategories = place.data.filter(entry => !isCTA(entry));
-    const CTACategories = place.data.filter(isCTA);
+const LocationDetails = ({ place }) => (
+    <PopupContainer>
+        <PopupHeader>
+            <PopupTitle>{place.title}</PopupTitle>
+            {place.subtitle && <PopupSubtitle>{place.subtitle}</PopupSubtitle>}
+        </PopupHeader>
 
-    return (
-        <PopupContainer>
-            <PopupHeader>
-                <PopupTitle>{place.title}</PopupTitle>
-                {place.subtitle && <PopupSubtitle>{place.subtitle}</PopupSubtitle>}
-            </PopupHeader>
-
-            <DetailsGrid>
-                {categoriesWithSubcategories.map(([category, value]) => (
-                    <React.Fragment key={category}>
-                        <DetailLabel>{category}</DetailLabel>
-                        <DetailValue>
-                            <LocationDetailsValue valueToDisplay={value} />
-                        </DetailValue>
-                    </React.Fragment>
-                ))}
-            </DetailsGrid>
-
-            {CTACategories.length > 0 && (
-                <CTAContainer>
-                    {CTACategories.map(([, value]) => (
-                        <LocationDetailsValue key={JSON.stringify(value)} valueToDisplay={value} />
-                    ))}
-                </CTAContainer>
-            )}
-        </PopupContainer>
-    );
-};
+        {SECTIONS.map(({ key, Container, labelled }) => {
+            const entries = place.data.filter(entry => sectionOf(entry) === key);
+            if (entries.length === 0) return null;
+            return (
+                <Container key={key}>
+                    {entries.map(([category, value]) =>
+                        labelled ? (
+                            <React.Fragment key={category}>
+                                <DetailLabel>{category}</DetailLabel>
+                                <DetailValue>
+                                    <LocationDetailsValue valueToDisplay={value} />
+                                </DetailValue>
+                            </React.Fragment>
+                        ) : (
+                            <LocationDetailsValue key={category} valueToDisplay={value} />
+                        ),
+                    )}
+                </Container>
+            );
+        })}
+    </PopupContainer>
+);
 
 LocationDetails.propTypes = {
     place: PropTypes.shape({
