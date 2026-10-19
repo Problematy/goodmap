@@ -25,6 +25,7 @@
     "reportOverload": "it's overloaded",
     "reportBroken": "it's broken",
     "reportOther": "other",
+    "locationReported": "Location reported",
     "submitProblem": "Submit",
     "describeOtherProblem": "Please describe",
     "listView": "List view",

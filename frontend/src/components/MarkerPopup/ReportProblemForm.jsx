@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import getCsrfToken from '../../utils/csrf';
-import { REPORT_LOCATION, withLang } from '../../services/http/endpoints';
+import { REPORT_LOCATION } from '../../services/http/endpoints';
 import { useDeploymentData } from '../../context/DeploymentDataContext';
 
 /**
@@ -175,7 +175,6 @@ const ReportProblemForm = ({ placeId }) => {
     const [problem, setProblem] = useState('');
     const [problemType, setProblemType] = useState('');
     const [isSubmitted, setIsSubmitted] = useState(false);
-    const [responseMessage, setResponseMessage] = useState('');
 
     // Only reached once the schema is known, so a loaded schema declaring no issue
     // types is the one case that falls back to the legacy defaults.
@@ -185,8 +184,8 @@ const ReportProblemForm = ({ placeId }) => {
         event.preventDefault();
         const csrfToken = await getCsrfToken();
 
-        const response = await axios.post(
-            withLang(REPORT_LOCATION),
+        await axios.post(
+            REPORT_LOCATION,
             {
                 id: placeId,
                 description: problemType === 'other' ? problem : problemType,
@@ -198,13 +197,11 @@ const ReportProblemForm = ({ placeId }) => {
                 },
             },
         );
-        const responseData = response.data;
-        setResponseMessage(responseData.message);
         setIsSubmitted(true);
     };
 
     if (isSubmitted) {
-        return <SuccessMessage>{responseMessage}</SuccessMessage>;
+        return <SuccessMessage>{t('locationReported')}</SuccessMessage>;
     }
 
     // This deployment's own issue types are the only ones it is guaranteed to accept, so

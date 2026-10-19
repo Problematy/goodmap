@@ -25,6 +25,7 @@
     "reportOverload": "przepełniony",
     "reportBroken": "punkt jest zniszczony",
     "reportOther": "inny",
+    "locationReported": "Lokalizacja zgłoszona",
     "submitProblem": "Wyślij",
     "describeOtherProblem": "Opisz problem",
     "listView": "Widok listy",

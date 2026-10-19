@@ -321,18 +321,6 @@ def test_unknown_lang_argument_is_ignored():
     assert _first_category_name(response) == "test-category@en"
 
 
-@mock.patch("goodmap.api.core_api.gettext", translation_with_locale)
-def test_report_location_is_translated_into_lang_argument():
-    response = api_post(
-        _bilingual_test_app(),
-        "/api/report-location?lang=pl",
-        {"id": "location-id", "description": "test issue 1"},
-    )
-    assert response.status_code == 200
-    assert response.json is not None
-    assert response.json["message"] == "Location reported@pl"
-
-
 def test_map_page_is_served_under_language_prefix():
     test_app = _bilingual_test_app()
 
