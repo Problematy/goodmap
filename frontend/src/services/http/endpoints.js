@@ -48,16 +48,6 @@ export const LOCATIONS = '/api/locations';
 export const LOCATIONS_CLUSTERED = '/api/locations-clustered';
 
 /**
- * API endpoint for suggesting a new point.
- */
-export const SUGGEST_NEW_POINT = '/api/suggest-new-point';
-
-/**
- * API endpoint for reporting a problem with a location.
- */
-export const REPORT_LOCATION = '/api/report-location';
-
-/**
  * External API endpoint for address search (forward geocoding) using OpenStreetMap Nominatim.
  * Converts addresses/place names to geographic coordinates.
  */

@@ -26,7 +26,6 @@ import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import imageCompression from 'browser-image-compression';
 import getCsrfToken from '../../../utils/csrf';
-import { SUGGEST_NEW_POINT } from '../../../services/http/endpoints';
 import { useLocation } from '../context/LocationContext';
 import { useDeploymentData } from '../../../context/DeploymentDataContext';
 import toast from '../../../utils/toast';
@@ -251,7 +250,7 @@ const SuggestNewPointForm = ({ open, onClose, locationSchema }) => {
         setIsSubmitting(true);
         try {
             const csrfToken = await getCsrfToken();
-            await axios.post(SUGGEST_NEW_POINT, formData, {
+            await axios.post('/api/suggest-new-point', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                     'X-CSRFToken': csrfToken,
