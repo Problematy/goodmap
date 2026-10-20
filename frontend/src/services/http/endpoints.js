@@ -1,9 +1,9 @@
 /**
  * Adds the page's language to a goodmap API URL, as the `lang` query argument.
  *
- * platzky derives the locale from the request's host and path only, so an unprefixed
- * /api request would otherwise always be answered in the default language. Use it for
- * endpoints whose responses carry translated text.
+ * /api is unprefixed, so its host and path alone would always pick the default language;
+ * the routes whose responses carry translated text are platzky `query_locale` routes, which
+ * take it from `lang` instead. Use it for those endpoints.
  *
  * @param {string} url - API URL, with or without a query string
  * @returns {string} The URL with `lang` set to `APP_LANG`, or unchanged without one

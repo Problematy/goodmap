@@ -2,14 +2,13 @@ import importlib.metadata
 import json as json_lib
 import logging
 import uuid
-from contextlib import ExitStack
 from typing import Any
 
 import deprecation
 import numpy
 import pysupercluster
-from flask import Blueprint, current_app, g, jsonify, make_response, request
-from flask_babel import force_locale, gettext
+from flask import Blueprint, current_app, jsonify, make_response, request
+from flask_babel import gettext
 from platzky import FeatureFlagSet
 from platzky.attachment import create_attachment
 from platzky.config import AttachmentConfig, LanguagesMapping
@@ -197,9 +196,6 @@ def _validation_error_to_api_shape(req, resp, req_validation_error, instance):
     resp.content_type = "application/json"
 
 
-LANG_QUERY_ARG = "lang"
-
-
 def core_pages(
     database,
     languages: LanguagesMapping,
@@ -210,26 +206,10 @@ def core_pages(
     shortcodes: dict[str, Shortcode],
     pin_marker_fields: PinMarkerFields,
 ) -> Blueprint:
+    # Routes with translated responses (pin fields, schema, categories) are query_locale
+    # routes: they follow the calling page's language, sent as ``?lang=``, since /api is
+    # unprefixed and its host and path alone would always pick the default language.
     core_api_blueprint = Blueprint("api", __name__, url_prefix="/api")
-
-    @core_api_blueprint.before_request
-    def use_requested_language():
-        """Translate the response into the ``lang`` query argument's language, if configured.
-
-        platzky derives the locale from the request's host and path only, so an unprefixed
-        /api request would otherwise always be answered in the default language. The page
-        calling the API passes its own language here instead; an unknown code is ignored.
-        """
-        lang = request.args.get(LANG_QUERY_ARG)
-        if lang in languages:
-            g.requested_language = ExitStack()
-            g.requested_language.enter_context(force_locale(lang))
-
-    @core_api_blueprint.teardown_request
-    def restore_language(_exc: BaseException | None) -> None:
-        """Undo the language ``use_requested_language`` switched to, if it did."""
-        if (requested_language := g.pop("requested_language", None)) is not None:
-            requested_language.close()
 
     # Build photo error message from config
     allowed_ext = ", ".join(sorted(photo_attachment_config.allowed_extensions or []))
@@ -428,7 +408,7 @@ def core_pages(
             logger.exception("Clustering operation failed: %s", e)
             return api_error(ERROR_CLUSTERING_FAILED, 500)
 
-    @core_api_blueprint.route("/location/<uuid:location_id>", methods=["GET"])
+    @core_api_blueprint.route("/location/<uuid:location_id>", methods=["GET"], query_locale=True)
     @spec.validate(
         tags=[TAG_MAP_DATA], resp=Response(HTTP_200=LocationDetail, HTTP_404=ErrorResponse)
     )
@@ -462,7 +442,7 @@ def core_pages(
         version_info = {"backend": importlib.metadata.version("goodmap")}
         return jsonify(version_info)
 
-    @core_api_blueprint.route("/location-schema", methods=["GET"])
+    @core_api_blueprint.route("/location-schema", methods=["GET"], query_locale=True)
     @spec.validate(tags=[TAG_DEPLOYMENT_SPECIFIC], resp=Response(HTTP_200=LocationSchemaResponse))
     def get_location_schema():
         """Get the schema this instance accepts for a new point.
@@ -497,7 +477,7 @@ def core_pages(
             }
         )
 
-    @core_api_blueprint.route("/categories-full", methods=["GET"])
+    @core_api_blueprint.route("/categories-full", methods=["GET"], query_locale=True)
     @spec.validate(tags=[TAG_DEPLOYMENT_SPECIFIC], resp=Response(HTTP_200=CategoriesFullResponse))
     def get_categories_full():
         """Get all categories with their subcategory options in a single request.
