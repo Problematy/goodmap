@@ -2465,14 +2465,14 @@ files = [
 
 [[package]]
 name = "platzky"
-version = "2.0.0a17"
+version = "2.0.0a18"
 description = "Not only blog engine"
 optional = false
 python-versions = "<4.0,>=3.10"
 groups = ["main"]
 files = [
-    {file = "platzky-2.0.0a17-py3-none-any.whl", hash = "sha256:21f6abc014e65788b2a8ab9016a601e1dcc034c503922c21b176f491e49f7ef1"},
-    {file = "platzky-2.0.0a17.tar.gz", hash = "sha256:d4612b92bc573709dd1d5cd971c4993e0e629bdf7a594ee128499347bab0f0a4"},
+    {file = "platzky-2.0.0a18-py3-none-any.whl", hash = "sha256:8854970c968db75451043a6c804caf9ca2e543e102aaf228a4905a6eb567b7e1"},
+    {file = "platzky-2.0.0a18.tar.gz", hash = "sha256:0be1ed1cb7172d5ac3f8883004c25151f071e8de9bc47a7968913902c1f6920d"},
 ]
 
 [package.dependencies]
@@ -4538,4 +4538,4 @@ docs = ["myst-parser", "sphinx", "sphinx-rtd-theme"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "bdc573cc23153f28b6c2b4bf84cf6c9f8195c95852f720ad5abe38282d0f4563"
+content-hash = "e47221bf36a7d54d77c021080738e18d396f0aa11021549ef859f56e15ef5559"
