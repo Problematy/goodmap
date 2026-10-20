@@ -321,6 +321,27 @@ def test_unknown_lang_argument_is_ignored():
     assert _first_category_name(response) == "test-category@en"
 
 
+LANG_QUERY_CASES = [("?lang=pl", "pl"), ("", "en"), ("?lang=xx", "en")]
+
+
+@pytest.mark.parametrize(("query", "locale"), LANG_QUERY_CASES)
+@mock.patch("goodmap.formatter.gettext", translation_with_locale)
+def test_location_endpoint_is_translated_into_lang_argument(query, locale):
+    response = _bilingual_test_app().get(
+        f"/api/location/11111111-1111-1111-1111-111111111111{query}"
+    )
+    assert response.status_code == 200
+    assert response.json["data"][0][0] == f"name@{locale}"
+
+
+@pytest.mark.parametrize(("query", "locale"), LANG_QUERY_CASES)
+@mock.patch("goodmap.api.core_api.gettext", translation_with_locale)
+def test_location_schema_endpoint_is_translated_into_lang_argument(query, locale):
+    response = _bilingual_test_app().get(f"/api/location-schema{query}")
+    assert response.status_code == 200
+    assert response.json["reported_issue_types"][0]["label"] == f"test issue 1@{locale}"
+
+
 def test_map_as_home_page_is_served_in_each_language():
     """The map is reached through platzky's multilang home page, not a prefixed /map."""
     config_data = get_test_config_data()
