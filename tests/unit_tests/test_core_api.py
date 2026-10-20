@@ -331,6 +331,7 @@ def test_location_endpoint_is_translated_into_lang_argument(query, locale):
         f"/api/location/11111111-1111-1111-1111-111111111111{query}"
     )
     assert response.status_code == 200
+    assert response.json is not None
     assert response.json["data"][0][0] == f"name@{locale}"
 
 
@@ -339,6 +340,7 @@ def test_location_endpoint_is_translated_into_lang_argument(query, locale):
 def test_location_schema_endpoint_is_translated_into_lang_argument(query, locale):
     response = _bilingual_test_app().get(f"/api/location-schema{query}")
     assert response.status_code == 200
+    assert response.json is not None
     assert response.json["reported_issue_types"][0]["label"] == f"test issue 1@{locale}"
 
 
