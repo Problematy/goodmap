@@ -281,7 +281,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
 
     goodmap = Blueprint("goodmap", __name__, url_prefix="/", template_folder="templates")
 
-    @goodmap.route("/map", multilang=True, methods=["GET"])
+    @goodmap.route("/map", methods=["GET"])
     def index():
         """Render the main map interface.
 

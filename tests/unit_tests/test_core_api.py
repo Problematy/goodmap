@@ -321,11 +321,19 @@ def test_unknown_lang_argument_is_ignored():
     assert _first_category_name(response) == "test-category@en"
 
 
-def test_map_page_is_served_under_language_prefix():
-    test_app = _bilingual_test_app()
+def test_map_as_home_page_is_served_in_each_language():
+    """The map is reached through platzky's multilang home page, not a prefixed /map."""
+    config_data = get_test_config_data()
+    config_data["LANGUAGES"] = {
+        "en": {"name": "English", "flag": "gb", "country": "GB"},
+        "pl": {"name": "polski", "flag": "pl", "country": "PL"},
+    }
+    config_data["DB"]["DATA"]["site_content"]["home_page_path"] = "/map"
+    test_app = create_app_from_config(GoodmapConfig.model_validate(config_data)).test_client()
 
-    assert 'APP_LANG="pl";' in test_app.get("/pl/map").get_data(as_text=True)
-    assert 'APP_LANG="en";' in test_app.get("/map").get_data(as_text=True)
+    assert 'APP_LANG="pl";' in test_app.get("/pl/").get_data(as_text=True)
+    assert 'APP_LANG="en";' in test_app.get("/").get_data(as_text=True)
+    assert test_app.get("/pl/map").status_code == 404
 
 
 def test_admin_page_is_not_served_under_language_prefix():
