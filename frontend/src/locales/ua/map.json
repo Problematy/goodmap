@@ -24,6 +24,7 @@
     "reportOverload": "переповнений",
     "reportBroken": "точка зруйнована",
     "reportOther": "інше",
+    "locationReported": "Місцезнаходження повідомлено",
     "submitProblem": "Відправити",
     "describeOtherProblem": "Опишіть проблему",
     "listView": "Перегляд списку",

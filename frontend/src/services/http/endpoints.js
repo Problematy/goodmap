@@ -1,4 +1,23 @@
 /**
+ * Adds the page's language to a goodmap API URL, as the `lang` query argument.
+ *
+ * /api is unprefixed, so its host and path alone would always pick the default language;
+ * the routes whose responses carry translated text are platzky `query_locale` routes, which
+ * take it from `lang` instead. Use it for those endpoints.
+ *
+ * @param {string} url - API URL, with or without a query string
+ * @returns {string} The URL with `lang` set to `APP_LANG`, or unchanged without one
+ */
+export const withLang = url => {
+    const lang = globalThis.APP_LANG;
+    if (!lang) {
+        return url;
+    }
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}lang=${encodeURIComponent(lang)}`;
+};
+
+/**
  * API endpoint for fetching all categories with their subcategories in a single request.
  * Eliminates the waterfall pattern of fetching categories then subcategories separately.
  */

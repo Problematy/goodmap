@@ -154,7 +154,7 @@ class TestLeftPanelMobile:
         toggle_button.wait_for(state="visible")
 
         # Filter dialog should not be visible by default on mobile
-        filter_dialog = mobile_page.locator('[role="dialog"]')
+        filter_dialog = mobile_page.locator("#left-panel")
         expect(filter_dialog).not_to_be_visible()
 
     @pytest.mark.parametrize("mobile_page", ["iphone-6"], indirect=True)
@@ -170,7 +170,7 @@ class TestLeftPanelMobile:
         toggle_button.click()
 
         # Wait for filter dialog to be visible
-        filter_dialog = mobile_page.locator('[role="dialog"]')
+        filter_dialog = mobile_page.locator("#left-panel")
         expect(filter_dialog).to_be_visible(timeout=5000)
 
         # Filter form should be visible inside dialog
@@ -190,7 +190,7 @@ class TestLeftPanelMobile:
         toggle_button.click()
 
         # Wait for dialog to open
-        filter_dialog = mobile_page.locator('[role="dialog"]')
+        filter_dialog = mobile_page.locator("#left-panel")
         expect(filter_dialog).to_be_visible(timeout=5000)
 
         # Close button should be visible
@@ -210,7 +210,7 @@ class TestLeftPanelMobile:
         toggle_button.click()
 
         # Wait for dialog to open
-        filter_dialog = mobile_page.locator('[role="dialog"]')
+        filter_dialog = mobile_page.locator("#left-panel")
         expect(filter_dialog).to_be_visible(timeout=5000)
 
         # Click close button

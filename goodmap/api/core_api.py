@@ -206,6 +206,9 @@ def core_pages(
     shortcodes: dict[str, Shortcode],
     pin_marker_fields: PinMarkerFields,
 ) -> Blueprint:
+    # Routes with translated responses (pin fields, schema, categories) are query_locale
+    # routes: they follow the calling page's language, sent as ``?lang=``, since /api is
+    # unprefixed and its host and path alone would always pick the default language.
     core_api_blueprint = Blueprint("api", __name__, url_prefix="/api")
 
     # Build photo error message from config
@@ -405,7 +408,7 @@ def core_pages(
             logger.exception("Clustering operation failed: %s", e)
             return api_error(ERROR_CLUSTERING_FAILED, 500)
 
-    @core_api_blueprint.route("/location/<uuid:location_id>", methods=["GET"])
+    @core_api_blueprint.route("/location/<uuid:location_id>", methods=["GET"], query_locale=True)
     @spec.validate(
         tags=[TAG_MAP_DATA], resp=Response(HTTP_200=LocationDetail, HTTP_404=ErrorResponse)
     )
@@ -439,7 +442,7 @@ def core_pages(
         version_info = {"backend": importlib.metadata.version("goodmap")}
         return jsonify(version_info)
 
-    @core_api_blueprint.route("/location-schema", methods=["GET"])
+    @core_api_blueprint.route("/location-schema", methods=["GET"], query_locale=True)
     @spec.validate(tags=[TAG_DEPLOYMENT_SPECIFIC], resp=Response(HTTP_200=LocationSchemaResponse))
     def get_location_schema():
         """Get the schema this instance accepts for a new point.
@@ -474,7 +477,7 @@ def core_pages(
             }
         )
 
-    @core_api_blueprint.route("/categories-full", methods=["GET"])
+    @core_api_blueprint.route("/categories-full", methods=["GET"], query_locale=True)
     @spec.validate(tags=[TAG_DEPLOYMENT_SPECIFIC], resp=Response(HTTP_200=CategoriesFullResponse))
     def get_categories_full():
         """Get all categories with their subcategory options in a single request.

@@ -1,11 +1,12 @@
 from io import BytesIO
 from unittest import mock
 
+import flask_babel
 import pytest
 
 from goodmap.api.core_api import get_default_issue_options, make_tuple_translation
 from goodmap.config import GoodmapConfig
-from goodmap.feature_flags import CategoriesHelp
+from goodmap.feature_flags import CategoriesHelp, EnableAdminPanel
 from goodmap.goodmap import create_app_from_config
 from tests.unit_tests.conftest import (
     api_post,
@@ -260,6 +261,112 @@ def test_categories_full_endpoint_without_categories_help():
     assert "categories_help" not in data
     category = data["categories"][0]
     assert "options_help" not in category
+
+
+def _bilingual_test_app(languages=("en", "pl")):
+    """An app serving the first language at the root and the others under /<lang>/."""
+    all_languages = {
+        "en": {"name": "English", "flag": "gb", "country": "GB"},
+        "pl": {"name": "polski", "flag": "pl", "country": "PL"},
+    }
+    config_data = get_test_config_data()
+    config_data["LANGUAGES"] = {lang: all_languages[lang] for lang in languages}
+    config_data["FEATURE_FLAGS"] = make_flag_set(EnableAdminPanel)
+    app = create_app_from_config(GoodmapConfig.model_validate(config_data))
+    app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
+    return app.test_client()
+
+
+def translation_with_locale(key: str, **_kwargs) -> str:
+    """Stand-in for gettext that shows the locale it would translate into.
+
+    The compiled .mo catalogs are build artifacts, absent from a fresh checkout, so the
+    tests check which locale was selected rather than depending on real translations.
+    """
+    return f"{key}@{flask_babel.get_locale()}"
+
+
+def _first_category_name(response) -> str:
+    assert response.status_code == 200
+    assert response.json is not None
+    return response.json["categories"][0]["name"]
+
+
+@mock.patch("goodmap.api.core_api.gettext", translation_with_locale)
+def test_categories_full_endpoint_is_translated_into_lang_argument():
+    test_app = _bilingual_test_app()
+
+    polish = _first_category_name(test_app.get("/api/categories-full?lang=pl"))
+    english = _first_category_name(test_app.get("/api/categories-full?lang=en"))
+
+    assert polish == "test-category@pl"
+    assert english == "test-category@en"
+
+
+@mock.patch("goodmap.api.core_api.gettext", translation_with_locale)
+def test_lang_argument_overrides_the_default_language():
+    """/api is unprefixed, so without ``lang`` platzky answers in the default language."""
+    test_app = _bilingual_test_app(languages=("pl", "en"))
+
+    default = _first_category_name(test_app.get("/api/categories-full"))
+    english = _first_category_name(test_app.get("/api/categories-full?lang=en"))
+
+    assert default == "test-category@pl"
+    assert english == "test-category@en"
+
+
+@mock.patch("goodmap.api.core_api.gettext", translation_with_locale)
+def test_unknown_lang_argument_is_ignored():
+    response = _bilingual_test_app().get("/api/categories-full?lang=xx")
+    assert _first_category_name(response) == "test-category@en"
+
+
+LANG_QUERY_CASES = [("?lang=pl", "pl"), ("", "en"), ("?lang=xx", "en")]
+
+
+@pytest.mark.parametrize(("query", "locale"), LANG_QUERY_CASES)
+@mock.patch("goodmap.formatter.gettext", translation_with_locale)
+def test_location_endpoint_is_translated_into_lang_argument(query, locale):
+    response = _bilingual_test_app().get(
+        f"/api/location/11111111-1111-1111-1111-111111111111{query}"
+    )
+    assert response.status_code == 200
+    assert response.json is not None
+    assert response.json["data"][0][0] == f"name@{locale}"
+
+
+@pytest.mark.parametrize(("query", "locale"), LANG_QUERY_CASES)
+@mock.patch("goodmap.api.core_api.gettext", translation_with_locale)
+def test_location_schema_endpoint_is_translated_into_lang_argument(query, locale):
+    response = _bilingual_test_app().get(f"/api/location-schema{query}")
+    assert response.status_code == 200
+    assert response.json is not None
+    assert response.json["reported_issue_types"][0]["label"] == f"test issue 1@{locale}"
+
+
+def test_map_as_home_page_is_served_in_each_language():
+    """The map is reached through platzky's multilang home page, not a prefixed /map."""
+    config_data = get_test_config_data()
+    config_data["LANGUAGES"] = {
+        "en": {"name": "English", "flag": "gb", "country": "GB"},
+        "pl": {"name": "polski", "flag": "pl", "country": "PL"},
+    }
+    config_data["DB"]["DATA"]["site_content"]["home_page_path"] = "/map"
+    test_app = create_app_from_config(GoodmapConfig.model_validate(config_data)).test_client()
+
+    assert 'APP_LANG="pl";' in test_app.get("/pl/").get_data(as_text=True)
+    assert 'APP_LANG="en";' in test_app.get("/").get_data(as_text=True)
+    assert test_app.get("/pl/map").status_code == 404
+
+
+def test_admin_page_is_not_served_under_language_prefix():
+    """The admin panel's language will come from the user's settings, not the URL."""
+    test_app = _bilingual_test_app()
+    with test_app.session_transaction() as sess:
+        sess["user"] = {"username": "Test User"}
+
+    assert test_app.get("/goodmap-admin").status_code == 200
+    assert test_app.get("/pl/goodmap-admin").status_code == 404
 
 
 # --- Locations endpoint tests ---
