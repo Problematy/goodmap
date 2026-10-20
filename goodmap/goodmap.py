@@ -302,7 +302,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
             initial_view=initial_view,
         )
 
-    @goodmap.route("/goodmap-admin", multilang=True, methods=["GET"])
+    @goodmap.route("/goodmap-admin", methods=["GET"])
     def admin():
         """Render admin interface for managing map data.
 

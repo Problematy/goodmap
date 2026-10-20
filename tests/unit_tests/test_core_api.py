@@ -328,17 +328,14 @@ def test_map_page_is_served_under_language_prefix():
     assert 'APP_LANG="en";' in test_app.get("/map").get_data(as_text=True)
 
 
-def test_admin_page_is_served_under_language_prefix():
+def test_admin_page_is_not_served_under_language_prefix():
+    """The admin panel's language will come from the user's settings, not the URL."""
     test_app = _bilingual_test_app()
     with test_app.session_transaction() as sess:
         sess["user"] = {"username": "Test User"}
 
-    polish = test_app.get("/pl/goodmap-admin")
-    english = test_app.get("/goodmap-admin")
-
-    assert polish.status_code == 200
-    assert 'APP_LANG="pl";' in polish.get_data(as_text=True)
-    assert 'APP_LANG="en";' in english.get_data(as_text=True)
+    assert test_app.get("/goodmap-admin").status_code == 200
+    assert test_app.get("/pl/goodmap-admin").status_code == 404
 
 
 # --- Locations endpoint tests ---
