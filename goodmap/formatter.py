@@ -148,6 +148,32 @@ def _without_html(value):
     return stripped
 
 
+def _popup_entry(field, value, plugins, defaults):
+    """Build one field's ``[label, value]`` pair for the popup, both translated.
+
+    Args:
+        field: The field's name.
+        value: Its value from the location data.
+        plugins: Field name -> the plugin Shortcode bound to it.
+        defaults: ``defaults(shortcode)`` -> the place-derived attributes it declares.
+
+    Returns:
+        The pair, or None when the field has nothing to show.
+    """
+    value = safe_gettext(value)
+    if field in plugins:
+        value = _rendered_field(plugins[field], value)
+    elif builtin := _builtin_shortcode(value):
+        value = _rendered_builtin(builtin, value, defaults)
+        if not value["html"]:
+            # Goodmap's own types have nothing to show but their ``html``, so one that
+            # rendered nothing - every image refused - would leave a label over a blank.
+            return None
+    else:
+        value = _without_html(value)
+    return [gettext(field), value]
+
+
 def prepare_pin(
     place, visible_fields, meta_data, shortcodes=None, alt_template=None
 ) -> dict[str, Any]:
@@ -179,22 +205,11 @@ def prepare_pin(
             alt = (alt_template or _DEFAULT_ALT_TEMPLATE).render(place, safe_gettext)
         return {"alt": alt}
 
-    data = []
-    for field in visible_fields:
-        if field not in place:
-            continue
-        value = safe_gettext(place[field])
-        if field in plugins:
-            value = _rendered_field(plugins[field], value)
-        elif builtin := _builtin_shortcode(value):
-            value = _rendered_builtin(builtin, value, defaults)
-            if not value["html"]:
-                # Goodmap's own types have nothing to show but their ``html``, so one that
-                # rendered nothing - every image refused - would leave a label over a blank.
-                continue
-        else:
-            value = _without_html(value)
-        data.append([gettext(field), value])
+    entries = (
+        _popup_entry(field, place[field], plugins, defaults)
+        for field in visible_fields
+        if field in place
+    )
     pin_data = {
         "title": place["name"],
         "subtitle": lazy_gettext(place["type_of_place"]),  # TODO this should not be obligatory
@@ -202,6 +217,6 @@ def prepare_pin(
         "metadata": {
             gettext(field): safe_gettext(place[field]) for field in meta_data if field in place
         },
-        "data": data,
+        "data": [entry for entry in entries if entry is not None],
     }
     return pin_data
