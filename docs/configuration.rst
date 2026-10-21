@@ -164,9 +164,9 @@ Basic keys
 
 ``IMAGE_ALT_TEMPLATE``
    The ``alt`` text given to a marker image that carries none of its own (see
-   :ref:`plugins-builtin-field-types`), so a screen reader can say what the photo shows.
-   It is a `Jinja <https://jinja.palletsprojects.com/templates/>`_ template, rendered once
-   per point with that point's fields as variables:
+   :ref:`built-in field types <plugins-builtin-field-types>`), so a screen reader can say
+   what the photo shows. It is a `Jinja <https://jinja.palletsprojects.com/templates/>`_
+   template, rendered once per point with that point's fields as variables:
 
    .. code-block:: yaml
 

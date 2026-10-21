@@ -96,7 +96,7 @@ Formatting
 Turning a point into what its popup shows: translation of category keys, option values and
 field names on the way out (:ref:`config-translations`), and the rendering of a field's value
 into HTML — by a plugin's shortcode, or by one of the field types goodmap builds in
-(:ref:`plugins-builtin-field-types`).
+(:ref:`built-in field types <plugins-builtin-field-types>`).
 
 .. automodule:: goodmap.formatter
    :members:

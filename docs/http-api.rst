@@ -195,23 +195,33 @@ or one a plugin's shortcode is bound to — comes back as an object rather than 
      "html": "<a href=\"https://example.com\" target=\"_blank\" rel=\"noopener noreferrer\">Example</a>"
    }]
 
-A field naming a built-in type may hold several values under ``items``, each returned with
-its own ``html``. Items that render to nothing are dropped, and a built-in field left with
-nothing to show is left out of ``data``:
+A field naming a built-in type may hold several values under ``items``. Each item comes back
+with its own ``html``, and the field's ``html`` joins them. Items that render to nothing are
+dropped, and a built-in field left with nothing to show is left out of ``data``. Stored as
+``{"type": "image", "items": [{"url": ".../front.jpg"}, {"url": ".../deck.jpg", "alt":
+"The deck at night"}]}``, an image field comes back as:
 
 .. code-block:: json
 
    ["images", {
      "type": "image",
-     "items": [{"url": "https://example.com/front.jpg", "alt": "photo of big bridge",
-                "html": "<img src=\"https://example.com/front.jpg\" alt=\"photo of big bridge\">"}],
-     "html": "<img src=\"https://example.com/front.jpg\" alt=\"photo of big bridge\">"
+     "items": [
+       {"url": "https://example.com/front.jpg", "alt": "Zwierzyniecka",
+        "html": "<img src=\"https://example.com/front.jpg\" alt=\"Zwierzyniecka\">"},
+       {"url": "https://example.com/deck.jpg", "alt": "The deck at night",
+        "html": "<img src=\"https://example.com/deck.jpg\" alt=\"The deck at night\">"}
+     ],
+     "html": "<img src=\"https://example.com/front.jpg\" alt=\"Zwierzyniecka\"><img src=\"https://example.com/deck.jpg\" alt=\"The deck at night\">"
    }]
 
-``html`` is the rendering to display and ``type`` says what produced it; the entry's own
-keys travel alongside for a client that would rather render from the data. See
-:ref:`plugins-builtin-field-types` for which types GoodMap ships and
-:ref:`plugins-shortcode-rendered-fields` for how a plugin adds one.
+The first item had no ``alt``, so :ref:`IMAGE_ALT_TEMPLATE <config-image-alt-template>`
+described it: by default, with the point's ``name``.
+
+``html`` is always the server's rendering, never a value taken from the data: it is what to
+display, and ``type`` says what produced it. The entry's own keys travel alongside for a
+client that would rather render from the data; such a client must escape them itself. See
+:ref:`built-in field types <plugins-builtin-field-types>` for which types GoodMap ships and
+:ref:`shortcode-rendered fields <plugins-shortcode-rendered-fields>` for how a plugin adds one.
 
 The path segment must be a valid UUID; anything else fails routing with ``404``. A
 well-formed UUID that does not exist also gives ``404 {"message": "Location not found"}``.
