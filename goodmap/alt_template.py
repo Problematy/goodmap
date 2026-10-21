@@ -24,13 +24,16 @@ logger = logging.getLogger(__name__)
 #: Used when the operator sets no template: every location has a name.
 DEFAULT_ALT_TEMPLATE = "{{ name }}"
 
+
 # No autoescape: the result is an attribute value, and the image shortcode escapes it
 # where it interpolates it. Escaping here as well would show ``&amp;`` in the alt.
 # ``finalize`` prints None as nothing: ``model_dump`` keeps an unset optional field as None,
 # and a screen reader would otherwise read out "None".
-_environment = ImmutableSandboxedEnvironment(
-    autoescape=False, finalize=lambda value: "" if value is None else value
-)
+def _finalize(value: object) -> object:
+    return "" if value is None else value
+
+
+_environment = ImmutableSandboxedEnvironment(autoescape=False, finalize=_finalize)
 _environment.globals["_"] = gettext
 
 _WHITESPACE = re.compile(r"\s+")

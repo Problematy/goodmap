@@ -304,7 +304,10 @@ def test_platzky_builtins_outside_the_allowlist_are_not_rendered():
 
 
 def test_alt_template_sees_translated_field_values(monkeypatch):
-    monkeypatch.setattr("goodmap.formatter.gettext", lambda text: f"{text}-pl")
+    def translate(text: str) -> str:
+        return f"{text}-pl"
+
+    monkeypatch.setattr("goodmap.formatter.gettext", translate)
     template = compile_alt_template("{{ type_of_place }} {{ types | join(',') }}")
     place = _images({"url": "https://example.com/1.jpg"})
     items = prepare_pin(place, ["images"], [], alt_template=template)["data"][0][1]["items"]
@@ -320,16 +323,26 @@ def test_image_alt_null_counts_as_absent():
 
 
 def test_alt_template_is_not_rendered_for_a_pin_without_images(monkeypatch):
-    calls = []
-    monkeypatch.setattr("goodmap.formatter.render_alt", lambda *args: calls.append(args) or "")
+    calls: list[tuple[object, ...]] = []
+
+    def render_alt(*args: object) -> str:
+        calls.append(args)
+        return ""
+
+    monkeypatch.setattr("goodmap.formatter.render_alt", render_alt)
     place = {**test_place, "website": {"type": "hyperlink", "value": "https://example.com"}}
     prepare_pin(place, ["website", "plain_text"], [], alt_template=compile_alt_template(None))
     assert calls == []
 
 
 def test_alt_template_is_rendered_once_per_pin(monkeypatch):
-    calls = []
-    monkeypatch.setattr("goodmap.formatter.render_alt", lambda *args: calls.append(args) or "x")
+    calls: list[tuple[object, ...]] = []
+
+    def render_alt(*args: object) -> str:
+        calls.append(args)
+        return "x"
+
+    monkeypatch.setattr("goodmap.formatter.render_alt", render_alt)
     place = {
         **_images({"url": "https://example.com/1.jpg"}, {"url": "https://example.com/2.jpg"}),
         "more": {"type": "image", "items": [{"url": "https://example.com/3.jpg"}]},

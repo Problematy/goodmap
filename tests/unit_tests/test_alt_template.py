@@ -3,7 +3,6 @@ import logging
 import pytest
 from jinja2 import TemplateSyntaxError
 
-from goodmap import alt_template
 from goodmap.alt_template import compile_alt_template, render_alt
 
 place = {
@@ -35,8 +34,11 @@ def test_missing_field_prints_empty_and_whitespace_collapses():
 
 
 def test_template_text_can_be_translated(monkeypatch):
-    monkeypatch.setitem(alt_template._environment.globals, "_", lambda text: f"{text}-pl")
+    def translate(text: str) -> str:
+        return f"{text}-pl"
+
     template = compile_alt_template("{{ _('photo of') }} {{ name }}")
+    monkeypatch.setitem(template.environment.globals, "_", translate)
     assert render_alt(template, place) == "photo of-pl Grunwaldzki"
 
 

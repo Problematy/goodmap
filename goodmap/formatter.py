@@ -157,13 +157,15 @@ def prepare_pin(
     plugins = shortcodes or {}
 
     @cache
-    def describe():
+    def describe(template):
         # Rendered once per pin, and only once an image asks for it.
-        return render_alt(alt_template, {field: safe_gettext(v) for field, v in place.items()})
+        return render_alt(template, {field: safe_gettext(v) for field, v in place.items()})
 
     def defaults(shortcode):
+        if alt_template is None:
+            return {}
         declared = {attribute.name for attribute in shortcode.attributes}
-        return {"alt": describe()} if alt_template and "alt" in declared else {}
+        return {"alt": describe(alt_template)} if "alt" in declared else {}
 
     data = []
     for field in visible_fields:

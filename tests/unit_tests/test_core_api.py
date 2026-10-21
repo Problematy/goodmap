@@ -1225,6 +1225,7 @@ def _app_with_images(**config):
 def test_location_images_are_described_by_the_configured_alt_template():
     client = _app_with_images(IMAGE_ALT_TEMPLATE="photo of {{ type_of_place }}")
     response = client.get("/api/location/11111111-1111-1111-1111-111111111111")
+    assert response.json is not None
     images = dict(response.json["data"])["images"]
     assert [item["alt"] for item in images["items"]] == ["photo of test-place"] * 2
 
@@ -1232,6 +1233,7 @@ def test_location_images_are_described_by_the_configured_alt_template():
 def test_location_images_default_to_the_place_name():
     client = _app_with_images()
     response = client.get("/api/location/11111111-1111-1111-1111-111111111111")
+    assert response.json is not None
     assert 'alt="test"' in dict(response.json["data"])["images"]["html"]
 
 
