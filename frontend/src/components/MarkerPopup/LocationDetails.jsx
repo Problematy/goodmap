@@ -249,7 +249,10 @@ NavigateMeButton.propTypes = {
 
 // Which popup section a field shows in, by its value's `type` - never by its label, which is
 // `gettext(field)` and so differs per locale. Anything not listed is a labelled detail.
-const SECTION_BY_TYPE = { image: 'images', CTA: 'actions' };
+const SECTION_BY_TYPE = new Map([
+    ['image', 'images'],
+    ['CTA', 'actions'],
+]);
 
 // In display order. A `labelled` section pairs each value with its field name.
 const SECTIONS = [
@@ -258,7 +261,7 @@ const SECTIONS = [
     { key: 'actions', Container: CTAContainer, labelled: false },
 ];
 
-const sectionOf = ([, value]) => SECTION_BY_TYPE[value?.type] ?? 'details';
+const sectionOf = ([, value]) => SECTION_BY_TYPE.get(value?.type) ?? 'details';
 
 /**
  * Component that renders location details: title, subtitle, then each section of fields.

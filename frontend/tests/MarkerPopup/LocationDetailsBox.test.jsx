@@ -99,6 +99,15 @@ describe('should render marker popup correctly', () => {
                     render(<LocationDetailsBox place={incorrectComplexMarkerData} />),
                 ).not.toThrow();
             });
+
+            it('keeps a field whose type names an Object.prototype property', () => {
+                const place = {
+                    ...correctMarkerData,
+                    data: [['oddType', { type: 'constructor', value: 'still shown' }]],
+                };
+                render(<LocationDetailsBox place={place} />);
+                expect(screen.getByText('oddType')).toBeInTheDocument();
+            });
         });
 
         describe('should handle plugin fields', () => {
