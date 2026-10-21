@@ -87,11 +87,12 @@ def _rendered_builtin(shortcode, value, defaults):
     Two things only goodmap's own types get, because goodmap knows what their rendering
     means - a plugin's field keeps exactly the rendering its shortcode gives it:
 
-    * ``items``: a field holding several values lists them there, each rendered on its own
-      and returned with its own ``html`` - what a gallery plugin would lay out - while the
-      field's ``html`` joins them for the popup, with the type's
-      :data:`~goodmap.field_types.ITEM_SEPARATORS` entry between. An item the shortcode
-      refuses renders to nothing and is dropped from both, as is one that is not an object.
+    * ``items``: a field holding several values lists them there. Each is rendered on its
+      own and the renderings joined into the field's ``html``, with the type's
+      :data:`~goodmap.field_types.ITEM_SEPARATORS` entry between; the items themselves go
+      back as data, without ``html``. An item the shortcode refuses renders to nothing and
+      is dropped, as is one that is not an object. A gallery wanting its own layout binds
+      its own shortcode to the field, or the field names the gallery's type instead.
     * defaults derived from the place, such as an image's ``alt``. An entry's own value wins;
       a ``null`` counts as absent, so imported data with ``"alt": null`` is still described
       rather than marked decorative.
@@ -120,9 +121,10 @@ def _rendered_builtin(shortcode, value, defaults):
             next(iter(shortcode.attributes)).name,
         )
     items = [rendered(item) for item in entries if isinstance(item, dict)]
-    items = [{k: v for k, v in item.items() if k != "type"} for item in items if item["html"]]
+    items = [item for item in items if item["html"]]
     html = ITEM_SEPARATORS.get(shortcode.name, "").join(item["html"] for item in items)
-    return {**value, "items": items, "type": shortcode.name, "html": html}
+    data = [{k: v for k, v in item.items() if k not in ("type", "html")} for item in items]
+    return {**value, "items": data, "type": shortcode.name, "html": html}
 
 
 def _without_html(value):

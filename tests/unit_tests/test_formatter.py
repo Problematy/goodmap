@@ -238,15 +238,25 @@ def _images(*items):
 
 
 def test_image_items_are_each_rendered_and_joined():
-    """Each item keeps its own ``html`` for a gallery plugin; the field's joins them."""
+    """The field's ``html`` joins the items' renderings; the items stay plain data."""
     place = _images({"url": "https://example.com/1.jpg"}, {"url": "https://example.com/2.jpg"})
     value = prepare_pin(place, ["images"], [])["data"][0][1]
     assert value["type"] == "image"
-    assert [item["html"] for item in value["items"]] == [
-        '<img src="https://example.com/1.jpg" alt="LASSO">',
-        '<img src="https://example.com/2.jpg" alt="LASSO">',
+    assert value["html"] == (
+        '<img src="https://example.com/1.jpg" alt="LASSO">'
+        '<img src="https://example.com/2.jpg" alt="LASSO">'
+    )
+    assert value["items"] == [
+        {"url": "https://example.com/1.jpg", "alt": "LASSO"},
+        {"url": "https://example.com/2.jpg", "alt": "LASSO"},
     ]
-    assert value["html"] == "".join(item["html"] for item in value["items"])
+
+
+def test_image_items_html_from_the_data_is_not_passed_on():
+    place = _images({"url": "https://example.com/1.jpg", "html": "<script>x</script>"})
+    value = prepare_pin(place, ["images"], [])["data"][0][1]
+    assert "html" not in value["items"][0]
+    assert "<script>" not in value["html"]
 
 
 def test_image_passes_width_and_height_through():

@@ -195,9 +195,10 @@ or one a plugin's shortcode is bound to — comes back as an object rather than 
      "html": "<a href=\"https://example.com\" target=\"_blank\" rel=\"noopener noreferrer\">Example</a>"
    }]
 
-A field naming a built-in type may hold several values under ``items``. Each item comes back
-with its own ``html``, and the field's ``html`` joins them. Items that render to nothing are
-dropped, and a built-in field left with nothing to show is left out of ``data``. Stored as
+A field naming a built-in type may hold several values under ``items``. The field's ``html``
+renders them all; ``items`` lists them as data, without ``html`` of their own. Items that
+render to nothing are dropped from both, and a built-in field left with nothing to show is
+left out of ``data``. Stored as
 ``{"type": "image", "items": [{"url": ".../front.jpg"}, {"url": ".../deck.jpg", "alt":
 "The deck at night"}]}``, an image field comes back as:
 
@@ -206,10 +207,8 @@ dropped, and a built-in field left with nothing to show is left out of ``data``.
    ["images", {
      "type": "image",
      "items": [
-       {"url": "https://example.com/front.jpg", "alt": "Zwierzyniecka",
-        "html": "<img src=\"https://example.com/front.jpg\" alt=\"Zwierzyniecka\">"},
-       {"url": "https://example.com/deck.jpg", "alt": "The deck at night",
-        "html": "<img src=\"https://example.com/deck.jpg\" alt=\"The deck at night\">"}
+       {"url": "https://example.com/front.jpg", "alt": "Zwierzyniecka"},
+       {"url": "https://example.com/deck.jpg", "alt": "The deck at night"}
      ],
      "html": "<img src=\"https://example.com/front.jpg\" alt=\"Zwierzyniecka\"><img src=\"https://example.com/deck.jpg\" alt=\"The deck at night\">"
    }]
