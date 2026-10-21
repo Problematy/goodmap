@@ -1,23 +1,15 @@
 import React from 'react';
 import '@testing-library/jest-dom';
-import { render } from '@testing-library/react';
+import { render, fireEvent } from '@testing-library/react';
 import LocationDetailsBox from '../../src/components/MarkerPopup/LocationDetails';
 
 // An `images` field as `prepare_pin` sends it: platzky's [image] shortcode rendered each item,
-// and the field's `html` joins them.
+// the field's `html` joins them, and the items come back as plain data.
 const images = {
     type: 'image',
     items: [
-        {
-            url: 'https://example.com/1.jpg',
-            alt: 'Front',
-            html: '<img src="https://example.com/1.jpg" alt="Front">',
-        },
-        {
-            url: 'https://example.com/2.jpg',
-            alt: 'Inside',
-            html: '<img src="https://example.com/2.jpg" alt="Inside">',
-        },
+        { url: 'https://example.com/1.jpg', alt: 'Front' },
+        { url: 'https://example.com/2.jpg', alt: 'Inside' },
     ],
     html: '<img src="https://example.com/1.jpg" alt="Front"><img src="https://example.com/2.jpg" alt="Inside">',
 };
@@ -47,5 +39,28 @@ describe('Images', () => {
 
         const html = container.innerHTML;
         expect(html.indexOf('<img')).toBeLessThan(html.indexOf('length'));
+    });
+
+    describe('load state', () => {
+        const renderImages = () =>
+            render(<LocationDetailsBox place={place([['images', images]])} />).container;
+
+        it('holds a placeholder until an image settles', () => {
+            const imgs = renderImages().querySelectorAll('img');
+            imgs.forEach(img => expect(img).not.toHaveAttribute('data-load-state'));
+        });
+
+        it('marks an image loaded when it arrives', () => {
+            const [front, inside] = renderImages().querySelectorAll('img');
+            fireEvent.load(front);
+            expect(front).toHaveAttribute('data-load-state', 'loaded');
+            expect(inside).not.toHaveAttribute('data-load-state');
+        });
+
+        it('marks an image failed when it cannot be fetched', () => {
+            const [front] = renderImages().querySelectorAll('img');
+            fireEvent.error(front);
+            expect(front).toHaveAttribute('data-load-state', 'error');
+        });
     });
 });

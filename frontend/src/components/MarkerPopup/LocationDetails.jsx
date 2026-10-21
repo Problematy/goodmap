@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import ExploreIcon from '@mui/icons-material/Explore';
 import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined';
 import ShareIcon from '@mui/icons-material/Share';
@@ -117,8 +117,35 @@ const CTAContainer = styled.div`
     }
 `;
 
+// The map's loading spinner (MapLoadingOverlay's DefaultSpinner) as an image, so it can be an
+// `<img>`'s own background: the server's markup has no element of ours to put one in.
+const ring = arc =>
+    `url("data:image/svg+xml,${encodeURIComponent(
+        `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'>` +
+            `<circle cx='25' cy='25' r='23' fill='none' stroke='#e0e0e0' stroke-width='4'/>` +
+            `<circle cx='25' cy='25' r='23' fill='none' stroke='#1976d2' stroke-width='4' ` +
+            `stroke-dasharray='36 109' stroke-linecap='butt'>${arc}</circle></svg>`,
+    )}")`;
+const spinner = ring(
+    `<animateTransform attributeName='transform' type='rotate' from='0 25 25' ` +
+        `to='360 25 25' dur='1s' repeatCount='indefinite'/>`,
+);
+const spinnerStill = ring('');
+
+const fadeIn = keyframes`
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+`;
+
 // Images the server rendered (`type: "image"`, platzky's [image] shortcode) arrive as plain
 // `<img>` tags, so their size is decided here: the popup's width, whatever the data asked for.
+// Until a photo has fully arrived it is not shown - a browser would draw it top-down as it
+// downloads - and holds a spinner in a placeholder of about the height it will take;
+// `markLoadState` says when it has arrived, or failed to.
 const ImagesContainer = styled.div`
     display: flex;
     flex-direction: column;
@@ -131,9 +158,37 @@ const ImagesContainer = styled.div`
 
     img {
         display: block;
+        width: 100%;
         max-width: 100%;
-        height: auto;
+        height: 180px;
         border-radius: 8px;
+        background: #f5f5f5 ${spinner} center / 50px no-repeat;
+        /* Draws the downloading picture outside its own box, leaving only the background. */
+        object-position: -10000px 0;
+    }
+
+    img[data-load-state='loaded'] {
+        width: auto;
+        height: auto;
+        background: none;
+        object-position: 50% 50%;
+        animation: ${fadeIn} 0.2s ease-out;
+    }
+
+    /* A broken-image icon tells a visitor nothing they can act on. */
+    img[data-load-state='error'] {
+        display: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        img {
+            background-image: ${spinnerStill};
+        }
+
+        img[data-load-state='loaded'] {
+            background-image: none;
+            animation: none;
+        }
     }
 
     /* Several images in one field arrive as one span, so the flex gap does not reach them. */
@@ -141,6 +196,36 @@ const ImagesContainer = styled.div`
         margin-top: 8px;
     }
 `;
+
+const markImage = (img, loaded) => {
+    img.dataset.loadState = loaded ? 'loaded' : 'error'; // eslint-disable-line no-param-reassign
+};
+
+/**
+ * Marks each `<img>` under `node` as `loaded` or `error` once it settles, for the CSS above.
+ * The markup is the server's, so React attaches no `onLoad` to it; `load` and `error` do not
+ * bubble, hence the capture phase. An image already settled - from the cache - is marked now.
+ */
+const markLoadState = node => {
+    if (!node) return;
+    node.querySelectorAll('img').forEach(img => {
+        if (img.complete) markImage(img, img.naturalWidth > 0);
+    });
+    const onSettle = event => {
+        if (event.target instanceof HTMLImageElement)
+            markImage(event.target, event.type === 'load');
+    };
+    node.addEventListener('load', onSettle, true);
+    node.addEventListener('error', onSettle, true);
+};
+
+const ImagesSection = ({ children }) => (
+    <ImagesContainer ref={markLoadState}>{children}</ImagesContainer>
+);
+
+ImagesSection.propTypes = {
+    children: PropTypes.node.isRequired,
+};
 
 const ActionButton = styled.button`
     cursor: pointer;
@@ -261,7 +346,7 @@ const SECTION_BY_TYPE = new Map([
 
 // In display order. A `labelled` section pairs each value with its field name.
 const SECTIONS = [
-    { key: 'images', Container: ImagesContainer, labelled: false },
+    { key: 'images', Container: ImagesSection, labelled: false },
     { key: 'details', Container: DetailsGrid, labelled: true },
     { key: 'actions', Container: CTAContainer, labelled: false },
 ];
