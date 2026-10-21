@@ -5,7 +5,7 @@ import pytest
 from markupsafe import Markup
 from platzky.shortcodes.shortcode import Shortcode, ShortcodeAttr, ShortcodeAttrs
 
-from goodmap.alt_template import compile_alt_template
+from goodmap.alt_template import DEFAULT_ALT_TEMPLATE, compile_alt_template
 from goodmap.formatter import prepare_pin
 
 test_place = {
@@ -326,7 +326,9 @@ def test_image_alt_defaults_to_the_template_and_an_items_own_alt_wins():
 
 def test_alt_default_is_not_given_to_a_type_without_alt():
     place = {**test_place, "website": {"type": "hyperlink", "value": "https://example.com"}}
-    value = prepare_pin(place, ["website"], [], alt_template=compile_alt_template(None))
+    value = prepare_pin(
+        place, ["website"], [], alt_template=compile_alt_template(DEFAULT_ALT_TEMPLATE)
+    )
     assert "alt" not in value["data"][0][1]
 
 
@@ -398,7 +400,7 @@ def test_alt_template_translates_only_the_fields_it_reads(monkeypatch):
 def test_image_alt_null_counts_as_absent():
     """Imported data writing ``"alt": null`` means "not given", not "decorative"."""
     place = _images({"url": "https://example.com/1.jpg", "alt": None})
-    template = compile_alt_template(None)
+    template = compile_alt_template(DEFAULT_ALT_TEMPLATE)
     items = prepare_pin(place, ["images"], [], alt_template=template)["data"][0][1]["items"]
     assert items[0]["alt"] == "LASSO"
 
@@ -412,7 +414,12 @@ def test_alt_template_is_not_rendered_for_a_pin_without_images(monkeypatch):
 
     monkeypatch.setattr("goodmap.formatter.render_alt", render_alt)
     place = {**test_place, "website": {"type": "hyperlink", "value": "https://example.com"}}
-    prepare_pin(place, ["website", "plain_text"], [], alt_template=compile_alt_template(None))
+    prepare_pin(
+        place,
+        ["website", "plain_text"],
+        [],
+        alt_template=compile_alt_template(DEFAULT_ALT_TEMPLATE),
+    )
     assert calls == []
 
 
@@ -428,7 +435,9 @@ def test_alt_template_is_rendered_once_per_pin(monkeypatch):
         **_images({"url": "https://example.com/1.jpg"}, {"url": "https://example.com/2.jpg"}),
         "more": {"type": "image", "items": [{"url": "https://example.com/3.jpg"}]},
     }
-    prepare_pin(place, ["images", "more"], [], alt_template=compile_alt_template(None))
+    prepare_pin(
+        place, ["images", "more"], [], alt_template=compile_alt_template(DEFAULT_ALT_TEMPLATE)
+    )
     assert len(calls) == 1
 
 
@@ -447,7 +456,7 @@ def test_plugin_field_keeps_its_own_rendering():
         ["promo_code"],
         [],
         shortcodes={"promo_code": _AltShortcode()},
-        alt_template=compile_alt_template(None),
+        alt_template=compile_alt_template(DEFAULT_ALT_TEMPLATE),
     )["data"][0][1]
     assert value["html"] == "<i>:X</i>"
     assert value["items"] == [{"code": "Y"}]

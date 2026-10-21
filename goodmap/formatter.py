@@ -5,13 +5,13 @@ from typing import Any
 
 from flask_babel import gettext, lazy_gettext
 
-from goodmap.alt_template import compile_alt_template, render_alt
+from goodmap.alt_template import DEFAULT_ALT_TEMPLATE, compile_alt_template, render_alt
 from goodmap.field_types import BUILTIN_FIELD_TYPES, ITEM_SEPARATORS
 
 logger = logging.getLogger(__name__)
 
 #: What a caller that passes no ``IMAGE_ALT_TEMPLATE`` gets: the place's name, as configured.
-_DEFAULT_ALT_TEMPLATE = compile_alt_template(None)
+_DEFAULT_ALT_TEMPLATE = compile_alt_template(DEFAULT_ALT_TEMPLATE)
 
 
 def safe_gettext(text):

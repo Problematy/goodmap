@@ -4,6 +4,7 @@ from unittest import mock
 import flask_babel
 import pytest
 from jinja2 import TemplateSyntaxError
+from pydantic import ValidationError
 
 from goodmap.api.core_api import get_default_issue_options, make_tuple_translation
 from goodmap.config import GoodmapConfig
@@ -1235,6 +1236,12 @@ def test_location_images_default_to_the_place_name():
     response = client.get("/api/location/11111111-1111-1111-1111-111111111111")
     assert response.json is not None
     assert 'alt="test"' in dict(response.json["data"])["images"]["html"]
+
+
+def test_empty_alt_template_fails_the_boot():
+    """Empty would mark every image without an alt decorative, not describe it."""
+    with pytest.raises(ValidationError, match="IMAGE_ALT_TEMPLATE"):
+        _app_with_images(IMAGE_ALT_TEMPLATE="")
 
 
 def test_unparseable_alt_template_fails_the_boot():

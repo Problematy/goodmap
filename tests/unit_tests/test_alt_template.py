@@ -3,7 +3,7 @@ import logging
 import pytest
 from jinja2 import TemplateSyntaxError
 
-from goodmap.alt_template import compile_alt_template, render_alt
+from goodmap.alt_template import DEFAULT_ALT_TEMPLATE, compile_alt_template, render_alt
 
 place = {
     "name": "Grunwaldzki",
@@ -14,7 +14,7 @@ place = {
 
 
 def test_default_describes_the_place_by_its_name():
-    assert render_alt(compile_alt_template(None), place) == "Grunwaldzki"
+    assert render_alt(compile_alt_template(DEFAULT_ALT_TEMPLATE), place) == "Grunwaldzki"
 
 
 @pytest.mark.parametrize(("is_free", "expected"), [("true", "free"), ("false", "paid")])

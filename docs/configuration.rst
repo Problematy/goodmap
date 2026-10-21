@@ -180,7 +180,8 @@ Basic keys
    language — ``is_free`` may read ``tak`` — so ``is_free == 'true'`` would hold in one
    language only. A field itself named ``raw`` takes the name over.
    A field the point lacks prints as nothing, and runs of whitespace are collapsed. Omit the
-   key and an image is described by the point's ``name``.
+   key and an image is described by the point's ``name``. An empty value is refused at
+   startup: it would mark every such image decorative, hiding it from screen readers.
 
    The template runs in Jinja's sandbox, so it can read the point's values and nothing
    behind them. One that does not parse stops the app at startup; one that fails for a

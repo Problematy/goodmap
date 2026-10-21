@@ -50,11 +50,12 @@ class AltTemplate:
     names: frozenset[str]
 
 
-def compile_alt_template(source: str | None) -> AltTemplate:
-    """Compile the operator's alt template, or the default when there is none.
+def compile_alt_template(source: str) -> AltTemplate:
+    """Compile an alt template.
 
     Args:
-        source: The ``IMAGE_ALT_TEMPLATE`` config value.
+        source: The template - the ``IMAGE_ALT_TEMPLATE`` config value, which defaults to
+            :data:`DEFAULT_ALT_TEMPLATE`.
 
     Returns:
         The compiled template.
@@ -62,7 +63,6 @@ def compile_alt_template(source: str | None) -> AltTemplate:
     Raises:
         jinja2.TemplateSyntaxError: If the template does not parse.
     """
-    source = source or DEFAULT_ALT_TEMPLATE
     names = meta.find_undeclared_variables(_environment.parse(source))
     return AltTemplate(_environment.from_string(source), frozenset(names))
 
