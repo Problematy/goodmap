@@ -9,7 +9,6 @@ import numpy
 import pysupercluster
 from flask import Blueprint, current_app, jsonify, make_response, request
 from flask_babel import gettext
-from jinja2 import Template
 from platzky import FeatureFlagSet
 from platzky.attachment import create_attachment
 from platzky.config import AttachmentConfig, LanguagesMapping
@@ -18,6 +17,7 @@ from spectree import Response, SpecTree
 from spectree.models import Tag
 from werkzeug.exceptions import HTTPException
 
+from goodmap.alt_template import AltTemplate
 from goodmap.api.api_models import (
     CategoriesFullResponse,
     ClusteredQueryParams,
@@ -206,7 +206,7 @@ def core_pages(
     feature_flags: FeatureFlagSet,
     shortcodes: dict[str, Shortcode],
     pin_marker_fields: PinMarkerFields,
-    alt_template: Template | None = None,
+    alt_template: AltTemplate | None = None,
 ) -> Blueprint:
     # Routes with translated responses (pin fields, schema, categories) are query_locale
     # routes: they follow the calling page's language, sent as ``?lang=``, since /api is

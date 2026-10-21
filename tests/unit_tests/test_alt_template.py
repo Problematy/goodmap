@@ -38,7 +38,7 @@ def test_template_text_can_be_translated(monkeypatch):
         return f"{text}-pl"
 
     template = compile_alt_template("{{ _('photo of') }} {{ name }}")
-    monkeypatch.setitem(template.environment.globals, "_", translate)
+    monkeypatch.setitem(template.template.environment.globals, "_", translate)
     assert render_alt(template, place) == "photo of-pl Grunwaldzki"
 
 

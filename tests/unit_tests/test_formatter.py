@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Sequence
 
 import pytest
@@ -242,8 +243,8 @@ def test_image_items_are_each_rendered_and_joined():
     value = prepare_pin(place, ["images"], [])["data"][0][1]
     assert value["type"] == "image"
     assert [item["html"] for item in value["items"]] == [
-        '<img src="https://example.com/1.jpg" alt="">',
-        '<img src="https://example.com/2.jpg" alt="">',
+        '<img src="https://example.com/1.jpg" alt="LASSO">',
+        '<img src="https://example.com/2.jpg" alt="LASSO">',
     ]
     assert value["html"] == "".join(item["html"] for item in value["items"])
 
@@ -251,7 +252,7 @@ def test_image_items_are_each_rendered_and_joined():
 def test_image_passes_width_and_height_through():
     place = _images({"url": "https://example.com/1.jpg", "width": 400, "height": 300})
     html = prepare_pin(place, ["images"], [])["data"][0][1]["html"]
-    assert html == '<img src="https://example.com/1.jpg" alt="" width="400" height="300">'
+    assert html == '<img src="https://example.com/1.jpg" alt="LASSO" width="400" height="300">'
 
 
 @pytest.mark.parametrize(
@@ -259,6 +260,7 @@ def test_image_passes_width_and_height_through():
     [
         {"url": "javascript:alert(1)"},
         {"url": "data:image/png;base64,AAAA"},
+        {"url": "http://example.com/1.jpg"},
         {"alt": "no url"},
         {"url": "https://example.com/1.jpg", "width": "wide"},
     ],
@@ -267,7 +269,32 @@ def test_refused_image_item_is_dropped(item):
     place = _images(item, {"url": "https://example.com/ok.jpg"})
     value = prepare_pin(place, ["images"], [])["data"][0][1]
     assert [i["url"] for i in value["items"]] == ["https://example.com/ok.jpg"]
-    assert value["html"] == '<img src="https://example.com/ok.jpg" alt="">'
+    assert value["html"] == '<img src="https://example.com/ok.jpg" alt="LASSO">'
+
+
+def test_image_on_a_site_path_is_accepted():
+    html = prepare_pin(_images({"url": "/static/1.jpg"}), ["images"], [])["data"][0][1]["html"]
+    assert html == '<img src="/static/1.jpg" alt="LASSO">'
+
+
+def test_image_item_that_is_not_an_object_is_dropped_with_a_warning(caplog):
+    place = _images("https://example.com/bare.jpg", {"url": "https://example.com/ok.jpg"})
+    with caplog.at_level(logging.WARNING):
+        value = prepare_pin(place, ["images"], [])["data"][0][1]
+    assert [i["url"] for i in value["items"]] == ["https://example.com/ok.jpg"]
+    assert "{'url': ...}" in caplog.text
+
+
+def test_hyperlink_items_are_separated():
+    place = {
+        **test_place,
+        "links": {
+            "type": "hyperlink",
+            "items": [{"value": "https://a.org"}, {"value": "https://b.org"}],
+        },
+    }
+    html = prepare_pin(place, ["links"], [])["data"][0][1]["html"]
+    assert "</a>, <a" in html
 
 
 def test_image_field_with_every_item_refused_is_left_out():
@@ -312,6 +339,50 @@ def test_alt_template_sees_translated_field_values(monkeypatch):
     place = _images({"url": "https://example.com/1.jpg"})
     items = prepare_pin(place, ["images"], [], alt_template=template)["data"][0][1]["items"]
     assert items[0]["alt"] == "container-pl shoes-pl"
+
+
+def test_alt_template_compares_against_raw_values(monkeypatch):
+    """A translated value differs per language; ``raw`` does not."""
+
+    def gettext(text: str) -> str:
+        return {"true": "tak"}.get(text, text)
+
+    monkeypatch.setattr("goodmap.formatter.gettext", gettext)
+    template = compile_alt_template(
+        "{{ 'free' if raw.is_free == 'true' else 'paid' }} {{ is_free }}"
+    )
+    place = {**_images({"url": "https://example.com/1.jpg"}), "is_free": "true"}
+    items = prepare_pin(place, ["images"], [], alt_template=template)["data"][0][1]["items"]
+    assert items[0]["alt"] == "free tak"
+
+
+def test_alt_template_empty_field_prints_nothing(monkeypatch):
+    """``gettext("")`` is the catalogue's header, which a screen reader would read out."""
+
+    def gettext(text: str) -> str:
+        return text or "HEADER"
+
+    monkeypatch.setattr("goodmap.formatter.gettext", gettext)
+    template = compile_alt_template("{{ name }} {{ remark }}")
+    place = {**_images({"url": "https://example.com/1.jpg"}), "remark": ""}
+    items = prepare_pin(place, ["images"], [], alt_template=template)["data"][0][1]["items"]
+    assert items[0]["alt"] == "LASSO"
+
+
+def test_alt_template_translates_only_the_fields_it_reads(monkeypatch):
+    translated: list[object] = []
+
+    def gettext(text: str) -> str:
+        translated.append(text)
+        return text
+
+    monkeypatch.setattr("goodmap.formatter.gettext", gettext)
+    place = _images({"url": "https://example.com/1.jpg"})
+    prepare_pin(place, [], [])  # nothing visible: only the alt could translate anything
+    translated.clear()
+    prepare_pin(place, ["images"], [], alt_template=compile_alt_template("{{ name }}"))
+    assert "random_string" not in translated
+    assert "LASSO" in translated
 
 
 def test_image_alt_null_counts_as_absent():

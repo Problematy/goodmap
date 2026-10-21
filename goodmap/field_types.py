@@ -11,10 +11,10 @@ declares, so any field can ask to be a ``hyperlink`` whatever it is called. That
 safe only because this catalogue is closed: an entry may name a type in here and nothing
 else, and so can never point itself at a plugin's renderer.
 
-The catalogue is goodmap's own types plus an allowlist of platzky's built-ins - ``image``,
-so a place can carry photos. An allowlist rather than the whole set, because the entries
-naming these types are data nobody vouched for, and platzky's ``html`` would hand them raw
-markup in the popup.
+The catalogue is goodmap's own types plus one of platzky's built-ins - ``image``, so a
+place can carry photos, restricted to ``https``. One rather than the whole set, because the
+entries naming these types are data nobody vouched for, and platzky's ``html`` would hand
+them raw markup in the popup.
 
 A field may hold several values of its type under ``items`` -
 ``{"type": "image", "items": [{"url": …}, …]}`` - each rendered on its own; see
@@ -26,8 +26,9 @@ from urllib.parse import urlparse
 
 from markupsafe import Markup, escape
 from platzky.shortcodes import Shortcode, ShortcodeAttr, ShortcodeAttrs, UrlNotPermitted
-from platzky.shortcodes.builtins import get_builtin_shortcodes
+from platzky.shortcodes.image import ImageShortcode
 from platzky.shortcodes.link import LinkShortcode
+from platzky.shortcodes.urls import UrlPolicy
 
 #: Schemes that navigate the browser somewhere, and so are worth a new tab.
 _NEW_TAB_SCHEMES = frozenset({"http", "https"})
@@ -101,14 +102,43 @@ class CTAFieldShortcode(HyperlinkFieldShortcode):
     description = "A marker field holding a URL, shown as a call-to-action button."
 
 
-#: platzky built-ins a marker field may name as its ``type``. An allowlist, not the whole
-#: set: ``html`` would let an entry nobody vouched for emit raw markup into the popup.
-_PLATZKY_FIELD_TYPES = ("image",)
+#: Stricter than platzky's image policy, which also takes plain ``http``.
+_MARKER_IMAGE_URL_POLICY = UrlPolicy(frozenset({"https"}))
 
-_platzky_shortcodes = get_builtin_shortcodes()
 
-#: Field ``type`` -> the shortcode rendering it, keyed by the name written in the data.
+class ImageFieldShortcode(ImageShortcode):
+    """platzky's ``[image]``, held to ``https`` or a path on the site itself.
+
+    A marker image comes from data nobody vouched for and is fetched the moment its popup
+    opens. Over plain ``http`` that fetch is readable and alterable on the way, and an https
+    deployment would show a mixed-content warning for it.
+    """
+
+    def render(self, attrs: ShortcodeAttrs, content: str, children: Sequence[Markup]) -> str:
+        """Refuse a URL the marker policy does not permit, then render as ``[image]``.
+
+        Args:
+            attrs: The item's stored keys, ``url`` among them.
+            content: Unused - image is a void element.
+            children: Unused - image is a void element.
+
+        Returns:
+            An ``<img>`` tag.
+
+        Raises:
+            UrlNotPermitted: If the URL is not ``https`` or a path on the site.
+        """
+        _MARKER_IMAGE_URL_POLICY.check(attrs.url)
+        return super().render(attrs, content, children)
+
+
+#: Field ``type`` -> the shortcode rendering it, keyed by the name written in the data. Of
+#: platzky's built-ins only ``image`` is here: ``html`` would let an entry nobody vouched
+#: for emit raw markup into the popup.
 BUILTIN_FIELD_TYPES: dict[str, Shortcode] = {
-    **{name: _platzky_shortcodes[name] for name in _PLATZKY_FIELD_TYPES},
-    **{s.name: s for s in (HyperlinkFieldShortcode(), CTAFieldShortcode())},
+    s.name: s for s in (ImageFieldShortcode(), HyperlinkFieldShortcode(), CTAFieldShortcode())
 }
+
+#: Field ``type`` -> what goes between its ``items`` in the field's ``html``. Images and CTAs
+#: are laid out by the popup's CSS; links share a line in the details, so need a separator.
+ITEM_SEPARATORS = {"hyperlink": ", "}

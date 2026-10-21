@@ -1,15 +1,17 @@
 """Formatters for translating and preparing location data for display."""
 
 import logging
-from functools import cache
 from typing import Any
 
 from flask_babel import gettext, lazy_gettext
 
-from goodmap.alt_template import render_alt
-from goodmap.field_types import BUILTIN_FIELD_TYPES
+from goodmap.alt_template import compile_alt_template, render_alt
+from goodmap.field_types import BUILTIN_FIELD_TYPES, ITEM_SEPARATORS
 
 logger = logging.getLogger(__name__)
+
+#: What a caller that passes no ``IMAGE_ALT_TEMPLATE`` gets: the place's name, as configured.
+_DEFAULT_ALT_TEMPLATE = compile_alt_template(None)
 
 
 def safe_gettext(text):
@@ -17,7 +19,7 @@ def safe_gettext(text):
 
     A dict, a number or a position has nothing for ``gettext`` to look up, so it comes back
     as it is - which is what lets one helper translate popup values and alt template
-    context alike.
+    context alike. Nor does an empty string: ``gettext("")`` is the catalogue's header.
 
     Args:
         text: A str, a list, or any other field value.
@@ -26,9 +28,9 @@ def safe_gettext(text):
         The translation, in the same shape as the input.
     """
     if isinstance(text, str):
-        return gettext(text)
+        return gettext(text) if text else text
     if isinstance(text, list):
-        return [safe_gettext(item) if isinstance(item, str) else item for item in text]
+        return [safe_gettext(item) for item in text]
     return text
 
 
@@ -87,8 +89,9 @@ def _rendered_builtin(shortcode, value, defaults):
 
     * ``items``: a field holding several values lists them there, each rendered on its own
       and returned with its own ``html`` - what a gallery plugin would lay out - while the
-      field's ``html`` joins them for the popup. An item the shortcode refuses renders to
-      nothing and is dropped from both.
+      field's ``html`` joins them for the popup, with the type's
+      :data:`~goodmap.field_types.ITEM_SEPARATORS` entry between. An item the shortcode
+      refuses renders to nothing and is dropped from both, as is one that is not an object.
     * defaults derived from the place, such as an image's ``alt``. An entry's own value wins;
       a ``null`` counts as absent, so imported data with ``"alt": null`` is still described
       rather than marked decorative.
@@ -109,9 +112,16 @@ def _rendered_builtin(shortcode, value, defaults):
 
     if not isinstance(value.get("items"), list):
         return rendered(value)
-    items = [rendered(item) for item in value["items"] if isinstance(item, dict)]
+    entries = value["items"]
+    if not all(isinstance(item, dict) for item in entries):
+        logger.warning(
+            "Dropping %s items that are not objects; write each as e.g. {%r: ...}.",
+            shortcode.name,
+            next(iter(shortcode.attributes)).name,
+        )
+    items = [rendered(item) for item in entries if isinstance(item, dict)]
     items = [{k: v for k, v in item.items() if k != "type"} for item in items if item["html"]]
-    html = "".join(item["html"] for item in items)
+    html = ITEM_SEPARATORS.get(shortcode.name, "").join(item["html"] for item in items)
     return {**value, "items": items, "type": shortcode.name, "html": html}
 
 
@@ -149,23 +159,23 @@ def prepare_pin(
             by name; anything else may still name a built-in ``type`` in its own data (see
             :mod:`goodmap.field_types`). Either way one shortcode renders it.
         alt_template: The compiled ``IMAGE_ALT_TEMPLATE`` (see :mod:`goodmap.alt_template`),
-            describing the place to any image that does not describe itself.
+            describing the place to any image that does not describe itself. Omitted, the
+            place's name does, as when the key is not configured.
 
     Returns:
         Title, subtitle, position, metadata, and ``data`` as ``[label, value]`` pairs.
     """
     plugins = shortcodes or {}
-
-    @cache
-    def describe(template):
-        # Rendered once per pin, and only once an image asks for it.
-        return render_alt(template, {field: safe_gettext(v) for field, v in place.items()})
+    alt = None
 
     def defaults(shortcode):
-        if alt_template is None:
+        # Rendered once per pin, and only once an image asks for it.
+        nonlocal alt
+        if "alt" not in {attribute.name for attribute in shortcode.attributes}:
             return {}
-        declared = {attribute.name for attribute in shortcode.attributes}
-        return {"alt": describe(alt_template)} if "alt" in declared else {}
+        if alt is None:
+            alt = render_alt(alt_template or _DEFAULT_ALT_TEMPLATE, place, safe_gettext)
+        return {"alt": alt}
 
     data = []
     for field in visible_fields:

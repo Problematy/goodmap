@@ -7,16 +7,19 @@ and every image without its own ``alt`` gets that template rendered against its 
 The template is Jinja, which the operator already knows and Flask already ships, run in the
 immutable sandbox so a template can reach the place's values and nothing behind them. It
 is compiled once at startup - a syntax error fails the boot, not every popup - and rendered
-per pin with the place's fields, already translated, as its context.
+per pin with the place's fields, already translated, as its context. A translated value is
+the wrong thing to compare against - ``is_free`` reads ``tak`` in Polish - so the stored
+values are there too, untranslated, as ``raw``.
 """
 
 import logging
 import re
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass
 from typing import Any
 
 from flask_babel import gettext
-from jinja2 import Template
+from jinja2 import Template, meta
 from jinja2.sandbox import ImmutableSandboxedEnvironment
 
 logger = logging.getLogger(__name__)
@@ -39,7 +42,15 @@ _environment.globals["_"] = gettext
 _WHITESPACE = re.compile(r"\s+")
 
 
-def compile_alt_template(source: str | None) -> Template:
+@dataclass(frozen=True)
+class AltTemplate:
+    """A compiled alt template, and the names it reads, so only those need translating."""
+
+    template: Template
+    names: frozenset[str]
+
+
+def compile_alt_template(source: str | None) -> AltTemplate:
     """Compile the operator's alt template, or the default when there is none.
 
     Args:
@@ -51,10 +62,18 @@ def compile_alt_template(source: str | None) -> Template:
     Raises:
         jinja2.TemplateSyntaxError: If the template does not parse.
     """
-    return _environment.from_string(source or DEFAULT_ALT_TEMPLATE)
+    source = source or DEFAULT_ALT_TEMPLATE
+    names = meta.find_undeclared_variables(_environment.parse(source))
+    return AltTemplate(_environment.from_string(source), frozenset(names))
 
 
-def render_alt(template: Template, context: Mapping[str, Any]) -> str:
+def _untranslated(value: Any) -> Any:
+    return value
+
+
+def render_alt(
+    alt: AltTemplate, place: Mapping[str, Any], translate: Callable[[Any], Any] = _untranslated
+) -> str:
     """Render the alt text for one place.
 
     A template that parsed can still fail on a particular place - the sandbox refusing an
@@ -63,15 +82,20 @@ def render_alt(template: Template, context: Mapping[str, Any]) -> str:
     name.
 
     Args:
-        template: From :func:`compile_alt_template`.
-        context: The place's fields, already translated.
+        alt: From :func:`compile_alt_template`.
+        place: The place's fields, as stored.
+        translate: Applied to each field the template reads; ``raw`` is left as stored.
 
     Returns:
         The alt text, with whitespace runs collapsed.
     """
+    # A field that is itself called ``raw`` keeps its name; the stored values are then out
+    # of the template's reach, which beats renaming a field the operator chose.
+    context = {"raw": place}
+    context.update({name: translate(place[name]) for name in alt.names if name in place})
     try:
-        rendered = template.render(context)
+        rendered = alt.template.render(context)
     except Exception:  # whatever the template raised, the popup still opens
         logger.warning("IMAGE_ALT_TEMPLATE failed for a location; using its name.", exc_info=True)
-        rendered = str(context.get("name", ""))
+        rendered = str(place.get("name", ""))
     return _WHITESPACE.sub(" ", rendered).strip()

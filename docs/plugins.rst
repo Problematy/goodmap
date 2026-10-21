@@ -208,21 +208,24 @@ That lookup is safe only because the catalogue is closed: an entry may name a ty
 and nothing else, so it can never point its own field at a plugin's renderer. ``prepare_pin``
 consults it only where no plugin shortcode claimed the field by name.
 
-Alongside its own, goodmap offers an **allowlist** of platzky's built-in shortcodes —
-currently ``image`` — so a point can carry photos. It is an allowlist rather than the whole
-set because the entries naming these types are data nobody vouched for: a suggested point or
-an imported dataset naming platzky's ``html`` would put raw markup into the popup. Adding
-another, ``figure`` say, is one word in ``_PLATZKY_FIELD_TYPES``.
+Alongside its own, goodmap offers **one** of platzky's built-in shortcodes — ``image``, as
+``ImageFieldShortcode`` — so a point can carry photos. Not the whole set, because the entries
+naming these types are data nobody vouched for: a suggested point or an imported dataset
+naming platzky's ``html`` would put raw markup into the popup. Offering another, ``figure``
+say, means adding it to ``BUILTIN_FIELD_TYPES`` under the same URL policy as ``image``.
 
 A field naming one of these types may hold several values under ``items``. Each is rendered
 on its own and returned with its own ``html`` — what a gallery field plugin on ``image`` would
-lay out — while the field's ``html`` joins them for the popup. An item the shortcode refuses
-is dropped from both, and a field left with nothing to show is left out of the popup
+lay out — while the field's ``html`` joins them for the popup (``hyperlink`` items with
+``", "`` between, the rest with nothing, the popup's CSS spacing them). An item the shortcode
+refuses is dropped from both, as is one that is not an object — a bare URL string, say,
+which logs a warning — and a field left with nothing to show is left out of the popup
 altogether. ``items`` is for goodmap's own types only: a field a plugin's shortcode is bound
 to keeps exactly the rendering that shortcode gives it.
 
-An image URL must be ``http``, ``https`` or a path on the site itself (``/static/…``) —
-platzky's image policy; ``javascript:`` and ``data:`` are refused:
+An image URL must be ``https`` or a path on the site itself (``/static/…``) — stricter than
+platzky's image policy, which also takes plain ``http``, since a marker image is fetched by
+every visitor who opens the point; ``http:``, ``javascript:`` and ``data:`` are refused:
 
 .. code-block:: json
 

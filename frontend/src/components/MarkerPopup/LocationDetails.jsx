@@ -110,6 +110,11 @@ const CTAContainer = styled.div`
         outline: 2px solid ${() => globalThis.SECONDARY_COLOR || 'black'};
         outline-offset: 2px;
     }
+
+    /* Several CTAs in one field arrive as one span, so the flex gap does not reach them. */
+    a + a {
+        margin-top: 8px;
+    }
 `;
 
 // Images the server rendered (`type: "image"`, platzky's [image] shortcode) arrive as plain
@@ -286,16 +291,20 @@ const LocationDetails = ({ place }) => (
             if (entries.length === 0) return null;
             return (
                 <Container key={key}>
-                    {entries.map(([category, value]) =>
+                    {/* Keyed by position: labels are translated, so two fields may share one.
+                        The server's order is fixed per place, so the position is stable. */}
+                    {entries.map(([category, value], index) =>
                         labelled ? (
-                            <React.Fragment key={category}>
+                            // eslint-disable-next-line react/no-array-index-key
+                            <React.Fragment key={index}>
                                 <DetailLabel>{category}</DetailLabel>
                                 <DetailValue>
                                     <LocationDetailsValue valueToDisplay={value} />
                                 </DetailValue>
                             </React.Fragment>
                         ) : (
-                            <LocationDetailsValue key={category} valueToDisplay={value} />
+                            // eslint-disable-next-line react/no-array-index-key
+                            <LocationDetailsValue key={index} valueToDisplay={value} />
                         ),
                     )}
                 </Container>
