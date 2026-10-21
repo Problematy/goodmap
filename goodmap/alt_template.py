@@ -27,20 +27,25 @@ logger = logging.getLogger(__name__)
 DEFAULT_ALT_TEMPLATE = "{{ name }}"
 
 
-# No autoescape: the result is an attribute value, and the image shortcode escapes it
-# where it interpolates it. Escaping here as well would show ``&amp;`` in the alt.
-# ``finalize`` prints None as nothing: ``model_dump`` keeps an unset optional field as None,
-# and a screen reader would otherwise read out "None".
 def _finalize(value: object) -> object:
+    """Print None as nothing.
+
+    ``model_dump`` keeps an unset optional field as None, and a screen reader would
+    otherwise read out "None".
+    """
     return "" if value is None else value
 
 
+# No autoescape: the result is an attribute value, and the image shortcode escapes it
+# where it interpolates it. Escaping here as well would show ``&amp;`` in the alt.
 _environment = ImmutableSandboxedEnvironment(autoescape=False, finalize=_finalize)
 
 
 def _translate(*args: Any, **kwargs: Any) -> str:
-    # ``gettext``'s own signature, formatting arguments included. Looked up per call rather
-    # than bound once, so the ``gettext`` in effect is the one used.
+    """The template's ``_()``: ``gettext``, formatting arguments included.
+
+    Looked up per call rather than bound once, so the ``gettext`` in effect is the one used.
+    """
     return gettext(*args, **kwargs)
 
 
@@ -50,6 +55,7 @@ _WHITESPACE = re.compile(r"\s+")
 
 
 def _untranslated(value: Any) -> Any:
+    """Leave a field value as stored: :meth:`AltTemplate.render`'s default ``translate``."""
     return value
 
 
