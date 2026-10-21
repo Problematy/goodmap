@@ -19,6 +19,7 @@ import PropTypes from 'prop-types';
  * cannot replace it — the server always emits `html` for a type it renders, so there is
  * always a seed beneath the wrapper.
  */
+// eslint-disable-next-line react/no-danger -- trusted server-rendered markup, see above
 const ServerHtmlField = ({ input }) => <span dangerouslySetInnerHTML={{ __html: input.html }} />;
 
 ServerHtmlField.propTypes = {
