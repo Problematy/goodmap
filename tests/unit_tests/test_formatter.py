@@ -5,7 +5,7 @@ import pytest
 from markupsafe import Markup
 from platzky.shortcodes.shortcode import Shortcode, ShortcodeAttr, ShortcodeAttrs
 
-from goodmap.alt_template import DEFAULT_ALT_TEMPLATE, compile_alt_template
+from goodmap.alt_template import DEFAULT_ALT_TEMPLATE, AltTemplate
 from goodmap.formatter import prepare_pin
 
 test_place = {
@@ -319,16 +319,14 @@ def test_image_alt_defaults_to_the_template_and_an_items_own_alt_wins():
         {"url": "https://example.com/2.jpg", "alt": "Own"},
         {"url": "https://example.com/3.jpg", "alt": ""},
     )
-    template = compile_alt_template("{{ type_of_place }} {{ name }}")
+    template = AltTemplate("{{ type_of_place }} {{ name }}")
     items = prepare_pin(place, ["images"], [], alt_template=template)["data"][0][1]["items"]
     assert [item["alt"] for item in items] == ["container LASSO", "Own", ""]
 
 
 def test_alt_default_is_not_given_to_a_type_without_alt():
     place = {**test_place, "website": {"type": "hyperlink", "value": "https://example.com"}}
-    value = prepare_pin(
-        place, ["website"], [], alt_template=compile_alt_template(DEFAULT_ALT_TEMPLATE)
-    )
+    value = prepare_pin(place, ["website"], [], alt_template=AltTemplate(DEFAULT_ALT_TEMPLATE))
     assert "alt" not in value["data"][0][1]
 
 
@@ -347,7 +345,7 @@ def test_alt_template_sees_translated_field_values(monkeypatch):
         return f"{text}-pl"
 
     monkeypatch.setattr("goodmap.formatter.gettext", translate)
-    template = compile_alt_template("{{ type_of_place }} {{ types | join(',') }}")
+    template = AltTemplate("{{ type_of_place }} {{ types | join(',') }}")
     place = _images({"url": "https://example.com/1.jpg"})
     items = prepare_pin(place, ["images"], [], alt_template=template)["data"][0][1]["items"]
     assert items[0]["alt"] == "container-pl shoes-pl"
@@ -360,9 +358,7 @@ def test_alt_template_compares_against_raw_values(monkeypatch):
         return {"true": "tak"}.get(text, text)
 
     monkeypatch.setattr("goodmap.formatter.gettext", gettext)
-    template = compile_alt_template(
-        "{{ 'free' if raw.is_free == 'true' else 'paid' }} {{ is_free }}"
-    )
+    template = AltTemplate("{{ 'free' if raw.is_free == 'true' else 'paid' }} {{ is_free }}")
     place = {**_images({"url": "https://example.com/1.jpg"}), "is_free": "true"}
     items = prepare_pin(place, ["images"], [], alt_template=template)["data"][0][1]["items"]
     assert items[0]["alt"] == "free tak"
@@ -375,7 +371,7 @@ def test_alt_template_empty_field_prints_nothing(monkeypatch):
         return text or "HEADER"
 
     monkeypatch.setattr("goodmap.formatter.gettext", gettext)
-    template = compile_alt_template("{{ name }} {{ remark }}")
+    template = AltTemplate("{{ name }} {{ remark }}")
     place = {**_images({"url": "https://example.com/1.jpg"}), "remark": ""}
     items = prepare_pin(place, ["images"], [], alt_template=template)["data"][0][1]["items"]
     assert items[0]["alt"] == "LASSO"
@@ -392,7 +388,7 @@ def test_alt_template_translates_only_the_fields_it_reads(monkeypatch):
     place = _images({"url": "https://example.com/1.jpg"})
     prepare_pin(place, [], [])  # nothing visible: only the alt could translate anything
     translated.clear()
-    prepare_pin(place, ["images"], [], alt_template=compile_alt_template("{{ name }}"))
+    prepare_pin(place, ["images"], [], alt_template=AltTemplate("{{ name }}"))
     assert "random_string" not in translated
     assert "LASSO" in translated
 
@@ -400,7 +396,7 @@ def test_alt_template_translates_only_the_fields_it_reads(monkeypatch):
 def test_image_alt_null_counts_as_absent():
     """Imported data writing ``"alt": null`` means "not given", not "decorative"."""
     place = _images({"url": "https://example.com/1.jpg", "alt": None})
-    template = compile_alt_template(DEFAULT_ALT_TEMPLATE)
+    template = AltTemplate(DEFAULT_ALT_TEMPLATE)
     items = prepare_pin(place, ["images"], [], alt_template=template)["data"][0][1]["items"]
     assert items[0]["alt"] == "LASSO"
 
@@ -408,17 +404,17 @@ def test_image_alt_null_counts_as_absent():
 def test_alt_template_is_not_rendered_for_a_pin_without_images(monkeypatch):
     calls: list[tuple[object, ...]] = []
 
-    def render_alt(*args: object) -> str:
+    def render(*args: object) -> str:
         calls.append(args)
         return ""
 
-    monkeypatch.setattr("goodmap.formatter.render_alt", render_alt)
+    monkeypatch.setattr(AltTemplate, "render", render)
     place = {**test_place, "website": {"type": "hyperlink", "value": "https://example.com"}}
     prepare_pin(
         place,
         ["website", "plain_text"],
         [],
-        alt_template=compile_alt_template(DEFAULT_ALT_TEMPLATE),
+        alt_template=AltTemplate(DEFAULT_ALT_TEMPLATE),
     )
     assert calls == []
 
@@ -426,18 +422,16 @@ def test_alt_template_is_not_rendered_for_a_pin_without_images(monkeypatch):
 def test_alt_template_is_rendered_once_per_pin(monkeypatch):
     calls: list[tuple[object, ...]] = []
 
-    def render_alt(*args: object) -> str:
+    def render(*args: object) -> str:
         calls.append(args)
         return "x"
 
-    monkeypatch.setattr("goodmap.formatter.render_alt", render_alt)
+    monkeypatch.setattr(AltTemplate, "render", render)
     place = {
         **_images({"url": "https://example.com/1.jpg"}, {"url": "https://example.com/2.jpg"}),
         "more": {"type": "image", "items": [{"url": "https://example.com/3.jpg"}]},
     }
-    prepare_pin(
-        place, ["images", "more"], [], alt_template=compile_alt_template(DEFAULT_ALT_TEMPLATE)
-    )
+    prepare_pin(place, ["images", "more"], [], alt_template=AltTemplate(DEFAULT_ALT_TEMPLATE))
     assert len(calls) == 1
 
 
@@ -456,7 +450,7 @@ def test_plugin_field_keeps_its_own_rendering():
         ["promo_code"],
         [],
         shortcodes={"promo_code": _AltShortcode()},
-        alt_template=compile_alt_template(DEFAULT_ALT_TEMPLATE),
+        alt_template=AltTemplate(DEFAULT_ALT_TEMPLATE),
     )["data"][0][1]
     assert value["html"] == "<i>:X</i>"
     assert value["items"] == [{"code": "Y"}]

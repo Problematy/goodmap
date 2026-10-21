@@ -15,11 +15,10 @@ values are there too, untranslated, as ``raw``.
 import logging
 import re
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass
 from typing import Any
 
 from flask_babel import gettext
-from jinja2 import Template, meta
+from jinja2 import meta
 from jinja2.sandbox import ImmutableSandboxedEnvironment
 
 logger = logging.getLogger(__name__)
@@ -37,65 +36,66 @@ def _finalize(value: object) -> object:
 
 
 _environment = ImmutableSandboxedEnvironment(autoescape=False, finalize=_finalize)
-_environment.globals["_"] = gettext
+
+
+def _translate(*args: Any, **kwargs: Any) -> str:
+    # ``gettext``'s own signature, formatting arguments included. Looked up per call rather
+    # than bound once, so the ``gettext`` in effect is the one used.
+    return gettext(*args, **kwargs)
+
+
+_environment.globals["_"] = _translate
 
 _WHITESPACE = re.compile(r"\s+")
-
-
-@dataclass(frozen=True)
-class AltTemplate:
-    """A compiled alt template, and the names it reads, so only those need translating."""
-
-    template: Template
-    names: frozenset[str]
-
-
-def compile_alt_template(source: str) -> AltTemplate:
-    """Compile an alt template.
-
-    Args:
-        source: The template - the ``IMAGE_ALT_TEMPLATE`` config value, which defaults to
-            :data:`DEFAULT_ALT_TEMPLATE`.
-
-    Returns:
-        The compiled template.
-
-    Raises:
-        jinja2.TemplateSyntaxError: If the template does not parse.
-    """
-    names = meta.find_undeclared_variables(_environment.parse(source))
-    return AltTemplate(_environment.from_string(source), frozenset(names))
 
 
 def _untranslated(value: Any) -> Any:
     return value
 
 
-def render_alt(
-    alt: AltTemplate, place: Mapping[str, Any], translate: Callable[[Any], Any] = _untranslated
-) -> str:
-    """Render the alt text for one place.
+class AltTemplate:
+    """A compiled alt template, which renders the alt text for one place at a time."""
 
-    A template that parsed can still fail on a particular place - the sandbox refusing an
-    attribute, a filter given the wrong type, a division by a field that is zero - and a
-    popup is not worth losing over its alt text, so any failure falls back to the place's
-    name.
+    def __init__(self, source: str) -> None:
+        """Compile the template.
 
-    Args:
-        alt: From :func:`compile_alt_template`.
-        place: The place's fields, as stored.
-        translate: Applied to each field the template reads; ``raw`` is left as stored.
+        Args:
+            source: The template - the ``IMAGE_ALT_TEMPLATE`` config value, which defaults to
+                :data:`DEFAULT_ALT_TEMPLATE`.
 
-    Returns:
-        The alt text, with whitespace runs collapsed.
-    """
-    # A field that is itself called ``raw`` keeps its name; the stored values are then out
-    # of the template's reach, which beats renaming a field the operator chose.
-    context = {"raw": place}
-    context.update({name: translate(place[name]) for name in alt.names if name in place})
-    try:
-        rendered = alt.template.render(context)
-    except Exception:  # whatever the template raised, the popup still opens
-        logger.warning("IMAGE_ALT_TEMPLATE failed for a location; using its name.", exc_info=True)
-        rendered = str(place.get("name", ""))
-    return _WHITESPACE.sub(" ", rendered).strip()
+        Raises:
+            jinja2.TemplateSyntaxError: If the template does not parse.
+        """
+        self._template = _environment.from_string(source)
+        # The names it reads, so only those of a place's fields need translating.
+        self._names = frozenset(meta.find_undeclared_variables(_environment.parse(source)))
+
+    def render(
+        self, place: Mapping[str, Any], translate: Callable[[Any], Any] = _untranslated
+    ) -> str:
+        """Render the alt text for one place.
+
+        A template that parsed can still fail on a particular place - the sandbox refusing
+        an attribute, a filter given the wrong type, a division by a field that is zero -
+        and a popup is not worth losing over its alt text, so any failure falls back to the
+        place's name.
+
+        Args:
+            place: The place's fields, as stored.
+            translate: Applied to each field the template reads; ``raw`` is left as stored.
+
+        Returns:
+            The alt text, with whitespace runs collapsed.
+        """
+        # A field that is itself called ``raw`` keeps its name; the stored values are then
+        # out of the template's reach, which beats renaming a field the operator chose.
+        context = {"raw": place}
+        context.update({name: translate(place[name]) for name in self._names if name in place})
+        try:
+            rendered = self._template.render(context)
+        except Exception:  # whatever the template raised, the popup still opens
+            logger.warning(
+                "IMAGE_ALT_TEMPLATE failed for a location; using its name.", exc_info=True
+            )
+            rendered = str(place.get("name", ""))
+        return _WHITESPACE.sub(" ", rendered).strip()

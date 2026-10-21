@@ -5,13 +5,13 @@ from typing import Any
 
 from flask_babel import gettext, lazy_gettext
 
-from goodmap.alt_template import DEFAULT_ALT_TEMPLATE, compile_alt_template, render_alt
+from goodmap.alt_template import DEFAULT_ALT_TEMPLATE, AltTemplate
 from goodmap.field_types import BUILTIN_FIELD_TYPES, ITEM_SEPARATORS
 
 logger = logging.getLogger(__name__)
 
 #: What a caller that passes no ``IMAGE_ALT_TEMPLATE`` gets: the place's name, as configured.
-_DEFAULT_ALT_TEMPLATE = compile_alt_template(DEFAULT_ALT_TEMPLATE)
+_DEFAULT_ALT_TEMPLATE = AltTemplate(DEFAULT_ALT_TEMPLATE)
 
 
 def safe_gettext(text):
@@ -176,7 +176,7 @@ def prepare_pin(
         if "alt" not in {attribute.name for attribute in shortcode.attributes}:
             return {}
         if alt is None:
-            alt = render_alt(alt_template or _DEFAULT_ALT_TEMPLATE, place, safe_gettext)
+            alt = (alt_template or _DEFAULT_ALT_TEMPLATE).render(place, safe_gettext)
         return {"alt": alt}
 
     data = []
