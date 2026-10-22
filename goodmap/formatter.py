@@ -106,17 +106,16 @@ class PinFormatter:
         Returns:
             Title, subtitle, position, metadata, and ``data`` as ``[label, value]`` pairs.
         """
-        entries = (self._entry(place, field) for field in self._visible_fields if field in place)
         return {
             "title": place["name"],
             "subtitle": lazy_gettext(place["type_of_place"]),  # TODO should not be obligatory
             "position": place["position"],
-            "metadata": {
-                gettext(field): safe_gettext(place[field])
-                for field in self._meta_fields
-                if field in place
-            },
-            "data": [entry for entry in entries if entry is not None],
+            # Machine data for the frontend (e.g. ``uuid`` for share links), read by its stored
+            # key, so it is passed on untranslated.
+            "metadata": {field: place[field] for field in self._meta_fields if field in place},
+            "data": [
+                entry for field in self._visible_fields if (entry := self._entry(place, field))
+            ],
         }
 
     def _entry(self, place, field):
@@ -127,8 +126,10 @@ class PinFormatter:
             field: The field's name.
 
         Returns:
-            The pair, or None when the field has nothing to show.
+            The pair, or None when the place lacks the field or it has nothing to show.
         """
+        if field not in place:
+            return None
         value = safe_gettext(place[field])
         if field in self._plugin_shortcodes:
             value = _rendered_field(self._plugin_shortcodes[field], value)

@@ -594,7 +594,8 @@ def test_get_location(test_app):
             ["test_category-translated", ["test-translated"]],
             ["type_of_place-translated", "test-place-translated"],
         ],
-        "metadata": {"uuid-translated": "11111111-1111-1111-1111-111111111111-translated"},
+        # Machine data, read by its stored key: never translated.
+        "metadata": {"uuid": "11111111-1111-1111-1111-111111111111"},
         "position": [50.0, 50.0],
         "subtitle": "test-place-translated",
         "title": "test",
