@@ -143,19 +143,14 @@ class PinFormatter:
     def _rendered_builtin(self, place, shortcode, value):
         """Build the payload for a field naming one of goodmap's own types.
 
-        Two things only goodmap's own types get, because goodmap knows what their rendering
-        means - a plugin's field keeps exactly the rendering its shortcode gives it:
+        Only goodmap's own types get these, since goodmap knows what their rendering means:
 
-        * ``items``: a field of a :data:`~goodmap.field_types.MULTI_VALUE_TYPES` type - an
-          image field - holding several values lists them there. Each is rendered on its own
-          and the renderings joined into the field's ``html``; the items themselves go back
-          as data, without ``html``. An item the shortcode refuses renders to nothing and is
-          dropped, as is one that is not an object. Any other type with ``items`` renders
-          nothing, with a warning. A gallery wanting its own layout binds its own shortcode
-          to the field, or the field names the gallery's type instead.
+        * ``items``, for a :data:`~goodmap.field_types.MULTI_VALUE_TYPES` field: each item
+          is rendered on its own, the renderings joined into the field's ``html``, and the
+          items go back as data. An item that renders nothing, or is not an object, is
+          dropped; any other type with ``items`` renders nothing, with a warning.
         * an ``alt`` from :attr:`_alt_template`, for a type that declares one. An entry's own
-          value wins; a ``null`` counts as absent, so imported data with ``"alt": null`` is
-          still described rather than marked decorative.
+          value wins; ``null`` counts as absent.
 
         Args:
             place: The location's data, which the alt template describes.
