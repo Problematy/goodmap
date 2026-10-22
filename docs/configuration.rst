@@ -171,14 +171,14 @@ Basic keys
    .. code-block:: yaml
 
       IMAGE_ALT_TEMPLATE: >-
-        {{ _('photo of') }} {{ type_of_place }},
-        {{ _('free') if raw.is_free == 'true' else _('paid') }},
-        {{ amenities | join(', ') }}
+        {{ _('photo of') }} {{ _(type_of_place) }},
+        {{ _('free') if is_free == 'true' else _('paid') }},
+        {{ _(amenities) | join(', ') }}
 
-   Field values arrive already translated, and ``_()`` translates the template's own text.
-   Compare against ``raw``, the point's fields as stored: a translated value differs per
-   language — ``is_free`` may read ``tak`` — so ``is_free == 'true'`` would hold in one
-   language only. A field itself named ``raw`` takes the name over.
+   The template sees the point's fields as stored, so a comparison like
+   ``is_free == 'true'`` holds in every language. ``_()`` translates whatever it wraps: the
+   template's own text, a field's value, or a list of them. A field printed without it stays
+   as stored.
    A field the point lacks prints as nothing, and runs of whitespace are collapsed. Omit the
    key and an image is described by the point's ``name``. An empty value is refused at
    startup: it would mark every such image decorative, hiding it from screen readers.

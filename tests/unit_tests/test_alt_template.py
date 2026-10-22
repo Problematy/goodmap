@@ -35,7 +35,13 @@ def test_missing_field_prints_empty_and_whitespace_collapses():
     assert template.render(place) == "photo of big bridge"
 
 
-_POLISH = {"photo of": "zdjęcie", "photo of %(name)s": "zdjęcie: %(name)s"}
+_POLISH = {
+    "photo of": "zdjęcie",
+    "photo of %(name)s": "zdjęcie: %(name)s",
+    "big bridge": "duży most",
+    "lighting": "oświetlenie",
+    "benches": "ławki",
+}
 
 
 def _to_polish(_domain: object, text: str, **variables: object) -> str:
@@ -47,6 +53,18 @@ def test_template_text_can_be_translated(monkeypatch):
     monkeypatch.setattr(flask_babel.Domain, "gettext", _to_polish)
     template = AltTemplate("{{ _('photo of') }} {{ name }}")
     assert template.render(place) == "zdjęcie Grunwaldzki"
+
+
+def test_fields_are_translated_only_when_wrapped(monkeypatch):
+    monkeypatch.setattr(flask_babel.Domain, "gettext", _to_polish)
+    template = AltTemplate("{{ type_of_place }} / {{ _(type_of_place) }}")
+    assert template.render(place) == "big bridge / duży most"
+
+
+def test_a_list_is_translated_item_by_item(monkeypatch):
+    monkeypatch.setattr(flask_babel.Domain, "gettext", _to_polish)
+    template = AltTemplate("{{ _(amenities) | join(', ') }}")
+    assert template.render(place) == "oświetlenie, ławki"
 
 
 def test_template_text_takes_formatting_arguments(monkeypatch):

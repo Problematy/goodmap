@@ -340,25 +340,25 @@ def test_platzky_builtins_outside_the_allowlist_are_not_rendered():
     assert value == {"type": "html", "items": [{}]}
 
 
-def test_alt_template_sees_translated_field_values(monkeypatch):
+def test_alt_template_translates_the_fields_it_wraps_in_underscore(monkeypatch):
     def translate(text: str) -> str:
         return f"{text}-pl"
 
     monkeypatch.setattr("goodmap.translation.gettext", translate)
-    template = AltTemplate("{{ type_of_place }} {{ types | join(',') }}")
+    template = AltTemplate("{{ _(type_of_place) }} {{ _(types) | join(',') }} {{ name }}")
     place = _images({"url": "https://example.com/1.jpg"})
     items = prepare_pin(place, ["images"], [], alt_template=template)["data"][0][1]["items"]
-    assert items[0]["alt"] == "container-pl shoes-pl"
+    assert items[0]["alt"] == "container-pl shoes-pl LASSO"
 
 
-def test_alt_template_compares_against_raw_values(monkeypatch):
-    """A translated value differs per language; ``raw`` does not."""
+def test_alt_template_compares_stored_values(monkeypatch):
+    """A translated value differs per language; the stored one the template sees does not."""
 
     def gettext(text: str) -> str:
         return {"true": "tak"}.get(text, text)
 
     monkeypatch.setattr("goodmap.translation.gettext", gettext)
-    template = AltTemplate("{{ 'free' if raw.is_free == 'true' else 'paid' }} {{ is_free }}")
+    template = AltTemplate("{{ 'free' if is_free == 'true' else 'paid' }} {{ _(is_free) }}")
     place = {**_images({"url": "https://example.com/1.jpg"}), "is_free": "true"}
     items = prepare_pin(place, ["images"], [], alt_template=template)["data"][0][1]["items"]
     assert items[0]["alt"] == "free tak"
@@ -371,13 +371,13 @@ def test_alt_template_empty_field_prints_nothing(monkeypatch):
         return text or "HEADER"
 
     monkeypatch.setattr("goodmap.translation.gettext", gettext)
-    template = AltTemplate("{{ name }} {{ remark }}")
+    template = AltTemplate("{{ name }} {{ _(remark) }}")
     place = {**_images({"url": "https://example.com/1.jpg"}), "remark": ""}
     items = prepare_pin(place, ["images"], [], alt_template=template)["data"][0][1]["items"]
     assert items[0]["alt"] == "LASSO"
 
 
-def test_alt_template_translates_only_the_fields_it_reads(monkeypatch):
+def test_alt_template_translates_only_what_it_wraps(monkeypatch):
     translated: list[object] = []
 
     def gettext(text: str) -> str:
@@ -388,7 +388,7 @@ def test_alt_template_translates_only_the_fields_it_reads(monkeypatch):
     place = _images({"url": "https://example.com/1.jpg"})
     prepare_pin(place, [], [])  # nothing visible: only the alt could translate anything
     translated.clear()
-    prepare_pin(place, ["images"], [], alt_template=AltTemplate("{{ name }}"))
+    prepare_pin(place, ["images"], [], alt_template=AltTemplate("{{ _(name) }}"))
     assert "random_string" not in translated
     assert "LASSO" in translated
 
