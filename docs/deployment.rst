@@ -119,8 +119,9 @@ incoming reports change it while the app runs.
 - **google_json** — the blob is your source of truth and the app never writes
   to it. Bucket object versioning gives you history.
 
-Schema keys (``categories``, ``visible_data``, ``location_obligatory_fields``) are read
-at startup, so changing them means restarting the app. Point data is re-read per request.
+Schema keys (``categories``, ``visible_data``, ``meta_data``,
+``location_obligatory_fields``) are read at startup, so changing them means restarting the
+app. Point data is re-read per request.
 
 Upgrading
 ---------

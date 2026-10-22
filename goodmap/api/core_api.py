@@ -426,10 +426,7 @@ def core_pages(
             logger.info(ERROR_LOCATION_NOT_FOUND, extra={"uuid": location_id})
             return api_error(ERROR_LOCATION_NOT_FOUND, 404)
 
-        visible_data = database.get_visible_data()
-        meta_data = database.get_meta_data()
-        formatted_data = pin_formatter.prepare_pin(location.model_dump(), visible_data, meta_data)
-        return jsonify(formatted_data)
+        return jsonify(pin_formatter.prepare_pin(location.model_dump()))
 
     @core_api_blueprint.route("/version", methods=["GET"])
     @spec.validate(tags=[TAG_META], resp=Response(HTTP_200=VersionResponse))

@@ -76,14 +76,17 @@ def _without_html(value):
 class PinFormatter:
     """Formats locations into the translated payload their map popups render.
 
-    Built once at startup with the settings that do not change per request; the fields to
-    show are passed per call, since they come from the data source.
+    Built once at startup with every setting it needs, the fields to show included: like
+    marker styles, they are read from the data source when the app starts, so changing them
+    takes a restart.
     """
 
-    def __init__(self, shortcodes=None, alt_template=None):
+    def __init__(self, visible_fields, meta_fields, shortcodes=None, alt_template=None):
         """Hold the formatting settings.
 
         Args:
+            visible_fields: Field names to show in the popup, in order.
+            meta_fields: Field names to carry as metadata.
             shortcodes: Field name -> the platzky Shortcode bound to it. A plugin claims a
                 field by name; anything else may still name a built-in ``type`` in its own
                 data (see :mod:`goodmap.field_types`). Either way one shortcode renders it.
@@ -91,27 +94,29 @@ class PinFormatter:
                 describing the place to any image that does not describe itself. Omitted,
                 the place's name does, as when the key is not configured.
         """
+        self._visible_fields = visible_fields
+        self._meta_fields = meta_fields
         self._plugins = shortcodes or {}
         self._alt_template = alt_template or _DEFAULT_ALT_TEMPLATE
 
-    def prepare_pin(self, place, visible_fields, meta_data) -> dict[str, Any]:
+    def prepare_pin(self, place) -> dict[str, Any]:
         """Format one location.
 
         Args:
             place: The location's data.
-            visible_fields: Field names to show in the popup.
-            meta_data: Field names to carry as metadata.
 
         Returns:
             Title, subtitle, position, metadata, and ``data`` as ``[label, value]`` pairs.
         """
-        entries = (self._entry(place, field) for field in visible_fields if field in place)
+        entries = (self._entry(place, field) for field in self._visible_fields if field in place)
         return {
             "title": place["name"],
             "subtitle": lazy_gettext(place["type_of_place"]),  # TODO should not be obligatory
             "position": place["position"],
             "metadata": {
-                gettext(field): safe_gettext(place[field]) for field in meta_data if field in place
+                gettext(field): safe_gettext(place[field])
+                for field in self._meta_fields
+                if field in place
             },
             "data": [entry for entry in entries if entry is not None],
         }

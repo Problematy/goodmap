@@ -35,9 +35,9 @@ class _FakeShortcode(Shortcode):
 def test_field_plugin_renders_the_value_as_html():
     """The shortcode renders its own field, so a plugin needs no frontend code here."""
     place = {**test_place, "promo_code": "SAVE20"}
-    result = PinFormatter(shortcodes={"promo_code": _FakeShortcode()}).prepare_pin(
-        place, ["promo_code"], []
-    )
+    result = PinFormatter(
+        ["promo_code"], [], shortcodes={"promo_code": _FakeShortcode()}
+    ).prepare_pin(place)
     assert result["data"] == [
         ["promo_code", {"type": "promo_code", "code": "SAVE20", "html": "<b>:SAVE20</b>"}]
     ]
@@ -46,9 +46,9 @@ def test_field_plugin_renders_the_value_as_html():
 def test_field_plugin_carries_entry_keys_for_a_react_renderer():
     """A field plugin rendering from the data gets the entry's own keys alongside."""
     place = {**test_place, "promo_code": {"code": "SAVE20", "color": "red"}}
-    result = PinFormatter(shortcodes={"promo_code": _FakeShortcode()}).prepare_pin(
-        place, ["promo_code"], []
-    )
+    result = PinFormatter(
+        ["promo_code"], [], shortcodes={"promo_code": _FakeShortcode()}
+    ).prepare_pin(place)
     assert result["data"] == [
         [
             "promo_code",
@@ -64,9 +64,9 @@ def test_field_plugin_carries_entry_keys_for_a_react_renderer():
 
 def test_entry_cannot_redirect_its_field_at_another_renderer():
     place = {**test_place, "promo_code": {"code": "X", "type": "hyperlink"}}
-    result = PinFormatter(shortcodes={"promo_code": _FakeShortcode()}).prepare_pin(
-        place, ["promo_code"], []
-    )
+    result = PinFormatter(
+        ["promo_code"], [], shortcodes={"promo_code": _FakeShortcode()}
+    ).prepare_pin(place)
     assert result["data"] == [
         ["promo_code", {"type": "promo_code", "code": "X", "html": "<b>:X</b>"}]
     ]
@@ -85,7 +85,7 @@ class _DefaultShortcode(Shortcode):
 def test_hyperlink_field_is_rendered_server_side():
     """A built-in type named in the data is rendered here, so the frontend needs no component."""
     place = {**test_place, "website": {"type": "hyperlink", "value": "https://example.com"}}
-    result = PinFormatter().prepare_pin(place, ["website"], [])
+    result = PinFormatter(["website"], []).prepare_pin(place)
     assert result["data"] == [
         [
             "website",
@@ -110,14 +110,14 @@ def test_hyperlink_uses_display_value_as_the_link_text():
             "displayValue": "Example",
         },
     }
-    result = PinFormatter().prepare_pin(place, ["website"], [])
+    result = PinFormatter(["website"], []).prepare_pin(place)
     assert ">Example</a>" in result["data"][0][1]["html"]
 
 
 def test_hyperlink_accepts_contact_schemes():
     """mailto:/tel: are how a place's contact details are written, and they navigate nowhere."""
     place = {**test_place, "email": {"type": "hyperlink", "value": "mailto:hi@example.com"}}
-    result = PinFormatter().prepare_pin(place, ["email"], [])
+    result = PinFormatter(["email"], []).prepare_pin(place)
     assert result["data"][0][1]["html"] == (
         '<a href="mailto:hi@example.com">mailto:hi@example.com</a>'
     )
@@ -133,7 +133,7 @@ def test_hyperlink_with_a_refused_url_keeps_its_text_unlinked():
             "displayValue": "<b>x</b>",
         },
     }
-    result = PinFormatter().prepare_pin(place, ["website"], [])
+    result = PinFormatter(["website"], []).prepare_pin(place)
     assert result["data"][0][1]["html"] == "&lt;b&gt;x&lt;/b&gt;"
 
 
@@ -143,7 +143,7 @@ def test_cta_is_rendered_as_a_link_too():
         **test_place,
         "CTA": {"type": "CTA", "value": "https://example.com", "displayValue": "Go"},
     }
-    result = PinFormatter().prepare_pin(place, ["CTA"], [])
+    result = PinFormatter(["CTA"], []).prepare_pin(place)
     assert result["data"][0][1]["html"] == (
         '<a href="https://example.com" target="_blank" rel="noopener noreferrer">Go</a>'
     )
@@ -154,39 +154,39 @@ def test_cta_with_a_refused_url_keeps_its_text_unlinked():
         **test_place,
         "CTA": {"type": "CTA", "value": "data:text/html,x", "displayValue": "Go"},
     }
-    result = PinFormatter().prepare_pin(place, ["CTA"], [])
+    result = PinFormatter(["CTA"], []).prepare_pin(place)
     assert result["data"][0][1]["html"] == "Go"
 
 
 def test_a_plugin_bound_field_is_not_reached_by_a_builtin_type():
     """The plugin owns its field outright; the data cannot redirect it at a built-in."""
     place = {**test_place, "promo_code": {"code": "X", "type": "hyperlink", "value": "https://e.x"}}
-    result = PinFormatter(shortcodes={"promo_code": _FakeShortcode()}).prepare_pin(
-        place, ["promo_code"], []
-    )
+    result = PinFormatter(
+        ["promo_code"], [], shortcodes={"promo_code": _FakeShortcode()}
+    ).prepare_pin(place)
     assert result["data"][0][1]["type"] == "promo_code"
     assert result["data"][0][1]["html"] == "<b>:X</b>"
 
 
 def test_an_unknown_type_is_left_alone():
     place = {**test_place, "thing": {"type": "not_a_field_type", "value": "x"}}
-    result = PinFormatter().prepare_pin(place, ["thing"], [])
+    result = PinFormatter(["thing"], []).prepare_pin(place)
     assert result["data"] == [["thing", {"type": "not_a_field_type", "value": "x"}]]
 
 
 def test_a_non_string_type_is_not_looked_up():
     """A stored ``type`` is data, and an unhashable one must not reach the registry lookup."""
     place = {**test_place, "thing": {"type": ["hyperlink"], "value": "x"}}
-    result = PinFormatter().prepare_pin(place, ["thing"], [])
+    result = PinFormatter(["thing"], []).prepare_pin(place)
     assert result["data"] == [["thing", {"type": ["hyperlink"], "value": "x"}]]
 
 
 def test_bare_value_lands_under_the_default_content_key():
     """Without a declared ``content_key`` a bare value is stored under ``content``."""
     place = {**test_place, "promo_code": "SAVE20"}
-    result = PinFormatter(shortcodes={"promo_code": _DefaultShortcode()}).prepare_pin(
-        place, ["promo_code"], []
-    )
+    result = PinFormatter(
+        ["promo_code"], [], shortcodes={"promo_code": _DefaultShortcode()}
+    ).prepare_pin(place)
     assert result["data"] == [
         ["promo_code", {"type": "promo_code", "content": "SAVE20", "html": "SAVE20"}]
     ]
@@ -206,7 +206,7 @@ def test_formatting_when_missing_visible_field():
         ],
         "metadata": {},
     }
-    assert PinFormatter().prepare_pin(test_place, visible_fields, []) == expected_data
+    assert PinFormatter(visible_fields, []).prepare_pin(test_place) == expected_data
 
 
 def test_html_in_the_data_is_dropped_rather_than_rendered_as_markup():
@@ -217,14 +217,14 @@ def test_html_in_the_data_is_dropped_rather_than_rendered_as_markup():
     stripped rather than passed on to be injected.
     """
     place = {**test_place, "evil": {"html": "<img src=x onerror=alert(1)>", "value": "hi"}}
-    result = PinFormatter().prepare_pin(place, ["evil"], [])
+    result = PinFormatter(["evil"], []).prepare_pin(place)
     assert result["data"] == [["evil", {"value": "hi"}]]
 
 
 def test_a_rendered_field_still_gets_its_html():
     """The guard above must not disturb a field something actually rendered."""
     place = {**test_place, "website": {"type": "hyperlink", "value": "https://example.com"}}
-    assert "html" in PinFormatter().prepare_pin(place, ["website"], [])["data"][0][1]
+    assert "html" in PinFormatter(["website"], []).prepare_pin(place)["data"][0][1]
 
 
 @pytest.mark.parametrize("display_value", ["", None], ids=["empty", "null"])
@@ -239,7 +239,7 @@ def test_a_blank_display_value_falls_back_to_the_url(display_value):
             "displayValue": display_value,
         },
     }
-    result = PinFormatter().prepare_pin(place, ["website"], [])
+    result = PinFormatter(["website"], []).prepare_pin(place)
     assert ">https://example.com</a>" in result["data"][0][1]["html"]
 
 
@@ -250,7 +250,7 @@ def _images(*items):
 def test_image_items_are_each_rendered_and_joined():
     """The field's ``html`` joins the items' renderings; the items stay plain data."""
     place = _images({"url": "https://example.com/1.jpg"}, {"url": "https://example.com/2.jpg"})
-    value = PinFormatter().prepare_pin(place, ["images"], [])["data"][0][1]
+    value = PinFormatter(["images"], []).prepare_pin(place)["data"][0][1]
     assert value["type"] == "image"
     assert value["html"] == (
         '<img src="https://example.com/1.jpg" alt="LASSO">'
@@ -264,14 +264,14 @@ def test_image_items_are_each_rendered_and_joined():
 
 def test_image_items_html_from_the_data_is_not_passed_on():
     place = _images({"url": "https://example.com/1.jpg", "html": "<script>x</script>"})
-    value = PinFormatter().prepare_pin(place, ["images"], [])["data"][0][1]
+    value = PinFormatter(["images"], []).prepare_pin(place)["data"][0][1]
     assert "html" not in value["items"][0]
     assert "<script>" not in value["html"]
 
 
 def test_image_passes_width_and_height_through():
     place = _images({"url": "https://example.com/1.jpg", "width": 400, "height": 300})
-    html = PinFormatter().prepare_pin(place, ["images"], [])["data"][0][1]["html"]
+    html = PinFormatter(["images"], []).prepare_pin(place)["data"][0][1]["html"]
     assert html == '<img src="https://example.com/1.jpg" alt="LASSO" width="400" height="300">'
 
 
@@ -287,13 +287,13 @@ def test_image_passes_width_and_height_through():
 )
 def test_refused_image_item_is_dropped(item):
     place = _images(item, {"url": "https://example.com/ok.jpg"})
-    value = PinFormatter().prepare_pin(place, ["images"], [])["data"][0][1]
+    value = PinFormatter(["images"], []).prepare_pin(place)["data"][0][1]
     assert [i["url"] for i in value["items"]] == ["https://example.com/ok.jpg"]
     assert value["html"] == '<img src="https://example.com/ok.jpg" alt="LASSO">'
 
 
 def test_image_on_a_site_path_is_accepted():
-    html = PinFormatter().prepare_pin(_images({"url": "/static/1.jpg"}), ["images"], [])["data"][0][
+    html = PinFormatter(["images"], []).prepare_pin(_images({"url": "/static/1.jpg"}))["data"][0][
         1
     ]["html"]
     assert html == '<img src="/static/1.jpg" alt="LASSO">'
@@ -302,7 +302,7 @@ def test_image_on_a_site_path_is_accepted():
 def test_image_item_that_is_not_an_object_is_dropped_with_a_warning(caplog):
     place = _images("https://example.com/bare.jpg", {"url": "https://example.com/ok.jpg"})
     with caplog.at_level(logging.WARNING):
-        value = PinFormatter().prepare_pin(place, ["images"], [])["data"][0][1]
+        value = PinFormatter(["images"], []).prepare_pin(place)["data"][0][1]
     assert [i["url"] for i in value["items"]] == ["https://example.com/ok.jpg"]
     assert "items that are not objects" in caplog.text
 
@@ -315,14 +315,14 @@ def test_items_on_a_type_other_than_image_render_nothing(field_type, caplog):
         "links": {"type": field_type, "items": [{"value": "https://a.org"}]},
     }
     with caplog.at_level(logging.WARNING):
-        assert PinFormatter().prepare_pin(place, ["links"], [])["data"] == []
+        assert PinFormatter(["links"], []).prepare_pin(place)["data"] == []
     assert "items is for images" in caplog.text
 
 
 def test_image_field_with_every_item_refused_is_left_out():
     """A label over a blank says nothing; the popup does not need to know why."""
     place = _images({"url": "javascript:alert(1)"})
-    assert PinFormatter().prepare_pin(place, ["images"], [])["data"] == []
+    assert PinFormatter(["images"], []).prepare_pin(place)["data"] == []
 
 
 def test_image_alt_defaults_to_the_template_and_an_items_own_alt_wins():
@@ -332,7 +332,7 @@ def test_image_alt_defaults_to_the_template_and_an_items_own_alt_wins():
         {"url": "https://example.com/3.jpg", "alt": ""},
     )
     template = AltTemplate("{{ type_of_place }} {{ name }}")
-    items = PinFormatter(alt_template=template).prepare_pin(place, ["images"], [])["data"][0][1][
+    items = PinFormatter(["images"], [], alt_template=template).prepare_pin(place)["data"][0][1][
         "items"
     ]
     assert [item["alt"] for item in items] == ["container LASSO", "Own", ""]
@@ -340,9 +340,9 @@ def test_image_alt_defaults_to_the_template_and_an_items_own_alt_wins():
 
 def test_alt_default_is_not_given_to_a_type_without_alt():
     place = {**test_place, "website": {"type": "hyperlink", "value": "https://example.com"}}
-    value = PinFormatter(alt_template=AltTemplate(DEFAULT_ALT_TEMPLATE)).prepare_pin(
-        place, ["website"], []
-    )
+    value = PinFormatter(
+        ["website"], [], alt_template=AltTemplate(DEFAULT_ALT_TEMPLATE)
+    ).prepare_pin(place)
     assert "alt" not in value["data"][0][1]
 
 
@@ -352,7 +352,7 @@ def test_platzky_builtins_outside_the_allowlist_are_not_rendered():
         **test_place,
         "evil": {"type": "html", "html": "<b>x</b>", "items": [{"html": "<script>x</script>"}]},
     }
-    value = PinFormatter().prepare_pin(place, ["evil"], [])["data"][0][1]
+    value = PinFormatter(["evil"], []).prepare_pin(place)["data"][0][1]
     assert value == {"type": "html", "items": [{}]}
 
 
@@ -363,7 +363,7 @@ def test_alt_template_translates_the_fields_it_wraps_in_underscore(monkeypatch):
     monkeypatch.setattr("goodmap.translation.gettext", translate)
     template = AltTemplate("{{ _(type_of_place) }} {{ _(types) | join(',') }} {{ name }}")
     place = _images({"url": "https://example.com/1.jpg"})
-    items = PinFormatter(alt_template=template).prepare_pin(place, ["images"], [])["data"][0][1][
+    items = PinFormatter(["images"], [], alt_template=template).prepare_pin(place)["data"][0][1][
         "items"
     ]
     assert items[0]["alt"] == "container-pl shoes-pl LASSO"
@@ -378,7 +378,7 @@ def test_alt_template_compares_stored_values(monkeypatch):
     monkeypatch.setattr("goodmap.translation.gettext", gettext)
     template = AltTemplate("{{ 'free' if is_free == 'true' else 'paid' }} {{ _(is_free) }}")
     place = {**_images({"url": "https://example.com/1.jpg"}), "is_free": "true"}
-    items = PinFormatter(alt_template=template).prepare_pin(place, ["images"], [])["data"][0][1][
+    items = PinFormatter(["images"], [], alt_template=template).prepare_pin(place)["data"][0][1][
         "items"
     ]
     assert items[0]["alt"] == "free tak"
@@ -393,7 +393,7 @@ def test_alt_template_empty_field_prints_nothing(monkeypatch):
     monkeypatch.setattr("goodmap.translation.gettext", gettext)
     template = AltTemplate("{{ name }} {{ _(remark) }}")
     place = {**_images({"url": "https://example.com/1.jpg"}), "remark": ""}
-    items = PinFormatter(alt_template=template).prepare_pin(place, ["images"], [])["data"][0][1][
+    items = PinFormatter(["images"], [], alt_template=template).prepare_pin(place)["data"][0][1][
         "items"
     ]
     assert items[0]["alt"] == "LASSO"
@@ -408,11 +408,11 @@ def test_alt_template_translates_only_what_it_wraps(monkeypatch):
 
     monkeypatch.setattr("goodmap.translation.gettext", gettext)
     place = _images({"url": "https://example.com/1.jpg"})
-    PinFormatter().prepare_pin(
-        place, [], []
+    PinFormatter([], []).prepare_pin(
+        place
     )  # nothing visible: only the alt could translate anything
     translated.clear()
-    PinFormatter(alt_template=AltTemplate("{{ _(name) }}")).prepare_pin(place, ["images"], [])
+    PinFormatter(["images"], [], alt_template=AltTemplate("{{ _(name) }}")).prepare_pin(place)
     assert "random_string" not in translated
     assert "LASSO" in translated
 
@@ -421,7 +421,7 @@ def test_image_alt_null_counts_as_absent():
     """Imported data writing ``"alt": null`` means "not given", not "decorative"."""
     place = _images({"url": "https://example.com/1.jpg", "alt": None})
     template = AltTemplate(DEFAULT_ALT_TEMPLATE)
-    items = PinFormatter(alt_template=template).prepare_pin(place, ["images"], [])["data"][0][1][
+    items = PinFormatter(["images"], [], alt_template=template).prepare_pin(place)["data"][0][1][
         "items"
     ]
     assert items[0]["alt"] == "LASSO"
@@ -436,9 +436,9 @@ def test_alt_template_is_not_rendered_for_a_pin_without_images(monkeypatch):
 
     monkeypatch.setattr(AltTemplate, "render", render)
     place = {**test_place, "website": {"type": "hyperlink", "value": "https://example.com"}}
-    PinFormatter(alt_template=AltTemplate(DEFAULT_ALT_TEMPLATE)).prepare_pin(
-        place, ["website", "plain_text"], []
-    )
+    PinFormatter(
+        ["website", "plain_text"], [], alt_template=AltTemplate(DEFAULT_ALT_TEMPLATE)
+    ).prepare_pin(place)
     assert calls == []
 
 
@@ -455,9 +455,9 @@ def test_alt_template_is_rendered_once_per_image_field(monkeypatch):
         **_images({"url": "https://example.com/1.jpg"}, {"url": "https://example.com/2.jpg"}),
         "more": {"type": "image", "items": [{"url": "https://example.com/3.jpg"}]},
     }
-    PinFormatter(alt_template=AltTemplate(DEFAULT_ALT_TEMPLATE)).prepare_pin(
-        place, ["images", "more"], []
-    )
+    PinFormatter(
+        ["images", "more"], [], alt_template=AltTemplate(DEFAULT_ALT_TEMPLATE)
+    ).prepare_pin(place)
     assert len(calls) == 2  # "images" with two items, and "more"
 
 
@@ -472,7 +472,10 @@ def test_plugin_field_keeps_its_own_rendering():
     """``items`` and place-derived defaults are for goodmap's own types only."""
     place = {**test_place, "promo_code": {"code": "X", "items": [{"code": "Y"}]}}
     value = PinFormatter(
-        shortcodes={"promo_code": _AltShortcode()}, alt_template=AltTemplate(DEFAULT_ALT_TEMPLATE)
-    ).prepare_pin(place, ["promo_code"], [])["data"][0][1]
+        ["promo_code"],
+        [],
+        shortcodes={"promo_code": _AltShortcode()},
+        alt_template=AltTemplate(DEFAULT_ALT_TEMPLATE),
+    ).prepare_pin(place)["data"][0][1]
     assert value["html"] == "<i>:X</i>"
     assert value["items"] == [{"code": "Y"}]

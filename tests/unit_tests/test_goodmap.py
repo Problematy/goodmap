@@ -48,10 +48,14 @@ def test_create_app_from_config():
             patch("goodmap.goodmap.get_category_data") as mock_get_category_data,
             patch("goodmap.goodmap.get_marker_styles") as mock_get_marker_styles,
             patch("goodmap.goodmap.get_initial_view") as mock_get_initial_view,
+            patch("goodmap.goodmap.get_visible_data") as mock_get_visible_data,
+            patch("goodmap.goodmap.get_meta_data") as mock_get_meta_data,
         ):
             mock_get_category_data.return_value.return_value = {"categories": {}}
             mock_get_marker_styles.return_value.return_value = {}
             mock_get_initial_view.return_value.return_value = {}
+            mock_get_visible_data.return_value.return_value = []
+            mock_get_meta_data.return_value.return_value = []
             goodmap.create_app_from_config(config)
             mock_platzky_app_creation.assert_called_once_with(
                 config,
@@ -885,9 +889,9 @@ def test_shortcodes_for_marker_fields_honours_both_keys() -> None:
     captured: dict[str, Any] = {}
     orig_pin_formatter = goodmap.PinFormatter
 
-    def _spy_pin_formatter(shortcodes: Any, alt_template: Any) -> Any:
-        captured["shortcodes"] = shortcodes
-        return orig_pin_formatter(shortcodes, alt_template)
+    def _spy_pin_formatter(*args: Any) -> Any:
+        _, _, captured["shortcodes"], _ = args
+        return orig_pin_formatter(*args)
 
     field_ep = mock.MagicMock()
     field_ep.name = "field_plugin"
