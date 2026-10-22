@@ -79,7 +79,7 @@ class PinFormatter:
     takes a restart.
     """
 
-    def __init__(self, visible_fields, meta_fields, alt_template, shortcodes=None):
+    def __init__(self, visible_fields, meta_fields, alt_template, plugin_shortcodes=None):
         """Hold the formatting settings.
 
         Args:
@@ -88,14 +88,14 @@ class PinFormatter:
             alt_template: The compiled ``IMAGE_ALT_TEMPLATE`` (see :mod:`goodmap.alt_template`),
                 describing the place to any image that does not describe itself. Its default
                 lives in the config: the place's name.
-            shortcodes: Field name -> the platzky Shortcode bound to it. A plugin claims a
+            plugin_shortcodes: Field name -> the platzky Shortcode bound to it. A plugin claims a
                 field by name; anything else may still name a built-in ``type`` in its own
                 data (see :mod:`goodmap.field_types`). Either way one shortcode renders it.
         """
         self._visible_fields = visible_fields
         self._meta_fields = meta_fields
         self._alt_template = alt_template
-        self._plugins = shortcodes or {}
+        self._plugin_shortcodes = plugin_shortcodes or {}
 
     def prepare_pin(self, place) -> dict[str, Any]:
         """Format one location.
@@ -130,8 +130,8 @@ class PinFormatter:
             The pair, or None when the field has nothing to show.
         """
         value = safe_gettext(place[field])
-        if field in self._plugins:
-            value = _rendered_field(self._plugins[field], value)
+        if field in self._plugin_shortcodes:
+            value = _rendered_field(self._plugin_shortcodes[field], value)
         elif builtin := _builtin_shortcode(value):
             value = self._rendered_builtin(place, builtin, value)
             if not value["html"]:

@@ -39,7 +39,10 @@ def test_field_plugin_renders_the_value_as_html():
     """The shortcode renders its own field, so a plugin needs no frontend code here."""
     place = {**test_place, "promo_code": "SAVE20"}
     result = PinFormatter(
-        ["promo_code"], [], shortcodes={"promo_code": _FakeShortcode()}, alt_template=_NAME_ALT
+        ["promo_code"],
+        [],
+        plugin_shortcodes={"promo_code": _FakeShortcode()},
+        alt_template=_NAME_ALT,
     ).prepare_pin(place)
     assert result["data"] == [
         ["promo_code", {"type": "promo_code", "code": "SAVE20", "html": "<b>:SAVE20</b>"}]
@@ -50,7 +53,10 @@ def test_field_plugin_carries_entry_keys_for_a_react_renderer():
     """A field plugin rendering from the data gets the entry's own keys alongside."""
     place = {**test_place, "promo_code": {"code": "SAVE20", "color": "red"}}
     result = PinFormatter(
-        ["promo_code"], [], shortcodes={"promo_code": _FakeShortcode()}, alt_template=_NAME_ALT
+        ["promo_code"],
+        [],
+        plugin_shortcodes={"promo_code": _FakeShortcode()},
+        alt_template=_NAME_ALT,
     ).prepare_pin(place)
     assert result["data"] == [
         [
@@ -68,7 +74,10 @@ def test_field_plugin_carries_entry_keys_for_a_react_renderer():
 def test_entry_cannot_redirect_its_field_at_another_renderer():
     place = {**test_place, "promo_code": {"code": "X", "type": "hyperlink"}}
     result = PinFormatter(
-        ["promo_code"], [], shortcodes={"promo_code": _FakeShortcode()}, alt_template=_NAME_ALT
+        ["promo_code"],
+        [],
+        plugin_shortcodes={"promo_code": _FakeShortcode()},
+        alt_template=_NAME_ALT,
     ).prepare_pin(place)
     assert result["data"] == [
         ["promo_code", {"type": "promo_code", "code": "X", "html": "<b>:X</b>"}]
@@ -165,7 +174,10 @@ def test_a_plugin_bound_field_is_not_reached_by_a_builtin_type():
     """The plugin owns its field outright; the data cannot redirect it at a built-in."""
     place = {**test_place, "promo_code": {"code": "X", "type": "hyperlink", "value": "https://e.x"}}
     result = PinFormatter(
-        ["promo_code"], [], shortcodes={"promo_code": _FakeShortcode()}, alt_template=_NAME_ALT
+        ["promo_code"],
+        [],
+        plugin_shortcodes={"promo_code": _FakeShortcode()},
+        alt_template=_NAME_ALT,
     ).prepare_pin(place)
     assert result["data"][0][1]["type"] == "promo_code"
     assert result["data"][0][1]["html"] == "<b>:X</b>"
@@ -188,7 +200,10 @@ def test_bare_value_lands_under_the_default_content_key():
     """Without a declared ``content_key`` a bare value is stored under ``content``."""
     place = {**test_place, "promo_code": "SAVE20"}
     result = PinFormatter(
-        ["promo_code"], [], shortcodes={"promo_code": _DefaultShortcode()}, alt_template=_NAME_ALT
+        ["promo_code"],
+        [],
+        plugin_shortcodes={"promo_code": _DefaultShortcode()},
+        alt_template=_NAME_ALT,
     ).prepare_pin(place)
     assert result["data"] == [
         ["promo_code", {"type": "promo_code", "content": "SAVE20", "html": "SAVE20"}]
@@ -481,7 +496,7 @@ def test_plugin_field_keeps_its_own_rendering():
     value = PinFormatter(
         ["promo_code"],
         [],
-        shortcodes={"promo_code": _AltShortcode()},
+        plugin_shortcodes={"promo_code": _AltShortcode()},
         alt_template=_NAME_ALT,
     ).prepare_pin(place)["data"][0][1]
     assert value["html"] == "<i>:X</i>"
