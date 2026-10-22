@@ -4,6 +4,7 @@ import logging
 from typing import Any
 
 from flask_babel import gettext, lazy_gettext
+from pydantic import JsonValue
 
 from goodmap.field_types import BUILTIN_FIELD_TYPES, MULTI_VALUE_TYPES
 from goodmap.translation import safe_gettext
@@ -48,7 +49,7 @@ def _rendered_field(shortcode, value):
     return {**entry, "type": shortcode.name, "html": shortcode.render_value(value)}
 
 
-def _without_html(value):
+def _drop_html_from_field(value: JsonValue) -> JsonValue:
     """Drop any ``html`` an unrendered field brought with it, its ``items`` included.
 
     ``html`` is this payload's word for "the server rendered this", and the popup injects it
@@ -64,8 +65,9 @@ def _without_html(value):
     if not isinstance(value, dict):
         return value
     stripped = {key: item for key, item in value.items() if key != "html"}
-    if isinstance(stripped.get("items"), list):
-        stripped["items"] = [_without_html(item) for item in stripped["items"]]
+    items = stripped.get("items")
+    if isinstance(items, list):
+        stripped["items"] = [_drop_html_from_field(item) for item in items]
     return stripped
 
 
@@ -137,7 +139,7 @@ class PinFormatter:
                 # rendered nothing - every image refused - would leave a label over a blank.
                 return None
         else:
-            value = _without_html(value)
+            value = _drop_html_from_field(value)
         return [gettext(field), value]
 
     def _rendered_builtin(self, place, shortcode, value):
