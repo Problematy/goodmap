@@ -74,17 +74,17 @@ class AltTemplate:
       ``-`` keeps the comma against the word before it.
     """
 
-    def __init__(self, source: str) -> None:
+    def __init__(self, template: str) -> None:
         """Compile the template.
 
         Args:
-            source: The template - the ``IMAGE_ALT_TEMPLATE`` config value, which defaults to
-                :data:`DEFAULT_ALT_TEMPLATE`.
+            template: The template text - the ``IMAGE_ALT_TEMPLATE`` config value, which
+                defaults to :data:`DEFAULT_ALT_TEMPLATE`.
 
         Raises:
             jinja2.TemplateSyntaxError: If the template does not parse.
         """
-        parsed = _environment.parse(source)
+        parsed = _environment.parse(template)
         self._template = _environment.from_string(parsed)
         # The names it reads, so only those of a place's fields need translating.
         self._names = frozenset(meta.find_undeclared_variables(parsed))
