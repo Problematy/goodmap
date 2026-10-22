@@ -110,11 +110,6 @@ const CTAContainer = styled.div`
         outline: 2px solid ${() => globalThis.SECONDARY_COLOR || 'black'};
         outline-offset: 2px;
     }
-
-    /* Several CTAs in one field arrive as one span, so the flex gap does not reach them. */
-    a + a {
-        margin-top: 8px;
-    }
 `;
 
 // The map's loading spinner (MapLoadingOverlay's DefaultSpinner) as an image, so it can be an

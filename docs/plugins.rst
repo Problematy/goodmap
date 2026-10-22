@@ -214,15 +214,15 @@ naming these types are data nobody vouched for: a suggested point or an imported
 naming platzky's ``html`` would put raw markup into the popup. Offering another, ``figure``
 say, means adding it to ``BUILTIN_FIELD_TYPES``.
 
-A field naming one of these types may hold several values under ``items``. Each is rendered
-on its own and the renderings joined into the field's ``html`` (``hyperlink`` items with
-``", "`` between, the rest with nothing, the popup's CSS spacing them); the items go back as
-plain data, without ``html`` of their own. An item the shortcode refuses is dropped, as is
-one that is not an object — a bare URL string, say, which logs a warning — and a field left
-with nothing to show is left out of the popup altogether. A gallery wanting a layout of its
-own does not reach into ``image``: it brings its own type, either a shortcode bound to the
-field by name or a field ``type`` of its own that the data names instead. ``items`` is for goodmap's own types only: a field a plugin's shortcode is bound
-to keeps exactly the rendering that shortcode gives it.
+An ``image`` field may hold several images under ``items``. Each is rendered on its own and
+the renderings joined into the field's ``html``; the items go back as plain data, without
+``html`` of their own. An item the shortcode refuses is dropped, as is one that is not an
+object — a bare URL string, say, which logs a warning — and a field left with nothing to
+show is left out of the popup altogether. A ``hyperlink`` or ``CTA`` field holds one value:
+given ``items``, it is left out of the popup, with a warning in the log. A gallery wanting a
+layout of its own does not reach into ``image``: it brings its own type, either a shortcode
+bound to the field by name or a field ``type`` of its own that the data names instead. A
+field a plugin's shortcode is bound to keeps exactly the rendering that shortcode gives it.
 
 An image URL must be ``https`` or a path on the site itself (``/static/…``) — platzky's
 image policy, since an image is fetched by every visitor who opens the point;

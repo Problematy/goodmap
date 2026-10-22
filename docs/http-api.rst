@@ -195,10 +195,10 @@ or one a plugin's shortcode is bound to — comes back as an object rather than 
      "html": "<a href=\"https://example.com\" target=\"_blank\" rel=\"noopener noreferrer\">Example</a>"
    }]
 
-A field naming a built-in type may hold several values under ``items``. The field's ``html``
-renders them all; ``items`` lists them as data, without ``html`` of their own. Items that
-render to nothing are dropped from both, and a built-in field left with nothing to show is
-left out of ``data``. Stored as
+An ``image`` field may hold several images under ``items``. The field's ``html`` renders
+them all; ``items`` lists them as data, without ``html`` of their own. Items that render to
+nothing are dropped from both, and a built-in field left with nothing to show is left out of
+``data``. Stored as
 ``{"type": "image", "items": [{"url": ".../front.jpg"}, {"url": ".../deck.jpg", "alt":
 "The deck at night"}]}``, an image field comes back as:
 

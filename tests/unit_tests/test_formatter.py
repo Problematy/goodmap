@@ -295,16 +295,16 @@ def test_image_item_that_is_not_an_object_is_dropped_with_a_warning(caplog):
     assert "{'url': ...}" in caplog.text
 
 
-def test_hyperlink_items_are_separated():
+@pytest.mark.parametrize("field_type", ["hyperlink", "CTA"])
+def test_items_on_a_type_other_than_image_render_nothing(field_type, caplog):
+    """Only images hold several values; anything else with items is left out, and says why."""
     place = {
         **test_place,
-        "links": {
-            "type": "hyperlink",
-            "items": [{"value": "https://a.org"}, {"value": "https://b.org"}],
-        },
+        "links": {"type": field_type, "items": [{"value": "https://a.org"}]},
     }
-    html = prepare_pin(place, ["links"], [])["data"][0][1]["html"]
-    assert "</a>, <a" in html
+    with caplog.at_level(logging.WARNING):
+        assert prepare_pin(place, ["links"], [])["data"] == []
+    assert "items is for images" in caplog.text
 
 
 def test_image_field_with_every_item_refused_is_left_out():

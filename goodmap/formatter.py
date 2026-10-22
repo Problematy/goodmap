@@ -6,7 +6,7 @@ from typing import Any
 from flask_babel import gettext, lazy_gettext
 
 from goodmap.alt_template import DEFAULT_ALT_TEMPLATE, AltTemplate
-from goodmap.field_types import BUILTIN_FIELD_TYPES, ITEM_SEPARATORS
+from goodmap.field_types import BUILTIN_FIELD_TYPES, MULTI_VALUE_TYPES
 from goodmap.translation import safe_gettext
 
 logger = logging.getLogger(__name__)
@@ -68,12 +68,13 @@ def _rendered_builtin(shortcode, value, defaults):
     Two things only goodmap's own types get, because goodmap knows what their rendering
     means - a plugin's field keeps exactly the rendering its shortcode gives it:
 
-    * ``items``: a field holding several values lists them there. Each is rendered on its
-      own and the renderings joined into the field's ``html``, with the type's
-      :data:`~goodmap.field_types.ITEM_SEPARATORS` entry between; the items themselves go
-      back as data, without ``html``. An item the shortcode refuses renders to nothing and
-      is dropped, as is one that is not an object. A gallery wanting its own layout binds
-      its own shortcode to the field, or the field names the gallery's type instead.
+    * ``items``: a field of a :data:`~goodmap.field_types.MULTI_VALUE_TYPES` type - an
+      image field - holding several values lists them there. Each is rendered on its own
+      and the renderings joined into the field's ``html``; the items themselves go back as
+      data, without ``html``. An item the shortcode refuses renders to nothing and is
+      dropped, as is one that is not an object. Any other type with ``items`` renders
+      nothing, with a warning. A gallery wanting its own layout binds its own shortcode to
+      the field, or the field names the gallery's type instead.
     * defaults derived from the place, such as an image's ``alt``. An entry's own value wins;
       a ``null`` counts as absent, so imported data with ``"alt": null`` is still described
       rather than marked decorative.
@@ -94,6 +95,9 @@ def _rendered_builtin(shortcode, value, defaults):
 
     if not isinstance(value.get("items"), list):
         return rendered(value)
+    if shortcode.name not in MULTI_VALUE_TYPES:
+        logger.warning("A %s field holds one value; items is for images.", shortcode.name)
+        return {**value, "type": shortcode.name, "html": ""}
     entries = value["items"]
     if not all(isinstance(item, dict) for item in entries):
         logger.warning(
@@ -103,7 +107,7 @@ def _rendered_builtin(shortcode, value, defaults):
         )
     items = [rendered(item) for item in entries if isinstance(item, dict)]
     items = [item for item in items if item["html"]]
-    html = ITEM_SEPARATORS.get(shortcode.name, "").join(item["html"] for item in items)
+    html = "".join(item["html"] for item in items)
     data = [{k: v for k, v in item.items() if k not in ("type", "html")} for item in items]
     return {**value, "items": data, "type": shortcode.name, "html": html}
 

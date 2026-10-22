@@ -16,7 +16,7 @@ place can carry photos; platzky holds its URLs to ``https`` or a path on the sit
 rather than the whole set, because the entries naming these types are data nobody vouched
 for, and platzky's ``html`` would hand them raw markup in the popup.
 
-A field may hold several values of its type under ``items`` -
+An image field may hold several images under ``items`` -
 ``{"type": "image", "items": [{"url": …}, …]}`` - each rendered on its own; see
 :func:`goodmap.formatter.prepare_pin`.
 """
@@ -108,6 +108,6 @@ BUILTIN_FIELD_TYPES: dict[str, Shortcode] = {
     s.name: s for s in (image_shortcode, HyperlinkFieldShortcode(), CTAFieldShortcode())
 }
 
-#: Field ``type`` -> what goes between its ``items`` in the field's ``html``. Images and CTAs
-#: are laid out by the popup's CSS; links share a line in the details, so need a separator.
-ITEM_SEPARATORS = {"hyperlink": ", "}
+#: The field types that may hold several values under ``items``. Only images: a place has
+#: several photos, while nothing yet needs several links in one field.
+MULTI_VALUE_TYPES = frozenset({"image"})
