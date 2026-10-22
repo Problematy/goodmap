@@ -5,14 +5,10 @@ from typing import Any
 
 from flask_babel import gettext, lazy_gettext
 
-from goodmap.alt_template import DEFAULT_ALT_TEMPLATE, AltTemplate
 from goodmap.field_types import BUILTIN_FIELD_TYPES, MULTI_VALUE_TYPES
 from goodmap.translation import safe_gettext
 
 logger = logging.getLogger(__name__)
-
-#: What a formatter given no ``IMAGE_ALT_TEMPLATE`` uses: the place's name, as configured.
-_DEFAULT_ALT_TEMPLATE = AltTemplate(DEFAULT_ALT_TEMPLATE)
 
 
 def _builtin_shortcode(value):
@@ -81,23 +77,23 @@ class PinFormatter:
     takes a restart.
     """
 
-    def __init__(self, visible_fields, meta_fields, shortcodes=None, alt_template=None):
+    def __init__(self, visible_fields, meta_fields, alt_template, shortcodes=None):
         """Hold the formatting settings.
 
         Args:
             visible_fields: Field names to show in the popup, in order.
             meta_fields: Field names to carry as metadata.
+            alt_template: The compiled ``IMAGE_ALT_TEMPLATE`` (see :mod:`goodmap.alt_template`),
+                describing the place to any image that does not describe itself. Its default
+                lives in the config: the place's name.
             shortcodes: Field name -> the platzky Shortcode bound to it. A plugin claims a
                 field by name; anything else may still name a built-in ``type`` in its own
                 data (see :mod:`goodmap.field_types`). Either way one shortcode renders it.
-            alt_template: The compiled ``IMAGE_ALT_TEMPLATE`` (see :mod:`goodmap.alt_template`),
-                describing the place to any image that does not describe itself. Omitted,
-                the place's name does, as when the key is not configured.
         """
         self._visible_fields = visible_fields
         self._meta_fields = meta_fields
+        self._alt_template = alt_template
         self._plugins = shortcodes or {}
-        self._alt_template = alt_template or _DEFAULT_ALT_TEMPLATE
 
     def prepare_pin(self, place) -> dict[str, Any]:
         """Format one location.

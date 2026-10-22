@@ -286,7 +286,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         location_model,
         photo_attachment_config=photo_attachment_config,
         feature_flags=config.feature_flags,
-        pin_formatter=PinFormatter(visible_fields, meta_fields, shortcodes, alt_template),
+        pin_formatter=PinFormatter(visible_fields, meta_fields, alt_template, shortcodes),
         pin_marker_fields=pin_marker_fields,
     )
     app.register_blueprint(cp)

@@ -890,7 +890,7 @@ def test_shortcodes_for_marker_fields_honours_both_keys() -> None:
     orig_pin_formatter = goodmap.PinFormatter
 
     def _spy_pin_formatter(*args: Any) -> Any:
-        _, _, captured["shortcodes"], _ = args
+        _, _, _, captured["shortcodes"] = args
         return orig_pin_formatter(*args)
 
     field_ep = mock.MagicMock()
