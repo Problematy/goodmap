@@ -1903,8 +1903,6 @@ def extend_db_with_goodmap_queries(db, location_model):
     """
     db.extend("get_issue_options", get_issue_options(db))
     db.extend("get_data", get_data(db))
-    db.extend("get_visible_data", get_visible_data(db))
-    db.extend("get_meta_data", get_meta_data(db))
     db.extend("get_marker_styles", get_marker_styles(db))
     db.extend("get_initial_view", get_initial_view(db))
     db.extend("get_locations", get_locations(db, location_model))
