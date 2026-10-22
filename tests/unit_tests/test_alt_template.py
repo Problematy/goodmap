@@ -1,5 +1,6 @@
 import logging
 
+import flask_babel
 import pytest
 from jinja2 import TemplateSyntaxError
 
@@ -33,13 +34,24 @@ def test_missing_field_prints_empty_and_whitespace_collapses():
     assert template.render(place) == "photo of big bridge"
 
 
-def test_template_text_can_be_translated(monkeypatch):
-    def translate(text: str) -> str:
-        return f"{text}-pl"
+_POLISH = {"photo of": "zdjęcie", "photo of %(name)s": "zdjęcie: %(name)s"}
 
-    monkeypatch.setattr("goodmap.alt_template.gettext", translate)
+
+def _to_polish(_domain: object, text: str, **variables: object) -> str:
+    return _POLISH.get(text, text) % variables
+
+
+def test_template_text_can_be_translated(monkeypatch):
+    # flask_babel's gettext hands each call to the active Domain, so this reaches ``_()``.
+    monkeypatch.setattr(flask_babel.Domain, "gettext", _to_polish)
     template = AltTemplate("{{ _('photo of') }} {{ name }}")
-    assert template.render(place) == "photo of-pl Grunwaldzki"
+    assert template.render(place) == "zdjęcie Grunwaldzki"
+
+
+def test_template_text_takes_formatting_arguments(monkeypatch):
+    monkeypatch.setattr(flask_babel.Domain, "gettext", _to_polish)
+    template = AltTemplate("{{ _('photo of %(name)s', name=name) }}")
+    assert template.render(place) == "zdjęcie: Grunwaldzki"
 
 
 def test_syntax_error_raises_at_compile_time():

@@ -44,21 +44,12 @@ def _finalize(value: object) -> object:
 _environment = ImmutableSandboxedEnvironment(autoescape=False, finalize=_finalize)
 
 
-def _translate(*args: Any, **kwargs: Any) -> str:
-    """The template's ``_()``, for translating the template's own text: ``gettext``.
-
-    Formatting arguments work as in ``gettext``. In a Polish request, given a catalogue
-    that translates the message::
-
-        {{ _('photo of') }} {{ name }}                 ->  "zdjęcie Grunwaldzki"
-        {{ _('photo of %(name)s', name=name) }}        ->  "zdjęcie Grunwaldzki"
-
-    Looked up per call rather than bound once, so the ``gettext`` in effect is the one used.
-    """
-    return gettext(*args, **kwargs)
-
-
-_environment.globals["_"] = _translate
+# The template's own text is translated with ``_()``, formatting arguments included. In a
+# Polish request, given a catalogue that translates the message:
+#
+#     {{ _('photo of') }} {{ name }}              ->  "zdjęcie Grunwaldzki"
+#     {{ _('photo of %(name)s', name=name) }}     ->  "zdjęcie Grunwaldzki"
+_environment.globals["_"] = gettext
 
 
 class AltTemplate:
