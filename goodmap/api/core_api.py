@@ -12,12 +12,10 @@ from flask_babel import gettext
 from platzky import FeatureFlagSet
 from platzky.attachment import create_attachment
 from platzky.config import AttachmentConfig, LanguagesMapping
-from platzky.shortcodes import Shortcode
 from spectree import Response, SpecTree
 from spectree.models import Tag
 from werkzeug.exceptions import HTTPException
 
-from goodmap.alt_template import AltTemplate
 from goodmap.api.api_models import (
     CategoriesFullResponse,
     ClusteredQueryParams,
@@ -43,7 +41,7 @@ from goodmap.clustering import (
 )
 from goodmap.exceptions import LocationValidationError
 from goodmap.feature_flags import CategoriesHelp
-from goodmap.formatter import prepare_pin
+from goodmap.formatter import PinFormatter
 from goodmap.json_security import (
     MAX_JSON_DEPTH_LOCATION,
     JSONDepthError,
@@ -204,9 +202,8 @@ def core_pages(
     location_model,
     photo_attachment_config: AttachmentConfig,
     feature_flags: FeatureFlagSet,
-    shortcodes: dict[str, Shortcode],
+    pin_formatter: PinFormatter,
     pin_marker_fields: PinMarkerFields,
-    alt_template: AltTemplate | None = None,
 ) -> Blueprint:
     # Routes with translated responses (pin fields, schema, categories) are query_locale
     # routes: they follow the calling page's language, sent as ``?lang=``, since /api is
@@ -431,9 +428,7 @@ def core_pages(
 
         visible_data = database.get_visible_data()
         meta_data = database.get_meta_data()
-        formatted_data = prepare_pin(
-            location.model_dump(), visible_data, meta_data, shortcodes, alt_template
-        )
+        formatted_data = pin_formatter.prepare_pin(location.model_dump(), visible_data, meta_data)
         return jsonify(formatted_data)
 
     @core_api_blueprint.route("/version", methods=["GET"])

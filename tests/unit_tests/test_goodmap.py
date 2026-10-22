@@ -883,11 +883,11 @@ def test_shortcodes_for_marker_fields_honours_both_keys() -> None:
     )
 
     captured: dict[str, Any] = {}
-    orig_core_pages = goodmap.core_pages
+    orig_pin_formatter = goodmap.PinFormatter
 
-    def _spy_core_pages(*args: Any, **kwargs: Any) -> Any:
-        captured["shortcodes"] = kwargs.get("shortcodes", {})
-        return orig_core_pages(*args, **kwargs)
+    def _spy_pin_formatter(shortcodes: Any, alt_template: Any) -> Any:
+        captured["shortcodes"] = shortcodes
+        return orig_pin_formatter(shortcodes, alt_template)
 
     field_ep = mock.MagicMock()
     field_ep.name = "field_plugin"
@@ -897,7 +897,7 @@ def test_shortcodes_for_marker_fields_honours_both_keys() -> None:
     post_ep.name = "post_plugin"
     post_ep.load.return_value = _PluginB
 
-    with mock.patch("goodmap.goodmap.core_pages", side_effect=_spy_core_pages):
+    with mock.patch("goodmap.goodmap.PinFormatter", side_effect=_spy_pin_formatter):
         with _patch_entry_points({"platzky.plugins": [field_ep, post_ep]}):
             goodmap.create_app_from_config(config)
 

@@ -11,7 +11,7 @@ from goodmap.translation import safe_gettext
 
 logger = logging.getLogger(__name__)
 
-#: What a caller that passes no ``IMAGE_ALT_TEMPLATE`` gets: the place's name, as configured.
+#: What a formatter given no ``IMAGE_ALT_TEMPLATE`` uses: the place's name, as configured.
 _DEFAULT_ALT_TEMPLATE = AltTemplate(DEFAULT_ALT_TEMPLATE)
 
 
@@ -28,12 +28,8 @@ def _builtin_shortcode(value):
     Returns:
         The Shortcode for the declared ``type``, or None when it names none goodmap ships.
     """
-    if not isinstance(value, dict):
-        return None
-    field_type = value.get("type")
-    if not isinstance(field_type, str):
-        return None
-    return BUILTIN_FIELD_TYPES.get(field_type)
+    field_type = value.get("type") if isinstance(value, dict) else None
+    return BUILTIN_FIELD_TYPES.get(field_type) if isinstance(field_type, str) else None
 
 
 def _rendered_field(shortcode, value):
@@ -42,14 +38,8 @@ def _rendered_field(shortcode, value):
     The shortcode renders the value into ``html``, which is what lets goodmap's own types and
     a plugin's alike display without shipping any frontend code. The entry's own keys travel
     alongside for a React field plugin rendering from the data instead - a bare value under
-    the shortcode's ``content_key``, the name that plugin would look for. ``type`` is stamped
-    last, so an entry cannot redirect its own field at another renderer.
-
-    Because that bare value travels alongside, a shortcode's rendering is presentation, not
-    concealment: one that masks or drops part of what it displays still ships the original
-    here for anyone reading the response. Nothing in goodmap reads it - the popup needs only
-    ``html`` and ``type`` - so it is carried purely for a field plugin that would rather
-    render from the data, and could be dropped if none turns up wanting it.
+    the shortcode's ``content_key``. ``type`` is stamped last, so an entry cannot redirect
+    its own field at another renderer.
 
     Args:
         shortcode: The Shortcode rendering this field.
@@ -60,56 +50,6 @@ def _rendered_field(shortcode, value):
     """
     entry = value if isinstance(value, dict) else {shortcode.content_key: value}
     return {**entry, "type": shortcode.name, "html": shortcode.render_value(value)}
-
-
-def _rendered_builtin(shortcode, value, defaults):
-    """Build the payload for a field naming one of goodmap's own types.
-
-    Two things only goodmap's own types get, because goodmap knows what their rendering
-    means - a plugin's field keeps exactly the rendering its shortcode gives it:
-
-    * ``items``: a field of a :data:`~goodmap.field_types.MULTI_VALUE_TYPES` type - an
-      image field - holding several values lists them there. Each is rendered on its own
-      and the renderings joined into the field's ``html``; the items themselves go back as
-      data, without ``html``. An item the shortcode refuses renders to nothing and is
-      dropped, as is one that is not an object. Any other type with ``items`` renders
-      nothing, with a warning. A gallery wanting its own layout binds its own shortcode to
-      the field, or the field names the gallery's type instead.
-    * defaults derived from the place, such as an image's ``alt``. An entry's own value wins;
-      a ``null`` counts as absent, so imported data with ``"alt": null`` is still described
-      rather than marked decorative.
-
-    Args:
-        shortcode: The built-in Shortcode the field's ``type`` named.
-        value: The field's value from the location data - a dict, since it named a type.
-        defaults: ``defaults(shortcode)`` -> the place-derived attributes it declares.
-
-    Returns:
-        The field payload, carrying ``type`` and ``html``, and ``items`` when it had them.
-    """
-    fallback = defaults(shortcode)
-
-    def rendered(entry):
-        given = {key: item for key, item in entry.items() if item is not None}
-        return _rendered_field(shortcode, {**fallback, **given})
-
-    if not isinstance(value.get("items"), list):
-        return rendered(value)
-    if shortcode.name not in MULTI_VALUE_TYPES:
-        logger.warning("A %s field holds one value; items is for images.", shortcode.name)
-        return {**value, "type": shortcode.name, "html": ""}
-    entries = value["items"]
-    if not all(isinstance(item, dict) for item in entries):
-        logger.warning(
-            "Dropping %s items that are not objects; write each as e.g. {%r: ...}.",
-            shortcode.name,
-            next(iter(shortcode.attributes)).name,
-        )
-    items = [rendered(item) for item in entries if isinstance(item, dict)]
-    items = [item for item in items if item["html"]]
-    html = "".join(item["html"] for item in items)
-    data = [{k: v for k, v in item.items() if k not in ("type", "html")} for item in items]
-    return {**value, "items": data, "type": shortcode.name, "html": html}
 
 
 def _without_html(value):
@@ -133,75 +73,113 @@ def _without_html(value):
     return stripped
 
 
-def _popup_entry(field, value, plugins, defaults):
-    """Build one field's ``[label, value]`` pair for the popup, both translated.
+class PinFormatter:
+    """Formats locations into the translated payload their map popups render.
 
-    Args:
-        field: The field's name.
-        value: Its value from the location data.
-        plugins: Field name -> the plugin Shortcode bound to it.
-        defaults: ``defaults(shortcode)`` -> the place-derived attributes it declares.
-
-    Returns:
-        The pair, or None when the field has nothing to show.
+    Built once at startup with the settings that do not change per request; the fields to
+    show are passed per call, since they come from the data source.
     """
-    value = safe_gettext(value)
-    if field in plugins:
-        value = _rendered_field(plugins[field], value)
-    elif builtin := _builtin_shortcode(value):
-        value = _rendered_builtin(builtin, value, defaults)
-        if not value["html"]:
-            # Goodmap's own types have nothing to show but their ``html``, so one that
-            # rendered nothing - every image refused - would leave a label over a blank.
-            return None
-    else:
-        value = _without_html(value)
-    return [gettext(field), value]
 
+    def __init__(self, shortcodes=None, alt_template=None):
+        """Hold the formatting settings.
 
-def prepare_pin(
-    place, visible_fields, meta_data, shortcodes=None, alt_template=None
-) -> dict[str, Any]:
-    """Format one location into the translated payload its map popup renders.
+        Args:
+            shortcodes: Field name -> the platzky Shortcode bound to it. A plugin claims a
+                field by name; anything else may still name a built-in ``type`` in its own
+                data (see :mod:`goodmap.field_types`). Either way one shortcode renders it.
+            alt_template: The compiled ``IMAGE_ALT_TEMPLATE`` (see :mod:`goodmap.alt_template`),
+                describing the place to any image that does not describe itself. Omitted,
+                the place's name does, as when the key is not configured.
+        """
+        self._plugins = shortcodes or {}
+        self._alt_template = alt_template or _DEFAULT_ALT_TEMPLATE
 
-    Args:
-        place: The location's data.
-        visible_fields: Field names to show in the popup.
-        meta_data: Field names to carry as metadata.
-        shortcodes: Field name → the platzky Shortcode bound to it. A plugin claims a field
-            by name; anything else may still name a built-in ``type`` in its own data (see
-            :mod:`goodmap.field_types`). Either way one shortcode renders it.
-        alt_template: The compiled ``IMAGE_ALT_TEMPLATE`` (see :mod:`goodmap.alt_template`),
-            describing the place to any image that does not describe itself. Omitted, the
-            place's name does, as when the key is not configured.
+    def prepare_pin(self, place, visible_fields, meta_data) -> dict[str, Any]:
+        """Format one location.
 
-    Returns:
-        Title, subtitle, position, metadata, and ``data`` as ``[label, value]`` pairs.
-    """
-    plugins = shortcodes or {}
-    alt = None
+        Args:
+            place: The location's data.
+            visible_fields: Field names to show in the popup.
+            meta_data: Field names to carry as metadata.
 
-    def defaults(shortcode):
-        # Rendered once per pin, and only once an image asks for it.
-        nonlocal alt
-        if "alt" not in {attribute.name for attribute in shortcode.attributes}:
-            return {}
-        if alt is None:
-            alt = (alt_template or _DEFAULT_ALT_TEMPLATE).render(place)
-        return {"alt": alt}
+        Returns:
+            Title, subtitle, position, metadata, and ``data`` as ``[label, value]`` pairs.
+        """
+        entries = (self._entry(place, field) for field in visible_fields if field in place)
+        return {
+            "title": place["name"],
+            "subtitle": lazy_gettext(place["type_of_place"]),  # TODO should not be obligatory
+            "position": place["position"],
+            "metadata": {
+                gettext(field): safe_gettext(place[field]) for field in meta_data if field in place
+            },
+            "data": [entry for entry in entries if entry is not None],
+        }
 
-    entries = (
-        _popup_entry(field, place[field], plugins, defaults)
-        for field in visible_fields
-        if field in place
-    )
-    pin_data = {
-        "title": place["name"],
-        "subtitle": lazy_gettext(place["type_of_place"]),  # TODO this should not be obligatory
-        "position": place["position"],
-        "metadata": {
-            gettext(field): safe_gettext(place[field]) for field in meta_data if field in place
-        },
-        "data": [entry for entry in entries if entry is not None],
-    }
-    return pin_data
+    def _entry(self, place, field):
+        """Build one field's ``[label, value]`` pair for the popup, both translated.
+
+        Args:
+            place: The location's data.
+            field: The field's name.
+
+        Returns:
+            The pair, or None when the field has nothing to show.
+        """
+        value = safe_gettext(place[field])
+        if field in self._plugins:
+            value = _rendered_field(self._plugins[field], value)
+        elif builtin := _builtin_shortcode(value):
+            value = self._rendered_builtin(place, builtin, value)
+            if not value["html"]:
+                # Goodmap's own types have nothing to show but their ``html``, so one that
+                # rendered nothing - every image refused - would leave a label over a blank.
+                return None
+        else:
+            value = _without_html(value)
+        return [gettext(field), value]
+
+    def _rendered_builtin(self, place, shortcode, value):
+        """Build the payload for a field naming one of goodmap's own types.
+
+        Two things only goodmap's own types get, because goodmap knows what their rendering
+        means - a plugin's field keeps exactly the rendering its shortcode gives it:
+
+        * ``items``: a field of a :data:`~goodmap.field_types.MULTI_VALUE_TYPES` type - an
+          image field - holding several values lists them there. Each is rendered on its own
+          and the renderings joined into the field's ``html``; the items themselves go back
+          as data, without ``html``. An item the shortcode refuses renders to nothing and is
+          dropped, as is one that is not an object. Any other type with ``items`` renders
+          nothing, with a warning. A gallery wanting its own layout binds its own shortcode
+          to the field, or the field names the gallery's type instead.
+        * an ``alt`` from :attr:`_alt_template`, for a type that declares one. An entry's own
+          value wins; a ``null`` counts as absent, so imported data with ``"alt": null`` is
+          still described rather than marked decorative.
+
+        Args:
+            place: The location's data, which the alt template describes.
+            shortcode: The built-in Shortcode the field's ``type`` named.
+            value: The field's value from the location data - a dict, since it named a type.
+
+        Returns:
+            The field payload, carrying ``type`` and ``html``, and ``items`` when it had them.
+        """
+        declared = {attribute.name for attribute in shortcode.attributes}
+        fallback = {"alt": self._alt_template.render(place)} if "alt" in declared else {}
+
+        def rendered(entry):
+            given = {key: item for key, item in entry.items() if item is not None}
+            return _rendered_field(shortcode, {**fallback, **given})
+
+        if not isinstance(value.get("items"), list):
+            return rendered(value)
+        if shortcode.name not in MULTI_VALUE_TYPES:
+            logger.warning("A %s field holds one value; items is for images.", shortcode.name)
+            return {**value, "type": shortcode.name, "html": ""}
+        if not all(isinstance(item, dict) for item in value["items"]):
+            logger.warning("Dropping %s items that are not objects.", shortcode.name)
+        items = [rendered(item) for item in value["items"] if isinstance(item, dict)]
+        items = [item for item in items if item["html"]]
+        html = "".join(item["html"] for item in items)
+        data = [{k: v for k, v in item.items() if k not in ("type", "html")} for item in items]
+        return {**value, "items": data, "type": shortcode.name, "html": html}

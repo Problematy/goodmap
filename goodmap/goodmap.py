@@ -28,6 +28,7 @@ from goodmap.db import (
     get_marker_styles,
 )
 from goodmap.feature_flags import EnableAdminPanel
+from goodmap.formatter import PinFormatter
 from goodmap.initial_view import resolve_initial_view
 from goodmap.marker_styles import resolve_marker_styles
 from goodmap.plugin import CAPABILITY_BASES, GoodmapPluginBase
@@ -278,9 +279,8 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         location_model,
         photo_attachment_config=photo_attachment_config,
         feature_flags=config.feature_flags,
-        shortcodes=shortcodes,
+        pin_formatter=PinFormatter(shortcodes, alt_template),
         pin_marker_fields=pin_marker_fields,
-        alt_template=alt_template,
     )
     app.register_blueprint(cp)
 
