@@ -7,31 +7,12 @@ from flask_babel import gettext, lazy_gettext
 
 from goodmap.alt_template import DEFAULT_ALT_TEMPLATE, AltTemplate
 from goodmap.field_types import BUILTIN_FIELD_TYPES, ITEM_SEPARATORS
+from goodmap.translation import safe_gettext
 
 logger = logging.getLogger(__name__)
 
 #: What a caller that passes no ``IMAGE_ALT_TEMPLATE`` gets: the place's name, as configured.
 _DEFAULT_ALT_TEMPLATE = AltTemplate(DEFAULT_ALT_TEMPLATE)
-
-
-def safe_gettext(text):
-    """Translate ``text``, mapping over a list; anything that is not text is left alone.
-
-    A dict, a number or a position has nothing for ``gettext`` to look up, so it comes back
-    as it is - which is what lets one helper translate popup values and alt template
-    context alike. Nor does an empty string: ``gettext("")`` is the catalogue's header.
-
-    Args:
-        text: A str, a list, or any other field value.
-
-    Returns:
-        The translation, in the same shape as the input.
-    """
-    if isinstance(text, str):
-        return gettext(text) if text else text
-    if isinstance(text, list):
-        return [safe_gettext(item) for item in text]
-    return text
 
 
 def _builtin_shortcode(value):
@@ -202,7 +183,7 @@ def prepare_pin(
         if "alt" not in {attribute.name for attribute in shortcode.attributes}:
             return {}
         if alt is None:
-            alt = (alt_template or _DEFAULT_ALT_TEMPLATE).render(place, safe_gettext)
+            alt = (alt_template or _DEFAULT_ALT_TEMPLATE).render(place)
         return {"alt": alt}
 
     entries = (

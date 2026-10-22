@@ -344,7 +344,7 @@ def test_alt_template_sees_translated_field_values(monkeypatch):
     def translate(text: str) -> str:
         return f"{text}-pl"
 
-    monkeypatch.setattr("goodmap.formatter.gettext", translate)
+    monkeypatch.setattr("goodmap.translation.gettext", translate)
     template = AltTemplate("{{ type_of_place }} {{ types | join(',') }}")
     place = _images({"url": "https://example.com/1.jpg"})
     items = prepare_pin(place, ["images"], [], alt_template=template)["data"][0][1]["items"]
@@ -357,7 +357,7 @@ def test_alt_template_compares_against_raw_values(monkeypatch):
     def gettext(text: str) -> str:
         return {"true": "tak"}.get(text, text)
 
-    monkeypatch.setattr("goodmap.formatter.gettext", gettext)
+    monkeypatch.setattr("goodmap.translation.gettext", gettext)
     template = AltTemplate("{{ 'free' if raw.is_free == 'true' else 'paid' }} {{ is_free }}")
     place = {**_images({"url": "https://example.com/1.jpg"}), "is_free": "true"}
     items = prepare_pin(place, ["images"], [], alt_template=template)["data"][0][1]["items"]
@@ -370,7 +370,7 @@ def test_alt_template_empty_field_prints_nothing(monkeypatch):
     def gettext(text: str) -> str:
         return text or "HEADER"
 
-    monkeypatch.setattr("goodmap.formatter.gettext", gettext)
+    monkeypatch.setattr("goodmap.translation.gettext", gettext)
     template = AltTemplate("{{ name }} {{ remark }}")
     place = {**_images({"url": "https://example.com/1.jpg"}), "remark": ""}
     items = prepare_pin(place, ["images"], [], alt_template=template)["data"][0][1]["items"]
@@ -384,7 +384,7 @@ def test_alt_template_translates_only_the_fields_it_reads(monkeypatch):
         translated.append(text)
         return text
 
-    monkeypatch.setattr("goodmap.formatter.gettext", gettext)
+    monkeypatch.setattr("goodmap.translation.gettext", gettext)
     place = _images({"url": "https://example.com/1.jpg"})
     prepare_pin(place, [], [])  # nothing visible: only the alt could translate anything
     translated.clear()

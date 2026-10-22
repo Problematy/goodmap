@@ -13,12 +13,14 @@ values are there too, untranslated, as ``raw``.
 """
 
 import logging
-from collections.abc import Callable, Mapping
+from collections.abc import Mapping
 from typing import Any
 
 from flask_babel import gettext
 from jinja2 import meta
 from jinja2.sandbox import ImmutableSandboxedEnvironment
+
+from goodmap.translation import safe_gettext
 
 logger = logging.getLogger(__name__)
 
@@ -59,30 +61,21 @@ def _translate(*args: Any, **kwargs: Any) -> str:
 _environment.globals["_"] = _translate
 
 
-def _untranslated(value: Any) -> Any:
-    """Leave a field value as stored: :meth:`AltTemplate.render`'s default ``translate``.
-
-    ``{{ type_of_place }}`` then prints ``big bridge`` whatever the request's language.
-    """
-    return value
-
-
 class AltTemplate:
     """A compiled alt template, which renders the alt text for one place at a time.
 
-    Example, with ``to_polish`` translating each value::
+    Example, in a Polish request whose catalogue translates these values::
 
         place = {"name": "Grunwaldzki", "type_of_place": "big bridge", "is_free": "true",
                  "amenities": ["lighting", "benches"]}
 
-        AltTemplate("{{ name }}").render(place)                        # "Grunwaldzki"
-        AltTemplate("{{ type_of_place }}").render(place, to_polish)    # "duży most"
-        AltTemplate("{{ amenities | join(', ') }}").render(place, to_polish)
-                                                                 # "oświetlenie, ławki"
-        AltTemplate("{{ 'free' if raw.is_free == 'true' else 'paid' }}").render(
-            place, to_polish)                                          # "free"
-        AltTemplate("{{ 'free' if is_free == 'true' else 'paid' }}").render(
-            place, to_polish)                       # "paid" - is_free reads "tak" here
+        AltTemplate("{{ name }}").render(place)                     # "Grunwaldzki"
+        AltTemplate("{{ type_of_place }}").render(place)            # "duży most"
+        AltTemplate("{{ amenities | join(', ') }}").render(place)   # "oświetlenie, ławki"
+        AltTemplate("{{ 'free' if raw.is_free == 'true' else 'paid' }}").render(place)
+                                                                    # "free"
+        AltTemplate("{{ 'free' if is_free == 'true' else 'paid' }}").render(place)
+                                                    # "paid" - is_free reads "tak" here
     """
 
     def __init__(self, source: str) -> None:
@@ -100,9 +93,7 @@ class AltTemplate:
         # The names it reads, so only those of a place's fields need translating.
         self._names = frozenset(meta.find_undeclared_variables(parsed))
 
-    def render(
-        self, place: Mapping[str, Any], translate: Callable[[Any], Any] = _untranslated
-    ) -> str:
+    def render(self, place: Mapping[str, Any]) -> str:
         """Render the alt text for one place.
 
         A template that parsed can still fail on a particular place - the sandbox refusing
@@ -118,8 +109,8 @@ class AltTemplate:
             "photo of\n   {{ name }}  "   ->  "photo of Grunwaldzki"
 
         Args:
-            place: The place's fields, as stored.
-            translate: Applied to each field the template reads; ``raw`` is left as stored.
+            place: The place's fields, as stored. Those the template reads are translated
+                into the request's language; ``raw`` keeps them as stored.
 
         Returns:
             The alt text, with whitespace runs collapsed.
@@ -128,7 +119,7 @@ class AltTemplate:
         # out of the template's reach, which beats renaming a field the operator chose.
         context = {
             "raw": place,
-            **{name: translate(place[name]) for name in self._names if name in place},
+            **{name: safe_gettext(place[name]) for name in self._names if name in place},
         }
         try:
             rendered = self._template.render(context)

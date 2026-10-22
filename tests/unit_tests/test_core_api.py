@@ -583,6 +583,7 @@ def test_get_locations_threshold_filter_mode():
 
 @mock.patch("goodmap.api.core_api.gettext", fake_translation)
 @mock.patch("goodmap.formatter.gettext", fake_translation)
+@mock.patch("goodmap.translation.gettext", fake_translation)
 @mock.patch("flask_babel.gettext", fake_translation)
 def test_get_location(test_app):
     response = test_app.get("/api/location/11111111-1111-1111-1111-111111111111")

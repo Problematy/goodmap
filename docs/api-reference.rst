@@ -101,6 +101,9 @@ into HTML — by a plugin's shortcode, or by one of the field types goodmap buil
 .. automodule:: goodmap.formatter
    :members:
 
+.. automodule:: goodmap.translation
+   :members:
+
 .. automodule:: goodmap.field_types
    :members:
    :show-inheritance:
