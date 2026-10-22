@@ -44,29 +44,34 @@ def _finalize(value: object) -> object:
 _environment = ImmutableSandboxedEnvironment(autoescape=False, finalize=_finalize)
 
 
-# The template's own text is translated with ``_()``, formatting arguments included. In a
-# Polish request, given a catalogue that translates the message:
-#
-#     {{ _('photo of') }} {{ name }}              ->  "zdjęcie Grunwaldzki"
-#     {{ _('photo of %(name)s', name=name) }}     ->  "zdjęcie Grunwaldzki"
+# The template's own text is translated with ``_()``; see :class:`AltTemplate`'s example.
 _environment.globals["_"] = gettext
 
 
 class AltTemplate:
     """A compiled alt template, which renders the alt text for one place at a time.
 
-    Example, in a Polish request whose catalogue translates these values::
+    Example - a sentence with the name inside it, a translated field, a condition on the
+    stored value, and a clause only some places have::
 
-        place = {"name": "Grunwaldzki", "type_of_place": "big bridge", "is_free": "true",
-                 "amenities": ["lighting", "benches"]}
+        {{ _('Photo of %(name)s', name=name) }} ({{ type_of_place }}):
+        {{ _('free') if raw.is_free == 'true' else _('paid') }}
+        {%- if speed_limit %}, {{ _('speed limit %(limit)s km/h', limit=speed_limit) }}{% endif %}
 
-        AltTemplate("{{ name }}").render(place)                     # "Grunwaldzki"
-        AltTemplate("{{ type_of_place }}").render(place)            # "duży most"
-        AltTemplate("{{ amenities | join(', ') }}").render(place)   # "oświetlenie, ławki"
-        AltTemplate("{{ 'free' if raw.is_free == 'true' else 'paid' }}").render(place)
-                                                                    # "free"
-        AltTemplate("{{ 'free' if is_free == 'true' else 'paid' }}").render(place)
-                                                    # "paid" - is_free reads "tak" here
+    For ``{"name": "Grunwaldzki", "type_of_place": "big bridge", "is_free": "true",
+    "speed_limit": "50"}`` that renders, in English and in a Polish request::
+
+        Photo of Grunwaldzki (big bridge): free, speed limit 50 km/h
+        Zdjęcie - Grunwaldzki (duży most): bezpłatny, ograniczenie prędkości 50 km/h
+
+    and without a ``speed_limit``, just ``Photo of Grunwaldzki (big bridge): free``.
+
+    * ``_('Photo of %(name)s', name=name)`` translates the whole phrase, so a language can
+      put the name where its grammar wants it.
+    * ``{{ type_of_place }}`` is translated already: ``big bridge`` became ``duży most``.
+    * ``raw.is_free`` is compared rather than ``is_free``, which reads ``tak`` in Polish.
+    * ``{%- if speed_limit %}`` leaves the clause out for a place without one, and its
+      ``-`` keeps the comma against the word before it.
     """
 
     def __init__(self, source: str) -> None:
@@ -92,8 +97,9 @@ class AltTemplate:
         and a popup is not worth losing over its alt text, so any failure falls back to the
         place's name::
 
-            AltTemplate("{{ 100 // capacity }}").render({"name": "LASSO", "capacity": 0})
-            # "LASSO", and a warning in the log
+            alt = AltTemplate("{{ 100 // capacity }} people fit here")
+            alt.render({"name": "Grunwaldzki", "capacity": 0})
+            # 100 // 0 raises ZeroDivisionError, so: "Grunwaldzki", and a warning in the log
 
         Runs of whitespace collapse, so a template may be laid out over several lines::
 
