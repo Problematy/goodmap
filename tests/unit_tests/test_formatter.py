@@ -230,6 +230,13 @@ def test_formatting_when_missing_visible_field():
     )
 
 
+def test_a_field_whose_value_is_none_is_left_out():
+    """``model_dump`` keeps an unset optional field as None; a label over nothing says nothing."""
+    place = {**test_place, "remark": None}
+    data = PinFormatter(["remark", "plain_text"], [], _NAME_ALT).prepare_pin(place)["data"]
+    assert data == [["plain_text", "text"]]
+
+
 def test_html_in_the_data_is_dropped_rather_than_rendered_as_markup():
     """``html`` means "the server rendered this", and the popup injects it as markup.
 

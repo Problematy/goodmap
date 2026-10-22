@@ -12,7 +12,7 @@ from goodmap.translation import safe_gettext
 logger = logging.getLogger(__name__)
 
 
-def _builtin_shortcode(value):
+def _find_builtin_shortcode(value):
     """The built-in shortcode a field's own data asks for, if any.
 
     Reached only where no plugin shortcode claimed the field by name, and only the closed
@@ -29,7 +29,7 @@ def _builtin_shortcode(value):
     return BUILTIN_FIELD_TYPES.get(field_type) if isinstance(field_type, str) else None
 
 
-def _rendered_field(shortcode, value):
+def _render_field(shortcode, value):
     """Build the popup payload for a field, from whichever shortcode renders it.
 
     The shortcode renders the value into ``html``, which is what lets goodmap's own types and
@@ -114,11 +114,13 @@ class PinFormatter:
             # key, so it is passed on untranslated.
             "metadata": {field: place[field] for field in self._meta_fields if field in place},
             "data": [
-                entry for field in self._visible_fields if (entry := self._entry(place, field))
+                entry
+                for field in self._visible_fields
+                if (entry := self._build_entry(place, field))
             ],
         }
 
-    def _entry(self, place, field):
+    def _build_entry(self, place, field):
         """Build one field's ``[label, value]`` pair for the popup, both translated.
 
         Args:
@@ -126,15 +128,17 @@ class PinFormatter:
             field: The field's name.
 
         Returns:
-            The pair, or None when the place lacks the field or it has nothing to show.
+            The pair, or None when the field has nothing to show: the place lacks it, its
+            value is None (``model_dump`` keeps an unset optional field as None), or it
+            rendered nothing.
         """
-        if field not in place:
+        if place.get(field) is None:
             return None
         value = safe_gettext(place[field])
         if field in self._plugin_shortcodes:
-            value = _rendered_field(self._plugin_shortcodes[field], value)
-        elif builtin := _builtin_shortcode(value):
-            value = self._rendered_builtin(place, builtin, value)
+            value = _render_field(self._plugin_shortcodes[field], value)
+        elif builtin := _find_builtin_shortcode(value):
+            value = self._render_builtin_field(place, builtin, value)
             if not value["html"]:
                 # Goodmap's own types have nothing to show but their ``html``, so one that
                 # rendered nothing - every image refused - would leave a label over a blank.
@@ -143,7 +147,7 @@ class PinFormatter:
             value = _drop_html_from_field(value)
         return [gettext(field), value]
 
-    def _rendered_builtin(self, place, shortcode, value):
+    def _render_builtin_field(self, place, shortcode, value):
         """Build the payload for a field naming one of goodmap's own types.
 
         Only goodmap's own types get these, since goodmap knows what their rendering means:
@@ -166,18 +170,18 @@ class PinFormatter:
         declared = {attribute.name for attribute in shortcode.attributes}
         fallback = {"alt": self._alt_template.render(place)} if "alt" in declared else {}
 
-        def rendered(entry):
+        def render_entry(entry):
             given = {key: item for key, item in entry.items() if item is not None}
-            return _rendered_field(shortcode, {**fallback, **given})
+            return _render_field(shortcode, {**fallback, **given})
 
         if not isinstance(value.get("items"), list):
-            return rendered(value)
+            return render_entry(value)
         if shortcode.name not in MULTI_VALUE_TYPES:
             logger.warning("A %s field holds one value; items is for images.", shortcode.name)
             return {**value, "type": shortcode.name, "html": ""}
         if not all(isinstance(item, dict) for item in value["items"]):
             logger.warning("Dropping %s items that are not objects.", shortcode.name)
-        items = [rendered(item) for item in value["items"] if isinstance(item, dict)]
+        items = [render_entry(item) for item in value["items"] if isinstance(item, dict)]
         items = [item for item in items if item["html"]]
         html = "".join(item["html"] for item in items)
         data = [{k: v for k, v in item.items() if k not in ("type", "html")} for item in items]
