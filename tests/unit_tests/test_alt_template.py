@@ -1,4 +1,5 @@
 import logging
+import os
 
 import flask_babel
 import pytest
@@ -64,6 +65,30 @@ def test_sandbox_refusal_falls_back_to_the_name(caplog):
     with caplog.at_level(logging.WARNING):
         assert template.render(place) == "Grunwaldzki"
     assert "IMAGE_ALT_TEMPLATE" in caplog.text
+
+
+_PWNED = "GOODMAP_ALT_TEMPLATE_PWNED"
+
+
+@pytest.mark.parametrize(
+    "escape",
+    [
+        # Jinja's default globals are Python functions, whose __globals__ lead to ``os``.
+        "cycler.__init__.__globals__.os.environ",
+        "lipsum.__globals__.os.environ",
+        "namespace.__init__.__globals__.os.environ",
+    ],
+)
+def test_sandbox_blocks_code_execution(escape, monkeypatch):
+    """The template is operator config; without the sandbox it could run code on the server.
+
+    Each payload tries to set an environment variable through ``os``, so the test sees
+    whether anything ran, not only what was printed.
+    """
+    monkeypatch.delenv(_PWNED, raising=False)
+    template = AltTemplate(f"{{{{ {escape}.__setitem__('{_PWNED}', '1') }}}}")
+    assert template.render(place) == "Grunwaldzki"
+    assert _PWNED not in os.environ
 
 
 def test_none_prints_as_nothing():
