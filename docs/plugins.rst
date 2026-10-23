@@ -300,6 +300,19 @@ optionally, ``config.order``; lower order is more innermost, higher order wraps 
 A wrapper must have a renderer beneath it (a type rendered server-side — one of goodmap's
 own, or a plugin's shortcode — or a renderer plugin it depends on).
 
+.. warning::
+
+   A field plugin renders data nobody vouched for — a suggested point, an imported dataset —
+   so it must render values as text, never as markup. ``<code>{input.code}</code>`` above is
+   safe because React escapes what it renders: a code stored as ``<img src=x onerror=…>``
+   shows as those characters. Passing a value to ``dangerouslySetInnerHTML``, or building
+   markup from it some other way, would run whatever it holds in every visitor's browser.
+
+   This is the frontend half of the rule a shortcode follows when it escapes the data it
+   interpolates. The one piece of markup the popup inserts as HTML is the field's ``html``,
+   which only the server writes; a wrapper receives it as an element in ``input`` and
+   composes around it, as ``HyperlinkBadge`` does.
+
 .. _plugins-configuration:
 
 Configuration
