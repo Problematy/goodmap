@@ -32,8 +32,8 @@ class TestPopupOnDesktop:
 
         verify_popup_content(page, EXPECTED_PLACE_ZWIERZYNIECKA)
 
-        # The seeded photo has no alt of its own, so the default template names the place.
-        expect(popup.locator('img[alt="Zwierzyniecka"]')).to_be_attached()
+        # The seeded photo, described by the alt its data gives it.
+        expect(popup.locator('img[alt="Most Zwierzyniecki"]')).to_be_attached()
 
         # Verify close button and click it
         close_button = page.locator(".leaflet-popup-close-button")

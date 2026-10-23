@@ -2,8 +2,8 @@
 
 A location entry names a field's ``type`` in the data - ``{"type": "hyperlink", "value": …}``
 - and this module is the catalogue of the types goodmap ships. Each is an ordinary platzky
-``Shortcode``, the same thing a plugin contributes, so ``prepare_pin`` renders every field
-through one interface and the popup gets ``html`` either way.
+``Shortcode``, the same thing a plugin contributes, so every field renders through one
+interface and the popup gets ``html`` either way.
 
 What differs is how a renderer is found. A plugin's shortcode is bound to a field by *name*,
 which is what makes the field its own. Goodmap's own are looked up by the ``type`` the entry
@@ -16,9 +16,8 @@ place can carry photos; platzky holds its URLs to ``https`` or a path on the sit
 rather than the whole set, because the entries naming these types are data nobody vouched
 for, and platzky's ``html`` would hand them raw markup in the popup.
 
-An image field may hold several images under ``items`` -
-``{"type": "image", "items": [{"url": …}, …]}`` - each rendered on its own; see
-:func:`goodmap.formatter.prepare_pin`.
+An image field holds one image - ``{"type": "image", "url": …, "alt": …}`` - described by
+the ``alt`` its data gives it.
 """
 
 from collections.abc import Sequence
@@ -107,7 +106,3 @@ class CTAFieldShortcode(HyperlinkFieldShortcode):
 BUILTIN_FIELD_TYPES: dict[str, Shortcode] = {
     s.name: s for s in (image_shortcode, HyperlinkFieldShortcode(), CTAFieldShortcode())
 }
-
-#: The field types that may hold several values under ``items``. Only images: a place has
-#: several photos, while nothing yet needs several links in one field.
-MULTI_VALUE_TYPES = frozenset({"image"})

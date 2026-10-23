@@ -14,7 +14,6 @@ from platzky.content_types import ContentType
 from platzky.models import CmsModule
 from platzky.shortcodes import Shortcode
 
-from goodmap.alt_template import AltTemplate
 from goodmap.api.admin_api import admin_pages
 from goodmap.api.api_models import PinMarkerFields
 from goodmap.api.core_api import core_pages
@@ -204,9 +203,6 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
     # page load (see goodmap.initial_view).
     initial_view = resolve_initial_view(get_initial_view(app.db)(app.db))
 
-    # Compiled here for the same reason: a template that does not parse fails the boot.
-    alt_template = AltTemplate(config.image_alt_template)
-
     # Which fields a popup shows, and which it carries as metadata: map configuration like
     # the view above, read once rather than on every popup, so changing it takes a restart.
     visible_fields = get_visible_data(app.db)(app.db)
@@ -286,7 +282,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         location_model,
         photo_attachment_config=photo_attachment_config,
         feature_flags=config.feature_flags,
-        pin_formatter=PinFormatter(visible_fields, meta_fields, alt_template, shortcodes),
+        pin_formatter=PinFormatter(visible_fields, meta_fields, shortcodes),
         pin_marker_fields=pin_marker_fields,
     )
     app.register_blueprint(cp)

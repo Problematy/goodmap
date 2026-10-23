@@ -185,11 +185,6 @@ const ImagesContainer = styled.div`
             animation: none;
         }
     }
-
-    /* Several images in one field arrive as one span, so the flex gap does not reach them. */
-    img + img {
-        margin-top: 8px;
-    }
 `;
 
 const markImage = (img, loaded) => {

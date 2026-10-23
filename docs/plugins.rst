@@ -214,15 +214,12 @@ naming these types are data nobody vouched for: a suggested point or an imported
 naming platzky's ``html`` would put raw markup into the popup. Offering another, ``figure``
 say, means adding it to ``BUILTIN_FIELD_TYPES``.
 
-An ``image`` field may hold several images under ``items``. Each is rendered on its own and
-the renderings joined into the field's ``html``; the items go back as plain data, without
-``html`` of their own. An item the shortcode refuses is dropped, as is one that is not an
-object — a bare URL string, say, which logs a warning — and a field left with nothing to
-show is left out of the popup altogether. A ``hyperlink`` or ``CTA`` field holds one value:
-given ``items``, it is left out of the popup, with a warning in the log. A gallery wanting a
-layout of its own does not reach into ``image``: it brings its own type, either a shortcode
-bound to the field by name or a field ``type`` of its own that the data names instead. A
-field a plugin's shortcode is bound to keeps exactly the rendering that shortcode gives it.
+Each built-in field holds one value; a field the shortcode refuses, leaving nothing to
+show, is left out of the popup altogether. A place with several photos gives each its own
+field. A gallery wanting a layout of its own does not reach into ``image``: it brings its
+own type, either a shortcode bound to the field by name or a field ``type`` of its own that
+the data names instead. A field a plugin's shortcode is bound to keeps exactly the
+rendering that shortcode gives it.
 
 An image URL must be ``https`` or a path on the site itself (``/static/…``) — platzky's
 image policy, since an image is fetched by every visitor who opens the point;
@@ -230,14 +227,12 @@ image policy, since an image is fetched by every visitor who opens the point;
 
 .. code-block:: json
 
-    {"images": {"type": "image",
-                "items": [{"url": "https://example.com/front.jpg"},
-                          {"url": "https://example.com/inside.jpg", "alt": "The counter"}]}}
+    {"photo": {"type": "image", "url": "https://example.com/front.jpg",
+               "alt": "The shop front, with its green door"}}
 
-A single photo is a one-element ``items``. An item without ``alt`` is described by
-:ref:`IMAGE_ALT_TEMPLATE <config-image-alt-template>`; one with its own wins, including an
-empty ``alt`` for a purely decorative image; an ``alt`` of ``null`` counts as not given.
-Image fields are shown full-width under the popup's title, without a label.
+Give every photo an ``alt`` saying what it shows, so a screen reader can describe it; an
+image without one gets ``alt=""``, which marks it as decorative. Image fields are shown
+full-width under the popup's title, without a label.
 
 .. note::
 

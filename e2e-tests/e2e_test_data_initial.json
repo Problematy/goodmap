@@ -43,13 +43,10 @@
         ],
         "uuid": "c8ecf476-5968-40da-ba5c-e810ad9ff203",
         "remark": "very old bridge",
-        "photos": {
+        "photo": {
           "type": "image",
-          "items": [
-            {
-              "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/WroclawMostZwierzyniecki.jpg/500px-WroclawMostZwierzyniecki.jpg"
-            }
-          ]
+          "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/WroclawMostZwierzyniecki.jpg/500px-WroclawMostZwierzyniecki.jpg",
+          "alt": "Most Zwierzyniecki"
         }
       },
       {
@@ -296,7 +293,7 @@
       }
     },
     "visible_data": [
-      "photos",
+      "photo",
       "remark",
       "accessible_by",
       "type_of_place",

@@ -3,16 +3,12 @@ import '@testing-library/jest-dom';
 import { render, fireEvent } from '@testing-library/react';
 import LocationDetailsBox from '../../src/components/MarkerPopup/LocationDetails';
 
-// An `images` field as `prepare_pin` sends it: platzky's [image] shortcode rendered each item,
-// the field's `html` joins them, and the items come back as plain data.
-const images = {
-    type: 'image',
-    items: [
-        { url: 'https://example.com/1.jpg', alt: 'Front' },
-        { url: 'https://example.com/2.jpg', alt: 'Inside' },
-    ],
-    html: '<img src="https://example.com/1.jpg" alt="Front"><img src="https://example.com/2.jpg" alt="Inside">',
-};
+// Image fields as `prepare_pin` sends them: one image each, rendered by platzky's [image].
+const image = (url, alt) => ({ type: 'image', url, alt, html: `<img src="${url}" alt="${alt}">` });
+const imageFields = [
+    ['front', image('https://example.com/1.jpg', 'Front')],
+    ['inside', image('https://example.com/2.jpg', 'Inside')],
+];
 
 const place = data => ({
     title: 'Most Grunwaldzki',
@@ -25,17 +21,12 @@ const place = data => ({
 describe('Images', () => {
     it('shows every image above the details, without a label', () => {
         const { container, getAllByRole, queryByText } = render(
-            <LocationDetailsBox
-                place={place([
-                    ['length', 112.5],
-                    ['images', images],
-                ])}
-            />,
+            <LocationDetailsBox place={place([['length', 112.5], ...imageFields])} />,
         );
 
         const shown = getAllByRole('img');
         expect(shown.map(img => img.getAttribute('alt'))).toEqual(['Front', 'Inside']);
-        expect(queryByText('images')).not.toBeInTheDocument();
+        expect(queryByText('front')).not.toBeInTheDocument();
 
         const html = container.innerHTML;
         expect(html.indexOf('<img')).toBeLessThan(html.indexOf('length'));
@@ -43,7 +34,7 @@ describe('Images', () => {
 
     describe('load state', () => {
         const renderImages = () =>
-            render(<LocationDetailsBox place={place([['images', images]])} />).container;
+            render(<LocationDetailsBox place={place(imageFields)} />).container;
 
         it('holds a placeholder until an image settles', () => {
             const imgs = renderImages().querySelectorAll('img');

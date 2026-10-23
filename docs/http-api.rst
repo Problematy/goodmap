@@ -195,26 +195,19 @@ or one a plugin's shortcode is bound to — comes back as an object rather than 
      "html": "<a href=\"https://example.com\" target=\"_blank\" rel=\"noopener noreferrer\">Example</a>"
    }]
 
-An ``image`` field may hold several images under ``items``. The field's ``html`` renders
-them all; ``items`` lists them as data, without ``html`` of their own. Items that render to
-nothing are dropped from both, and a built-in field left with nothing to show is left out of
-``data``. Stored as
-``{"type": "image", "items": [{"url": ".../front.jpg"}, {"url": ".../deck.jpg", "alt":
-"The deck at night"}]}``, an image field comes back as:
+An image field holds one image, and comes back the same way:
 
 .. code-block:: json
 
-   ["images", {
+   ["photo", {
      "type": "image",
-     "items": [
-       {"url": "https://example.com/front.jpg", "alt": "Zwierzyniecka"},
-       {"url": "https://example.com/deck.jpg", "alt": "The deck at night"}
-     ],
-     "html": "<img src=\"https://example.com/front.jpg\" alt=\"Zwierzyniecka\"><img src=\"https://example.com/deck.jpg\" alt=\"The deck at night\">"
+     "url": "https://example.com/deck.jpg",
+     "alt": "The deck at night",
+     "html": "<img src=\"https://example.com/deck.jpg\" alt=\"The deck at night\">"
    }]
 
-The first item had no ``alt``, so :ref:`IMAGE_ALT_TEMPLATE <config-image-alt-template>`
-described it: by default, with the point's ``name``.
+A built-in field left with nothing to show - an image whose URL is refused, say - is left
+out of ``data``.
 
 ``html`` is always the server's rendering, never a value taken from the data: it is what to
 display, and ``type`` says what produced it. The entry's own keys travel alongside for a

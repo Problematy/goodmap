@@ -7,8 +7,6 @@ from platzky.config import AttachmentConfig
 from platzky.config import Config as PlatzkyConfig
 from pydantic import Field
 
-from goodmap.alt_template import DEFAULT_ALT_TEMPLATE
-
 
 def _default_photo_attachment_config() -> AttachmentConfig:
     """Attachment limits for location suggestion photos: JPEG only, up to 5 MiB.
@@ -38,13 +36,6 @@ class GoodmapConfig(PlatzkyConfig):
     attachment: AttachmentConfig = Field(
         default_factory=_default_photo_attachment_config,
         alias="ATTACHMENT",
-    )
-
-    # Jinja template describing a place to any of its images that carries no ``alt`` of its
-    # own; see goodmap.alt_template. Unset, an image is described by the place's name. Empty is
-    # refused: it would mark every such image decorative, hiding it from screen readers.
-    image_alt_template: str = Field(
-        default=DEFAULT_ALT_TEMPLATE, alias="IMAGE_ALT_TEMPLATE", min_length=1
     )
 
     @classmethod

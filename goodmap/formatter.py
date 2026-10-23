@@ -1,16 +1,30 @@
 """Formatters for translating and preparing location data for display."""
 
-import logging
 from typing import Any
 
 from flask_babel import gettext, lazy_gettext
 from pydantic import JsonValue
 
-from goodmap.alt_template import describe_images
-from goodmap.field_types import BUILTIN_FIELD_TYPES, MULTI_VALUE_TYPES
-from goodmap.translation import safe_gettext
+from goodmap.field_types import BUILTIN_FIELD_TYPES
 
-logger = logging.getLogger(__name__)
+
+def safe_gettext(text):
+    """Translate ``text``, mapping over a list; anything that is not text is left alone.
+
+    A dict, a number or a position has nothing for ``gettext`` to look up, so it comes back
+    as it is. Nor does an empty string: ``gettext("")`` is the catalogue's header.
+
+    Args:
+        text: A str, a list, or any other field value.
+
+    Returns:
+        The translation, in the same shape as the input.
+    """
+    if isinstance(text, str):
+        return gettext(text) if text else text
+    if isinstance(text, list):
+        return [safe_gettext(item) for item in text]
+    return text
 
 
 def _find_builtin_shortcode(value):
@@ -51,7 +65,7 @@ def _render_field(shortcode, value):
 
 
 def _drop_html_from_field(value: JsonValue) -> JsonValue:
-    """Drop any ``html`` an unrendered field brought with it, its ``items`` included.
+    """Drop any ``html`` an unrendered field brought with it.
 
     ``html`` is this payload's word for "the server rendered this", and the popup injects it
     as markup. Nothing rendered this field, so an ``html`` here came from the data - a
@@ -61,45 +75,11 @@ def _drop_html_from_field(value: JsonValue) -> JsonValue:
         value: The field's value from the location data.
 
     Returns:
-        The value without ``html``, at the top level or on any item.
+        The value without ``html``.
     """
     if not isinstance(value, dict):
         return value
-    stripped = {key: item for key, item in value.items() if key != "html"}
-    items = stripped.get("items")
-    if isinstance(items, list):
-        stripped["items"] = [_drop_html_from_field(item) for item in items]
-    return stripped
-
-
-def _render_builtin_field(shortcode, value):
-    """Build the payload for a field naming one of goodmap's own types.
-
-    A field of a :data:`~goodmap.field_types.MULTI_VALUE_TYPES` type - an image field - may
-    hold several values under ``items``: each is rendered on its own, the renderings joined
-    into the field's ``html``, and the items go back as data. An item that renders nothing,
-    or is not an object, is dropped; any other type with ``items`` renders nothing, with a
-    warning.
-
-    Args:
-        shortcode: The built-in Shortcode the field's ``type`` named.
-        value: The field's value from the location data - a dict, since it named a type.
-
-    Returns:
-        The field payload, carrying ``type`` and ``html``, and ``items`` when it had them.
-    """
-    if not isinstance(value.get("items"), list):
-        return _render_field(shortcode, value)
-    if shortcode.name not in MULTI_VALUE_TYPES:
-        logger.warning("A %s field holds one value; items is for images.", shortcode.name)
-        return {**value, "type": shortcode.name, "html": ""}
-    if not all(isinstance(item, dict) for item in value["items"]):
-        logger.warning("Dropping %s items that are not objects.", shortcode.name)
-    items = [_render_field(shortcode, item) for item in value["items"] if isinstance(item, dict)]
-    items = [item for item in items if item["html"]]
-    html = "".join(item["html"] for item in items)
-    data = [{k: v for k, v in item.items() if k not in ("type", "html")} for item in items]
-    return {**value, "items": data, "type": shortcode.name, "html": html}
+    return {key: item for key, item in value.items() if key != "html"}
 
 
 class PinFormatter:
@@ -110,25 +90,20 @@ class PinFormatter:
     takes a restart.
     """
 
-    def __init__(self, visible_fields, meta_fields, alt_template, plugin_shortcodes=None):
+    def __init__(self, visible_fields, meta_fields, plugin_shortcodes=None):
         """Hold the formatting settings.
 
         Args:
             visible_fields: Field names to show in the popup, in order.
             meta_fields: Field names to carry as metadata.
-            alt_template: The compiled ``IMAGE_ALT_TEMPLATE`` (see :mod:`goodmap.alt_template`),
-                describing the place to any image that does not describe itself. Its default
-                lives in the config: the place's name.
-            plugin_shortcodes: Field name -> the platzky Shortcode bound to it. A plugin claims a
-                field by name; anything else may still name a built-in ``type`` in its own
-                data (see :mod:`goodmap.field_types`). Either way one shortcode renders it.
+            plugin_shortcodes: Field name -> the platzky Shortcode a plugin bound to it. A
+                plugin claims a field by name; anything else may still name a built-in
+                ``type`` in its own data (see :mod:`goodmap.field_types`). Either way one
+                shortcode renders it.
         """
         self._visible_fields = visible_fields
         self._meta_fields = meta_fields
-        self._alt_template = alt_template
         self._plugin_shortcodes = plugin_shortcodes or {}
-        # A plugin's field keeps exactly what its data says, so only the rest get described.
-        self._fields_to_describe = [f for f in visible_fields if f not in self._plugin_shortcodes]
 
     def prepare_pin(self, place) -> dict[str, Any]:
         """Format one location.
@@ -139,7 +114,6 @@ class PinFormatter:
         Returns:
             Title, subtitle, position, metadata, and ``data`` as ``[label, value]`` pairs.
         """
-        place = describe_images(place, self._fields_to_describe, self._alt_template)
         return {
             "title": place["name"],
             "subtitle": lazy_gettext(place["type_of_place"]),  # TODO should not be obligatory
@@ -172,10 +146,10 @@ class PinFormatter:
         if field in self._plugin_shortcodes:
             value = _render_field(self._plugin_shortcodes[field], value)
         elif builtin := _find_builtin_shortcode(value):
-            value = _render_builtin_field(builtin, value)
+            value = _render_field(builtin, value)
             if not value["html"]:
                 # Goodmap's own types have nothing to show but their ``html``, so one that
-                # rendered nothing - every image refused - would leave a label over a blank.
+                # rendered nothing - a refused image, say - would leave a label over a blank.
                 return None
         else:
             value = _drop_html_from_field(value)
