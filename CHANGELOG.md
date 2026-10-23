@@ -2,6 +2,13 @@
 
 <!-- version list -->
 
+## [2.0.0-alpha.11](https://github.com/Problematy/goodmap/compare/2.0.0-alpha.10...2.0.0-alpha.11) (2026-10-23)
+
+
+### Features
+
+* added images to markers ([#409](https://github.com/Problematy/goodmap/issues/409)) ([9c1460a](https://github.com/Problematy/goodmap/commit/9c1460a7df280fe4ebc42944deb8858d3393e115))
+
 ## [2.0.0-alpha.10](https://github.com/Problematy/goodmap/compare/2.0.0-alpha.9...2.0.0-alpha.10) (2026-09-29)
 
 
