@@ -99,6 +99,32 @@ describe('should render marker popup correctly', () => {
                     render(<LocationDetailsBox place={incorrectComplexMarkerData} />),
                 ).not.toThrow();
             });
+
+            it('keeps a field whose type names an Object.prototype property', () => {
+                const place = {
+                    ...correctMarkerData,
+                    data: [['oddType', { type: 'constructor', value: 'still shown' }]],
+                };
+                render(<LocationDetailsBox place={place} />);
+                expect(screen.getByText('oddType')).toBeInTheDocument();
+            });
+
+            it('keeps both of two fields whose translated labels coincide', () => {
+                const cta = text => ({ type: 'CTA', html: `<a href="https://a.org">${text}</a>` });
+                const place = {
+                    ...correctMarkerData,
+                    data: [
+                        ['link', cta('first')],
+                        ['link', cta('second')],
+                    ],
+                };
+                const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+                render(<LocationDetailsBox place={place} />);
+                expect(screen.getByText('first')).toBeInTheDocument();
+                expect(screen.getByText('second')).toBeInTheDocument();
+                expect(consoleError).not.toHaveBeenCalled();
+                consoleError.mockRestore();
+            });
         });
 
         describe('should handle plugin fields', () => {

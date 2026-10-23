@@ -208,14 +208,47 @@ That lookup is safe only because the catalogue is closed: an entry may name a ty
 and nothing else, so it can never point its own field at a plugin's renderer. ``prepare_pin``
 consults it only where no plugin shortcode claimed the field by name.
 
-A plugin cannot take over ``hyperlink`` or ``CTA`` either. The server always emits ``html``
+Alongside its own, goodmap offers **one** of platzky's built-in shortcodes — ``image`` — so
+a point can carry photos. Not the whole set, because the entries
+naming these types are data nobody vouched for: a suggested point or an imported dataset
+naming platzky's ``html`` would put raw markup into the popup. Offering another, ``figure``
+say, means adding it to ``BUILTIN_FIELD_TYPES``.
+
+Each built-in field holds one value; a field the shortcode refuses, leaving nothing to
+show, is left out of the popup altogether. A place with several photos gives each its own
+field. A gallery wanting a layout of its own does not reach into ``image``: it brings its
+own type, either a shortcode bound to the field by name or a field ``type`` of its own that
+the data names instead. A field a plugin's shortcode is bound to keeps exactly the
+rendering that shortcode gives it.
+
+An image URL must be ``https`` or a path on the site itself (``/static/…``) — platzky's
+image policy, since an image is fetched by every visitor who opens the point;
+``http:``, ``javascript:`` and ``data:`` are refused:
+
+.. code-block:: json
+
+    {"photo": {"type": "image", "url": "https://example.com/front.jpg",
+               "alt": "The shop front, with its green door"}}
+
+Give every photo an ``alt`` saying what it shows, so a screen reader can describe it; an
+image without one gets ``alt=""``, which marks it as decorative. Image fields are shown
+full-width under the popup's title, without a label.
+
+.. note::
+
+   Unlike a link, an image is fetched as soon as its popup opens. Whoever hosts an image
+   URL in your data therefore learns the IP address of everyone who opens that point, and
+   when — which is why a suggested point's images deserve the same scrutiny as its text
+   before it is approved, and why an imported dataset's should come from hosts you trust.
+
+A plugin cannot take over ``hyperlink``, ``CTA`` or ``image`` either. The server always emits ``html``
 for a type it renders, so that HTML is always the innermost stage — a field plugin attached
 to one of these types wraps it and cannot replace it.
 
 The two share a rendering, because they only ever differed in presentation: both are a URL
 and the text to show for it. Which one a field is decides where the popup puts it — a line
-among the details, or a button below them — which ``LocationDetails`` decides from the field
-name.
+among the details, or a button below them — which ``LocationDetails`` decides from the
+value's ``type`` in its ``SECTION_BY_TYPE`` table.
 
 A field plugin is a ``MarkerFieldPluginBase`` whose component is a stage
 ``({ input, config }) => element`` — it receives the previous stage's output as ``input``.
@@ -261,6 +294,19 @@ Both are the same plugin kind. Each sets ``config.field`` to the type it attache
 optionally, ``config.order``; lower order is more innermost, higher order wraps further out.
 A wrapper must have a renderer beneath it (a type rendered server-side — one of goodmap's
 own, or a plugin's shortcode — or a renderer plugin it depends on).
+
+.. warning::
+
+   A field plugin renders data nobody vouched for — a suggested point, an imported dataset —
+   so it must render values as text, never as markup. ``<code>{input.code}</code>`` above is
+   safe because React escapes what it renders: a code stored as ``<img src=x onerror=…>``
+   shows as those characters. Passing a value to ``dangerouslySetInnerHTML``, or building
+   markup from it some other way, would run whatever it holds in every visitor's browser.
+
+   This is the frontend half of the rule a shortcode follows when it escapes the data it
+   interpolates. The one piece of markup the popup inserts as HTML is the field's ``html``,
+   which only the server writes; a wrapper receives it as an element in ``input`` and
+   composes around it, as ``HyperlinkBadge`` does.
 
 .. _plugins-configuration:
 

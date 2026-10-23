@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import ExploreIcon from '@mui/icons-material/Explore';
 import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined';
 import ShareIcon from '@mui/icons-material/Share';
@@ -112,6 +112,111 @@ const CTAContainer = styled.div`
     }
 `;
 
+// The map's loading spinner (MapLoadingOverlay's DefaultSpinner) as an image, so it can be an
+// `<img>`'s own background: the server's markup has no element of ours to put one in.
+const ring = arc =>
+    `url("data:image/svg+xml,${encodeURIComponent(
+        `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'>` +
+            `<circle cx='25' cy='25' r='23' fill='none' stroke='#e0e0e0' stroke-width='4'/>` +
+            `<circle cx='25' cy='25' r='23' fill='none' stroke='#1976d2' stroke-width='4' ` +
+            `stroke-dasharray='36 109' stroke-linecap='butt'>${arc}</circle></svg>`,
+    )}")`;
+const spinner = ring(
+    `<animateTransform attributeName='transform' type='rotate' from='0 25 25' ` +
+        `to='360 25 25' dur='1s' repeatCount='indefinite'/>`,
+);
+const spinnerStill = ring('');
+
+const fadeIn = keyframes`
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+`;
+
+// Images the server rendered (`type: "image"`, platzky's [image] shortcode) arrive as plain
+// `<img>` tags, so their size is decided here: the popup's width, whatever the data asked for.
+// Until a photo has fully arrived it is not shown - a browser would draw it top-down as it
+// downloads - and holds a spinner in a placeholder of about the height it will take;
+// `markLoadState` says when it has arrived, or failed to.
+const ImagesContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0 8px 16px 8px;
+
+    > span {
+        display: block;
+    }
+
+    img {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        height: 180px;
+        border-radius: 8px;
+        background: #f5f5f5 ${spinner} center / 50px no-repeat;
+        /* Draws the downloading picture outside its own box, leaving only the background. */
+        object-position: -10000px 0;
+    }
+
+    img[data-load-state='loaded'] {
+        width: auto;
+        height: auto;
+        background: none;
+        object-position: 50% 50%;
+        animation: ${fadeIn} 0.2s ease-out;
+    }
+
+    /* A broken-image icon tells a visitor nothing they can act on. */
+    img[data-load-state='error'] {
+        display: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        img {
+            background-image: ${spinnerStill};
+        }
+
+        img[data-load-state='loaded'] {
+            background-image: none;
+            animation: none;
+        }
+    }
+`;
+
+const markImage = (img, loaded) => {
+    img.dataset.loadState = loaded ? 'loaded' : 'error'; // eslint-disable-line no-param-reassign
+};
+
+/**
+ * Marks each `<img>` under `node` as `loaded` or `error` once it settles, for the CSS above.
+ * The markup is the server's, so React attaches no `onLoad` to it; `load` and `error` do not
+ * bubble, hence the capture phase. An image already settled - from the cache - is marked now.
+ */
+const markLoadState = node => {
+    if (!node) return;
+    node.querySelectorAll('img').forEach(img => {
+        if (img.complete) markImage(img, img.naturalWidth > 0);
+    });
+    const onSettle = event => {
+        if (event.target instanceof HTMLImageElement)
+            markImage(event.target, event.type === 'load');
+    };
+    node.addEventListener('load', onSettle, true);
+    node.addEventListener('error', onSettle, true);
+};
+
+const ImagesSection = ({ children }) => (
+    <ImagesContainer ref={markLoadState}>{children}</ImagesContainer>
+);
+
+ImagesSection.propTypes = {
+    children: PropTypes.node.isRequired,
+};
+
 const ActionButton = styled.button`
     cursor: pointer;
     display: flex;
@@ -140,7 +245,7 @@ const isCustomValue = value => value !== null && typeof value === 'object' && !A
 
 /**
  * Component that renders a location detail value.
- * Handles both standard values (strings, numbers, arrays) and custom typed values (hyperlinks, CTAs).
+ * Handles both standard values (strings, numbers, arrays) and typed values the server rendered.
  *
  * @param {Object} props - Component props
  * @param {string|number|Array|Object} props.valueToDisplay - Value to display, can be primitive or custom type object
@@ -222,10 +327,25 @@ NavigateMeButton.propTypes = {
     }).isRequired,
 };
 
+// Which popup section a field shows in, by its value's `type` - never by its label, which is
+// `gettext(field)` and so differs per locale. Anything not listed is a labelled detail.
+const SECTION_BY_TYPE = new Map([
+    ['image', 'images'],
+    ['CTA', 'actions'],
+]);
+
+// In display order. A `labelled` section pairs each value with its field name.
+const SECTIONS = [
+    { key: 'images', Container: ImagesSection, labelled: false },
+    { key: 'details', Container: DetailsGrid, labelled: true },
+    { key: 'actions', Container: CTAContainer, labelled: false },
+];
+
+const sectionOf = ([, value]) => SECTION_BY_TYPE.get(value?.type) ?? 'details';
+
 /**
- * Component that renders location details including title, subtitle, and categorized data.
- * Separates data into regular categories and CTA (Call-To-Action) categories.
- * Displays data in a grid layout with category labels and values.
+ * Component that renders location details: title, subtitle, then each section of fields.
+ * Fields are placed in a section by their value's `type` (see SECTION_BY_TYPE).
  *
  * @param {Object} props - Component props
  * @param {Object} props.place - Location data object
@@ -234,42 +354,39 @@ NavigateMeButton.propTypes = {
  * @param {Array<[string, *]>} props.place.data - Array of [category, value] tuples
  * @returns {React.ReactElement} Div containing formatted location details
  */
-const LocationDetails = ({ place }) => {
-    // Selected by the value's `type`, not by the field's label: the label is `gettext(field)`,
-    // so matching on it would drop the button in any locale that translates "CTA", and would
-    // miss a field that declares `type: "CTA"` under a name of its own.
-    const isCTA = ([, value]) => value?.type === 'CTA';
-    const categoriesWithSubcategories = place.data.filter(entry => !isCTA(entry));
-    const CTACategories = place.data.filter(isCTA);
+const LocationDetails = ({ place }) => (
+    <PopupContainer>
+        <PopupHeader>
+            <PopupTitle>{place.title}</PopupTitle>
+            {place.subtitle && <PopupSubtitle>{place.subtitle}</PopupSubtitle>}
+        </PopupHeader>
 
-    return (
-        <PopupContainer>
-            <PopupHeader>
-                <PopupTitle>{place.title}</PopupTitle>
-                {place.subtitle && <PopupSubtitle>{place.subtitle}</PopupSubtitle>}
-            </PopupHeader>
-
-            <DetailsGrid>
-                {categoriesWithSubcategories.map(([category, value]) => (
-                    <React.Fragment key={category}>
-                        <DetailLabel>{category}</DetailLabel>
-                        <DetailValue>
-                            <LocationDetailsValue valueToDisplay={value} />
-                        </DetailValue>
-                    </React.Fragment>
-                ))}
-            </DetailsGrid>
-
-            {CTACategories.length > 0 && (
-                <CTAContainer>
-                    {CTACategories.map(([, value]) => (
-                        <LocationDetailsValue key={JSON.stringify(value)} valueToDisplay={value} />
-                    ))}
-                </CTAContainer>
-            )}
-        </PopupContainer>
-    );
-};
+        {SECTIONS.map(({ key, Container, labelled }) => {
+            const entries = place.data.filter(entry => sectionOf(entry) === key);
+            if (entries.length === 0) return null;
+            return (
+                <Container key={key}>
+                    {/* Keyed by position: labels are translated, so two fields may share one.
+                        The server's order is fixed per place, so the position is stable. */}
+                    {entries.map(([category, value], index) =>
+                        labelled ? (
+                            // eslint-disable-next-line react/no-array-index-key
+                            <React.Fragment key={index}>
+                                <DetailLabel>{category}</DetailLabel>
+                                <DetailValue>
+                                    <LocationDetailsValue valueToDisplay={value} />
+                                </DetailValue>
+                            </React.Fragment>
+                        ) : (
+                            // eslint-disable-next-line react/no-array-index-key
+                            <LocationDetailsValue key={index} valueToDisplay={value} />
+                        ),
+                    )}
+                </Container>
+            );
+        })}
+    </PopupContainer>
+);
 
 LocationDetails.propTypes = {
     place: PropTypes.shape({

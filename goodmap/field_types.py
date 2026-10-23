@@ -2,14 +2,22 @@
 
 A location entry names a field's ``type`` in the data - ``{"type": "hyperlink", "value": …}``
 - and this module is the catalogue of the types goodmap ships. Each is an ordinary platzky
-``Shortcode``, the same thing a plugin contributes, so ``prepare_pin`` renders every field
-through one interface and the popup gets ``html`` either way.
+``Shortcode``, the same thing a plugin contributes, so every field renders through one
+interface and the popup gets ``html`` either way.
 
 What differs is how a renderer is found. A plugin's shortcode is bound to a field by *name*,
 which is what makes the field its own. Goodmap's own are looked up by the ``type`` the entry
 declares, so any field can ask to be a ``hyperlink`` whatever it is called. That lookup is
 safe only because this catalogue is closed: an entry may name a type in here and nothing
 else, and so can never point itself at a plugin's renderer.
+
+The catalogue is goodmap's own types plus one of platzky's built-ins - ``image``, so a
+place can carry photos; platzky holds its URLs to ``https`` or a path on the site. One
+rather than the whole set, because the entries naming these types are data nobody vouched
+for, and platzky's ``html`` would hand them raw markup in the popup.
+
+An image field holds one image - ``{"type": "image", "url": …, "alt": …}`` - described by
+the ``alt`` its data gives it.
 """
 
 from collections.abc import Sequence
@@ -17,6 +25,7 @@ from urllib.parse import urlparse
 
 from markupsafe import Markup, escape
 from platzky.shortcodes import Shortcode, ShortcodeAttr, ShortcodeAttrs, UrlNotPermitted
+from platzky.shortcodes.image import image_shortcode
 from platzky.shortcodes.link import LinkShortcode
 
 #: Schemes that navigate the browser somewhere, and so are worth a new tab.
@@ -91,7 +100,9 @@ class CTAFieldShortcode(HyperlinkFieldShortcode):
     description = "A marker field holding a URL, shown as a call-to-action button."
 
 
-#: Field ``type`` -> the shortcode rendering it, keyed by the name written in the data.
+#: Field ``type`` -> the shortcode rendering it, keyed by the name written in the data. Of
+#: platzky's built-ins only ``image`` is here: ``html`` would let an entry nobody vouched
+#: for emit raw markup into the popup.
 BUILTIN_FIELD_TYPES: dict[str, Shortcode] = {
-    shortcode.name: shortcode for shortcode in (HyperlinkFieldShortcode(), CTAFieldShortcode())
+    s.name: s for s in (image_shortcode, HyperlinkFieldShortcode(), CTAFieldShortcode())
 }

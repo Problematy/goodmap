@@ -27,6 +27,12 @@ import { useFilters } from '../../../context/FiltersContext';
  * @param {Function} props.setIsAccessibilityTableOpen - Callback to close the table and return to map view
  * @returns {React.ReactElement} Table container with location data and back button
  */
+// Server-rendered images carry no size of their own; the popup bounds them in its
+// ImagesContainer, and a table cell needs the same or one photo stretches its whole row.
+const imageCellSx = {
+    '& img': { display: 'block', maxWidth: 160, height: 'auto', margin: '0 auto' },
+};
+
 const AccessibilityTable = ({ userPosition, setIsAccessibilityTableOpen }) => {
     const { selectedFilters } = useFilters();
     const { t } = useTranslation();
@@ -108,7 +114,11 @@ const AccessibilityTable = ({ userPosition, setIsAccessibilityTableOpen }) => {
                                 sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                             >
                                 {row.map((cell, cellIndex) => (
-                                    <TableCell key={headers[cellIndex]} align="center">
+                                    <TableCell
+                                        key={headers[cellIndex]}
+                                        align="center"
+                                        sx={imageCellSx}
+                                    >
                                         {cell.type ? <FieldRenderer value={cell} /> : cell}
                                     </TableCell>
                                 ))}

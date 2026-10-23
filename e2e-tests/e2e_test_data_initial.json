@@ -42,7 +42,12 @@
           "lighting"
         ],
         "uuid": "c8ecf476-5968-40da-ba5c-e810ad9ff203",
-        "remark": "very old bridge"
+        "remark": "very old bridge",
+        "photo": {
+          "type": "image",
+          "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/WroclawMostZwierzyniecki.jpg/500px-WroclawMostZwierzyniecki.jpg",
+          "alt": "Most Zwierzyniecki"
+        }
       },
       {
         "name": "Milenijny",
@@ -288,6 +293,7 @@
       }
     },
     "visible_data": [
+      "photo",
       "remark",
       "accessible_by",
       "type_of_place",

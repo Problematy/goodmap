@@ -25,8 +25,11 @@ from goodmap.db import (
     get_initial_view,
     get_location_obligatory_fields,
     get_marker_styles,
+    get_meta_data,
+    get_visible_data,
 )
 from goodmap.feature_flags import EnableAdminPanel
+from goodmap.formatter import PinFormatter
 from goodmap.initial_view import resolve_initial_view
 from goodmap.marker_styles import resolve_marker_styles
 from goodmap.plugin import CAPABILITY_BASES, GoodmapPluginBase
@@ -200,6 +203,11 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
     # page load (see goodmap.initial_view).
     initial_view = resolve_initial_view(get_initial_view(app.db)(app.db))
 
+    # Which fields a popup shows, and which it carries as metadata: map configuration like
+    # the view above, read once rather than on every popup, so changing it takes a restart.
+    visible_fields = get_visible_data(app.db)(app.db)
+    meta_fields = get_meta_data(app.db)(app.db)
+
     location_model = create_location_model(location_obligatory_fields, categories)
     app.db = extend_db_with_goodmap_queries(app.db, location_model)
 
@@ -274,7 +282,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         location_model,
         photo_attachment_config=photo_attachment_config,
         feature_flags=config.feature_flags,
-        shortcodes=shortcodes,
+        pin_formatter=PinFormatter(visible_fields, meta_fields, shortcodes),
         pin_marker_fields=pin_marker_fields,
     )
     app.register_blueprint(cp)

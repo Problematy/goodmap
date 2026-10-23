@@ -12,7 +12,6 @@ from flask_babel import gettext
 from platzky import FeatureFlagSet
 from platzky.attachment import create_attachment
 from platzky.config import AttachmentConfig, LanguagesMapping
-from platzky.shortcodes import Shortcode
 from spectree import Response, SpecTree
 from spectree.models import Tag
 from werkzeug.exceptions import HTTPException
@@ -42,7 +41,7 @@ from goodmap.clustering import (
 )
 from goodmap.exceptions import LocationValidationError
 from goodmap.feature_flags import CategoriesHelp
-from goodmap.formatter import prepare_pin
+from goodmap.formatter import PinFormatter
 from goodmap.json_security import (
     MAX_JSON_DEPTH_LOCATION,
     JSONDepthError,
@@ -203,7 +202,7 @@ def core_pages(
     location_model,
     photo_attachment_config: AttachmentConfig,
     feature_flags: FeatureFlagSet,
-    shortcodes: dict[str, Shortcode],
+    pin_formatter: PinFormatter,
     pin_marker_fields: PinMarkerFields,
 ) -> Blueprint:
     # Routes with translated responses (pin fields, schema, categories) are query_locale
@@ -427,10 +426,7 @@ def core_pages(
             logger.info(ERROR_LOCATION_NOT_FOUND, extra={"uuid": location_id})
             return api_error(ERROR_LOCATION_NOT_FOUND, 404)
 
-        visible_data = database.get_visible_data()
-        meta_data = database.get_meta_data()
-        formatted_data = prepare_pin(location.model_dump(), visible_data, meta_data, shortcodes)
-        return jsonify(formatted_data)
+        return jsonify(pin_formatter.prepare_pin(location.model_dump()))
 
     @core_api_blueprint.route("/version", methods=["GET"])
     @spec.validate(tags=[TAG_META], resp=Response(HTTP_200=VersionResponse))

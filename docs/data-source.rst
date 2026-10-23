@@ -463,8 +463,8 @@ JSON file
 
 The whole structure above in one file on disk. Read per request, so edits to ``data``
 show up on the next refresh — though the schema keys (``categories``,
-``location_obligatory_fields``, ``visible_data``) are read once at startup and need a
-restart. Writes — new suggestions and reports — are written back atomically via a
+``location_obligatory_fields``, ``visible_data``, ``meta_data``) are read once at startup
+and need a restart. Writes — new suggestions and reports — are written back atomically via a
 temporary file and a rename, so a crash mid-write cannot truncate your data.
 
 Best for: development, and small-to-medium read-mostly maps served by a single process.

@@ -591,7 +591,8 @@ def test_get_location(test_app):
             ["test_category-translated", ["test-translated"]],
             ["type_of_place-translated", "test-place-translated"],
         ],
-        "metadata": {"uuid-translated": "11111111-1111-1111-1111-111111111111-translated"},
+        # Machine data, read by its stored key: never translated.
+        "metadata": {"uuid": "11111111-1111-1111-1111-111111111111"},
         "position": [50.0, 50.0],
         "subtitle": "test-place-translated",
         "title": "test",
@@ -1208,3 +1209,20 @@ def test_get_locations_from_request_helper(test_app):
             assert isinstance(locations[0], dict)
             assert "uuid" in locations[0]
             assert "position" in locations[0]
+
+
+def test_location_image_is_rendered_with_its_alt():
+    config_data = get_test_config_data()
+    data = config_data["DB"]["DATA"]
+    data["data"][0]["photo"] = {
+        "type": "image",
+        "url": "https://example.com/1.jpg",
+        "alt": "The bridge at dusk",
+    }
+    data["visible_data"] = [*data["visible_data"], "photo"]
+    client = create_app_from_config(GoodmapConfig.model_validate(config_data)).test_client()
+    response = client.get("/api/location/11111111-1111-1111-1111-111111111111")
+    assert response.json is not None
+    assert dict(response.json["data"])["photo"]["html"] == (
+        '<img src="https://example.com/1.jpg" alt="The bridge at dusk">'
+    )
