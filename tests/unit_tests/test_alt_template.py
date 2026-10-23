@@ -5,7 +5,7 @@ import flask_babel
 import pytest
 from jinja2 import TemplateSyntaxError
 
-from goodmap.alt_template import DEFAULT_ALT_TEMPLATE, AltTemplate
+from goodmap.alt_template import DEFAULT_ALT_TEMPLATE, AltTemplate, describe_images
 
 place = {
     "name": "Grunwaldzki",
@@ -118,3 +118,34 @@ def test_none_prints_as_nothing():
 def test_any_render_error_falls_back_to_the_name():
     template = AltTemplate("{{ name }} {{ 100 // capacity }}")
     assert template.render({**place, "capacity": 0}) == "Grunwaldzki"
+
+
+def test_describe_images_fills_only_images_without_their_own_alt():
+    place = {
+        "name": "Grunwaldzki",
+        "photos": {
+            "type": "image",
+            "items": [
+                {"url": "https://example.com/1.jpg"},
+                {"url": "https://example.com/2.jpg", "alt": "The deck"},
+                {"url": "https://example.com/3.jpg", "alt": ""},
+                {"url": "https://example.com/4.jpg", "alt": None},
+            ],
+        },
+        "cover": {"type": "image", "url": "https://example.com/cover.jpg"},
+        "website": {"type": "hyperlink", "value": "https://example.com"},
+    }
+    described = describe_images(place, ["photos", "cover", "website"], AltTemplate("{{ name }}"))
+    assert [item["alt"] for item in described["photos"]["items"]] == [
+        "Grunwaldzki",  # none given
+        "The deck",  # its own wins
+        "",  # empty is its own: decorative
+        "Grunwaldzki",  # null counts as not given
+    ]
+    assert described["cover"]["alt"] == "Grunwaldzki"
+    assert described["website"] == place["website"]
+
+
+def test_describe_images_looks_only_in_the_given_fields():
+    place = {"name": "N", "photos": {"type": "image", "url": "https://example.com/1.jpg"}}
+    assert describe_images(place, [], AltTemplate("{{ name }}")) == place

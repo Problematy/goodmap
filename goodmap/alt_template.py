@@ -8,11 +8,12 @@ The template is Jinja, which the operator already knows and Flask already ships,
 immutable sandbox so a template can reach the place's values and nothing behind them. It
 is compiled once at startup - a syntax error fails the boot, not every popup - and rendered
 per pin with the place's fields, as stored, as its context. What should be translated, the
-template wraps in ``_()``: its own text and field values alike.
+template wraps in ``_()``: its own text and field values alike. :func:`describe_images`
+puts the result on a place's images.
 """
 
 import logging
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from typing import Any
 
 from flask_babel import gettext
@@ -133,3 +134,52 @@ class AltTemplate:
             )
             rendered = str(place.get("name", ""))
         return " ".join(rendered.split())
+
+
+def _with_alt(item: Any, alt: str) -> Any:
+    """Give one image item ``alt`` unless it has its own; ``null`` counts as not given.
+
+    An empty ``alt`` is the item's own - a purely decorative image - and is kept.
+    """
+    if not isinstance(item, dict) or item.get("alt") is not None:
+        return item
+    return {**item, "alt": alt}
+
+
+def describe_images(
+    place: Mapping[str, Any], fields: Iterable[str], alt_template: AltTemplate
+) -> dict[str, Any]:
+    """Give every image in ``fields`` that does not describe itself the place's description.
+
+    An image field is ``{"type": "image", ...}``, holding one image or several under
+    ``items``; each image without an ``alt`` of its own gets ``alt_template`` rendered against
+    the place. The template is rendered at most once, and only for a place with an image::
+
+        place = {"name": "Grunwaldzki", "photos": {"type": "image", "items": [
+            {"url": "https://example.com/1.jpg"},
+            {"url": "https://example.com/2.jpg", "alt": "The deck"}]}}
+        describe_images(place, ["photos"], AltTemplate("{{ name }}"))["photos"]["items"]
+        # [{"url": ".../1.jpg", "alt": "Grunwaldzki"}, {"url": ".../2.jpg", "alt": "The deck"}]
+
+    Args:
+        place: The place's fields, as stored.
+        fields: The fields to look in.
+        alt_template: Describes the place.
+
+    Returns:
+        A copy of ``place`` with its images described.
+    """
+    described = dict(place)
+    alt = None
+    for field in fields:
+        value = place.get(field)
+        if not isinstance(value, dict) or value.get("type") != "image":
+            continue
+        if alt is None:
+            alt = alt_template.render(place)
+        items = value.get("items")
+        if isinstance(items, list):
+            described[field] = {**value, "items": [_with_alt(item, alt) for item in items]}
+        else:
+            described[field] = _with_alt(value, alt)
+    return described

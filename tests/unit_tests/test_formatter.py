@@ -473,8 +473,8 @@ def test_alt_template_is_not_rendered_for_a_pin_without_images(monkeypatch):
     assert calls == []
 
 
-def test_alt_template_is_rendered_once_per_image_field(monkeypatch):
-    """Not once per image: a field's items share the place's description."""
+def test_alt_template_is_rendered_once_per_pin(monkeypatch):
+    """Every image of a place shares its description, across fields too."""
     calls: list[tuple[object, ...]] = []
 
     def render(*args: object) -> str:
@@ -487,7 +487,7 @@ def test_alt_template_is_rendered_once_per_image_field(monkeypatch):
         "more": {"type": "image", "items": [{"url": "https://example.com/3.jpg"}]},
     }
     PinFormatter(["images", "more"], [], alt_template=_NAME_ALT).prepare_pin(place)
-    assert len(calls) == 2  # "images" with two items, and "more"
+    assert len(calls) == 1
 
 
 class _AltShortcode(_FakeShortcode):
