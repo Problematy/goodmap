@@ -79,7 +79,7 @@ def _render_builtin_field(shortcode, value):
     hold several values under ``items``: each is rendered on its own, the renderings joined
     into the field's ``html``, and the items go back as data. An item that renders nothing,
     or is not an object, is dropped; any other type with ``items`` renders nothing, with a
-    warning. In an entry, ``null`` counts as not given.
+    warning.
 
     Args:
         shortcode: The built-in Shortcode the field's ``type`` named.
@@ -88,19 +88,14 @@ def _render_builtin_field(shortcode, value):
     Returns:
         The field payload, carrying ``type`` and ``html``, and ``items`` when it had them.
     """
-
-    def render_entry(entry):
-        given = {key: item for key, item in entry.items() if item is not None}
-        return _render_field(shortcode, given)
-
     if not isinstance(value.get("items"), list):
-        return render_entry(value)
+        return _render_field(shortcode, value)
     if shortcode.name not in MULTI_VALUE_TYPES:
         logger.warning("A %s field holds one value; items is for images.", shortcode.name)
         return {**value, "type": shortcode.name, "html": ""}
     if not all(isinstance(item, dict) for item in value["items"]):
         logger.warning("Dropping %s items that are not objects.", shortcode.name)
-    items = [render_entry(item) for item in value["items"] if isinstance(item, dict)]
+    items = [_render_field(shortcode, item) for item in value["items"] if isinstance(item, dict)]
     items = [item for item in items if item["html"]]
     html = "".join(item["html"] for item in items)
     data = [{k: v for k, v in item.items() if k not in ("type", "html")} for item in items]
