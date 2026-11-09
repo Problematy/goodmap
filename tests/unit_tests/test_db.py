@@ -4,6 +4,7 @@ from typing import Any, cast
 from unittest import mock
 
 import pytest
+from platzky.db.github_json_db import GithubJsonDb
 from platzky.db.google_json_db import GoogleJsonDb
 from platzky.db.json_db import Json, MemoryStore
 from platzky.db.json_file_db import JsonFile
@@ -17,10 +18,10 @@ from goodmap.db import (
     delete_location,
     delete_report,
     delete_suggestion,
-    extend_db_with_goodmap_queries,
     get_data,
     get_location_from_raw_data,
     get_location_obligatory_fields,
+    goodmap_queries,
     google_json_db_get_categories,
     google_json_db_get_category_data,
     google_json_db_get_data,
@@ -49,7 +50,6 @@ from goodmap.db import (
     json_db_update_location,
     json_db_update_report,
     json_db_update_suggestion,
-    json_file_atomic_dump,
     json_file_db_add_location,
     json_file_db_add_report,
     json_file_db_add_suggestion,
@@ -123,6 +123,20 @@ def in_memory_json_db(data: dict[str, Any]) -> Json:
     return Json(MemoryStore(data))
 
 
+def mongo_database(mock_client: mock.Mock) -> mock.Mock:
+    """The pymongo database a patched ``MongoClient`` hands to platzky's ``MongoDB``.
+
+    Platzky's own collections are empty, so ``MongoDB`` passes the site config and blog
+    validation it runs when it is built; goodmap's collections are left for each test to set.
+    """
+    database = mock.Mock()
+    database.site_config.find_one.return_value = None
+    database.localized_content.find.return_value = []
+    database.blog_meta.find.return_value = []
+    mock_client.return_value.__getitem__.return_value = database
+    return database
+
+
 data = {
     "data": [
         {"position": [50, 50], "uuid": "1", "name": "one", "test-category": "searchable"},
@@ -140,18 +154,18 @@ data_json = json.dumps({"map": data})
 def initialize_and_assert_db(db, data):
     location_obligatory_fields = get_location_obligatory_fields(db)
     location_model = create_location_model(location_obligatory_fields, {})
-    extend_db_with_goodmap_queries(db, location_model)
+    queries = goodmap_queries(db, location_model)
 
     # Query values arrive as lists in production (request.args.to_dict(flat=False));
     # a single selected value exactly matches one entry's scalar category field.
     query = {"test-category": ["searchable"]}
 
-    location = db.get_location("1")
+    location = queries.get_location("1")
     assert location.position == (50, 50)
     assert location.uuid == "1"
 
-    assert len(db.get_locations(query)) == 1
-    assert db.get_data() == data
+    assert len(queries.get_locations(query)) == 1
+    assert queries.get_data() == data
 
 
 def test_goodmap_json_db_extended():
@@ -159,9 +173,10 @@ def test_goodmap_json_db_extended():
     initialize_and_assert_db(db, data)
 
 
-@mock.patch("builtins.open", mock.mock_open(read_data=data_json))
-def test_goodmap_json_db_file_extended():
-    db = JsonFile("/fake/path/file.json")
+def test_goodmap_json_db_file_extended(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(data_json)
+    db = JsonFile(str(db_file))
     initialize_and_assert_db(db, data)
 
 
@@ -174,19 +189,21 @@ def test_goodmap_google_json_db_extended(mock_cli):
     initialize_and_assert_db(db, data)
 
 
-@mock.patch("goodmap.db.json.dump")
-@mock.patch("goodmap.db.tempfile.NamedTemporaryFile")
-@mock.patch("goodmap.db.os.fsync")
-@mock.patch("goodmap.db.os.replace")
-def test_json_file_atomic_dump(mock_replace, mock_fsync, mock_tempfile, mock_json_dump):
-    file_path = "atomic.json"
-    payload = {"key": "value", "list": [1, 2, 3]}
-    json_file_atomic_dump(payload, file_path)
-    mock_tempfile.assert_called_once_with("w", dir="", delete=False)
-    mock_json_dump.assert_called_once_with(payload, mock_tempfile().__enter__())
-    mock_tempfile().__enter__().flush.assert_called_once()
-    mock_fsync.assert_called_once_with(mock_tempfile().__enter__().fileno())
-    mock_replace.assert_called_once_with(mock_tempfile().__enter__().name, file_path)
+@mock.patch("platzky.db.github_json_db.Github")
+def test_github_json_db_is_not_supported(mock_github):
+    mock_github.return_value.get_repo.return_value.get_contents.return_value.decoded_content = b"{}"
+    db = GithubJsonDb("token", "owner/repo", "main", "data.json")
+    with pytest.raises(NotImplementedError, match="GithubJsonDb"):
+        goodmap_queries(db, LocationBase)
+    with pytest.raises(NotImplementedError, match="GithubJsonDb"):
+        get_location_obligatory_fields(db)
+
+
+def test_goodmap_queries_leaves_the_database_untouched():
+    db = in_memory_json_db(data)
+    attributes_before = set(vars(db))
+    goodmap_queries(db, LocationBase)
+    assert set(vars(db)) == attributes_before
 
 
 def test_json_db_get_location_obligatory_fields():
@@ -194,12 +211,10 @@ def test_json_db_get_location_obligatory_fields():
     assert json_db_get_location_obligatory_fields(db) == ["field"]
 
 
-@mock.patch(
-    "builtins.open",
-    mock.mock_open(read_data=json.dumps({"map": {"location_obligatory_fields": [1, 2, 3]}})),
-)
-def test_json_file_db_get_location_obligatory_fields():
-    db = JsonFile("/fake/db.json")
+def test_json_file_db_get_location_obligatory_fields(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(json.dumps({"map": {"location_obligatory_fields": [1, 2, 3]}}))
+    db = JsonFile(str(db_file))
     assert json_file_db_get_location_obligatory_fields(db) == [1, 2, 3]
 
 
@@ -217,9 +232,10 @@ def test_get_data_dispatch_json_db():
     assert get_data(db) is json_db_get_data
 
 
-@mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {}})))
-def test_get_data_dispatch_json_file_db():
-    db = JsonFile("/fake/path/data.json")
+def test_get_data_dispatch_json_file_db(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(json.dumps({"map": {}}))
+    db = JsonFile(str(db_file))
     assert get_data(db) is json_file_db_get_data
 
 
@@ -237,9 +253,10 @@ def test_json_db_get_data_returns_data():
     assert json_db_get_data(db) == {"foo": "bar"}
 
 
-@mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {"a": 1}})))
-def test_json_file_db_get_data_reads_file():
-    db = JsonFile("/fake/path/data.json")
+def test_json_file_db_get_data_reads_file(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(json.dumps({"map": {"a": 1}}))
+    db = JsonFile(str(db_file))
     assert json_file_db_get_data(db) == {"a": 1}
 
 
@@ -253,62 +270,46 @@ def test_google_json_db_get_data(mock_cli):
 
 
 # Test get_visible_data and get_meta_data for json_file_db
-@mock.patch(
-    "builtins.open",
-    mock.mock_open(
-        read_data=json.dumps(
-            {"map": {"visible_data": {"field1": "value1"}, "meta_data": {"meta1": "info1"}}}
-        )
-    ),
-)
-def test_json_file_db_get_visible_data():
-    db = JsonFile("/fake/path/data.json")
+def test_json_file_db_get_visible_data(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(
+        json.dumps({"map": {"visible_data": {"field1": "value1"}, "meta_data": {"meta1": "info1"}}})
+    )
+    db = JsonFile(str(db_file))
     result = json_file_db_get_visible_data(db)
     assert result == {"field1": "value1"}
 
 
-@mock.patch(
-    "builtins.open",
-    mock.mock_open(
-        read_data=json.dumps({"map": {"visible_data": {}, "meta_data": {"meta1": "info1"}}})
-    ),
-)
-def test_json_file_db_get_visible_data_empty():
-    db = JsonFile("/fake/path/data.json")
+def test_json_file_db_get_visible_data_empty(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(json.dumps({"map": {"visible_data": {}, "meta_data": {"meta1": "info1"}}}))
+    db = JsonFile(str(db_file))
     result = json_file_db_get_visible_data(db)
     assert result == {}
 
 
-@mock.patch(
-    "builtins.open",
-    mock.mock_open(
-        read_data=json.dumps(
-            {"map": {"visible_data": {"field1": "value1"}, "meta_data": {"meta1": "info1"}}}
-        )
-    ),
-)
-def test_json_file_db_get_meta_data():
-    db = JsonFile("/fake/path/data.json")
+def test_json_file_db_get_meta_data(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(
+        json.dumps({"map": {"visible_data": {"field1": "value1"}, "meta_data": {"meta1": "info1"}}})
+    )
+    db = JsonFile(str(db_file))
     result = json_file_db_get_meta_data(db)
     assert result == {"meta1": "info1"}
 
 
-@mock.patch(
-    "builtins.open",
-    mock.mock_open(
-        read_data=json.dumps({"map": {"visible_data": {"field1": "value1"}, "meta_data": {}}})
-    ),
-)
-def test_json_file_db_get_meta_data_empty():
-    db = JsonFile("/fake/path/data.json")
+def test_json_file_db_get_meta_data_empty(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(json.dumps({"map": {"visible_data": {"field1": "value1"}, "meta_data": {}}}))
+    db = JsonFile(str(db_file))
     result = json_file_db_get_meta_data(db)
     assert result == {}
 
 
-@mock.patch(
-    "builtins.open",
-    mock.mock_open(
-        read_data=json.dumps(
+def test_json_file_db_get_marker_styles(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(
+        json.dumps(
             {
                 "map": {
                     "marker_styles": {
@@ -322,10 +323,8 @@ def test_json_file_db_get_meta_data_empty():
                 }
             }
         )
-    ),
-)
-def test_json_file_db_get_marker_styles():
-    db = JsonFile("/fake/path/data.json")
+    )
+    db = JsonFile(str(db_file))
     result = json_file_db_get_marker_styles(db)
     assert result == {
         "icon_field": "type_of_place",
@@ -337,9 +336,10 @@ def test_json_file_db_get_marker_styles():
     }
 
 
-@mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {}})))
-def test_json_file_db_get_marker_styles_empty():
-    db = JsonFile("/fake/path/data.json")
+def test_json_file_db_get_marker_styles_empty(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(json.dumps({"map": {}}))
+    db = JsonFile(str(db_file))
     result = json_file_db_get_marker_styles(db)
     assert result == {}
 
@@ -351,20 +351,17 @@ def test_json_file_db_get_marker_styles_empty():
 # so "declared nothing" has to reach it as {} rather than as a backend's own guess at a view.
 
 
-@mock.patch(
-    "builtins.open",
-    mock.mock_open(
-        read_data=json.dumps({"map": {"initial_view": {"center": [53.37, 22.89], "zoom": 8}}})
-    ),
-)
-def test_json_file_db_get_initial_view():
-    db = JsonFile("/fake/path/data.json")
+def test_json_file_db_get_initial_view(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(json.dumps({"map": {"initial_view": {"center": [53.37, 22.89], "zoom": 8}}}))
+    db = JsonFile(str(db_file))
     assert json_file_db_get_initial_view(db) == {"center": [53.37, 22.89], "zoom": 8}
 
 
-@mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {}})))
-def test_json_file_db_get_initial_view_empty():
-    db = JsonFile("/fake/path/data.json")
+def test_json_file_db_get_initial_view_empty(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(json.dumps({"map": {}}))
+    db = JsonFile(str(db_file))
     assert json_file_db_get_initial_view(db) == {}
 
 
@@ -398,8 +395,7 @@ def test_google_json_db_get_initial_view_empty(mock_cli):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_initial_view(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.config.find_one.return_value = {
         "_id": "map_config",
         "initial_view": {"center": [53.37, 22.89], "zoom": 8},
@@ -411,8 +407,7 @@ def test_mongodb_db_get_initial_view(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_initial_view_empty(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.config.find_one.return_value = {"_id": "map_config"}
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
@@ -421,8 +416,7 @@ def test_mongodb_db_get_initial_view_empty(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_initial_view_no_config(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.config.find_one.return_value = None
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
@@ -525,8 +519,8 @@ def test_json_db_add_location():
     db = in_memory_json_db({"data": []})
     location = {"uuid": "1", "position": [1, 2]}
     json_db_add_location(db, location, Location)
-    assert len(db.data["data"]) == 1
-    assert tuple(db.data["data"][0]["position"]) == (1, 2)
+    assert len(db.document.data["data"]) == 1
+    assert tuple(db.document.data["data"][0]["position"]) == (1, 2)
 
 
 def test_json_db_add_duplicate_location():
@@ -543,7 +537,7 @@ def test_json_db_update_location():
     db = in_memory_json_db({"data": [{"uuid": "1", "position": [1, 2]}]})
     location_update = {"uuid": "1", "position": [3, 4]}
     json_db_update_location(db, "1", location_update, Location)
-    assert tuple(db.data["data"][0]["position"]) == (3, 4)
+    assert tuple(db.document.data["data"][0]["position"]) == (3, 4)
 
 
 def test_json_db_update_location_not_found():
@@ -557,7 +551,7 @@ def test_json_db_update_location_not_found():
 def test_json_db_delete_location():
     db = in_memory_json_db({"data": [{"uuid": "1", "position": [1, 2]}]})
     json_db_delete_location(db, "1")
-    assert db.data["data"] == []
+    assert db.document.data["data"] == []
 
 
 def test_json_db_delete_location_not_found():
@@ -566,72 +560,77 @@ def test_json_db_delete_location_not_found():
         json_db_delete_location(db, "1")
 
 
-@mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {"data": []}})))
-@mock.patch("goodmap.db.json_file_atomic_dump")
-def test_json_file_db_add_location(mock_atomic_dump):
+def test_json_file_db_add_location(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(json.dumps({"map": {"data": []}}))
     Location = create_location_model([], {})
-    file_path = "locs.json"
-    db = JsonFile(file_path)
+    db = JsonFile(str(db_file))
     location_raw = {"uuid": "a", "position": [5, 6]}
     json_file_db_add_location(db, location_raw, Location)
-    location = Location.model_validate(location_raw).model_dump()
-    mock_atomic_dump.assert_called_once_with({"map": {"data": [location]}}, file_path)
+    location = Location.model_validate(location_raw).model_dump(mode="json")
+    assert json.loads(db_file.read_text()) == {"map": {"data": [location]}}
 
 
-@mock.patch(
-    "builtins.open",
-    mock.mock_open(read_data=json.dumps({"map": {"data": [{"uuid": "a", "position": [5, 6]}]}})),
-)
-def test_json_file_db_add_duplicate_location():
+def test_json_file_db_write_is_visible_through_the_document(tmp_path):
+    """Writes land in the file and in platzky's in-memory document, so neither goes stale."""
+    db_file = tmp_path / "db.json"
+    db_file.write_text(json.dumps({"map": {"data": [], "reports": []}}))
+    db = JsonFile(str(db_file))
     Location = create_location_model([], {})
-    file_path = "locs.json"
-    db = JsonFile(file_path)
+
+    json_file_db_add_location(db, {"uuid": "a", "position": [5, 6]}, Location)
+    json_file_db_add_report(db, {"uuid": "r1", "status": "new"})
+
+    on_disk = json.loads(db_file.read_text())
+    assert [point["uuid"] for point in on_disk["map"]["data"]] == ["a"]
+    assert on_disk["map"]["reports"] == [{"uuid": "r1", "status": "new"}]
+    assert [point["uuid"] for point in db.document.data["map"]["data"]] == ["a"]
+    assert db.document.data["map"]["reports"] == [{"uuid": "r1", "status": "new"}]
+
+
+def test_json_file_db_add_duplicate_location(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(json.dumps({"map": {"data": [{"uuid": "a", "position": [5, 6]}]}}))
+    Location = create_location_model([], {})
+    db = JsonFile(str(db_file))
     location = {"uuid": "a", "position": [5, 6]}
     with pytest.raises(LocationAlreadyExistsError):
         json_file_db_add_location(db, location, Location)
 
 
-@mock.patch(
-    "builtins.open",
-    mock.mock_open(read_data=json.dumps({"map": {"data": [{"uuid": "a", "position": [5, 6]}]}})),
-)
-@mock.patch("goodmap.db.json_file_atomic_dump")
-def test_json_file_db_update_location(mock_atomic_dump):
+def test_json_file_db_update_location(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(json.dumps({"map": {"data": [{"uuid": "a", "position": [5, 6]}]}}))
     Location = create_location_model([], {})
-    file_path = "locs.json"
-    db = JsonFile(file_path)
+    db = JsonFile(str(db_file))
     location_update_raw = {"uuid": "a", "position": [7, 8]}
     json_file_db_update_location(db, "a", location_update_raw, Location)
-    location_update = Location.model_validate(location_update_raw).model_dump()
-    mock_atomic_dump.assert_called_once_with({"map": {"data": [location_update]}}, file_path)
+    location_update = Location.model_validate(location_update_raw).model_dump(mode="json")
+    assert json.loads(db_file.read_text()) == {"map": {"data": [location_update]}}
 
 
-@mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {"data": []}})))
-def test_json_file_db_update_location_not_found():
+def test_json_file_db_update_location_not_found(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(json.dumps({"map": {"data": []}}))
     Location = create_location_model([], {})
-    file_path = "locs.json"
-    db = JsonFile(file_path)
+    db = JsonFile(str(db_file))
     location_update_raw = {"uuid": "a", "position": [7, 8]}
     with pytest.raises(LocationNotFoundError):
         json_file_db_update_location(db, "a", location_update_raw, Location)
 
 
-@mock.patch(
-    "builtins.open",
-    mock.mock_open(read_data=json.dumps({"map": {"data": [{"uuid": "a", "position": [5, 6]}]}})),
-)
-@mock.patch("goodmap.db.json_file_atomic_dump")
-def test_json_file_db_delete_location(mock_atomic_dump):
-    file_path = "locs.json"
-    db = JsonFile(file_path)
+def test_json_file_db_delete_location(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(json.dumps({"map": {"data": [{"uuid": "a", "position": [5, 6]}]}}))
+    db = JsonFile(str(db_file))
     json_file_db_delete_location(db, "a")
-    mock_atomic_dump.assert_called_once_with({"map": {"data": []}}, file_path)
+    assert json.loads(db_file.read_text()) == {"map": {"data": []}}
 
 
-@mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {"data": []}})))
-def test_json_file_db_delete_location_not_found():
-    file_path = "locs.json"
-    db = JsonFile(file_path)
+def test_json_file_db_delete_location_not_found(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(json.dumps({"map": {"data": []}}))
+    db = JsonFile(str(db_file))
     with pytest.raises(LocationNotFoundError):
         json_file_db_delete_location(db, "a")
 
@@ -640,8 +639,8 @@ def test_json_db_add_suggestion():
     db = in_memory_json_db({})
     suggestion = {"uuid": "s1", "foo": "bar"}
     json_db_add_suggestion(db, suggestion)
-    assert len(db.data["suggestions"]) == 1
-    assert db.data["suggestions"][0]["status"] == "pending"
+    assert len(db.document.data["suggestions"]) == 1
+    assert db.document.data["suggestions"][0]["status"] == "pending"
 
 
 def test_json_db_add_duplicate_suggestion():
@@ -674,7 +673,7 @@ def test_json_db_get_suggestion_by_uuid():
 def test_json_db_update_suggestion():
     db = in_memory_json_db({"suggestions": [{"uuid": "s1", "status": "pending"}]})
     json_db_update_suggestion(db, "s1", "done")
-    assert db.data["suggestions"][0]["status"] == "done"
+    assert db.document.data["suggestions"][0]["status"] == "done"
 
 
 def test_json_db_update_suggestion_not_found():
@@ -691,14 +690,14 @@ def test_json_db_update_suggestion_multiple():
     ]
     db = in_memory_json_db({"suggestions": [s.copy() for s in suggestions]})
     json_db_update_suggestion(db, "b", "done")
-    assert db.data["suggestions"][0]["status"] == "pending"
-    assert db.data["suggestions"][1]["status"] == "done"
+    assert db.document.data["suggestions"][0]["status"] == "pending"
+    assert db.document.data["suggestions"][1]["status"] == "done"
 
 
 def test_json_db_delete_suggestion():
     db = in_memory_json_db({"suggestions": [{"uuid": "s1"}]})
     json_db_delete_suggestion(db, "s1")
-    assert db.data["suggestions"] == []
+    assert db.document.data["suggestions"] == []
 
 
 def test_json_db_delete_suggestion_not_found():
@@ -707,34 +706,30 @@ def test_json_db_delete_suggestion_not_found():
         json_db_delete_suggestion(db, "s1")
 
 
-@mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {"suggestions": []}})))
-@mock.patch("goodmap.db.json_file_atomic_dump")
-def test_json_file_db_add_suggestion(mock_atomic_dump):
-    file_path = "sug.json"
-    db = JsonFile(file_path)
+def test_json_file_db_add_suggestion(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(json.dumps({"map": {"suggestions": []}}))
+    db = JsonFile(str(db_file))
     suggestion_raw = {"uuid": "s1", "foo": "bar"}
     json_file_db_add_suggestion(db, suggestion_raw)
     suggestion = suggestion_raw.copy()
     suggestion["status"] = "pending"
-    mock_atomic_dump.assert_called_once_with({"map": {"suggestions": [suggestion]}}, file_path)
+    assert json.loads(db_file.read_text()) == {"map": {"suggestions": [suggestion]}}
 
 
-@mock.patch(
-    "builtins.open",
-    mock.mock_open(read_data=json.dumps({"map": {"suggestions": [{"uuid": "s1"}]}})),
-)
-def test_json_file_db_add_duplicate_suggestion():
-    file_path = "sug.json"
-    db = JsonFile(file_path)
+def test_json_file_db_add_duplicate_suggestion(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(json.dumps({"map": {"suggestions": [{"uuid": "s1"}]}}))
+    db = JsonFile(str(db_file))
     suggestion = {"uuid": "s1"}
     with pytest.raises(AlreadyExistsError):
         json_file_db_add_suggestion(db, suggestion)
 
 
-@mock.patch(
-    "builtins.open",
-    mock.mock_open(
-        read_data=json.dumps(
+def test_json_file_db_get_suggestions_filters(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(
+        json.dumps(
             {
                 "map": {
                     "suggestions": [
@@ -744,58 +739,44 @@ def test_json_file_db_add_duplicate_suggestion():
                 }
             }
         )
-    ),
-)
-def test_json_file_db_get_suggestions_filters():
-    file_path = "sug.json"
-    db = JsonFile(file_path)
+    )
+    db = JsonFile(str(db_file))
     all_suggestions = json_file_db_get_suggestions(db, {})
     assert len(all_suggestions) == 2
     pending = json_file_db_get_suggestions(db, {"status": ["pending"]})
     assert len(pending) == 1 and pending[0]["uuid"] == "s1"
 
 
-@mock.patch(
-    "builtins.open",
-    mock.mock_open(
-        read_data=json.dumps({"map": {"suggestions": [{"uuid": "s1", "status": "pending"}]}})
-    ),
-)
-def test_json_file_db_get_suggestion_by_uuid():
-    file_path = "sug.json"
-    db = JsonFile(file_path)
+def test_json_file_db_get_suggestion_by_uuid(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(json.dumps({"map": {"suggestions": [{"uuid": "s1", "status": "pending"}]}}))
+    db = JsonFile(str(db_file))
     suggestion = json_file_db_get_suggestion(db, "s1")
     assert suggestion is not None and suggestion["uuid"] == "s1"
     assert json_file_db_get_suggestion(db, "x") is None
 
 
-@mock.patch(
-    "builtins.open",
-    mock.mock_open(
-        read_data=json.dumps({"map": {"suggestions": [{"uuid": "s1", "status": "pending"}]}})
-    ),
-)
-@mock.patch("goodmap.db.json_file_atomic_dump")
-def test_json_file_db_update_suggestion(mock_atomic_dump):
-    file_path = "sug.json"
-    db = JsonFile(file_path)
+def test_json_file_db_update_suggestion(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(json.dumps({"map": {"suggestions": [{"uuid": "s1", "status": "pending"}]}}))
+    db = JsonFile(str(db_file))
     json_file_db_update_suggestion(db, "s1", "done")
     suggestion = {"uuid": "s1", "status": "done"}
-    mock_atomic_dump.assert_called_once_with({"map": {"suggestions": [suggestion]}}, file_path)
+    assert json.loads(db_file.read_text()) == {"map": {"suggestions": [suggestion]}}
 
 
-@mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {"suggestions": []}})))
-def test_json_file_db_update_suggestion_not_found():
-    file_path = "sug.json"
-    db = JsonFile(file_path)
+def test_json_file_db_update_suggestion_not_found(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(json.dumps({"map": {"suggestions": []}}))
+    db = JsonFile(str(db_file))
     with pytest.raises(ValueError):
         json_file_db_update_suggestion(db, "x", "new")
 
 
-@mock.patch(
-    "builtins.open",
-    mock.mock_open(
-        read_data=json.dumps(
+def test_json_file_db_update_suggestion_multiple(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(
+        json.dumps(
             {
                 "map": {
                     "suggestions": [
@@ -805,35 +786,27 @@ def test_json_file_db_update_suggestion_not_found():
                 }
             }
         )
-    ),
-)
-@mock.patch("goodmap.db.json_file_atomic_dump")
-def test_json_file_db_update_suggestion_multiple(mock_atomic_dump):
-    file_path = "sug.json"
-    db = JsonFile(file_path)
+    )
+    db = JsonFile(str(db_file))
     json_file_db_update_suggestion(db, "b", "done")
     rec1 = {"uuid": "a", "status": "pending"}
     rec2 = {"uuid": "b", "status": "done"}
     expected = {"map": {"suggestions": [rec1, rec2]}}
-    mock_atomic_dump.assert_called_once_with(expected, file_path)
+    assert json.loads(db_file.read_text()) == expected
 
 
-@mock.patch(
-    "builtins.open",
-    mock.mock_open(read_data=json.dumps({"map": {"suggestions": [{"uuid": "s1"}]}})),
-)
-@mock.patch("goodmap.db.json_file_atomic_dump")
-def test_json_file_db_delete_suggestion(mock_atomic_dump):
-    file_path = "sug.json"
-    db = JsonFile(file_path)
+def test_json_file_db_delete_suggestion(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(json.dumps({"map": {"suggestions": [{"uuid": "s1"}]}}))
+    db = JsonFile(str(db_file))
     json_file_db_delete_suggestion(db, "s1")
-    mock_atomic_dump.assert_called_once_with({"map": {"suggestions": []}}, file_path)
+    assert json.loads(db_file.read_text()) == {"map": {"suggestions": []}}
 
 
-@mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {"suggestions": []}})))
-def test_json_file_db_delete_suggestion_not_found():
-    file_path = "sug.json"
-    db = JsonFile(file_path)
+def test_json_file_db_delete_suggestion_not_found(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(json.dumps({"map": {"suggestions": []}}))
+    db = JsonFile(str(db_file))
     with pytest.raises(ValueError):
         json_file_db_delete_suggestion(db, "s1")
 
@@ -842,7 +815,7 @@ def test_json_db_add_report():
     db = in_memory_json_db({})
     report = {"uuid": "r1", "status": "new", "priority": "high"}
     json_db_add_report(db, report)
-    assert len(db.data["reports"]) == 1
+    assert len(db.document.data["reports"]) == 1
 
 
 def test_json_db_add_duplicate_report():
@@ -880,12 +853,12 @@ def test_json_db_get_report_by_uuid():
 def test_json_db_update_report_fields():
     db = in_memory_json_db({"reports": [{"uuid": "r1", "status": "new", "priority": "high"}]})
     json_db_update_report(db, "r1", status="done")
-    assert db.data["reports"][0]["status"] == "done"
+    assert db.document.data["reports"][0]["status"] == "done"
     json_db_update_report(db, "r1", priority="low")
-    assert db.data["reports"][0]["priority"] == "low"
+    assert db.document.data["reports"][0]["priority"] == "low"
     json_db_update_report(db, "r1", status="new", priority="high")
-    assert db.data["reports"][0]["status"] == "new"
-    assert db.data["reports"][0]["priority"] == "high"
+    assert db.document.data["reports"][0]["status"] == "new"
+    assert db.document.data["reports"][0]["priority"] == "high"
 
 
 def test_json_db_update_report_not_found():
@@ -903,14 +876,14 @@ def test_json_db_update_report_multiple():
     ]
     db = in_memory_json_db({"reports": [r.copy() for r in reports]})
     json_db_update_report(db, "r2", status="resolved", priority=None)
-    assert db.data["reports"][0]["status"] == "pending"
-    assert db.data["reports"][1]["status"] == "resolved"
+    assert db.document.data["reports"][0]["status"] == "pending"
+    assert db.document.data["reports"][1]["status"] == "resolved"
 
 
 def test_json_db_delete_report():
     db = in_memory_json_db({"reports": [{"uuid": "r1"}]})
     json_db_delete_report(db, "r1")
-    assert db.data["reports"] == []
+    assert db.document.data["reports"] == []
 
 
 def test_json_db_delete_report_not_found():
@@ -920,31 +893,28 @@ def test_json_db_delete_report_not_found():
         json_db_delete_report(db, report_uuid)
 
 
-@mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {"reports": []}})))
-@mock.patch("goodmap.db.json_file_atomic_dump")
-def test_json_file_db_add_report(mock_atomic_dump):
-    file_path = "rep.json"
-    db = JsonFile(file_path)
+def test_json_file_db_add_report(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(json.dumps({"map": {"reports": []}}))
+    db = JsonFile(str(db_file))
     report = {"uuid": "r1", "status": "new", "priority": "high"}
     json_file_db_add_report(db, report)
-    mock_atomic_dump.assert_called_once_with({"map": {"reports": [report]}}, file_path)
+    assert json.loads(db_file.read_text()) == {"map": {"reports": [report]}}
 
 
-@mock.patch(
-    "builtins.open", mock.mock_open(read_data=json.dumps({"map": {"reports": [{"uuid": "r1"}]}}))
-)
-def test_json_file_db_add_duplicate_report():
-    file_path = "rep.json"
-    db = JsonFile(file_path)
+def test_json_file_db_add_duplicate_report(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(json.dumps({"map": {"reports": [{"uuid": "r1"}]}}))
+    db = JsonFile(str(db_file))
     report = {"uuid": "r1"}
     with pytest.raises(ValueError):
         json_file_db_add_report(db, report)
 
 
-@mock.patch(
-    "builtins.open",
-    mock.mock_open(
-        read_data=json.dumps(
+def test_json_file_db_get_reports_filters(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(
+        json.dumps(
             {
                 "map": {
                     "reports": [
@@ -954,11 +924,8 @@ def test_json_file_db_add_duplicate_report():
                 }
             }
         )
-    ),
-)
-def test_json_file_db_get_reports_filters():
-    file_path = "rep.json"
-    db = JsonFile(file_path)
+    )
+    db = JsonFile(str(db_file))
     all_reports = json_file_db_get_reports(db, {})
     assert len(all_reports) == 2
     status_reports = json_file_db_get_reports(db, {"status": ["new"]})
@@ -967,61 +934,48 @@ def test_json_file_db_get_reports_filters():
     assert len(priority_reports) == 1 and priority_reports[0]["uuid"] == "r2"
 
 
-@mock.patch(
-    "builtins.open", mock.mock_open(read_data=json.dumps({"map": {"reports": [{"uuid": "r1"}]}}))
-)
-def test_json_file_db_get_report_by_uuid():
-    file_path = "rep.json"
-    db = JsonFile(file_path)
+def test_json_file_db_get_report_by_uuid(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(json.dumps({"map": {"reports": [{"uuid": "r1"}]}}))
+    db = JsonFile(str(db_file))
     report = json_file_db_get_report(db, "r1")
     assert report is not None and report["uuid"] == "r1"
     assert json_file_db_get_report(db, "x") is None
 
 
-@mock.patch(
-    "builtins.open",
-    mock.mock_open(
-        read_data=json.dumps(
-            {"map": {"reports": [{"uuid": "r1", "status": "new", "priority": "high"}]}}
-        )
-    ),
-)
-@mock.patch("goodmap.db.json_file_atomic_dump")
-def test_json_file_db_update_report_fields(mock_atomic_dump):
-    file_path = "rep.json"
-    db = JsonFile(file_path)
-    original_report = {"uuid": "r1", "status": "new", "priority": "high"}
+def test_json_file_db_update_report_fields(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(
+        json.dumps({"map": {"reports": [{"uuid": "r1", "status": "new", "priority": "high"}]}})
+    )
+    db = JsonFile(str(db_file))
 
     json_file_db_update_report(db, "r1", status="done")
-    report = original_report.copy()
-    report["status"] = "done"
-    mock_atomic_dump.assert_called_with({"map": {"reports": [report]}}, file_path)
+    report = {"uuid": "r1", "status": "done", "priority": "high"}
+    assert json.loads(db_file.read_text()) == {"map": {"reports": [report]}}
 
     json_file_db_update_report(db, "r1", priority="low")
-    report = original_report.copy()
-    report["priority"] = "low"
-    mock_atomic_dump.assert_called_with({"map": {"reports": [report]}}, file_path)
+    report = {"uuid": "r1", "status": "done", "priority": "low"}
+    assert json.loads(db_file.read_text()) == {"map": {"reports": [report]}}
 
-    json_file_db_update_report(db, "r1", status="done", priority="low")
-    report = original_report.copy()
-    report["status"] = "done"
-    report["priority"] = "low"
-    mock_atomic_dump.assert_called_with({"map": {"reports": [report]}}, file_path)
+    json_file_db_update_report(db, "r1", status="new", priority="critical")
+    report = {"uuid": "r1", "status": "new", "priority": "critical"}
+    assert json.loads(db_file.read_text()) == {"map": {"reports": [report]}}
 
 
-@mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {"reports": []}})))
-def test_json_file_db_update_report_not_found():
-    file_path = "rep.json"
-    db = JsonFile(file_path)
+def test_json_file_db_update_report_not_found(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(json.dumps({"map": {"reports": []}}))
+    db = JsonFile(str(db_file))
     report_uuid = "550e8400-e29b-41d4-a716-446655440002"
     with pytest.raises(ReportNotFoundError):
         json_file_db_update_report(db, report_uuid, status="a")
 
 
-@mock.patch(
-    "builtins.open",
-    mock.mock_open(
-        read_data=json.dumps(
+def test_json_file_db_update_report_multiple(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(
+        json.dumps(
             {
                 "map": {
                     "reports": [
@@ -1031,34 +985,27 @@ def test_json_file_db_update_report_not_found():
                 }
             }
         )
-    ),
-)
-@mock.patch("goodmap.db.json_file_atomic_dump")
-def test_json_file_db_update_report_multiple(mock_atomic_dump):
-    file_path = "rep.json"
-    db = JsonFile(file_path)
+    )
+    db = JsonFile(str(db_file))
     json_file_db_update_report(db, "r2", priority="critical")
     rec1 = {"uuid": "r1", "status": "pending", "priority": "low"}
     rec2 = {"uuid": "r2", "status": "pending", "priority": "critical"}
     expected = {"map": {"reports": [rec1, rec2]}}
-    mock_atomic_dump.assert_called_once_with(expected, file_path)
+    assert json.loads(db_file.read_text()) == expected
 
 
-@mock.patch(
-    "builtins.open", mock.mock_open(read_data=json.dumps({"map": {"reports": [{"uuid": "r1"}]}}))
-)
-@mock.patch("goodmap.db.json_file_atomic_dump")
-def test_json_file_db_delete_report(mock_atomic_dump):
-    file_path = "rep.json"
-    db = JsonFile(file_path)
+def test_json_file_db_delete_report(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(json.dumps({"map": {"reports": [{"uuid": "r1"}]}}))
+    db = JsonFile(str(db_file))
     json_file_db_delete_report(db, "r1")
-    mock_atomic_dump.assert_called_once_with({"map": {"reports": []}}, file_path)
+    assert json.loads(db_file.read_text()) == {"map": {"reports": []}}
 
 
-@mock.patch("builtins.open", mock.mock_open(read_data=json.dumps({"map": {"reports": []}})))
-def test_json_file_db_delete_report_not_found():
-    file_path = "rep.json"
-    db = JsonFile(file_path)
+def test_json_file_db_delete_report_not_found(tmp_path):
+    db_file = tmp_path / "db.json"
+    db_file.write_text(json.dumps({"map": {"reports": []}}))
+    db = JsonFile(str(db_file))
     report_uuid = "550e8400-e29b-41d4-a716-446655440003"
     with pytest.raises(ReportNotFoundError):
         json_file_db_delete_report(db, report_uuid)
@@ -1070,14 +1017,14 @@ def test_dispatch_add_update_delete_location():
 
     loc = {"uuid": "u1", "position": [10, 20]}
     add_location(db, loc, Location)
-    assert db.data["data"][0]["uuid"] == "u1"
+    assert db.document.data["data"][0]["uuid"] == "u1"
 
     updated = {"uuid": "u1", "position": [30, 40]}
     update_location(db, "u1", updated, Location)
-    assert tuple(db.data["data"][0]["position"]) == (30, 40)
+    assert tuple(db.document.data["data"][0]["position"]) == (30, 40)
 
     delete_location(db, "u1")
-    assert db.data["data"] == []
+    assert db.document.data["data"] == []
 
 
 def test_dispatch_add_update_delete_suggestion():
@@ -1085,13 +1032,13 @@ def test_dispatch_add_update_delete_suggestion():
 
     sugg = {"uuid": "s1", "foo": "bar"}
     add_suggestion(db, sugg)
-    assert db.data["suggestions"][0]["status"] == "pending"
+    assert db.document.data["suggestions"][0]["status"] == "pending"
 
     update_suggestion(db, "s1", "done")
-    assert db.data["suggestions"][0]["status"] == "done"
+    assert db.document.data["suggestions"][0]["status"] == "done"
 
     delete_suggestion(db, "s1")
-    assert db.data["suggestions"] == []
+    assert db.document.data["suggestions"] == []
 
 
 def test_dispatch_add_update_delete_report():
@@ -1099,21 +1046,20 @@ def test_dispatch_add_update_delete_report():
 
     rep = {"uuid": "r1", "status": "new", "priority": "high"}
     add_report(db, rep)
-    assert db.data["reports"][0]["uuid"] == "r1"
+    assert db.document.data["reports"][0]["uuid"] == "r1"
 
     update_report(db, "r1", status="resolved", priority="low")
-    assert db.data["reports"][0]["status"] == "resolved"
-    assert db.data["reports"][0]["priority"] == "low"
+    assert db.document.data["reports"][0]["status"] == "resolved"
+    assert db.document.data["reports"][0]["priority"] == "low"
 
     delete_report(db, "r1")
-    assert db.data["reports"] == []
+    assert db.document.data["reports"] == []
 
 
 # MongoDB tests
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_location_obligatory_fields(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.config.find_one.return_value = {
         "_id": "map_config",
         "location_obligatory_fields": ["name", "position"],
@@ -1127,8 +1073,7 @@ def test_mongodb_db_get_location_obligatory_fields(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_location_obligatory_fields_empty(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.config.find_one.return_value = None
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
@@ -1138,8 +1083,7 @@ def test_mongodb_db_get_location_obligatory_fields_empty(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_data(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.config.find_one.return_value = {
         "_id": "map_config",
         "categories": {"test-category": ["searchable", "unsearchable"]},
@@ -1164,8 +1108,7 @@ def test_mongodb_db_get_data(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_data_no_config(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.config.find_one.return_value = None
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
@@ -1184,8 +1127,7 @@ def test_mongodb_db_get_data_no_config(mock_client):
 # Test get_visible_data and get_meta_data for mongodb_db
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_visible_data(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.config.find_one.return_value = {
         "_id": "map_config",
         "visible_data": {"field1": "value1"},
@@ -1199,8 +1141,7 @@ def test_mongodb_db_get_visible_data(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_visible_data_empty(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.config.find_one.return_value = {
         "_id": "map_config",
     }
@@ -1212,8 +1153,7 @@ def test_mongodb_db_get_visible_data_empty(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_visible_data_no_config(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.config.find_one.return_value = None
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
@@ -1223,8 +1163,7 @@ def test_mongodb_db_get_visible_data_no_config(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_meta_data(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.config.find_one.return_value = {
         "_id": "map_config",
         "visible_data": {"field1": "value1"},
@@ -1238,8 +1177,7 @@ def test_mongodb_db_get_meta_data(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_meta_data_empty(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.config.find_one.return_value = {
         "_id": "map_config",
     }
@@ -1251,8 +1189,7 @@ def test_mongodb_db_get_meta_data_empty(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_meta_data_no_config(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.config.find_one.return_value = None
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
@@ -1262,8 +1199,7 @@ def test_mongodb_db_get_meta_data_no_config(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_marker_styles(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.config.find_one.return_value = {
         "_id": "map_config",
         "marker_styles": {
@@ -1286,8 +1222,7 @@ def test_mongodb_db_get_marker_styles(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_marker_styles_empty(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.config.find_one.return_value = {
         "_id": "map_config",
     }
@@ -1299,8 +1234,7 @@ def test_mongodb_db_get_marker_styles_empty(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_marker_styles_no_config(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.config.find_one.return_value = None
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
@@ -1310,8 +1244,7 @@ def test_mongodb_db_get_marker_styles_no_config(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_location(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.locations.find_one.return_value = {"uuid": "1", "position": [50, 50], "name": "one"}
 
     Location = create_location_model([], {})
@@ -1327,8 +1260,7 @@ def test_mongodb_db_get_location(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_location_not_found(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.locations.find_one.return_value = None
 
     Location = create_location_model([], {})
@@ -1340,8 +1272,7 @@ def test_mongodb_db_get_location_not_found(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_add_location(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.locations.find_one.return_value = None  # No existing location
 
     Location = create_location_model([], {})
@@ -1356,8 +1287,7 @@ def test_mongodb_db_add_location(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_add_duplicate_location(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     existing_uuid = "450e8400-e29b-41d4-a716-446655440000"
     mock_db.locations.find_one.return_value = {"uuid": existing_uuid}
 
@@ -1373,8 +1303,7 @@ def test_mongodb_db_add_duplicate_location(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_update_location(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_result = mock.Mock()
     mock_result.matched_count = 1
     mock_db.locations.update_one.return_value = mock_result
@@ -1390,8 +1319,7 @@ def test_mongodb_db_update_location(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_update_location_not_found(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_result = mock.Mock()
     mock_result.matched_count = 0
     mock_db.locations.update_one.return_value = mock_result
@@ -1409,8 +1337,7 @@ def test_mongodb_db_update_location_not_found(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_delete_location(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_result = mock.Mock()
     mock_result.deleted_count = 1
     mock_db.locations.delete_one.return_value = mock_result
@@ -1423,8 +1350,7 @@ def test_mongodb_db_delete_location(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_delete_location_not_found(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_result = mock.Mock()
     mock_result.deleted_count = 0
     mock_db.locations.delete_one.return_value = mock_result
@@ -1440,8 +1366,7 @@ def test_mongodb_db_delete_location_not_found(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_add_suggestion(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.suggestions.find_one.return_value = None
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
@@ -1455,8 +1380,7 @@ def test_mongodb_db_add_suggestion(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_add_duplicate_suggestion(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     s1_uuid = "950e8400-e29b-41d4-a716-446655440000"
     mock_db.suggestions.find_one.return_value = {"uuid": s1_uuid}
 
@@ -1471,8 +1395,7 @@ def test_mongodb_db_add_duplicate_suggestion(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_suggestions(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.suggestions.find.return_value = [{"uuid": "s1", "status": "pending"}]
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
@@ -1485,8 +1408,7 @@ def test_mongodb_db_get_suggestions(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_suggestions_no_status(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.suggestions.find.return_value = [
         {"uuid": "s1", "status": "pending"},
         {"uuid": "s2", "status": "done"},
@@ -1501,8 +1423,7 @@ def test_mongodb_db_get_suggestions_no_status(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_suggestion(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.suggestions.find_one.return_value = {"uuid": "s1", "content": "test"}
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
@@ -1514,8 +1435,7 @@ def test_mongodb_db_get_suggestion(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_update_suggestion(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_result = mock.Mock()
     mock_result.matched_count = 1
     mock_db.suggestions.update_one.return_value = mock_result
@@ -1530,8 +1450,7 @@ def test_mongodb_db_update_suggestion(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_update_suggestion_not_found(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_result = mock.Mock()
     mock_result.matched_count = 0
     mock_db.suggestions.update_one.return_value = mock_result
@@ -1544,8 +1463,7 @@ def test_mongodb_db_update_suggestion_not_found(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_delete_suggestion(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_result = mock.Mock()
     mock_result.deleted_count = 1
     mock_db.suggestions.delete_one.return_value = mock_result
@@ -1558,8 +1476,7 @@ def test_mongodb_db_delete_suggestion(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_delete_suggestion_not_found(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_result = mock.Mock()
     mock_result.deleted_count = 0
     mock_db.suggestions.delete_one.return_value = mock_result
@@ -1572,7 +1489,6 @@ def test_mongodb_db_delete_suggestion_not_found(mock_client):
 
 def test_json_db_get_categories():
     db = in_memory_json_db(data)
-    extend_db_with_goodmap_queries(db, LocationBase)
     categories = json_db_get_categories(db)
     assert list(categories) == ["test-category"]
 
@@ -1582,7 +1498,6 @@ def test_json_file_db_get_categories(tmp_path):
     test_file.write_text(data_json)
 
     db = JsonFile(str(test_file))
-    extend_db_with_goodmap_queries(db, LocationBase)
     categories = json_file_db_get_categories(db)
     assert list(categories) == ["test-category"]
 
@@ -1615,60 +1530,51 @@ def test_google_json_db_get_categories(mock_cli):
         data_json
     )
     db = GoogleJsonDb("bucket", "blob")
-    extend_db_with_goodmap_queries(db, LocationBase)
     categories = google_json_db_get_categories(db)
     assert list(categories) == ["test-category"]
 
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_categories(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.config.find_one.return_value = {
         "_id": "map_config",
         "categories": {"test-category": ["searchable", "unsearchable"]},
     }
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
-    extend_db_with_goodmap_queries(db, LocationBase)
     categories = mongodb_db_get_categories(db)
     assert categories == ["test-category"]
 
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_categories_no_config(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.config.find_one.return_value = None
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
-    extend_db_with_goodmap_queries(db, LocationBase)
     categories = mongodb_db_get_categories(db)
     assert categories == []
 
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_categories_no_categories_field(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.config.find_one.return_value = {"_id": "map_config"}
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
-    extend_db_with_goodmap_queries(db, LocationBase)
     categories = mongodb_db_get_categories(db)
     assert categories == []
 
 
 def test_get_categories():
     db = in_memory_json_db(data)
-    extend_db_with_goodmap_queries(db, LocationBase)
     categories = json_db_get_categories(db)
     assert list(categories) == ["test-category"]
 
 
 def test_json_db_get_category_data():
     db = in_memory_json_db(data)
-    extend_db_with_goodmap_queries(db, LocationBase)
     category_data = json_db_get_category_data(db)
     expected = {
         "categories": {"test-category": ["searchable", "unsearchable"]},
@@ -1682,7 +1588,6 @@ def test_json_db_get_category_data():
 
 def test_json_db_get_category_data_specific_category():
     db = in_memory_json_db(data)
-    extend_db_with_goodmap_queries(db, LocationBase)
     category_data = json_db_get_category_data(db, "test-category")
     expected = {
         "categories": {"test-category": ["searchable", "unsearchable"]},
@@ -1699,7 +1604,6 @@ def test_json_file_db_get_category_data(tmp_path):
     test_file.write_text(data_json)
 
     db = JsonFile(str(test_file))
-    extend_db_with_goodmap_queries(db, LocationBase)
     category_data = json_file_db_get_category_data(db)
     expected = {
         "categories": {"test-category": ["searchable", "unsearchable"]},
@@ -1716,7 +1620,6 @@ def test_json_file_db_get_category_data_specific_category(tmp_path):
     test_file.write_text(data_json)
 
     db = JsonFile(str(test_file))
-    extend_db_with_goodmap_queries(db, LocationBase)
     category_data = json_file_db_get_category_data(db, "test-category")
     expected = {
         "categories": {"test-category": ["searchable", "unsearchable"]},
@@ -1734,7 +1637,6 @@ def test_google_json_db_get_category_data(mock_cli):
         data_json
     )
     db = GoogleJsonDb("bucket", "blob")
-    extend_db_with_goodmap_queries(db, LocationBase)
     category_data = google_json_db_get_category_data(db)
     expected = {
         "categories": {"test-category": ["searchable", "unsearchable"]},
@@ -1752,7 +1654,6 @@ def test_google_json_db_get_category_data_specific_category(mock_cli):
         data_json
     )
     db = GoogleJsonDb("bucket", "blob")
-    extend_db_with_goodmap_queries(db, LocationBase)
     category_data = google_json_db_get_category_data(db, "test-category")
     expected = {
         "categories": {"test-category": ["searchable", "unsearchable"]},
@@ -1766,8 +1667,7 @@ def test_google_json_db_get_category_data_specific_category(mock_cli):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_category_data(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.config.find_one.return_value = {
         "_id": "map_config",
         "categories": {"test-category": ["searchable", "unsearchable"]},
@@ -1777,7 +1677,6 @@ def test_mongodb_db_get_category_data(mock_client):
     }
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
-    extend_db_with_goodmap_queries(db, LocationBase)
     category_data = mongodb_db_get_category_data(db)
     expected = {
         "categories": {"test-category": ["searchable", "unsearchable"]},
@@ -1791,8 +1690,7 @@ def test_mongodb_db_get_category_data(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_category_data_specific_category(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.config.find_one.return_value = {
         "_id": "map_config",
         "categories": {"test-category": ["searchable", "unsearchable"]},
@@ -1802,7 +1700,6 @@ def test_mongodb_db_get_category_data_specific_category(mock_client):
     }
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
-    extend_db_with_goodmap_queries(db, LocationBase)
     category_data = mongodb_db_get_category_data(db, "test-category")
     expected = {
         "categories": {"test-category": ["searchable", "unsearchable"]},
@@ -1816,12 +1713,10 @@ def test_mongodb_db_get_category_data_specific_category(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_category_data_no_config(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.config.find_one.return_value = None
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
-    extend_db_with_goodmap_queries(db, LocationBase)
     category_data = mongodb_db_get_category_data(db)
     expected = {
         "categories": {},
@@ -1835,7 +1730,6 @@ def test_mongodb_db_get_category_data_no_config(mock_client):
 
 def test_get_category_data():
     db = in_memory_json_db(data)
-    extend_db_with_goodmap_queries(db, LocationBase)
     category_data = json_db_get_category_data(db)
     expected = {
         "categories": {"test-category": ["searchable", "unsearchable"]},
@@ -1849,16 +1743,13 @@ def test_get_category_data():
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_locations(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.locations.find.return_value = [
         {"uuid": "1", "position": [50, 50]},
         {"uuid": "2", "position": [10, 10]},
     ]
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
-    extend_db_with_goodmap_queries(db, LocationBase)
-
     query = {"test-category": ["searchable"]}
     locations = list(mongodb_db_get_locations(db, query, LocationBase))
 
@@ -1877,8 +1768,7 @@ def test_mongodb_db_get_locations(mock_client):
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_locations_and_filter_mode(mock_client):
     """An "and" category must use $all (every selected value), not $in (any)."""
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.config.find_one.return_value = {
         "_id": "map_config",
         "categories_filter_mode": {"amenities": "and"},
@@ -1886,8 +1776,6 @@ def test_mongodb_db_get_locations_and_filter_mode(mock_client):
     mock_db.locations.find.return_value = [{"uuid": "1", "position": [50, 50]}]
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
-    extend_db_with_goodmap_queries(db, LocationBase)
-
     query = {"amenities": ["lighting", "benches"]}
     locations = list(mongodb_db_get_locations(db, query, LocationBase))
 
@@ -1903,8 +1791,7 @@ def test_mongodb_db_get_locations_threshold_parse_failure_matches_nothing(mock_c
     """A non-numeric threshold value should match nothing for that category,
     the same as goodmap.filtering's _matches_threshold, rather than silently
     dropping the filter (which would match everything)."""
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.config.find_one.return_value = {
         "_id": "map_config",
         "categories_filter_mode": {"speed_limit": "threshold"},
@@ -1912,8 +1799,6 @@ def test_mongodb_db_get_locations_threshold_parse_failure_matches_nothing(mock_c
     mock_db.locations.find.return_value = []
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
-    extend_db_with_goodmap_queries(db, LocationBase)
-
     query = {"speed_limit": ["not-a-number"]}
     locations = list(mongodb_db_get_locations(db, query, LocationBase))
 
@@ -1926,13 +1811,10 @@ def test_mongodb_db_get_locations_threshold_parse_failure_matches_nothing(mock_c
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_locations_empty_query(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.locations.find.return_value = []
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
-    extend_db_with_goodmap_queries(db, LocationBase)
-
     query = {"test-category": []}
     locations = list(mongodb_db_get_locations(db, query, LocationBase))
 
@@ -1944,8 +1826,7 @@ def test_mongodb_db_get_locations_empty_query(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_add_report(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.reports.find_one.return_value = None
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
@@ -1958,8 +1839,7 @@ def test_mongodb_db_add_report(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_add_report_already_exists(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.reports.find_one.return_value = {"uuid": "r1", "content": "existing"}
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
@@ -1971,8 +1851,7 @@ def test_mongodb_db_add_report_already_exists(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_reports(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.reports.find.return_value = [
         {"uuid": "r1", "status": "open", "priority": "high"},
         {"uuid": "r2", "status": "closed", "priority": "low"},
@@ -1990,8 +1869,7 @@ def test_mongodb_db_get_reports(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_reports_empty_query(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.reports.find.return_value = []
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
@@ -2004,8 +1882,7 @@ def test_mongodb_db_get_reports_empty_query(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_report(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.reports.find_one.return_value = {"uuid": "r1", "content": "test"}
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
@@ -2017,8 +1894,7 @@ def test_mongodb_db_get_report(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_update_report(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_result = mock.Mock()
     mock_result.matched_count = 1
     mock_db.reports.update_one.return_value = mock_result
@@ -2033,8 +1909,7 @@ def test_mongodb_db_update_report(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_update_report_not_found(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_result = mock.Mock()
     mock_result.matched_count = 0
     mock_db.reports.update_one.return_value = mock_result
@@ -2048,8 +1923,7 @@ def test_mongodb_db_update_report_not_found(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_update_report_no_updates(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
 
     db = MongoDB("mongodb://localhost:27017", "test_db")
     mongodb_db_update_report(db, "r1")
@@ -2059,8 +1933,7 @@ def test_mongodb_db_update_report_no_updates(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_delete_report(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_result = mock.Mock()
     mock_result.deleted_count = 1
     mock_db.reports.delete_one.return_value = mock_result
@@ -2073,8 +1946,7 @@ def test_mongodb_db_delete_report(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_delete_report_not_found(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_result = mock.Mock()
     mock_result.deleted_count = 0
     mock_db.reports.delete_one.return_value = mock_result
@@ -2122,8 +1994,7 @@ def test_google_json_db_get_locations_paginated(mock_client):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_locations_paginated(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.locations.count_documents.return_value = 5
     mock_db.locations.aggregate.return_value = [
         {"uuid": "1", "name": "test1", "position": [50, 50]},
@@ -2176,8 +2047,7 @@ def test_json_file_db_get_suggestions_paginated(tmp_path):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_suggestions_paginated(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.suggestions.count_documents.return_value = 3
     mock_db.suggestions.aggregate.return_value = [
         {"uuid": "s1", "status": "pending"},
@@ -2229,8 +2099,7 @@ def test_json_file_db_get_reports_paginated(tmp_path):
 
 @mock.patch("platzky.db.mongodb_db.MongoClient")
 def test_mongodb_db_get_reports_paginated(mock_client):
-    mock_db = mock.Mock()
-    mock_client.return_value.__getitem__.return_value = mock_db
+    mock_db = mongo_database(mock_client)
     mock_db.reports.count_documents.return_value = 4
     mock_db.reports.aggregate.return_value = [
         {"uuid": "r1", "status": "new", "priority": "high"},
@@ -2415,8 +2284,7 @@ def test_mongodb_sorting_edge_cases():
 
     # Test MongoDB sorting functionality
     with mock.patch("platzky.db.mongodb_db.MongoClient") as mock_client:
-        mock_db = mock.Mock()
-        mock_client.return_value.__getitem__.return_value = mock_db
+        mock_db = mongo_database(mock_client)
         mock_db.locations.count_documents.return_value = 2
         mock_db.locations.aggregate.return_value = [
             {"uuid": "1", "name": "test1", "position": [50, 50]},
@@ -2486,22 +2354,23 @@ def test_json_db_pagination_no_per_page():
     assert len(result["items"]) == 2
 
 
-def test_json_file_pagination_no_hasattr():
+def test_json_file_pagination_no_hasattr(tmp_path):
     from goodmap.db import json_file_db_get_locations_paginated
 
     # Mock to return raw dict data instead of Location objects
-    with mock.patch("builtins.open", mock.mock_open(read_data=data_json)):
-        db = JsonFile("/fake/path/file.json")
+    db_file = tmp_path / "db.json"
+    db_file.write_text(data_json)
+    db = JsonFile(str(db_file))
 
-        # Test get_sort_key when item has name attribute
-        query = {"page": ["1"], "per_page": ["10"], "sort_by": ["name"], "sort_order": ["asc"]}
-        result = json_file_db_get_locations_paginated(db, query, create_location_model([], {}))
-        assert "items" in result
+    # Test get_sort_key when item has name attribute
+    query = {"page": ["1"], "per_page": ["10"], "sort_by": ["name"], "sort_order": ["asc"]}
+    result = json_file_db_get_locations_paginated(db, query, create_location_model([], {}))
+    assert "items" in result
 
-        # Test get_sort_key when sort_by is not 'name'
-        query = {"page": ["1"], "per_page": ["10"], "sort_by": ["uuid"], "sort_order": ["asc"]}
-        result = json_file_db_get_locations_paginated(db, query, create_location_model([], {}))
-        assert "items" in result
+    # Test get_sort_key when sort_by is not 'name'
+    query = {"page": ["1"], "per_page": ["10"], "sort_by": ["uuid"], "sort_order": ["asc"]}
+    result = json_file_db_get_locations_paginated(db, query, create_location_model([], {}))
+    assert "items" in result
 
 
 def test_suggestions_pagination_no_per_page():
@@ -2521,8 +2390,7 @@ def test_mongodb_suggestions_pagination_sorting():
 
     # Test line 1058 - MongoDB suggestions sort_direction logic
     with mock.patch("platzky.db.mongodb_db.MongoClient") as mock_client:
-        mock_db = mock.Mock()
-        mock_client.return_value.__getitem__.return_value = mock_db
+        mock_db = mongo_database(mock_client)
         mock_db.suggestions.count_documents.return_value = 1
         mock_db.suggestions.aggregate.return_value = [{"uuid": "s1", "status": "pending"}]
 
@@ -2552,21 +2420,22 @@ def test_reports_pagination_no_per_page():
     assert len(result["items"]) == 1
 
 
-def test_json_file_pagination_no_per_page():
+def test_json_file_pagination_no_per_page(tmp_path):
     from goodmap.db import json_file_db_get_locations_paginated
 
     # Test line 427 - no per_page in json_file_db
-    with mock.patch("builtins.open", mock.mock_open(read_data=data_json)):
-        db = JsonFile("/fake/path/file.json")
-        Location = create_location_model([], {})
+    db_file = tmp_path / "db.json"
+    db_file.write_text(data_json)
+    db = JsonFile(str(db_file))
+    Location = create_location_model([], {})
 
-        query = {"page": ["1"]}  # No per_page
-        result = json_file_db_get_locations_paginated(db, query, Location)
-        assert len(result["items"]) == 2
+    query = {"page": ["1"]}  # No per_page
+    result = json_file_db_get_locations_paginated(db, query, Location)
+    assert len(result["items"]) == 2
 
 
 # Test very specific missing lines by calling functions directly
-def test_specific_missing_lines():
+def test_specific_missing_lines(tmp_path):
     from goodmap.db import (
         google_json_db_get_locations_paginated,
         json_db_get_locations_paginated,
@@ -2618,22 +2487,24 @@ def test_specific_missing_lines():
         assert len(result["items"]) == 1
 
     # Test line 427 - json_file_db when per_page is None
-    with mock.patch("builtins.open", mock.mock_open(read_data=data_json)):
-        db = JsonFile("/fake/path/file.json")
-        Location = create_location_model([], {})
-        query = {"per_page": ["all"], "page": ["1"]}
-        result = json_file_db_get_locations_paginated(db, query, Location)
-        assert len(result["items"]) == 2
+    db_file = tmp_path / "db.json"
+    db_file.write_text(data_json)
+    db = JsonFile(str(db_file))
+    Location = create_location_model([], {})
+    query = {"per_page": ["all"], "page": ["1"]}
+    result = json_file_db_get_locations_paginated(db, query, Location)
+    assert len(result["items"]) == 2
 
     # Test line 433 - json_file_db when no hasattr model_dump
-    with mock.patch("builtins.open", mock.mock_open(read_data=data_json)):
-        with mock.patch("goodmap.db.get_locations_list_from_raw_data") as mock_get_locs:
-            mock_get_locs.return_value = [{"uuid": "1", "position": [50, 50]}]  # Raw dicts
-            db = JsonFile("/fake/path/file.json")
-            Location = create_location_model([], {})
-            query = {"per_page": ["1"], "page": ["1"]}
-            result = json_file_db_get_locations_paginated(db, query, Location)
-            assert len(result["items"]) == 1
+    db_file = tmp_path / "db.json"
+    db_file.write_text(data_json)
+    with mock.patch("goodmap.db.get_locations_list_from_raw_data") as mock_get_locs:
+        mock_get_locs.return_value = [{"uuid": "1", "position": [50, 50]}]  # Raw dicts
+        db = JsonFile(str(db_file))
+        Location = create_location_model([], {})
+        query = {"per_page": ["1"], "page": ["1"]}
+        result = json_file_db_get_locations_paginated(db, query, Location)
+        assert len(result["items"]) == 1
 
     # Test line 700 - json_db_get_suggestions when per_page is None
     suggestions_data = {"suggestions": [{"uuid": "s1", "status": "pending"}]}
@@ -2643,14 +2514,12 @@ def test_specific_missing_lines():
     assert len(result["items"]) == 1
 
     # Test line 750 - json_file_db_get_suggestions when per_page is None
-    with mock.patch(
-        "builtins.open",
-        mock.mock_open(read_data=json.dumps({"map": {"suggestions": [{"uuid": "s1"}]}})),
-    ):
-        db = JsonFile("/fake/path/file.json")
-        query = {"per_page": ["all"], "page": ["1"]}
-        result = json_file_db_get_suggestions_paginated(db, query)
-        assert len(result["items"]) == 1
+    db_file = tmp_path / "db.json"
+    db_file.write_text(json.dumps({"map": {"suggestions": [{"uuid": "s1"}]}}))
+    db = JsonFile(str(db_file))
+    query = {"per_page": ["all"], "page": ["1"]}
+    result = json_file_db_get_suggestions_paginated(db, query)
+    assert len(result["items"]) == 1
 
     # Test line 1000 - json_db_get_reports when per_page is None
     reports_data = {"reports": [{"uuid": "r1", "status": "new"}]}
@@ -2661,8 +2530,7 @@ def test_specific_missing_lines():
 
     # Test line 1058 - mongodb suggestions sort ascending
     with mock.patch("platzky.db.mongodb_db.MongoClient") as mock_client:
-        mock_db = mock.Mock()
-        mock_client.return_value.__getitem__.return_value = mock_db
+        mock_db = mongo_database(mock_client)
         mock_db.suggestions.count_documents.return_value = 1
         mock_db.suggestions.aggregate.return_value = [{"uuid": "s1", "status": "pending"}]
 
@@ -2674,18 +2542,19 @@ def test_specific_missing_lines():
         assert len(result["items"]) == 1
 
     # Test line 474 - json_file_db when no hasattr model_dump with sorting
-    with mock.patch("builtins.open", mock.mock_open(read_data=data_json)):
-        with mock.patch("goodmap.db.get_locations_list_from_raw_data") as mock_get_locs:
-            mock_get_locs.return_value = [{"uuid": "1", "position": [50, 50]}]  # Raw dicts
-            db = JsonFile("/fake/path/file.json")
-            Location = create_location_model([], {})
-            query = {"per_page": ["1"], "page": ["1"], "sort_by": ["name"]}
-            result = json_file_db_get_locations_paginated(db, query, Location)
-            assert len(result["items"]) == 1
+    db_file = tmp_path / "db.json"
+    db_file.write_text(data_json)
+    with mock.patch("goodmap.db.get_locations_list_from_raw_data") as mock_get_locs:
+        mock_get_locs.return_value = [{"uuid": "1", "position": [50, 50]}]  # Raw dicts
+        db = JsonFile(str(db_file))
+        Location = create_location_model([], {})
+        query = {"per_page": ["1"], "page": ["1"], "sort_by": ["name"]}
+        result = json_file_db_get_locations_paginated(db, query, Location)
+        assert len(result["items"]) == 1
 
 
 # Test the two remaining missing lines for 100% coverage
-def test_remaining_missing_coverage_lines():
+def test_remaining_missing_coverage_lines(tmp_path):
     # Test line 474 - MongoDB case when locations list is empty, serialized_locations = locations
     from goodmap.db import (
         json_file_db_get_reports_paginated,
@@ -2693,8 +2562,7 @@ def test_remaining_missing_coverage_lines():
     )
 
     with mock.patch("platzky.db.mongodb_db.MongoClient") as mock_client:
-        mock_db = mock.Mock()
-        mock_client.return_value.__getitem__.return_value = mock_db
+        mock_db = mongo_database(mock_client)
         mock_db.locations.count_documents.return_value = 0  # Empty result
         mock_db.locations.aggregate.return_value = []  # Empty locations list
 
@@ -2707,13 +2575,14 @@ def test_remaining_missing_coverage_lines():
 
     # Test line 1058 - when per_page is None in reports pagination (json_file_db)
     reports_json = json.dumps({"map": {"reports": [{"uuid": "r1", "status": "new"}]}})
-    with mock.patch("builtins.open", mock.mock_open(read_data=reports_json)):
-        db = JsonFile("/fake/path/file.json")
+    db_file = tmp_path / "db.json"
+    db_file.write_text(reports_json)
+    db = JsonFile(str(db_file))
 
-        # Use per_page="all" to make per_page None, triggering line 1058
-        query = {"per_page": ["all"], "page": ["1"]}
-        result = json_file_db_get_reports_paginated(db, query)
-        assert len(result["items"]) == 1  # This hits line 1058: items = reports
+    # Use per_page="all" to make per_page None, triggering line 1058
+    query = {"per_page": ["all"], "page": ["1"]}
+    result = json_file_db_get_reports_paginated(db, query)
+    assert len(result["items"]) == 1  # This hits line 1058: items = reports
 
 
 def test_pagination_helper_error_handling():
@@ -2738,3 +2607,16 @@ def test_pagination_helper_error_handling():
     items = [{"name": "test", "custom_field": "test_value"}]
     result = PaginationHelper.create_paginated_response(items, query, custom_extract)
     assert len(result["items"]) == 1  # Custom filter should pass the item
+
+
+def test_json_file_db_sorted_page_leaves_the_document_order_alone(tmp_path):
+    path = tmp_path / "db.json"
+    reports = [{"uuid": "a", "status": "pending"}, {"uuid": "b", "status": "pending"}]
+    path.write_text(json.dumps({"map": {"reports": reports}}))
+    db = JsonFile(str(path))
+    queries = goodmap_queries(db, LocationBase)
+
+    page = queries.get_reports_paginated({"sort_by": ["uuid"], "sort_order": ["desc"]})
+
+    assert [r["uuid"] for r in page["items"]] == ["b", "a"]
+    assert [r["uuid"] for r in db.document.data["map"]["reports"]] == ["a", "b"]

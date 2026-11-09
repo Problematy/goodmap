@@ -91,9 +91,9 @@ class TestLanguageSwitching:
         page.get_by_role("link", name="polski", exact=True).click()
         page.wait_for_load_state("domcontentloaded")
 
-        # Polish About link should point to /blog/page/o-nas
+        # Polish is served under /pl/, and a page only under its own language's URLs
         about_link_pl = page.get_by_role("link", name="O nas")
-        expect(about_link_pl).to_have_attribute("href", "/blog/page/o-nas")
+        expect(about_link_pl).to_have_attribute("href", "/pl/blog/page/o-nas")
 
     def test_switch_back_to_english_restores_menu(self, page: Page):
         """Verify switching back to English restores original menu items"""

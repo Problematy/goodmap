@@ -48,7 +48,10 @@
         "str"
       ]
     ],
-    "reported_issue_types": ["under construction", "has a hole"],
+    "reported_issue_types": [
+      "under construction",
+      "has a hole"
+    ],
     "categories": {
       "accessible_by": [
         "bikes",
@@ -87,8 +90,44 @@
       "uuid"
     ]
   },
-  "site_content": {
-    "home_page_path": "/map",
+  "site_config": {
+    "logo_url": "",
+    "font": {
+      "name": "Poppins",
+      "url": "https://fonts.googleapis.com/css2?family=Poppins"
+    },
+    "primary_color": "#FFFFFF",
+    "secondary_color": "#245466",
+    "localized_content": {
+      "en": {
+        "menu_items": [
+          {
+            "name": "Map",
+            "url": "/"
+          },
+          {
+            "name": "About",
+            "url": "/blog/page/about"
+          }
+        ],
+        "home_page_path": "/map"
+      },
+      "pl": {
+        "menu_items": [
+          {
+            "name": "Mapa",
+            "url": "/pl/"
+          },
+          {
+            "name": "O nas",
+            "url": "/pl/blog/page/o-nas"
+          }
+        ],
+        "home_page_path": "/map"
+      }
+    }
+  },
+  "blog": {
     "pages": [
       {
         "title": "O nas",
@@ -97,7 +136,7 @@
           "url": "",
           "alternateText": ""
         },
-        "date": "01-01-2024",
+        "date": "2024-01-01",
         "author": "",
         "comments": [],
         "excerpt": "",
@@ -112,7 +151,7 @@
           "url": "",
           "alternateText": ""
         },
-        "date": "01-01-2024",
+        "date": "2024-01-01",
         "author": "",
         "comments": [],
         "excerpt": "",
@@ -120,35 +159,6 @@
         "language": "en",
         "contentInMarkdown": "about"
       }
-    ],
-    "menu_items": {
-      "pl": [
-        {
-          "name": "Mapa",
-          "url": "/"
-        },
-        {
-          "name": "O nas",
-          "url": "/blog/page/o-nas"
-        }
-      ],
-      "en": [
-        {
-          "name": "Map",
-          "url": "/"
-        },
-        {
-          "name": "About",
-          "url": "/blog/page/about"
-        }
-      ]
-    },
-    "logo_url": "",
-    "font": {
-      "name": "Poppins",
-      "url": "https://fonts.googleapis.com/css2?family=Poppins"
-    },
-    "primary_color": "#FFFFFF",
-    "secondary_color": "#245466"
+    ]
   }
 }

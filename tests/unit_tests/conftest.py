@@ -31,7 +31,6 @@ def get_test_config_data() -> dict[str, Any]:
         "DB": {
             "TYPE": "json",
             "DATA": {
-                "site_content": {"pages": []},
                 "categories": {"test-category": ["test", "test2"]},
                 "locations": [],
                 "data": [

@@ -43,7 +43,7 @@ def test_create_app_from_config():
     with patch("platzky.platzky.create_app_from_config", MagicMock()) as mock_platzky_app_creation:
         mock_platzky_app_creation.return_value.is_enabled.return_value = False
         with (
-            patch("goodmap.goodmap.extend_db_with_goodmap_queries", MagicMock()) as mock_extend_db,
+            patch("goodmap.goodmap.goodmap_queries", MagicMock()) as mock_queries,
             patch("goodmap.goodmap.get_location_obligatory_fields", return_value=[]),
             patch("goodmap.goodmap.get_category_data") as mock_get_category_data,
             patch("goodmap.goodmap.get_marker_styles") as mock_get_marker_styles,
@@ -63,7 +63,7 @@ def test_create_app_from_config():
                 extra_plugins_entrypoints=["goodmap.plugins"],
                 extra_content_types=[goodmap.MARKER_FIELD_CONTENT_TYPE],
             )
-            mock_extend_db.assert_called_once()
+            mock_queries.assert_called_once()
 
 
 @mock.patch("goodmap.goodmap.create_app_from_config")
@@ -81,7 +81,7 @@ def test_location_model_is_always_built_from_the_data_source(mock_get_location_o
     config = GoodmapConfig(
         APP_NAME="test_lazy",
         SECRET_KEY="secret",
-        DB=JsonDbConfig(DATA={"site_content": {}, "location_obligatory_fields": []}, TYPE="json"),
+        DB=JsonDbConfig(DATA={"location_obligatory_fields": []}, TYPE="json"),
     )
 
     app = goodmap.create_app_from_config(config)
@@ -97,7 +97,6 @@ def test_frontend_lib_url_explicit_override_wins():
         BLOG_PREFIX="/blog",
         DB=JsonDbConfig(
             DATA={
-                "site_content": {"pages": []},
                 "location_obligatory_fields": [],
                 "categories": {},
             },
@@ -140,7 +139,6 @@ def test_map_route_marker_styles():
         BLOG_PREFIX="/blog",
         DB=JsonDbConfig(
             DATA={
-                "site_content": {"pages": []},
                 "categories": {"type_of_place": ["parcel_locker", "container"]},
                 "marker_styles": {
                     "icon_field": "type_of_place",
@@ -188,7 +186,6 @@ def test_map_route_initial_view():
             BLOG_PREFIX="/blog",
             DB=JsonDbConfig(
                 DATA={
-                    "site_content": {"pages": []},
                     "initial_view": {"center": [53.37, 22.89], "zoom": 8},
                 },
                 TYPE="json",
@@ -225,7 +222,7 @@ def test_map_route_initial_view_stays_in_step_with_startup():
     app = goodmap.create_app_from_config(_minimal_config())
     app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
 
-    with mock.patch.object(app.db, "get_initial_view") as fresh_read:
+    with mock.patch.object(app.extensions["goodmap"]["queries"], "get_initial_view") as fresh_read:
         response_text = app.test_client().get("/map").data.decode("utf-8")
 
     fresh_read.assert_not_called()
@@ -238,7 +235,6 @@ def test_map_route_marker_styles_stay_in_step_with_the_api():
     /map that served newer lookup tables would key them on values the API isn't
     sending."""
     data = {
-        "site_content": {"pages": []},
         "location_obligatory_fields": [["type_of_place", "str"]],
         "marker_styles": {
             "icon_field": "type_of_place",
@@ -258,7 +254,7 @@ def test_map_route_marker_styles_stay_in_step_with_the_api():
     )
     app.config["WTF_CSRF_ENABLED"] = False  # NOSONAR
 
-    with mock.patch.object(app.db, "get_marker_styles") as fresh_read:
+    with mock.patch.object(app.extensions["goodmap"]["queries"], "get_marker_styles") as fresh_read:
         response_text = app.test_client().get("/map").data.decode("utf-8")
 
     fresh_read.assert_not_called()
@@ -270,7 +266,6 @@ def test_map_route_serves_icons_already_resolved_to_urls():
     values a data source configures are resolved at startup, so supporting a new provider
     never needs a frontend release."""
     data = {
-        "site_content": {"pages": []},
         "location_obligatory_fields": [["type_of_place", "str"]],
         "marker_styles": {
             "icon_field": "type_of_place",
@@ -311,7 +306,7 @@ def test_map_route_includes_photo_constraints():
         USE_WWW=False,
         BLOG_PREFIX="/blog",
         DB=JsonDbConfig(
-            DATA={"site_content": {"pages": []}, "categories": {}},
+            DATA={"categories": {}},
             TYPE="json",
         ),
     )
@@ -336,7 +331,7 @@ def _minimal_config() -> GoodmapConfig:
         USE_WWW=False,
         BLOG_PREFIX="/blog",
         DB=JsonDbConfig(
-            DATA={"site_content": {"pages": []}, "categories": {}},
+            DATA={"categories": {}},
             TYPE="json",
         ),
     )
@@ -349,7 +344,7 @@ def _config_with_attachment(attachment: AttachmentConfig) -> GoodmapConfig:
         USE_WWW=False,
         BLOG_PREFIX="/blog",
         DB=JsonDbConfig(
-            DATA={"site_content": {"pages": []}, "categories": {}},
+            DATA={"categories": {}},
             TYPE="json",
         ),
         ATTACHMENT=attachment,
@@ -409,7 +404,7 @@ def test_map_route_overrides_photo_constraints():
         USE_WWW=False,
         BLOG_PREFIX="/blog",
         DB=JsonDbConfig(
-            DATA={"site_content": {"pages": []}, "categories": {}},
+            DATA={"categories": {}},
             TYPE="json",
         ),
         ATTACHMENT=AttachmentConfig(
@@ -442,7 +437,6 @@ def test_location_schema_endpoint_includes_obligatory_fields():
         BLOG_PREFIX="/blog",
         DB=JsonDbConfig(
             DATA={
-                "site_content": {"pages": []},
                 "categories": {"test_category": ["option1"]},
                 "location_obligatory_fields": [
                     ("name", "str"),
@@ -671,7 +665,6 @@ def test_plugin_static_registration_failure_is_skipped():
 
 def _make_test_app_config(feature_flags: Any = None, extra_data: Any = None) -> GoodmapConfig:
     data: dict[str, Any] = {
-        "site_content": {"pages": []},
         "location_obligatory_fields": [],
     }
     if extra_data:

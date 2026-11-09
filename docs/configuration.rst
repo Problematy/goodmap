@@ -88,13 +88,16 @@ Basic keys
 
 ``LANGUAGES``
    The interface languages, as a mapping of language code to ``name``, ``flag``
-   (a country code used to pick the flag icon), and ``country``. **The first entry is the
-   default language.** Translations of your own category and field names go in
+   (a country code used to pick the flag icon), ``country`` and optionally ``domain``.
+   **The first entry is the default language** unless ``DEFAULT_LANGUAGE`` names another;
+   it is served at the root of the site. A language with a ``domain`` is served at the root
+   of that domain, any other one under ``/<code>/`` (the map at ``/pl/map``). Once any
+   language has a ``domain``, the default one needs one too. Translations of your own category and field names go in
    ``TRANSLATION_DIRECTORIES``; see :ref:`config-translations`.
 
 ``BLOG_PREFIX``
-   URL prefix for platzky's pages and blog, e.g. ``"/blog"``. The ``site_content.pages``
-   entries in your data source are served under it.
+   URL prefix for platzky's pages and blog, e.g. ``"/blog"``. The ``blog.pages`` and
+   ``blog.posts`` entries in your data source are served under it.
 
 ``TRANSLATION_DIRECTORIES``
    Extra directories to load gettext catalogues from, on top of Goodmap's own. Use
