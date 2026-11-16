@@ -454,8 +454,8 @@ platzky's part of the file: ``site_config`` holds the colours, logo and font, pl
      },
      "blog": {
        "pages": [
-         {"title": "About", "slug": "about", "language": "en", "contentInMarkdown": "..."},
-         {"title": "O nas", "slug": "o-nas", "language": "pl", "contentInMarkdown": "..."}
+         {"title": "About", "slug": "about", "language": "en", "author": "", "excerpt": "", "contentInMarkdown": "..."},
+         {"title": "O nas", "slug": "o-nas", "language": "pl", "author": "", "excerpt": "", "contentInMarkdown": "..."}
        ]
      }
    }
@@ -494,8 +494,8 @@ JSON file
      PATH: data.json
 
 The whole structure above in one file on disk. It is read once, at startup, and then
-changed only by the app, so edit the file while the app is stopped, or restart it after
-editing. Writes — new suggestions and reports — are written back atomically via a
+changed only by the app, which writes its whole copy back on the next suggestion or report:
+stop the app, edit the file, then start it, or the edit can be overwritten. Writes — new suggestions and reports — are written back atomically via a
 temporary file and a rename, so a crash mid-write cannot truncate your data.
 
 Best for: development, and small-to-medium read-mostly maps served by a single process.
