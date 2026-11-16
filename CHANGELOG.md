@@ -2,6 +2,17 @@
 
 <!-- version list -->
 
+## [2.0.0-alpha.12](https://github.com/Problematy/goodmap/compare/2.0.0-alpha.11...2.0.0-alpha.12) (2026-11-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* migrate to platzky 2.0.0a20; serve /map in every language ([#411](https://github.com/Problematy/goodmap/issues/411))
+
+### Features
+
+* migrate to platzky 2.0.0a20; serve /map in every language ([#411](https://github.com/Problematy/goodmap/issues/411)) ([81ca184](https://github.com/Problematy/goodmap/commit/81ca18420e98e682eb4b76e3505246a01f8af85e))
+
 ## [2.0.0-alpha.11](https://github.com/Problematy/goodmap/compare/2.0.0-alpha.10...2.0.0-alpha.11) (2026-10-23)
 
 
