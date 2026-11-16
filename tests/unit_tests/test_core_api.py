@@ -344,19 +344,86 @@ def test_location_schema_endpoint_is_translated_into_lang_argument(query, locale
     assert response.json["reported_issue_types"][0]["label"] == f"test issue 1@{locale}"
 
 
-def test_map_as_home_page_is_served_in_each_language():
-    """The map is reached through platzky's multilang home page, not a prefixed /map."""
+def _map_test_app(languages, localized_content, use_www=False):
+    """An app with the given languages and per-language site content."""
     config_data = get_test_config_data()
-    config_data["LANGUAGES"] = {
-        "en": {"name": "English", "flag": "gb", "country": "GB"},
-        "pl": {"name": "polski", "flag": "pl", "country": "PL"},
-    }
-    config_data["DB"]["DATA"]["site_content"]["home_page_path"] = "/map"
-    test_app = create_app_from_config(GoodmapConfig.model_validate(config_data)).test_client()
+    config_data["LANGUAGES"] = languages
+    config_data["USE_WWW"] = use_www
+    config_data["DB"]["DATA"]["site_config"] = {"localized_content": localized_content}
+    return create_app_from_config(GoodmapConfig.model_validate(config_data)).test_client()
 
-    assert 'APP_LANG="pl";' in test_app.get("/pl/").get_data(as_text=True)
-    assert 'APP_LANG="en";' in test_app.get("/").get_data(as_text=True)
-    assert test_app.get("/pl/map").status_code == 404
+
+THREE_LANGUAGES = {
+    "pl": {"name": "polski", "flag": "pl", "country": "PL"},
+    "en": {"name": "English", "flag": "gb", "country": "GB"},
+    "uk": {"name": "українська", "flag": "ua", "country": "UA"},
+}
+
+
+@pytest.mark.parametrize(
+    ("path", "language"),
+    [("/", "pl"), ("/map", "pl"), ("/en/", "en"), ("/en/map", "en"), ("/uk/map", "uk")],
+)
+def test_map_is_served_in_each_language(path, language):
+    test_app = _map_test_app(THREE_LANGUAGES, {"pl": {"home_page_path": "/map"}})
+
+    response = test_app.get(path)
+
+    assert response.status_code == 200
+    assert f'APP_LANG="{language}";' in response.get_data(as_text=True)
+
+
+def test_map_title_and_description_come_from_the_language_site_content():
+    test_app = _map_test_app(
+        THREE_LANGUAGES,
+        {
+            "pl": {"app_title": "Mapa", "app_description": "Opis"},
+            "uk": {"app_title": "Мапа", "app_description": "Опис"},
+        },
+    )
+
+    polish = test_app.get("/map").get_data(as_text=True)
+    ukrainian = test_app.get("/uk/map").get_data(as_text=True)
+
+    assert "<title>Mapa</title>" in polish
+    assert '<meta name="description" content="Opis">' in polish
+    assert "<title>Мапа</title>" in ukrainian
+    assert '<meta name="description" content="Опис">' in ukrainian
+
+
+def test_map_as_home_page_has_the_language_home_as_canonical():
+    test_app = _map_test_app(THREE_LANGUAGES, {"pl": {"home_page_path": "/map"}})
+
+    page = test_app.get("/uk/map").get_data(as_text=True)
+
+    assert '<link rel="canonical" href="http://localhost/uk/">' in page
+
+
+def test_map_is_in_the_sitemap_in_each_language_unless_it_is_the_home_page():
+    as_page = _map_test_app(THREE_LANGUAGES, {}).get("/sitemap.xml").get_data(as_text=True)
+    as_home = (
+        _map_test_app(THREE_LANGUAGES, {"pl": {"home_page_path": "/map"}})
+        .get("/sitemap.xml")
+        .get_data(as_text=True)
+    )
+
+    for url in ("http://localhost/map", "http://localhost/en/map", "http://localhost/uk/map"):
+        assert f"<loc>{url}</loc>" in as_page
+        assert f"<loc>{url}</loc>" not in as_home
+
+
+def test_map_on_a_language_domain_is_served_in_that_language():
+    languages = {
+        "pl": {**THREE_LANGUAGES["pl"], "domain": "www.map.test"},
+        "en": {**THREE_LANGUAGES["en"], "domain": "www.map-en.test"},
+        "uk": THREE_LANGUAGES["uk"],
+    }
+    test_app = _map_test_app(languages, {"pl": {"home_page_path": "/map"}}, use_www=True)
+
+    response = test_app.get("/map", base_url="https://www.map-en.test")
+
+    assert response.status_code == 200
+    assert 'APP_LANG="en";' in response.get_data(as_text=True)
 
 
 def test_admin_page_is_not_served_under_language_prefix():
@@ -649,7 +716,7 @@ def test_report_location_with_invalid_json(test_app):
 
 
 def test_report_location_unexpected_error(test_app):
-    db = test_app.application.db
+    db = test_app.application.extensions["goodmap"]["queries"]
     with mock.patch.object(db, "add_report", side_effect=Exception("Database failure")):
         response = api_post(
             test_app, "/api/report-location", {"id": "test-id", "description": "test issue 1"}
@@ -749,7 +816,7 @@ def test_suggest_new_location_keeps_json_scalar_looking_field_as_string(
     object, this only stays true because it's sent as a proper JSON string value
     (`json.dumps(value)`), not because of any per-field type sniffing.
     """
-    db = test_app.application.db
+    db = test_app.application.extensions["goodmap"]["queries"]
     initial_count = len(db.get_suggestions({}))
 
     response = multipart_suggest_post(
@@ -770,7 +837,7 @@ def test_suggest_new_location_keeps_json_scalar_looking_field_as_string(
 
 def test_suggest_new_location_keeps_json_array_looking_string_as_string(test_app):
     """A str-typed field whose value happens to look like valid JSON must stay a string."""
-    db = test_app.application.db
+    db = test_app.application.extensions["goodmap"]["queries"]
     initial_count = len(db.get_suggestions({}))
 
     response = multipart_suggest_post(
@@ -912,7 +979,7 @@ def test_suggest_location_rejects_fake_jpeg(test_app):
 
 def test_suggest_location_with_photo_stores_suggestion(test_app):
     """Verify that location with photo is stored in database."""
-    db = test_app.application.db
+    db = test_app.application.extensions["goodmap"]["queries"]
     initial_count = len(db.get_suggestions({}))
 
     with mock.patch(
@@ -1010,7 +1077,7 @@ def test_suggest_new_location_with_list_item_too_long(test_app):
 
 
 def test_suggest_location_unexpected_error(test_app):
-    db = test_app.application.db
+    db = test_app.application.extensions["goodmap"]["queries"]
     with mock.patch.object(db, "add_suggestion", side_effect=Exception("Database failure")):
         response = multipart_suggest_post(
             test_app,
@@ -1167,13 +1234,13 @@ def test_make_tuple_translation():
 
 
 def test_issue_options_from_db(test_app):
-    db = test_app.application.db
+    db = test_app.application.extensions["goodmap"]["queries"]
     assert db.get_issue_options() == ["test issue 1", "test issue 2"]
 
 
 def test_issue_options_empty_when_not_configured():
     client = create_test_app(db_overrides={"reported_issue_types": []})
-    db = client.application.db  # type: ignore[attr-defined]
+    db = client.application.extensions["goodmap"]["queries"]
     assert db.get_issue_options() == []
 
 
@@ -1186,8 +1253,8 @@ def test_issue_options_defaults_to_empty_when_missing():
     config_data["DB"]["DATA"].pop("reported_issue_types", None)
     config = GoodmapConfig.model_validate(config_data)
     app = create_app_from_config(config)
-    db = app.db
-    assert db.get_issue_options() == []  # type: ignore[attr-defined]
+    db = app.extensions["goodmap"]["queries"]
+    assert db.get_issue_options() == []
 
 
 def test_get_locations_from_request_helper(test_app):
@@ -1202,7 +1269,9 @@ def test_get_locations_from_request_helper(test_app):
 
     with test_app.application.app_context():
         locations = get_locations_from_request(
-            test_app.application.db, mock_request_args, PinMarkerFields()
+            test_app.application.extensions["goodmap"]["queries"],
+            mock_request_args,
+            PinMarkerFields(),
         )
         assert isinstance(locations, list)
         if locations:

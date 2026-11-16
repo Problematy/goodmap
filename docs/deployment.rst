@@ -39,10 +39,10 @@ How many workers you can run depends on the data source:
 **MongoDB** — scale freely. The database arbitrates concurrent writes.
 
 **json_file** — **run a single worker** if anything writes: new suggestions, new
-reports. Each write rewrites the whole file. The rename is atomic, so the file is never
-left half-written, but two processes that read-modify-write concurrently will lose one of
-the two changes. A read-only map that takes no submissions is safe with any number of
-workers.
+reports, admin edits. Each worker reads the file once, at startup, and keeps its own copy:
+it never sees another worker's writes, and its next write saves its copy over the whole
+file, dropping theirs. The rename is atomic, so the file is never left half-written. A
+read-only map that takes no submissions is safe with any number of workers.
 
 **google_json** — read-only, so any number of workers is fine.
 
@@ -114,14 +114,15 @@ incoming reports change it while the app runs.
 
 - **json_file** — back up the file itself. Because writes go through a temporary file and
   a rename, a copy taken at any moment is a consistent snapshot of some version. Note that
-  this file also holds ``site_content``.
+  this file also holds platzky's ``site_config`` and ``blog``.
 - **MongoDB** — your usual database backups; nothing Goodmap-specific.
 - **google_json** — the blob is your source of truth and the app never writes
   to it. Bucket object versioning gives you history.
 
 Schema keys (``categories``, ``visible_data``, ``meta_data``,
 ``location_obligatory_fields``) are read at startup, so changing them means restarting the
-app. Point data is re-read per request.
+app. Point data is re-read per request from MongoDB; a ``json_file`` is read once at startup
+and then changed only by the app, so edit the file while the app is stopped.
 
 Upgrading
 ---------

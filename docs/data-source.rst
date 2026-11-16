@@ -6,7 +6,7 @@ shown, which are filterable, and which plugins are active. It is separate from
 ``config.yml`` (:doc:`configuration`), which only says *how the app runs*.
 
 Whatever backend you choose, the shape is the same — a ``map`` section holding the points
-and their schema, alongside platzky's ``site_content`` section:
+and their schema, alongside platzky's ``site_config`` and ``blog`` sections:
 
 .. code-block:: text
 
@@ -24,7 +24,8 @@ and their schema, alongside platzky's ``site_content`` section:
        "reports": [ ... ]
      },
      "plugins": { ... },
-     "site_content": { ... }
+     "site_config": { ... },
+     "blog": { ... }
    }
 
 Note that ``plugins`` is a **sibling** of ``map``, not a key inside it.
@@ -395,7 +396,7 @@ move it into ``data`` yourself.
 marker-field renderers) and platzky's (notifiers and the like) alike. ``config.yml`` has
 no say in it.
 
-This is a **top-level key**, alongside ``map`` and ``site_content`` — not inside ``map``.
+This is a **top-level key**, alongside ``map`` and ``site_config`` — not inside ``map``.
 Put it in the wrong place and nothing complains: the app starts, the plugin is simply
 never loaded.
 
@@ -421,29 +422,60 @@ a typo in the key stops the app rather than silently disabling a feature. An ent
 
 See :doc:`plugins` for writing one, and restart the app after changing this key.
 
-``site_content``
-----------------
+.. _data-source-site-config:
 
-platzky's half of the file: pages, menu items, logo, fonts and colours. Goodmap only
-depends on one key of it:
+``site_config`` and ``blog``
+----------------------------
+
+platzky's part of the file: ``site_config`` holds the colours, logo and font, plus one
+``localized_content`` entry per language with its menu, footer, texts and home page;
+``blog`` holds the CMS ``pages`` and blog ``posts``. Their format is platzky's — see its
+*Site content* documentation; ``platzky check data.json`` validates a JSON file.
 
 .. code-block:: json
 
    {
-     "site_content": {
-       "home_page_path": "/map",
-       "pages": [],
-       "menu_items": {},
-       "logo_url": "",
+     "site_config": {
        "primary_color": "#FFFFFF",
-       "secondary_color": "#245466"
+       "secondary_color": "#245466",
+       "localized_content": {
+         "en": {
+           "app_title": "Bridges in Wrocław",
+           "app_description": "A map of the bridges in Wrocław",
+           "home_page_path": "/map",
+           "menu_items": [{"name": "Map", "url": "/"}, {"name": "About", "url": "/blog/page/about"}]
+         },
+         "pl": {
+           "app_title": "Mosty Wrocławia",
+           "app_description": "Mapa mostów Wrocławia",
+           "menu_items": [{"name": "Mapa", "url": "/pl/"}, {"name": "O nas", "url": "/pl/blog/page/o-nas"}]
+         }
+       }
+     },
+     "blog": {
+       "pages": [
+         {"title": "About", "slug": "about", "language": "en", "author": "", "excerpt": "", "contentInMarkdown": "..."},
+         {"title": "O nas", "slug": "o-nas", "language": "pl", "author": "", "excerpt": "", "contentInMarkdown": "..."}
+       ]
      }
    }
 
-The map view is registered at ``/map``, because platzky reserves ``/`` for its own
-homepage dispatch. Setting ``home_page_path`` to ``"/map"`` makes ``/`` serve the map
-directly, with no redirect. Leave it out and visitors get platzky's homepage instead, with
-the map reachable only at ``/map``.
+The map view is registered at ``/map``, because platzky reserves ``/`` for each language's
+home page. Setting ``home_page_path`` to ``"/map"`` in the default language makes ``/`` serve
+the map directly, with no redirect; a language without its own ``home_page_path`` uses the
+default language's. Leave it out and visitors get platzky's blog index instead, with the map
+reachable only at ``/map``.
+
+The map is served in every language: the default one at ``/map``, a language with its own
+``domain`` at ``/map`` on that domain, and any other one under its code (``/pl/map``). Its
+``<title>`` and meta description are the language's ``app_title`` and ``app_description``.
+When ``/map`` is a language's home page, its canonical URL is that language's ``/`` and the
+sitemap lists only the home page; otherwise the sitemap lists ``/map`` in every language.
+
+Every page and post needs a ``language`` and is served only under that language's URLs, so
+a menu links to its own language's pages (``/pl/blog/page/o-nas``, not
+``/blog/page/o-nas``), and to its home page as ``/`` (``/pl/`` under a prefix) rather than
+``/map``.
 
 .. _data-source-backends:
 
@@ -461,10 +493,9 @@ JSON file
      TYPE: json_file
      PATH: data.json
 
-The whole structure above in one file on disk. Read per request, so edits to ``data``
-show up on the next refresh — though the schema keys (``categories``,
-``location_obligatory_fields``, ``visible_data``, ``meta_data``) are read once at startup
-and need a restart. Writes — new suggestions and reports — are written back atomically via a
+The whole structure above in one file on disk. It is read once, at startup, and then
+changed only by the app, which writes its whole copy back on the next suggestion or report:
+stop the app, edit the file, then start it, or the edit can be overwritten. Writes — new suggestions and reports — are written back atomically via a
 temporary file and a rename, so a crash mid-write cannot truncate your data.
 
 Best for: development, and small-to-medium read-mostly maps served by a single process.

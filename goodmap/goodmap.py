@@ -13,6 +13,7 @@ from platzky.config import languages_dict
 from platzky.content_types import ContentType
 from platzky.models import CmsModule
 from platzky.shortcodes import Shortcode
+from platzky.sitemap import single_url
 
 from goodmap.api.admin_api import admin_pages
 from goodmap.api.api_models import PinMarkerFields
@@ -20,13 +21,13 @@ from goodmap.api.core_api import core_pages
 from goodmap.config import GoodmapConfig
 from goodmap.data_models.location import create_location_model
 from goodmap.db import (
-    extend_db_with_goodmap_queries,
     get_category_data,
     get_initial_view,
     get_location_obligatory_fields,
     get_marker_styles,
     get_meta_data,
     get_visible_data,
+    goodmap_queries,
 )
 from goodmap.feature_flags import EnableAdminPanel
 from goodmap.formatter import PinFormatter
@@ -184,10 +185,11 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
     if app.config.get("MAX_CONTENT_LENGTH") is None:
         app.config["MAX_CONTENT_LENGTH"] = config.attachment.max_size + MULTIPART_OVERHEAD_ALLOWANCE
 
-    # Build this deployment's location model from its data source and extend app.db
-    # with the query functions it needs. categories/marker_styles are both optional
-    # (see docs/data-source.rst) - every backend's get_category_data()/
-    # get_marker_styles() already defaults them to {} internally.
+    # Build this deployment's location model from its data source and collect the
+    # query functions it needs (app.db itself stays Platzky's database).
+    # categories/marker_styles are both optional (see docs/data-source.rst) - every
+    # backend's get_category_data()/get_marker_styles() already defaults them to {}
+    # internally.
     #
     # marker_styles splits two ways: the raw config says which *fields* drive a pin (app
     # wiring, below), while resolve_marker_styles builds the icon/color lookup tables the
@@ -209,7 +211,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
     meta_fields = get_meta_data(app.db)(app.db)
 
     location_model = create_location_model(location_obligatory_fields, categories)
-    app.db = extend_db_with_goodmap_queries(app.db, location_model)
+    queries = goodmap_queries(app.db, location_model)
 
     obligatory_field_names = {name for name, _ in location_obligatory_fields}
     pin_marker_fields = PinMarkerFields(
@@ -225,16 +227,12 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
         ),
     )
 
-    app.extensions["goodmap"] = {"location_obligatory_fields": location_obligatory_fields}
+    app.extensions["goodmap"] = {
+        "location_obligatory_fields": location_obligatory_fields,
+        "queries": queries,
+    }
 
-    try:
-        plugins_data = app.db.get_plugins_data()
-    except Exception:
-        logger.warning(
-            "Could not read plugin config data; frontend plugins get empty config",
-            exc_info=True,
-        )
-        plugins_data = {}
+    plugins_data = app.db.plugin_config.get_all()
 
     plugin_manifest = []
     for ep in importlib.metadata.entry_points(group=_PLUGIN_ENTRY_POINT_GROUP):
@@ -276,7 +274,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
     shortcodes: dict[str, Shortcode] = app.shortcodes_for(MARKER_FIELD_CONTENT_TYPE)
 
     cp = core_pages(
-        app.db,
+        queries,
         languages_dict(config.languages),
         app.notify,
         location_model,
@@ -289,14 +287,15 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
 
     goodmap = Blueprint("goodmap", __name__, url_prefix="/", template_folder="templates")
 
-    @goodmap.route("/map", methods=["GET"])
+    @goodmap.route("/map", methods=["GET"], multilang=True, sitemap_provider=single_url)
     def index():
-        """Render the main map interface.
+        """Render the main map interface in the request's language.
 
-        Registered at /map rather than / because platzky (>=2.0.0a8) reserves
-        the root path for its own homepage dispatch (see
-        db.get_home_page_path()). Deployments set site_content.home_page_path
-        to "/map" so visiting / still renders this view, with no redirect.
+        Registered at /map rather than / because platzky reserves the root path for
+        each language's home page. Deployments set ``home_page_path: "/map"`` in the
+        default language's ``localized_content`` so visiting / renders this view, with no
+        redirect. Served in every language: /pl/map under a prefix, /map on a language's
+        own domain.
 
         Returns:
             Rendered map.html template with feature flags and the plugin manifest
@@ -341,7 +340,7 @@ def create_app_from_config(config: GoodmapConfig) -> platzky.Engine:
     app.register_blueprint(goodmap)
 
     if app.is_enabled(EnableAdminPanel):
-        admin_bp = admin_pages(app.db, location_model)
+        admin_bp = admin_pages(queries, location_model)
         app.register_blueprint(admin_bp)
 
         goodmap_cms_modules = CmsModule.model_validate(

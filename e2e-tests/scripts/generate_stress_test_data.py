@@ -69,13 +69,7 @@ def main():
             "visible_data": ["accessible_by", "type_of_place"],
             "meta_data": ["uuid"],
         },
-        "site_content": {
-            "home_page_path": "/map",
-            "pages": [],
-            "menu_items": {
-                "en": [{"name": "Map", "url": "/"}],
-                "pl": [{"name": "Mapa", "url": "/"}],
-            },
+        "site_config": {
             "logo_url": "",
             "font": {
                 "name": "Poppins",
@@ -83,6 +77,10 @@ def main():
             },
             "primary_color": "#FFFFFF",
             "secondary_color": "#245466",
+            "localized_content": {
+                "en": {"menu_items": [{"name": "Map", "url": "/"}], "home_page_path": "/map"},
+                "pl": {"menu_items": [{"name": "Mapa", "url": "/pl/"}], "home_page_path": "/map"},
+            },
         },
     }
 

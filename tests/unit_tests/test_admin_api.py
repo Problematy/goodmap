@@ -158,7 +158,7 @@ def test_admin_put_location_not_found(test_app):
     """Test LocationNotFoundError handler when updating non-existent location."""
     from goodmap.exceptions import LocationNotFoundError
 
-    db = test_app.application.db
+    db = test_app.application.extensions["goodmap"]["queries"]
     valid_location = {
         "name": "Test",
         "position": [50, 50],
@@ -270,10 +270,11 @@ def test_admin_put_suggestion_not_found(test_app):
 
 def test_admin_suggestion_processing(test_app):
     """Test suggestion processing: already processed and successful scenarios."""
-    test_app.application.db.data["suggestions"] = [
-        {"uuid": "already-processed", "status": "accepted", "name": "test"},
-        {"uuid": "pending-one", "status": "pending", "name": "test2"},
-    ]
+    with test_app.application.db.document.edit() as data:
+        data["suggestions"] = [
+            {"uuid": "already-processed", "status": "accepted", "name": "test"},
+            {"uuid": "pending-one", "status": "pending", "name": "test2"},
+        ]
 
     # Already processed returns 409
     response = api_put(test_app, "/api/admin/suggestions/already-processed", {"status": "rejected"})
@@ -283,22 +284,28 @@ def test_admin_suggestion_processing(test_app):
     # Pending one can be processed
     response = api_put(test_app, "/api/admin/suggestions/pending-one", {"status": "rejected"})
     assert response.status_code == 200
-    assert test_app.application.db.get_suggestion("pending-one")["status"] == "rejected"
+    assert (
+        test_app.application.extensions["goodmap"]["queries"].get_suggestion("pending-one")[
+            "status"
+        ]
+        == "rejected"
+    )
 
 
 def test_admin_suggestion_processing_location_validation_error(test_app):
     """Test LocationValidationError when accepting suggestion with invalid data."""
     db = test_app.application.db
-    db.data["suggestions"].append(
-        {
-            "uuid": "invalid-suggestion",
-            "name": "Invalid",
-            "type_of_place": "test",
-            "test_category": ["test"],
-            "position": [200, 200],  # Invalid coordinates
-            "status": "pending",
-        }
-    )
+    with db.document.edit() as data:
+        data["suggestions"].append(
+            {
+                "uuid": "invalid-suggestion",
+                "name": "Invalid",
+                "type_of_place": "test",
+                "test_category": ["test"],
+                "position": [200, 200],  # Invalid coordinates
+                "status": "pending",
+            }
+        )
 
     response = api_put(
         test_app, "/api/admin/suggestions/invalid-suggestion", {"status": "accepted"}
@@ -310,25 +317,26 @@ def test_admin_suggestion_processing_location_validation_error(test_app):
 def test_admin_suggestion_processing_duplicate_location(test_app):
     """Test LocationAlreadyExistsError when accepting suggestion with duplicate UUID."""
     db = test_app.application.db
-    db.data["data"].append(
-        {
-            "uuid": "duplicate-uuid",
-            "name": "Existing",
-            "position": [50, 50],
-            "test_category": ["test"],
-            "type_of_place": "test",
-        }
-    )
-    db.data["suggestions"].append(
-        {
-            "uuid": "duplicate-uuid",
-            "name": "Suggested",
-            "type_of_place": "test",
-            "test_category": ["test"],
-            "position": [60, 60],
-            "status": "pending",
-        }
-    )
+    with db.document.edit() as data:
+        data["data"].append(
+            {
+                "uuid": "duplicate-uuid",
+                "name": "Existing",
+                "position": [50, 50],
+                "test_category": ["test"],
+                "type_of_place": "test",
+            }
+        )
+        data["suggestions"].append(
+            {
+                "uuid": "duplicate-uuid",
+                "name": "Suggested",
+                "type_of_place": "test",
+                "test_category": ["test"],
+                "position": [60, 60],
+                "status": "pending",
+            }
+        )
 
     response = api_put(test_app, "/api/admin/suggestions/duplicate-uuid", {"status": "accepted"})
     assert response.status_code == 409
@@ -368,7 +376,7 @@ def test_admin_report_update_race_condition(test_app):
     """Test ReportNotFoundError handler for race condition scenario."""
     from goodmap.exceptions import ReportNotFoundError
 
-    db = test_app.application.db
+    db = test_app.application.extensions["goodmap"]["queries"]
     with (
         mock.patch.object(
             db, "get_report", return_value={"uuid": "race-uuid", "status": "pending"}
@@ -385,7 +393,7 @@ def test_admin_report_update_race_condition(test_app):
 
 def test_admin_database_exceptions(test_app):
     """Test database exceptions in admin endpoints."""
-    db = test_app.application.db
+    db = test_app.application.extensions["goodmap"]["queries"]
     valid_location = {
         "name": "Test",
         "position": [50, 50],

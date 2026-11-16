@@ -68,13 +68,12 @@ Create ``data.json``. This one file holds both the points and the map's schema:
        "meta_data": ["uuid"],
        "reported_issue_types": ["under construction", "has a hole", "other"]
      },
-     "site_content": {
-       "home_page_path": "/map",
-       "pages": [],
-       "menu_items": {},
-       "logo_url": "",
+     "site_config": {
        "primary_color": "#FFFFFF",
-       "secondary_color": "#245466"
+       "secondary_color": "#245466",
+       "localized_content": {
+         "en": {"home_page_path": "/map"}
+       }
      }
    }
 
@@ -102,10 +101,11 @@ What each part does:
    Which fields show inside the marker popup. Fields not listed here are never sent to
    the frontend.
 
-``site_content``
-   platzky's section — pages, menus, colours. ``home_page_path: "/map"`` is what makes
-   ``/`` serve the map; without it, ``/`` is platzky's own homepage and the map lives at
-   ``/map`` only.
+``site_config``
+   platzky's section — colours, logo, and per language (``localized_content``) the menu,
+   texts and home page. ``home_page_path: "/map"`` in the default language is what makes
+   ``/`` serve the map; without it, ``/`` is platzky's blog index and the map lives at
+   ``/map`` only. See :ref:`data-source-site-config`.
 
 The full reference for this file is :doc:`data-source`.
 
@@ -204,9 +204,8 @@ Add another bridge, or add a new filterable field:
 4. Add it to ``location_obligatory_fields`` if every point must have it.
 5. Restart the server.
 
-With ``TYPE: json_file`` the file is re-read per request, so data edits show up on
-refresh — but the schema keys above are read once at startup, so changing them needs a
-restart.
+With ``TYPE: json_file`` the file is read once at startup, so any edit to it — points or
+schema — needs a restart.
 
 Where to go next
 ----------------
